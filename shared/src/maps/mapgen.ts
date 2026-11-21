@@ -48,7 +48,9 @@ export function getMap(zoneId: string): GameMap {
 }
 
 const px = (t: number) => t * TILE + TILE / 2;
-const WIDE = new Set(['rock_l', 'log', 'arch', 'stall']);
+const WIDE = new Set(['rock_l', 'log', 'log_moss', 'arch', 'stall']);
+/** Große Bäume halten Abstand zueinander, damit Kronen nicht zu einer Wand verschmelzen. */
+const BIG_TREES = new Set(['tree_oak', 'tree_oak2', 'tree_pine', 'tree_birch', 'tree_willow', 'tree_dead', 'pine_snow', 'pine_snow2', 'vine_tree', 'twisted_tree', 'dead_tree']);
 
 function finishSolid(tiles: Uint8Array, solid: Uint8Array) {
   for (let i = 0; i < tiles.length; i++) {
@@ -99,6 +101,25 @@ function genOverworld(def: ZoneDef): GameMap {
     tiles[I(x, y)] = t;
   }
 
+  // Bachlauf (vor Lichtungen und Wegen, damit Wege Brücken schlagen)
+  if (def.river) {
+    for (let k = 0; k + 1 < def.river.length; k++) {
+      const [ax, ay] = def.river[k], [bx, by] = def.river[k + 1];
+      const n = Math.ceil(Math.hypot(bx - ax, by - ay) * 2);
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        const cx = ax + (bx - ax) * t + (noise2(ax + i, ay + k * 31, 9, seed + 50) - 0.5) * 5;
+        const cy = ay + (by - ay) * t;
+        const rad = 1.2 + noise2(cx, cy, 11, seed + 51) * 0.9;
+        for (let y = Math.floor(cy - rad - 1); y <= Math.ceil(cy + rad + 1); y++) for (let x = Math.floor(cx - rad - 1); x <= Math.ceil(cx + rad + 1); x++) {
+          if (x < 1 || y < 1 || x >= w - 1 || y >= h - 1) continue;
+          const dd = Math.hypot(x - cx, y - cy);
+          if (dd <= rad) tiles[I(x, y)] = T.LIQUID;
+          else if (dd <= rad + 1.2 && (tiles[I(x, y)] === T.WALL || tiles[I(x, y)] === T.HAZARD)) tiles[I(x, y)] = T.GROUND;
+        }
+      }
+    }
+  }
   const pois = def.pois!;
   const poi = (id: string) => pois.find(p => p.id === id)!;
 
@@ -240,19 +261,23 @@ function genOverworld(def: ZoneDef): GameMap {
         ['barrel', -9, 3, true], ['crate', -14, 3, true], ['barrel', 11, -8, true], ['crate', 12, -8, true], ['haystack', -14, 7, true],
         ['banner', -2, 9, true], ['banner', 4, 9, true], ['crate', 9, 4, true], ['barrel', 2, 14, true],
         ['fence_h', -12, -6, true], ['fence_h', -11, -6, true], ['fence_h', -10, -6, true], ['fence_h', 12, 3, true], ['fence_h', 13, 3, true],
-        ['flowers_a', -6, -8, false], ['flowers_b', -3, -9, false], ['flowers_a', 8, 9, false], ['flowers_b', -10, 9, false], ['flowers_a', 13, -3, false],
+        ['flowers_a', -6, -8, false], ['flowers_b', -3, -9, false], ['flowers_c', 8, 9, false], ['flowers_d', -10, 9, false], ['flowers_e', 13, -3, false],
+        ['forge', -10, 3, true, 2], ['woodpile', -15, 5, true, 2], ['sacks', 10, 4, true], ['cart', 11, 6, true, 3], ['bench', -3, -7, true, 2], ['bench', 2, 7, true, 2],
+        ['beehive', 14, -6, true], ['birdhouse', -7, -9, true], ['scarecrow', 14, 9, true], ['bush_flower', -9, -3, true], ['bush_flower', 8, -4, true], ['flowers_f', 1, 8, false],
       ];
       for (const [f, dx, dy, s, wc] of D) addDecor(f, p.x + dx, p.y + dy, s, wc ?? 1);
       safe.push({ x: px(p.x), y: px(p.y), r: (p.r + 9) * TILE });
     } else if (p.kind === 'camp') {
       addDecor('campfire', p.x, p.y, true);
-      addDecor('tent', p.x - 5, p.y - 1, true, 2, 2);
+      addDecor('tent', p.x - 5, p.y - 1, true, 3, 2);
+      addDecor('woodpile', p.x - 2, p.y - 3, true, 2);
       addDecor('crate', p.x + 5, p.y + 1, true);
       addDecor('barrel', p.x + 5, p.y + 2, true);
       if (p.npcs?.length) addObj('stone', p.x, p.y + 4, 'stone');
       safe.push({ x: px(p.x), y: px(p.y), r: (p.r + 6) * TILE });
     }
     for (const [npc, dx, dy] of p.npcs ?? []) addObj('npc', p.x + dx, p.y + dy, npc);
+    if (p.id === 'schrein') { addDecor('shrine', p.x - 1, p.y - 1, true, 2); addDecor('wall_ruin_h', p.x - 5, p.y - 2, true, 3); addDecor('wall_ruin_h', p.x + 2, p.y - 3, true, 3); addDecor('wall_ruin_end', p.x + 5, p.y - 3, true, 1); }
     const lore = LORE[`${def.id}:${p.id}`];
     if (lore) addObj('sign', p.x + (p.kind === 'camp' ? -2 : 1), p.y + (p.kind === 'camp' ? 3 : -2), undefined, { text: lore });
   }
@@ -260,9 +285,30 @@ function genOverworld(def: ZoneDef): GameMap {
 
   // Deko streuen
   const dList = def.decor!.map(d => [d, d[1]] as const);
+  const bigAt = new Uint8Array(w * h);
+  const nearLiquid = (x: number, y: number, r: number) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (inb(x + dx, y + dy) && tiles[I(x + dx, y + dy)] === T.LIQUID) return true; return false; };
+  const lush = def.id === 'gruenwald';
   for (let y = 2; y < h - 2; y++) for (let x = 2; x < w - 2; x++) {
     const i = I(x, y), t = tiles[i];
-    if ((t !== T.GROUND && t !== T.GROUND2) || reserved[i] || solid[i]) continue;
+    if (lush && t === T.LIQUID) {
+      // Seerosen auf ruhigem Wasser
+      const r = hash2(x, y, seed + 61);
+      if (r < 0.1) decor.push({ f: r < 0.02 ? 'lily_flower' : r < 0.06 ? 'lilypad_a' : 'lilypad_b', x: x * TILE + 3 + Math.floor(r * 977) % 10, y: y * TILE + 6 + Math.floor(r * 613) % 8 });
+      continue;
+    }
+    if ((t !== T.GROUND && t !== T.GROUND2) || solid[i]) continue;
+    if (lush && !reserved[i] && nearLiquid(x, y, 1)) {
+      // Uferbewuchs
+      const r = hash2(x, y, seed + 62);
+      if (r < 0.5) { decor.push({ f: r < 0.3 ? 'reeds' : 'cattail', x: x * TILE + 4 + Math.floor(r * 811) % 9, y: y * TILE + 9 + Math.floor(r * 397) % 6 }); if (r < 0.12) decor.push({ f: 'reeds', x: x * TILE + 11, y: y * TILE + 14 }); continue; }
+      if (r > 0.93 && !bigAt[i]) { if (addDecor('tree_willow', x, y, true)) { for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (inb(x + dx, y + dy)) bigAt[I(x + dx, y + dy)] = 1; continue; } }
+    }
+    if (reserved[i]) continue;
+    if (lush && t === T.GROUND2 && noise2(x, y, 9, seed + 60) > 0.6) {
+      // Kornfeld: dichte, wiegende Ähren, durch die man hindurchläuft
+      decor.push({ f: 'wheat', x: x * TILE + 4, y: y * TILE + 7 }, { f: 'wheat', x: x * TILE + 12, y: y * TILE + 9 }, { f: 'wheat', x: x * TILE + 7, y: y * TILE + 15 });
+      continue;
+    }
     const dens = def.decorDensity! * (0.25 + 1.7 * noise2(x, y, 8, seed + 30));
     if (rng.next() >= dens) continue;
     const [f, , sol] = rng.weighted(dList);
@@ -270,18 +316,30 @@ function genOverworld(def: ZoneDef): GameMap {
       let n = 0;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (solid[I(x + dx, y + dy)] === 1 && tiles[I(x + dx, y + dy)] !== T.LIQUID) n++;
       if (n > 1) continue;
-      addDecor(f, x, y, true, WIDE.has(f) ? 2 : 1);
+      if (BIG_TREES.has(f)) {
+        if (bigAt[i]) continue;
+        if (!addDecor(f, x, y, true)) continue;
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) bigAt[I(x + dx, y + dy)] = 1;
+      } else addDecor(f, x, y, true, WIDE.has(f) ? 2 : 1);
     } else {
       decor.push({ f, x: x * TILE + 8 + rng.int(-3, 3), y: y * TILE + 12 + rng.int(-2, 2) });
     }
   }
+  if (lush) for (let k = 0; k < 7; k++) {
+    // verstreute Mauerreste der alten Hüter
+    const x = rng.int(6, w - 9), y = rng.int(6, h - 7);
+    let ok = true;
+    for (let dx = 0; dx < 3; dx++) if (reserved[I(x + dx, y)] || solid[I(x + dx, y)] || (tiles[I(x + dx, y)] !== T.GROUND && tiles[I(x + dx, y)] !== T.GROUND2)) ok = false;
+    if (ok) addDecor('wall_ruin_h', x, y, true, 3);
+  }
 
   // Dichter Wald: Bäume wachsen aus dem Dickicht (rein optisch, die Zellen sind ohnehin Wand)
-  const canopy: Record<string, string[]> = { gruenwald: ['tree_oak', 'tree_oak2', 'tree_pine'], frost: ['pine_snow', 'pine_snow2'] };
+  const canopy: Record<string, string[]> = { gruenwald: ['tree_oak', 'tree_pine', 'tree_oak', 'tree_birch'], frost: ['pine_snow', 'pine_snow2'] };
+  const canopyP = def.biome === 'gruenwald' ? 0.13 : 0.42;
   if (canopy[def.biome]) for (let y = 1; y < h; y++) for (let x = 0; x < w; x++) {
     if (tiles[I(x, y)] !== T.WALL || reserved[I(x, y)]) continue;
     const r = hash2(x, y, seed + 77);
-    if (r < 0.42) decor.push({ f: canopy[def.biome][Math.floor(r * 1000) % canopy[def.biome].length], x: x * TILE + 8 + Math.floor(r * 97) % 7 - 3, y: y * TILE + 14 });
+    if (r < canopyP) decor.push({ f: canopy[def.biome][Math.floor(r * 1000) % canopy[def.biome].length], x: x * TILE + 8 + Math.floor(r * 97) % 7 - 3, y: y * TILE + 14 });
   }
   finishSolid(tiles, solid);
   for (const o of objects) if (o.type === 'npc' || o.type === 'stone' || o.type === 'sign' || o.type === 'board' || o.type === 'chest') {
@@ -395,6 +453,16 @@ const DUNGEON_DECOR: Record<BiomeId, [string, boolean][]> = {
   frost: [['ice_spike', true], ['snow_rock', true], ['bones', false], ['frozen_bush', true]],
   ruinen: [['urn', true], ['rubble', true], ['pillar_broken', true], ['bones', false]],
   schatten: [['void_crystal', true], ['tombstone', true], ['bones', false], ['floating_shard', false]],
+};
+
+/** Einrichtungsgegenstände je Raumrolle: [Frame, solide] */
+const ROLE_PROPS: Record<string, [string, boolean][]> = {
+  combat: [['d_crate', true], ['d_barrel', true], ['d_rubble', true], ['d_urn', true], ['d_skull', false]],
+  entrance: [['d_crate', true], ['d_barrel', true], ['d_candles', false]],
+  key: [['d_statue', true], ['d_rack', true], ['d_urn', true], ['d_candles', false]],
+  treasure: [['d_crate', true], ['d_barrel', true], ['d_urn', true], ['d_sarcophagus', true], ['d_candles', false]],
+  puzzle: [['d_bookshelf', true], ['d_table', true], ['d_candles', false], ['d_statue', true]],
+  secret: [['d_sarcophagus', true], ['d_candles', false], ['d_mushroom_glow', false]],
 };
 
 function genDungeon(def: ZoneDef): GameMap {
@@ -561,11 +629,25 @@ function genDungeon(def: ZoneDef): GameMap {
         tiles[I(x, y)] = T.WALL; take(x, y);
       }
     }
-    // Feuerschalen als Lichtquellen
-    if (room.role !== 'puzzle' && room.role !== 'secret') {
+    // Lichtquellen und Wandschmuck
+    if (room.role === 'boss' || room.role === 'trap') {
       solidDecor('brazier', x0, y0); solidDecor('brazier', x1, y0);
       if (room.role === 'boss') { solidDecor('brazier', x0, y1); solidDecor('brazier', x1, y1); }
     }
+    const wallY = y0 * TILE - 3;
+    for (let x = x0 + 1, k = room.id; x <= x1 - 1; x++, k++) {
+      if (tiles[I(x, y0 - 1)] !== T.WALL || tiles[I(x, y0)] !== T.FLOOR) continue;
+      const m = (x - x0) % 4;
+      if (m === 1) decor.push({ f: 'wall_torch', x: px(x), y: wallY });
+      else if (m === 3 && room.role !== 'secret') {
+        const r = hash2(x, y0, seed + 5);
+        const f = r < 0.4 ? 'd_banner' : r < 0.55 ? 'd_chains' : r < 0.7 && def.biome === 'gruenwald' ? 'd_roots' : null;
+        if (f) decor.push({ f, x: px(x), y: wallY + (f === 'd_roots' ? 6 : 0) });
+      }
+    }
+    if (hash2(room.id, 1, seed) < 0.6) decor.push({ f: 'd_cobweb', x: x0 * TILE + 9, y: y0 * TILE + 12 });
+    if (hash2(room.id, 2, seed) < 0.6) decor.push({ f: 'd_cobweb', x: (x1 + 1) * TILE - 9, y: y0 * TILE + 12 });
+    if ((room.role === 'combat' || room.role === 'treasure' || room.role === 'key' || room.role === 'entrance') && hw >= 5) decor.push({ f: hash2(room.id, 3, seed) < 0.5 ? 'd_rug_a' : 'd_rug_b', x: cx * TILE, y: cy * TILE + 16 });
     switch (room.role) {
       case 'entrance': {
         start = { x: px(cx) - 8, y: px(cy) };
@@ -642,15 +724,21 @@ function genDungeon(def: ZoneDef): GameMap {
         break;
       }
     }
-    // Deko
+    // Deko: Einrichtung an den Wänden, Spuren auf dem Boden
     if (room.role !== 'boss' && room.role !== 'trap') {
-      const list = DUNGEON_DECOR[def.biome];
-      for (let k = rng.int(2, 5); k > 0; k--) {
+      const list: [string, boolean][] = [...DUNGEON_DECOR[def.biome], ...ROLE_PROPS[room.role] ?? ROLE_PROPS.combat];
+      for (let k = rng.int(4, 8); k > 0; k--) {
         const x = rng.int(x0, x1), y = rng.pick([y0, y1, rng.int(y0, y1)]);
         if (!free(x, y) || onAxis(room, x, y) || (x > x0 && x < x1 && y > y0 && y < y1)) continue;
         const [f, sol] = rng.pick(list);
         if (sol) solidDecor(f, x, y); else { decor.push({ f, x: px(x), y: y * TILE + 12 }); take(x, y); }
       }
+    }
+    if (room.role === 'boss') for (const [sx, sy] of [[-1, -1], [1, -1]]) { const x = sx < 0 ? x0 + 3 : x1 - 3; if (free(x, y0)) solidDecor('d_statue', x, y0); void sy; }
+    for (let k = rng.int(2, 5); k > 0; k--) {
+      const x = rng.int(x0, x1), y = rng.int(y0, y1);
+      if (tiles[I(x, y)] !== T.FLOOR) continue;
+      decor.push({ f: rng.pick(['d_crack', 'd_crack', 'd_moss', 'd_moss', 'd_puddle', 'd_bones', 'd_grate']), x: px(x) + rng.int(-4, 4), y: y * TILE + 12 + rng.int(-3, 3) });
     }
   }
 

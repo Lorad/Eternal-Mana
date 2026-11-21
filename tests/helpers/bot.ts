@@ -114,7 +114,10 @@ export class Bot {
     const t0 = Date.now();
     while (Date.now() - t0 < maxMs && this.mobs.has(target.id) && !this.dead) {
       const d = Math.hypot(target.x - this.x, target.y - this.y);
-      if (d > 24) await this.walkTo(target.x, target.y, 300, 20);
+      if (d > 24) {
+        // Hindernis im Weg? Dann per Dev-Befehl direkt neben den Gegner setzen (Server läuft in Tests mit EM_DEV=1).
+        if (d > 60 || !(await this.walkTo(target.x, target.y, 400, 20))) { this.chat(`/goto ${target.x + 14} ${target.y}`); await this.sleep(150); }
+      }
       this.send({ t: 'atk', ang: Math.atan2(target.y - this.y, target.x - this.x) });
       await this.sleep(120);
     }
