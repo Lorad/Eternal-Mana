@@ -132,7 +132,7 @@ function animGrid(list: Fx2Entry[]): void {
 
 function overlayBlock(): void {
   for (const [name, cv] of Object.entries(overlays)) {
-    if (only && !`overlay_${name}`.includes(only)) continue;
+    if (only && !only.split(',').some((o) => `overlay_${name}`.includes(o))) continue;
     const b = document.createElement('div'); b.className = 'blk'; root.append(b);
     label(b, `overlay ${name} ${cv.width}×${cv.height} – 2×2 gekachelt (Gras | Dunkel)`);
     const r = document.createElement('div'); r.className = 'row'; b.append(r);
@@ -146,7 +146,7 @@ function overlayBlock(): void {
 }
 
 void loadChar().then(() => {
-  const list = cat.filter((e) => !only || e.name.includes(only));
+  const list = cat.filter((e) => !only || only.split(',').some((o) => (o.startsWith('=') ? e.name === o.slice(1) : e.name.includes(o))));
   if (animMode) { h2('Animiert (~14 fps): links neutral auf Dunkel, rechts eingefärbt auf Gras'); animGrid(list.filter((e) => e.frames > 1)); }
   else { h2('Streifen: neutral/Dunkel · eingefärbt/Gras · additiv/Dunkel'); strips(list); overlayBlock(); }
   (window as unknown as { __done: boolean }).__done = true;

@@ -83,6 +83,8 @@ function genOverworld(def: ZoneDef): GameMap {
   const tiles = new Uint8Array(w * h);
   const solid = new Uint8Array(w * h);
   const reserved = new Uint8Array(w * h);
+  /** schmale Geheimgänge: hier darf nichts stehen, was den Durchgang versperrt */
+  const noBuild = new Uint8Array(w * h);
   const I = (x: number, y: number) => y * w + x;
   const inb = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h;
 
@@ -191,6 +193,10 @@ function genOverworld(def: ZoneDef): GameMap {
       for (let x = x0; x <= x1; x++) { if (tiles[I(x, y0 - 1)] === T.LIQUID) ns++; if (tiles[I(x, y1 + 1)] === T.LIQUID) ns++; }
       for (let y = y0; y <= y1; y++) { if (tiles[I(x0 - 1, y)] === T.LIQUID) ew++; if (tiles[I(x1 + 1, y)] === T.LIQUID) ew++; }
       const horizontal = ns >= ew;
+      // Anlandestellen: Wegfelder, die an die alte Brückenfläche grenzten – sie werden unten wieder angeschlossen
+      const landings: [number, number][] = [];
+      for (const i of comp) { const x = i % w, y = (i / w) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (inb(x + dx, y + dy) && tiles[I(x + dx, y + dy)] === T.PATH) landings.push([x + dx, y + dy]); }
+      const ends: [number, number][] = [];
       for (const i of comp) tiles[i] = T.LIQUID;
       const wet = (x: number, y: number) => inb(x, y) && (tiles[I(x, y)] === T.LIQUID || tiles[I(x, y)] === T.BRIDGE);
       if (horizontal) {
@@ -203,6 +209,7 @@ function genOverworld(def: ZoneDef): GameMap {
           else if (tiles[I(x, y)] !== T.PATH) tiles[I(x, y)] = x === a - 1 || x === b + 1 ? T.PATH : tiles[I(x, y)] === T.WALL || tiles[I(x, y)] === T.HAZARD ? T.GROUND : tiles[I(x, y)];
           reserved[I(x, y)] = 1;
         }
+        ends.push([a - 1, cym], [b + 1, cym]);
       } else {
         let a = y0, b = y1;
         while (a > 2 && (wet(cxm - 1, a - 1) || wet(cxm, a - 1) || wet(cxm + 1, a - 1))) a--;
@@ -212,6 +219,17 @@ function genOverworld(def: ZoneDef): GameMap {
           if (y >= a && y <= b) { tiles[I(x, y)] = T.BRIDGE; seen[I(x, y)] = 1; }
           else if (tiles[I(x, y)] !== T.PATH) tiles[I(x, y)] = y === a - 1 || y === b + 1 ? T.PATH : tiles[I(x, y)] === T.WALL || tiles[I(x, y)] === T.HAZARD ? T.GROUND : tiles[I(x, y)];
           reserved[I(x, y)] = 1;
+        }
+        ends.push([cxm, a - 1], [cxm, b + 1]);
+      }
+      for (const [lx, ly] of landings) {
+        const [ex, ey] = Math.hypot(ends[0][0] - lx, ends[0][1] - ly) <= Math.hypot(ends[1][0] - lx, ends[1][1] - ly) ? ends[0] : ends[1];
+        let x = lx, y = ly, guard = 0;
+        while ((x !== ex || y !== ey) && guard++ < 80) {
+          if (Math.abs(ex - x) >= Math.abs(ey - y)) x += Math.sign(ex - x); else y += Math.sign(ey - y);
+          const i = I(x, y);
+          if (tiles[i] === T.LIQUID) { tiles[i] = T.BRIDGE; seen[i] = 1; } else if (tiles[i] !== T.BRIDGE) tiles[i] = T.PATH;
+          reserved[i] = 1;
         }
       }
     }
@@ -285,7 +303,7 @@ function genOverworld(def: ZoneDef): GameMap {
       const i = I(x, y);
       if (dd > p.r + 3 && (tiles[i] === T.PATH || tiles[i] === T.BRIDGE)) break;
       tiles[i] = tiles[i] === T.LIQUID ? T.BRIDGE : (dd <= p.r ? T.GROUND2 : T.GROUND);
-      reserved[i] = 1;
+      reserved[i] = 1; noBuild[i] = 1; solid[i] = 0;
       if (!boulderPlaced && dd >= p.r + 1) {
         addObj('boulder', x, y, 'secret', { cells: [i] });
         boulderPlaced = true;
@@ -416,7 +434,7 @@ function genOverworld(def: ZoneDef): GameMap {
   const pickCell = (ok: (x: number, y: number, i: number) => boolean, tries = 3000): [number, number] | null => {
     for (let k = 0; k < tries; k++) {
       const x = rng.int(3, w - 4), y = rng.int(3, h - 4), i = I(x, y);
-      if (reach[i] && !solid[i] && isWalkableTile(tiles[i]) && tiles[i] !== T.HAZARD && tiles[i] !== T.BRIDGE && ok(x, y, i)) return [x, y];
+      if (reach[i] && !solid[i] && !noBuild[i] && isWalkableTile(tiles[i]) && tiles[i] !== T.HAZARD && tiles[i] !== T.BRIDGE && ok(x, y, i)) return [x, y];
     }
     return null;
   };
