@@ -284,7 +284,7 @@ export class Zone {
     const rec = this.recipients(m);
     const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
     for (const p of rec) {
-      p.char.kills++;
+      p.char.kills++; p.sync('kills');
       p.gainXp(xpBase * CFG.enemy.xpLevelPenalty(p.level, m.lvl));
       p.questEvent({ t: 'kill', mob: m.def.id, zone: this.id });
       if (!m.summoned) this.rollLoot(p, m);
@@ -1001,7 +1001,7 @@ export class Zone {
         }
       } else if (o.type === 'turret') {
         if (o.nextFire === undefined) o.nextFire = now + o.props!.offset;
-        if (now < o.nextFire) continue;
+        if (now < o.nextFire!) continue;
         o.nextFire = now + o.props!.period;
         if (!this.nearestPlayer(o.x, o.y, 260)) continue;
         const a = o.props!.dir;

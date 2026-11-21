@@ -276,6 +276,13 @@ function genOverworld(def: ZoneDef): GameMap {
     }
   }
 
+  // Dichter Wald: Bäume wachsen aus dem Dickicht (rein optisch, die Zellen sind ohnehin Wand)
+  const canopy: Record<string, string[]> = { gruenwald: ['tree_oak', 'tree_oak2', 'tree_pine'], frost: ['pine_snow', 'pine_snow2'] };
+  if (canopy[def.biome]) for (let y = 1; y < h; y++) for (let x = 0; x < w; x++) {
+    if (tiles[I(x, y)] !== T.WALL || reserved[I(x, y)]) continue;
+    const r = hash2(x, y, seed + 77);
+    if (r < 0.42) decor.push({ f: canopy[def.biome][Math.floor(r * 1000) % canopy[def.biome].length], x: x * TILE + 8 + Math.floor(r * 97) % 7 - 3, y: y * TILE + 14 });
+  }
   finishSolid(tiles, solid);
   for (const o of objects) if (o.type === 'npc' || o.type === 'stone' || o.type === 'sign' || o.type === 'board' || o.type === 'chest') {
     const tx = Math.floor(o.x / TILE), ty = Math.floor(o.y / TILE);

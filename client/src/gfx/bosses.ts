@@ -133,10 +133,10 @@ const ignarok: BossFn = (p, s) => {
   const hot = s.sp > 0 || s.atk === 2;
   // Lavabecken
   p.layer((l) => {
-    l.ell(40, 78, 34, 8, BASALT[1]); l.ell(40, 77, 31, 6.5, F[1]); l.ell(40, 77, 28, 5, F[2]); l.ell(38, 76.5, 20, 3, F[3]);
-    for (const [x, y, w] of [[18, 77, 5], [56, 79, 6], [30, 80, 4], [64, 76, 3]] as const) l.rect(x, y, w, 1, BASALT[2]);
-    const b = [[22, 75], [58, 76], [30, 79], [50, 74]][s.t]; l.ell(b[0], b[1], 2, 1.5, F[4]); l.set(b[0], b[1] - 3, F[3]);
-    for (const [x, y] of [[8, 74], [72, 74], [14, 82], [66, 82], [40, 85]] as const) { l.ball(x, y, 4, 3, BASALT, 1, 4); }
+    l.ell(40, 79, 39, 8, BASALT[1]); l.ell(40, 78.5, 36, 6.5, F[1]); l.ell(40, 78.5, 33, 5.2, F[2]); l.ell(38, 78, 28, 3.4, F[3]); l.ell(16, 78, 6, 1.5, F[4]); l.ell(62, 79, 7, 1.5, F[4]);
+    for (const [x, y, w] of [[8, 79, 5], [58, 81, 6], [26, 82, 4], [68, 77, 3]] as const) l.rect(x, y, w, 1, BASALT[2]);
+    const b = [[12, 76], [66, 78], [20, 81], [58, 76]][s.t]; l.ell(b[0], b[1], 2, 1.5, F[4]); l.set(b[0], b[1] - 3, F[3]);
+    for (const [x, y] of [[3, 82], [76, 83], [24, 85], [56, 85]] as const) { l.ball(x, y, 3.5, 2.5, BASALT, 1, 4); }
   });
   // Leib
   const body: Pt[] = [...bez([40, 78], [nx - 6, 66], [nx + 4, 46], 14), ...bez([nx + 4, 46], [nx + 12, 30], [hx - 8, hy + 6], 12)];
@@ -225,7 +225,7 @@ const ysolde: BossFn = (p, s) => {
   // Kopf
   p.layer((l) => {
     const hy = 21 + y0;
-    l.ball(32, hy, 7, 7.5, I, 3, 4); l.rect(27, hy + 3, 10, 3, I[4]); l.rect(34, hy + 1, 3, 5, I[3]);
+    l.ball(32, hy, 7, 7.5, P.cream, 3, 4); l.rect(35, hy + 1, 2, 4, P.cream[3]); l.rect(29, hy + 6, 6, 1, P.cream[2]);
     // Haar vorn
     l.poly([[25, hy - 2], [32, hy - 8], [39, hy - 2], [36, hy - 4], [32, hy - 3], [28, hy - 4]], W[3]); l.rect(25, hy - 3, 2, 9, W[3]); l.rect(37, hy - 3, 2, 9, W[2]); l.rect(26, hy - 5, 4, 2, W[4]);
     // Augen

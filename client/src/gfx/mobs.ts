@@ -470,7 +470,7 @@ const nachtmahr: MobFn = (p, f) => {
   const t = cyc(f), S = P.shadow, V = P.violet;
   const rear = f === 4, bx = f === 5 ? 3 : 0, by = f === 5 ? 1 : rear ? -1 : (t & 1);
   const lf = rear ? [0, 0, 1, -1] : f === 5 ? [4, 3, -3, -2] : [[3, -2, -3, 2], [1, 0, -1, 0], [-3, 2, 3, -2], [-1, 0, 1, 0]][t];
-  const flame = (l: Px, x: number, y: number, h: number, ph: number) => { const hh = h + ((t + ph) & 1); l.poly([[x - 2, y + 1], [x - 0.5 - ((t + ph) % 3 === 0 ? 1 : 0), y - hh], [x + 2, y + 1]], V[3]); l.line(x, y, x, y - hh + 2, V[4]); l.set(x, y, WHITE); };
+  const flame = (l: Px, x: number, y: number, h: number, ph: number) => { const hh = h + ((t + ph) & 1), lean = ((t + ph) % 3) - 2; l.poly([[x - 1.6, y + 1], [x + lean * 0.8, y - hh], [x + 1.6, y + 1]], V[(ph & 1) ? 2 : 3]); l.set(x, y - 1, V[4]); l.set(x + lean * 0.4, y - hh + 1, V[4]); };
   p.layer((l) => {
     const X = (x: number) => x + bx, Y = (y: number) => y + by;
     const fy = (x: number) => (rear && x > 16 ? -7 : 0);
@@ -492,12 +492,12 @@ const nachtmahr: MobFn = (p, f) => {
     l.rect(X(nx + 3), Y(ny + 1), 2, 1, P.pink[4]); l.set(X(nx + 4), Y(ny + 1), WHITE);
     if (f === 5) { l.rect(X(nx + 5), Y(ny + 5), 3, 1, S[2]); l.set(X(nx + 6), Y(ny + 4), P.pink[3]); }
     // Mähnen-Flammen
-    for (let i = 0; i < 5; i++) { const k = i / 4; flame(l, X(19 + (nx - 19) * k - 1), Y(14 + fy(19) + (ny - 14 - fy(19)) * k), 4, i); }
+    for (let i = 0; i < 8; i++) { const k = i / 7; flame(l, X(18 + (nx - 18) * k - 1), Y(14 + fy(19) + (ny - 14 - fy(19)) * k), 3 + (i % 3), i); }
   });
   glow(p, 24 + bx, 8 + by, 5, V[3], 40);
 };
 const hohlritter: MobFn = (p, f) => {
-  const t = cyc(f), bob = [0, 1, 1, 0][t], sw = [1, 0, -1, 0][t], A = P.ash, V = P.violet;
+  const t = cyc(f), bob = [0, 1, 1, 0][t], sw = [1, 0, -1, 0][t], A: Ramp = [INK, P.shadow[1], P.steel[0], P.steel[1], P.steel[2]], V = P.violet;
   const atk = f === 4 ? 1 : f === 5 ? 2 : 0, bx = atk === 2 ? 2 : atk === 1 ? -1 : 0;
   const vg = V[atk ? 4 : 3];
   // Leuchten aus den Fugen

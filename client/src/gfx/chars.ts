@@ -26,7 +26,7 @@ const LOOKS: Record<string, Look> = {
     chest: 'plate', chestC: P.steel, pauldron: P.steel, cape: P.red, weapon: 'sword', shield: P.steel },
   char_magier: { skin: P.skin, hair: P.gold, hairStyle: 'long', hat: 'wizard', hatC: P.violet, hatTrim: P.gold, top: P.violet, legs: P.violet, boots: P.wood, trim: P.gold,
     chest: 'sash', chestC: P.blue, robe: true, weapon: 'staff', gem: P.blue },
-  char_waldlaeufer: { skin: P.skinD, hair: P.wood, hairStyle: 'short', hat: 'hood', hatC: P.green, top: P.green, legs: P.tan, boots: P.wood, trim: P.tan,
+  char_waldlaeufer: { skin: P.skin, hair: P.wood, hairStyle: 'short', hat: 'hood', hatC: P.green, top: P.green, legs: P.tan, boots: P.wood, trim: P.tan,
     chest: 'vest', chestC: P.tan, cape: P.forest, quiver: true, weapon: 'bow' },
   char_paladin: { skin: P.skin, hair: P.gold, hairStyle: 'short', hat: 'winghelm', hatC: P.cream, hatTrim: P.gold, top: P.cream, legs: P.cream, boots: P.gold, trim: P.gold,
     chest: 'plate', chestC: P.cream, pauldron: P.gold, cape: P.blue, weapon: 'hammer' },
@@ -267,7 +267,7 @@ function drawHead(h: Px, L: Look, dir: number, ox: number, oy: number, face: Pos
     }
   } else {
     // Hinterkopf
-    R(15, 6, 2, 8, hr[1]); R(8, 14, 8, 1, hr[1]); R(8, 5, 4, 1, hr[3]); R(7, 6, 3, 2, hr[3]); S(10, 8, hr[3]);
+    R(15, 6, 2, 8, hr[1]); R(8, 14, 8, 1, hr[1]); R(8, 5, 4, 1, hr[3]); R(7, 6, 3, 2, hr[3]); S(10, 8, hr[3]); R(9, 10, 1, 3, hr[3]); R(7, 10, 1, 3, hr[3]); R(12, 10, 1, 4, hr[1]); S(11, 6, hr[4]);
     if (L.hairStyle !== 'long' && !bald) { R(9, 15, 6, 1, sk[2]); }
     if (bald) { for (const [y, x0, x1] of HEAD_ROWS) if (y < 10) R(x0, y, x1 - x0 + 1, 1, sk[3]); R(8, 4, 5, 1, sk[4]); R(14, 6, 3, 4, sk[2]); R(9, 15, 6, 1, sk[2]); }
   }
@@ -281,7 +281,7 @@ function drawHead(h: Px, L: Look, dir: number, ox: number, oy: number, face: Pos
       break;
     case 'long':
       if (side) { R(5, 8, 3, 9, hr[2]); R(5, 12, 2, 6, hr[1]); R(6, 17, 3, 2, hr[1]); S(7, 9, hr[3]); }
-      else if (back) { R(5, 8, 14, 9, hr[2]); R(6, 17, 12, 2, hr[2]); R(7, 19, 10, 1, hr[1]); R(13, 8, 5, 10, hr[1]); R(7, 9, 2, 6, hr[3]); S(10, 12, hr[3]); S(11, 15, hr[1]); S(9, 17, hr[1]); }
+      else if (back) { R(5, 9, 14, 6, hr[2]); R(6, 15, 12, 3, hr[2]); R(8, 18, 8, 1, hr[1]); R(16, 9, 3, 8, hr[1]); R(7, 9, 2, 6, hr[3]); S(10, 12, hr[3]); R(12, 11, 1, 6, hr[1]); S(9, 16, hr[1]); S(14, 15, hr[1]); }
       else { R(5, 8, 2, 9, hr[2]); R(17, 8, 2, 9, hr[1]); R(5, 17, 2, 2, hr[1]); R(17, 17, 2, 2, hr[1]); S(5, 9, hr[3]); S(5, 10, hr[3]); }
       break;
     case 'bun':
