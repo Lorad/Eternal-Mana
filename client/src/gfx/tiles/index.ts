@@ -10,9 +10,11 @@ import { Chunk, TS, type BiomePainter } from './core';
 import { gruenwald } from './gruenwald';
 import { kristall } from './kristall';
 import { glut } from './glut';
+import { frost } from './frost';
 import { buildLiquidsLegacy, paintGroundLegacy } from './legacy';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
+  frost,
   gruenwald,
   kristall,
   glut,
