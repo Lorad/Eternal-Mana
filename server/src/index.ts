@@ -42,6 +42,14 @@ async function main() {
       res.end(JSON.stringify({ ...info, online: game.onlineCount() }));
       return;
     }
+    if (url.pathname === '/api/stop') {
+      // Nur vom selben Rechner aus erlaubt (stop-server-Skripte)
+      const ip = req.socket.remoteAddress ?? '';
+      if (req.method !== 'POST' || !(ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1')) { res.writeHead(403); res.end('Nur lokal erlaubt'); return; }
+      res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); res.end('Server wird beendet.');
+      setTimeout(() => shutdown(), 50);
+      return;
+    }
     if (!fs.existsSync(dist)) {
       res.writeHead(503, { 'content-type': 'text/html; charset=utf-8' });
       res.end('<h1>Eternal Mana</h1><p>Der Client wurde noch nicht gebaut. Bitte <code>npm run build</code> ausführen (die Startskripte erledigen das automatisch).</p>');
@@ -57,6 +65,8 @@ async function main() {
     fs.createReadStream(file).pipe(res);
   });
 
+  let closing = false;
+  let shutdown: () => void = () => {};
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   server.on('upgrade', (req, socket, head) => {
     if (!(req.url ?? '').startsWith('/ws')) { socket.destroy(); return; }
@@ -85,8 +95,7 @@ async function main() {
     console.log('  Befehle: save | backup | players | say <Text> | stop   (oder Strg+C)\n');
   });
 
-  let closing = false;
-  const shutdown = () => {
+  shutdown = () => {
     if (closing) return;
     closing = true;
     console.log('\nSpeichere alle Charaktere und beende …');
