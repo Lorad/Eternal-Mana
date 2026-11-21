@@ -191,3 +191,5 @@ export function debris(p: Px, cx: number, gy: number, t: number, seed: number, n
     p.set(x, Math.min(gy, y), c[i % c.length]);
   }
 }
+/** Punkt je Frame aus einer Liste (letzter Eintrag gilt weiter). */
+export function pk(a: ReadonlyArray<Pt>, i: number): Pt { return a[Math.min(i, a.length - 1)]; }

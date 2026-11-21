@@ -4,6 +4,7 @@
  *   ?scale=4       Vergrößerung
  *   ?sec=strips|lineup|sil   nur ein Abschnitt (Standard: alle)
  *   ?anims=attack,heavy      nur diese Animationen in den Streifen;  ?row=0|1|2 nur eine Blickrichtung
+ *   ?bg=0|1        nur Wiesen- bzw. nur dunkler Hintergrund
  *   ?anim=1        animierte Ansicht; ?t=<ms> friert sie zu einem Zeitpunkt ein
  */
 import { buildCharSheet } from './chars';
@@ -19,7 +20,7 @@ const animsF = (q.get('anims') ?? '').split(',').filter(Boolean);
 const rowF = q.get('row');
 const root = document.getElementById('root')!;
 const report = document.getElementById('report')!;
-const BG = ['#6aa84a', '#23222c'];
+const BG = ['#6aa84a', '#23222c'].filter((_, i) => q.get('bg') === null || Number(q.get('bg')) === i);
 const ANIMS = Object.entries(CHAR_ANIMS);
 
 const keys = [...CLASS_IDS.map((c) => `char_${c}`), ...NPC_LOOKS.map((c) => `npc_${c}`)].filter((k) => !only.length || only.some((o) => k.includes(o)));

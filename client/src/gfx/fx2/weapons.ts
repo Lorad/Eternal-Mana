@@ -29,16 +29,16 @@ export function weaponItems(out: Item[]): void {
 
   // ------------------------------------------------------------ Schwerer Hieb: Doppelklinge, Geschwindigkeitslinien, Nachbild
   anim(out, 'slash_heavy', 7, 80, 80, (p, k) => {
-    const A = { cx: 8, cy: 40, rx: 63, ry: 33.5 };
+    const A = { cx: 8, cy: 40, rx: 62, ry: 33 };
     const a0 = [-87, -86, -74, -46, -62, -30, 20][k], a1 = [-46, 4, 60, 82, 84, 85, 86][k];
-    const w = [8, 16, 17, 14, 12, 10, 4][k], gain = [1.4, 1.42, 1.3, 1.05, 0.8, 0.62, 0.5][k], br = [0, 0, 0.06, 0.22, 0.25, 0.6, 0.9][k];
+    const w = [10, 21, 23, 18, 15, 12, 4][k], gain = [1.4, 1.45, 1.36, 1.1, 0.85, 0.66, 0.5][k], br = [0, 0, 0.06, 0.22, 0.25, 0.6, 0.9][k];
     // äußere Geschwindigkeitslinien (dünne Bögen knapp außerhalb)
     if (k >= 1 && k <= 4) for (let i = 0; i < 3; i++) {
       const s = 1.05 + i * 0.035, lag = 10 + i * 14;
-      arcSmear(p, { ...A, rx: A.rx * s, ry: A.ry * s, a0: Math.max(-88, a0 - 6 + lag), a1: a1 - lag * 0.6, w: 1.2, gain: gain * 0.6, breakup: 0.3 + 0.15 * k, seed: 31 + i, comb: 0 });
+      arcSmear(p, { ...A, rx: A.rx * s, ry: A.ry * s, a0: Math.max(-88, a0 - 6 + lag), a1: a1 - lag * 0.6, w: 1.7, gain: gain * 0.75, breakup: 0.3 + 0.15 * k, seed: 31 + i, comb: 0 });
     }
     // innere zweite Schneide (nachlaufend)
-    if (k >= 1 && k <= 5) arcSmear(p, { ...A, rx: A.rx * 0.66, ry: A.ry * 0.66, a0: a0 + 10, a1: a1 - 16, w: at([0, 6, 8, 7, 5, 4], k), gain: gain * 0.8, breakup: br + 0.1, seed: 29, edge: k >= 4 });
+    if (k >= 1 && k <= 5) arcSmear(p, { ...A, rx: A.rx * 0.66, ry: A.ry * 0.66, a0: a0 + 10, a1: a1 - 16, w: at([0, 8, 11, 9, 6, 5], k), gain: gain * 0.9, breakup: br + 0.1, seed: 29, edge: k >= 4 });
     arcSmear(p, { ...A, a0, a1, w, gain, breakup: br, seed: 17, edge: k === 4 || k === 5 });
     if (k === 4) arcSmear(p, { ...A, rx: A.rx - 2, ry: A.ry - 2, a0: a0 + 6, a1: a1 - 4, w: 8, gain: 0.18, breakup: 0.55, seed: 19, heat: () => G(0.66, 120) });
     // Aufschlagfunke am Ende des Schwungs
@@ -138,22 +138,21 @@ export function weaponItems(out: Item[]): void {
 
   // ------------------------------------------------------------ Biss: zuschnappende Kieferbögen
   anim(out, 'bite', 4, 32, 32, (p, k) => {
-    const gap = [11, 6.5, 1.5, 3][k], v = k === 3 ? 0.72 : 1, tc = k === 3 ? G(0.8) : WH, gc = G(0.62 * v, k === 3 ? 170 : 255);
+    const gap = [11, 7, 3.4, 5][k], v = k === 3 ? 0.72 : 1, tc = k === 3 ? G(0.8) : WH, gc = G(0.62 * v, k === 3 ? 170 : 255);
     const jaw = (dirY: number, xs: readonly number[], ls: readonly number[]): void => {
       const base = (x: number): number => 16 + dirY * (gap + 5 - Math.pow(x / 13, 2) * 4.5);
-      for (let x = -13; x <= 13; x++) { const y = base(x); p.set(16 + x, y, gc); if (k < 3) p.set(16 + x, y + dirY, G(0.5, 150)); }
+      for (let x = -13; x <= 13; x++) p.set(16 + x, base(x), gc);
       xs.forEach((x, i) => {
         const y = base(x), l = ls[i] + (k === 1 ? 1 : 0);
         p.poly([[16 + x - 2.2, y], [16 + x + 2.2, y], [16 + x + (x < 0 ? 0.6 : -0.6), y - dirY * l]], tc);
         p.line(16 + x, y, 16 + x + (x < 0 ? 0.6 : -0.6), y - dirY * l, tc);
-        if (k < 3) p.line(16 + x + 1.4, y - dirY, 16 + x + 0.6, y - dirY * (l - 2), G(0.78));
       });
     };
     jaw(-1, [-10, -5, 0, 5, 10], [4, 7, 4, 7, 4]);
     jaw(1, [-7.5, -2.5, 2.5, 7.5], [6, 4, 4, 6]);
     if (k === 0) for (const x of [-9, -3, 4, 10]) { streak(p, 16 + x, 0, 16 + x, 3, heatW, 0.6, 0.2, x); streak(p, 16 + x + 1, 31, 16 + x + 1, 28, heatW, 0.6, 0.2, x + 1); }
     if (k === 1) for (const x of [-11, -6, 1, 7, 12]) { streak(p, 16 + x, 1, 16 + x, 6, heatW, 0.7, 0.3, x); streak(p, 16 + x, 30, 16 + x, 25, heatW, 0.7, 0.3, x + 2); }
-    if (k === 2) { kite(p, 16, 16, 0, 30, 3.2, WH); twinkle(p, 16, 16, 3, WH); for (const pt of burst(9, 7)) p.set(16 + Math.cos(pt.a) * (12 + 3 * pt.s), 16 + Math.sin(pt.a) * (5 + 8 * pt.s), WH); }
+    if (k === 2) { kite(p, 16, 16, 0, 31, 1.8, WH); p.set(1, 16, WH); p.set(30, 16, WH); for (const pt of burst(9, 7)) p.set(16 + Math.cos(pt.a) * (12 + 3 * pt.s), 16 + Math.sin(pt.a) * (5 + 8 * pt.s), WH); }
     if (k === 3) { dissolve(p, 0.5, 4, 1); for (const pt of burst(19, 9)) p.set(16 + Math.cos(pt.a) * (11 + 4 * pt.s), 16 + Math.sin(pt.a) * (9 + 5 * pt.s), G(0.7, 200)); }
   });
 

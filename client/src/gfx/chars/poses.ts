@@ -2,8 +2,8 @@
 import { Px } from '../draw';
 import { CHAR_ANIMS, CHAR_COLS } from '../spec';
 import type { CharAnim } from '../spec';
-import { CX, FOOT, bbox, drawFrame, mkPose, rotPlace } from './rig';
-import type { Costume, Dir, Pose, V2, V3 } from './rig';
+import { CX, FOOT, bbox, drawFrame, mkPose, rotPlace, setFrameLabel } from './rig';
+import type { Costume, Dir, Pose, V2 } from './rig';
 
 const v2 = (a: V2, dx: number, dy: number): V2 => [a[0] + dx, a[1] + dy];
 
@@ -120,6 +120,7 @@ function lyingFrame(c: Costume, dir: Dir, settle: number): Px {
 
 /** Ein Frame einer Animation (fertiges Bild). */
 export function renderAnim(c: Costume, dir: Dir, anim: CharAnim, f: number): Px {
+  setFrameLabel(`${anim}${f}`);
   const own = (a: string, ff: number): Partial<Pose> | null => ({ ...(c.anim?.(a, dir, ff) ?? {}), label: `${anim}${f}` });
   if (anim === 'dodge') {
     if (c.npc) return drawFrame(c, dir, generic(c, dir, 'hit', f % 2));
@@ -182,4 +183,3 @@ export function allFrames(c: Costume): Px[] {
   }
   return frames;
 }
-export type { V3 };

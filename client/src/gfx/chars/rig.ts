@@ -297,6 +297,9 @@ function legSide(l: Px, k: K, f: V3, far: boolean): void {
 
 /** Protokoll der vom Sicherheitsrand abgeschnittenen Pixel (für die Vorschau). */
 export const clipLog: string[] = [];
+let frameLabel = '';
+/** Name des gerade erzeugten Frames (nur für das Protokoll). */
+export function setFrameLabel(s: string): void { frameLabel = s; }
 /** Zeichnet einen Frame der Figur in der gegebenen Pose. */
 export function drawFrame(c: Costume, dir: Dir, ps: Pose): Px {
   const p = new Px(FW, FH), B = c.B, lg = c.lg, stoop = c.stoop ?? 0;
@@ -367,7 +370,7 @@ export function drawFrame(c: Costume, dir: Dir, ps: Pose): Px {
   // Sicherheitsrand: nichts ragt unter die Standlinie oder bis an die Framekante (Kontur braucht 1 px)
   let cut = 0, cutB = 0;
   for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) if ((y > FOOT || y < 2 || x < 2 || x > FW - 3) && p.d[y * FW + x] >>> 24) { p.d[y * FW + x] = 0; if (y > FOOT) cutB++; else cut++; }
-  if (cut || cutB > 3) clipLog.push(`${c.key} r${dir} ${ps.label}: Rand ${cut} px, unten ${cutB} px beschnitten`);
+  if (cut || cutB > 3) clipLog.push(`${c.key} r${dir} ${ps.label || frameLabel}: Rand ${cut} px, unten ${cutB} px beschnitten`);
   outlineAll(p);
   if (ps.glint) glint(p, k);
   c.post?.(p, k);
@@ -465,7 +468,7 @@ export function rotPlace(p: Px, q: number, cxT: number, bottom: number): Px {
   const o = new Px(FW, FH), b = bbox(p);
   if (!b) return o;
   const [x0, y0, x1, y1] = b, w = x1 - x0 + 1, h = y1 - y0 + 1, rw = q % 2 ? h : w, rh = q % 2 ? w : h;
-  const ox = Math.max(0, Math.min(FW - rw, Math.round(cxT - rw / 2))), oy = Math.max(0, bottom - rh + 1);
+  const ox = Math.max(1, Math.min(FW - 1 - rw, Math.round(cxT - rw / 2))), oy = Math.max(1, bottom - rh + 1);
   for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
     let sx: number, sy: number;
     if (q === 1) { sx = y; sy = h - 1 - x; } else if (q === 2) { sx = w - 1 - x; sy = h - 1 - y; } else if (q === 3) { sx = w - 1 - y; sy = x; } else { sx = x; sy = y; }

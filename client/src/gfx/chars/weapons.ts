@@ -154,4 +154,3 @@ export function book(l: Px, x: number, y: number, side = false): void {
   l.rect(x, y, 8, 5, P.red[2]); l.rect(x, y + 4, 8, 1, P.red[1]);
   l.rect(x + 1, y, 3, 4, P.cream[4]); l.rect(x + 4, y, 3, 4, P.cream[3]); l.rect(x + 1, y + 1, 2, 1, P.cream[2]); l.rect(x + 5, y + 2, 2, 1, P.cream[2]); l.set(x + 4, y + 1, P.cream[2]);
 }
-void mix;

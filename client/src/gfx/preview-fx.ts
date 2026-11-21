@@ -100,7 +100,8 @@ function strips(list: Fx2Entry[]): void {
     label(b, `${e.name}  ${e.frames || 1}×  ${e.w}×${e.h}  ${e.tintable ? 'TINT' : 'farbig'}`);
     const r = document.createElement('div'); r.className = 'row'; b.append(r);
     const sc = scaleOf(e);
-    r.append(panel(e, DARK, 'plain', sc), panel(e, GRASS, e.tintable ? 'tint' : 'plain', sc), panel(e, DARK, 'add', sc));
+    r.append(panel(e, DARK, 'plain', sc), panel(e, GRASS, e.tintable ? 'tint' : 'plain', sc));
+    if (q.get('p') !== '2') r.append(panel(e, DARK, 'add', sc));
   }
 }
 

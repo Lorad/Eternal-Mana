@@ -1,5 +1,5 @@
 /** Die fünf spielbaren Klassen: Pixelkarten, Ausrüstung und klassenspezifische Angriffsposen. */
-import { P, WHITE, alpha, mix } from '../palette';
+import { P, mix } from '../palette';
 import { BUILD, art, cape, head, legend, mixR, ribbon } from './rig';
 import type { Costume, Dir, K, LayerFn, Pose, V2 } from './rig';
 import type { Px } from '../draw';
@@ -27,7 +27,7 @@ const kTab: Tab = {
     [ // unten: Hieb von links nach rechts vor dem Körper
       { mh: [-2, 0], wa: -112.5, lean: -1, oh: [2, 5], fa: [-1, 0, 0] },
       { mh: [3, 3], wa: 135, y: 1, oh: [3, 3], fa: [0, 0, 1], tr: 2, tag: 'wtop' },
-      { mh: [8, 3], wa: 22.5, y: 1, lean: 1, oh: [3, 2], fa: [0, 0, 1], tr: 2, sw: -1, tag: 'wtop' },
+      { mh: [7, 3], wa: 45, y: 1, lean: 1, oh: [3, 2], fa: [0, 0, 1], tr: 2, sw: -1, tag: 'wtop' },
       { mh: [5, 5], wa: 67.5, lean: 1, oh: [2, 4], sw: 1, tag: 'wtop' },
     ],
     [ // Seite: von hinten oben nach vorn
@@ -102,12 +102,12 @@ export const krieger: Costume = {
     head([
       '.....v..U.....',
       '...UvVvUvUu...',
-      '..UvVvvUvUUu..',
-      '.UvvvUvvUUUuu.',
-      '.AbbAAAAAAAaa.',
-      '.UvvUUvUUUUuu.',
-      '.UvUvUUUuUUuu.',
-      '.uUUUUuUUUuuu.',
+      '..UvVvvUUUUu..',
+      '.UvvvUUUUUUuu.',
+      '.AbAAAAAAAAaa.',
+      '.aAAAAAAAAaaa.',
+      '.UvUUUUUUUUuu.',
+      '.uUvUUUuUUuuu.',
       '..uUuUUuUuuu..',
       '....uSuSSu....',
       '....SSSSSs....',
@@ -293,13 +293,13 @@ export const magier: Costume = {
       '......eEfFfEEEe.....',
       '..cCCCCdDCCCCCCCcc..',
       '.cCCdDCCCCCCCCCCccc.',
-      '..ccvVVVVVVVVVUucc..',
-      '....vVVvVVVvVVUu....',
-      '....vVVvVVVvVVUu....',
-      '....vVVvVVVvVUUu....',
-      '.....vVvVVvVVUu.....',
-      '.....vVVvVVvUUu.....',
-      '......vVvVvUuu......',
+      '..ccvVVVVVVVvUUucc..',
+      '....vVVvVVVvUvUu....',
+      '....vVVvVVvUUvUu....',
+      '....vVvVVVvUvUuu....',
+      '.....vVvVvUUvUu.....',
+      '.....UvVvUvUUuu.....',
+      '......UvUvUuuu......',
     ], 8),
   ],
   torso: [
@@ -385,10 +385,10 @@ const wTab: Tab = {
       { oh: [5, 2], wa2: 22.5, mh: [0, 4], fa: [2, 0, 0], fb: [-2, 0, 0], sw: 1 },
     ],
     [
-      { oh: [0, -2], wa2: 180, mh: [-5, 0], bow: 0.5, arrow: true, tag: 'aup' },
-      { oh: [0, -3], wa2: 180, mh: [-5, 0], bow: 1, arrow: true, hy: -1, tag: 'aup tipglint' },
-      { oh: [0, -3], wa2: 180, mh: [-5, 1], bow: 0, arrow: false, y: 1, tr: 2 },
-      { oh: [-1, 2], wa2: 180, mh: [-2, 3], sw: 1 },
+      { oh: [-2, -2], wa2: 180, mh: [-5, 0], bow: 0.5, arrow: true, tag: 'aup', oz: 1 },
+      { oh: [-2, -3], wa2: 180, mh: [-5, 0], bow: 1, arrow: true, hy: -1, tag: 'aup tipglint', oz: 1 },
+      { oh: [-2, -3], wa2: 180, mh: [-5, 1], bow: 0, arrow: false, y: 1, tr: 2, oz: 1 },
+      { oh: [-2, 2], wa2: 180, mh: [-2, 3], sw: 1, oz: 1 },
     ],
   ],
   heavy: [
@@ -407,11 +407,11 @@ const wTab: Tab = {
       { oh: [5, 2], wa2: 22.5, mh: [0, 3], y: 2, fa: [3, 0, 0], fb: [-3, 0, 0], sw: 1 },
     ],
     [
-      { oh: [0, -2], wa2: 180, mh: [-5, 0], bow: 0.5, arrow: true, y: 2, tag: 'aup' },
-      { oh: [0, -3], wa2: 180, mh: [-5, 0], bow: 1, arrow: true, kneel: true, y: 5, tag: 'aup tipglint', glint: 1 },
-      { oh: [0, -3], wa2: 180, mh: [-5, 1], bow: 1, arrow: true, kneel: true, y: 5, tag: 'aup tipglint', glint: 2, up: 1 },
-      { oh: [0, -3], wa2: 180, mh: [-5, 1], bow: 0, arrow: false, kneel: true, y: 5, hy: 1, tr: 3 },
-      { oh: [-1, 1], wa2: 180, mh: [-2, 3], y: 2, sw: 1 },
+      { oh: [-2, -2], wa2: 180, mh: [-5, 0], bow: 0.5, arrow: true, y: 2, tag: 'aup', oz: 1 },
+      { oh: [-2, -3], wa2: 180, mh: [-5, 0], bow: 1, arrow: true, kneel: true, y: 5, tag: 'aup tipglint', glint: 1, oz: 1 },
+      { oh: [-2, -3], wa2: 180, mh: [-5, 1], bow: 1, arrow: true, kneel: true, y: 5, tag: 'aup tipglint', glint: 2, up: 1, oz: 1 },
+      { oh: [-2, -3], wa2: 180, mh: [-5, 1], bow: 0, arrow: false, kneel: true, y: 5, hy: 1, tr: 3, oz: 1 },
+      { oh: [-2, 1], wa2: 180, mh: [-2, 3], y: 2, sw: 1, oz: 1 },
     ],
   ],
 };
@@ -524,7 +524,7 @@ export const waldlaeufer: Costume = {
     });
   },
   swing: [1, 0.3], reach: 'm',
-  carry: (dir) => (dir === 0 ? { oh: [2, 4], wa2: 0 } : dir === 1 ? { oh: [5, 3], wa2: 22.5, lean: 0 } : { oh: [-2, 4], wa2: 180 }),
+  carry: (dir) => (dir === 0 ? { oh: [3, 3], wa2: 0 } : dir === 1 ? { oh: [5, 3], wa2: 22.5, lean: 0 } : { oh: [-3, 3], wa2: 180, oz: 1 }),
   anim: (a, dir, f) => {
     if (a === 'lie') return { wa2: -90, oh: [dir === 0 ? 1 : -1, 5], oz: 1 };
     if (a === 'cast') return dir === 1 ? { oh: [5, 0], wa2: -22.5, mh: [3, -1], tag: 'tipglint' } : { oh: [dir === 0 ? 2 : -2, 1], wa2: dir === 0 ? -22.5 : -157.5, mh: [dir === 0 ? -1 : 1, -2], tag: 'tipglint', oz: dir === 0 ? 1 : 0 };
@@ -753,35 +753,35 @@ export const schattenjaeger: Costume = {
     head([
       '.........vV...',
       '........vVVu..',
-      '...UVVvVVVUu..',
-      '..UVVVVvVVVUu.',
-      '.UVVvVVVvVVUUu',
-      '.UVvVVvVVvVUu.',
-      '.UvVtVVvttvUu.',
-      '.Uv..v......u.',
-      '.u..........u.',
+      '...vVVVVVVUu..',
+      '..vVVVVVVVvUu.',
+      '.vVVVVVVVvvUUu',
+      '.vVVVVVVvvvUu.',
+      '.vVVtVVvttvUu.',
+      '.vV..v......u.',
+      '.U..........u.',
       '.uCdCCCCCCCcu.',
       '..CdCCCCCCcc..',
       '...cCCCCCcc...',
     ], 2),
     head([
-      '...UVVvVVUu...',
-      '..UVVVvVVvUUu.',
-      '.UVVvVVvvVUUu.',
-      '.UVvVVvVvUUUUu',
-      '.UvVVvVUtUtUt.',
-      '.uUVVUUt......',
-      '.uuUVuUt.....C',
+      '...vVVVVVUu...',
+      '..vVVVVVVvUUu.',
+      '.vVVVVVVVvvUu.',
+      '.vVVVVVVvvUUUu',
+      '.UvVVVVvtUtUt.',
+      '.uUvVVUt......',
+      '.uuUvUUt.....C',
       '. uuUu.CCdCCC.',
       '......cCCdCC..',
       '......cCCCC...',
     ]),
     head([
-      '...UVVvVVUu...',
-      '..UVVVUUVvUUu.',
-      '.UVVUUEEUUVUu.',
-      '.UVUUuffuUUUu.',
-      '.UVUUuUUuUUUu.',
+      '...vVVVVVUu...',
+      '..vVVVUUVvUUu.',
+      '.vVVUUEEUUvUu.',
+      '.vVUUuffuUUUu.',
+      '.vVUUuUUuUUUu.',
       '.UvUUuUUuUUuu.',
       '.uUUUuUUuUuuu.',
       '..uUuuUUuuuu..',
@@ -843,4 +843,3 @@ export const schattenjaeger: Costume = {
 export const CLASSES: Record<string, Costume> = {
   char_krieger: krieger, char_magier: magier, char_waldlaeufer: waldlaeufer, char_paladin: paladin, char_schattenjaeger: schattenjaeger,
 };
-void WHITE; void alpha; void shieldSide;
