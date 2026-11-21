@@ -6,7 +6,7 @@
 import { INK, P, WHITE, alpha, mix, rng } from '../palette';
 import { Px, bez, type Pt } from '../draw';
 import { flipStamp, stampOf, stampRows, type Stamp } from './core';
-import { EARTH, F, FOAM, G, GRASS_N, MEADOW_N, MOSS, PATH_N, PLANK, ROCK, WD, YG, zShade, zShadeM, zSun } from './gruenwald_pal';
+import { F, FOAM, G, GRASS_N, MEADOW_N, MOSS, PATH_N, PLANK, ROCK, WD, YG, zShade, zShadeM, zSun } from './gruenwald_pal';
 
 export interface TuftPal { d: number; m: number; l: number; t: number; s: number }
 
@@ -65,13 +65,11 @@ function mkFern(seed: number): Stamp {
 function mkRoot(seed: number): Stamp {
   const r = rng(seed), w = 18, h = 9, p = new Px(w, h);
   const y0 = 2 + r() * 4, pts = bez([1, y0], [6 + r() * 5, y0 + (r() - 0.5) * 8], [16, 2 + r() * 5], 18);
-  let last: Pt = pts[0];
   pts.forEach((q, i) => {
     const x = Math.round(q[0]), y = Math.round(q[1]);
     p.set(x, y + 1, alpha(INK, 70));
     p.set(x, y, i > pts.length - 4 ? WD[1] : WD[2]);
     if (i > 2 && i < pts.length - 5 && (i % 5) < 3) p.set(x, y - 1, WD[3]);
-    last = q;
   });
   if (r() < 0.6) { const b = pts[9]; p.line(b[0], b[1], b[0] + 3, b[1] + 3, WD[1]); }
   return stampOf(p, 9, 4);

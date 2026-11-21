@@ -6,7 +6,7 @@
  *           Läuferverband in Korridoren, Schwellensteine an den Durchgängen.
  *   Becken  steingefasst, trübes Wasser;  Gefahr: Dornwurzeln, die das Pflaster aufbrechen.
  */
-import { INK, P, WHITE, alpha, hash2, mix, rng, rnd2 } from '../palette';
+import { INK, P, alpha, hash2, mix, rng, rnd2 } from '../palette';
 import { Px, tube, type Pt } from '../draw';
 import {
   Chunk, FLOOR, HAZARD, LIQUID, SHADE, TS, VOID, WALL, allow, clamp, lut, mapCache, rf, ri, seedAt, stampOf, stampRows, tileAt,
@@ -34,7 +34,7 @@ const VOIDG = mix(F[0], INK, 0.78);
 const MURK = mix(F[1], P.sand[0], 0.35);
 
 const L_F = lut(WALL, VOID), L_LIQ = lut(LIQUID), L_HAZ = lut(HAZARD);
-const A_FLOOR = allow(D_FLOOR, D_HAZ), A_FACE = allow(D_FACE), A_WALLS = allow(D_FACE, D_TOP), A_FF = allow(D_FACE, D_FLOOR, D_HAZ), A_HAZ = allow(D_HAZ, D_FLOOR), A_TOP = allow(D_TOP);
+const A_FLOOR = allow(D_FLOOR, D_HAZ), A_FACE = allow(D_FACE), A_WALLS = allow(D_FACE, D_TOP), A_FF = allow(D_FACE, D_FLOOR, D_HAZ), A_HAZ = allow(D_HAZ, D_FLOOR);
 
 // ---------------------------------------------------------------------------------------------------- Plattenverbände
 /** Verlegemuster für 32×32-px-Blöcke: Rechtecke (x, y, w, h), die den Block lückenlos füllen. */
@@ -411,7 +411,7 @@ function faceCol(c: Chunk, f: GF, i: number, wx: number, wy: number, h: number):
   return col;
 }
 function topCol(c: Chunk, f: GF, i: number, wx: number, wy: number, h: number): number {
-  const g = f.geom, d = f.dOut[i], ts = g.ts[i], W = c.W, seed = c.seed;
+  const g = f.geom, d = f.dOut[i], ts = g.ts[i], seed = c.seed;
   // Pfeilerkopf: helle Deckplatte mit Fase
   if (ts < 255 && g.tn[i] < 255 && ts + g.tn[i] <= 9) {
     const lx = wx & 15;

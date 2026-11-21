@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>Eternal Mana – Effekt-Vorschau (fx2)</title>
+<style>
+  body { margin: 0; padding: 8px; background: #1c1f28; color: #e8e4d8; font: 11px/1.25 monospace; }
+  h2 { margin: 12px 0 4px; font-size: 13px; color: #f6d250; }
+  .blk { margin-bottom: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
+  .grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cell { display: flex; flex-direction: column; gap: 1px; }
+  canvas { image-rendering: pixelated; display: block; }
+  nav a { color: #9ad; margin-right: 10px; }
+  pre { color: #f88; white-space: pre-wrap; margin: 2px 0; }
+  #info { color: #9c9; }
+</style>
+</head>
+<body>
+<nav><a href="?">strips</a><a href="?anim=1">animiert</a><a href="?only=overlay">overlays</a><a href="?only=explosion">explosionen</a><a href="?only=slash">hiebe</a></nav>
+<pre id="info"></pre>
+<pre id="report"></pre>
+<div id="root"></div>
+<script type="module" src="/src/gfx/preview-fx.ts"></script>
+</body>
+</html>

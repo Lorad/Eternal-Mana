@@ -267,7 +267,7 @@ function topCol(c: Chunk, f: Fields, i: number, wx: number, wy: number, h: numbe
 
 // ------------------------------------------------------------------ Wand: Front (Felsbank mit Erde, Moos und Grasbehang)
 function faceCol(c: Chunk, f: Fields, i: number, wx: number, wy: number, h: number): number {
-  const g = f.geom, v = g.fv[i], fh = g.fh[i], seed = c.seed, W = c.W;
+  const g = f.geom, v = g.fv[i], fh = g.fh[i], seed = c.seed;
   // Grasbehang an der Oberkante
   const hang = 2 + (hash2(wx >> 1, 7, seed + 104) % 3) + (hash2(wx, 9, seed + 105) % 9 === 0 ? 3 : 0);
   const top = fh - v;

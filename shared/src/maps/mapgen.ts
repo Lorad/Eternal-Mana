@@ -171,6 +171,52 @@ function genOverworld(def: ZoneDef): GameMap {
   };
   for (const [a, b] of def.links!) { const A = poi(a), B = poi(b); carve(A.x, A.y, B.x, B.y); }
 
+  // Brücken begradigen: Jede zusammenhängende Brückenfläche wird zu einem geraden, drei Felder breiten Steg quer übers Wasser.
+  {
+    const seen = new Uint8Array(w * h);
+    for (let i0 = 0; i0 < tiles.length; i0++) {
+      if (tiles[i0] !== T.BRIDGE || seen[i0]) continue;
+      const comp: number[] = [], q = [i0];
+      seen[i0] = 1;
+      while (q.length) {
+        const i = q.pop()!; comp.push(i);
+        const x = i % w, y = (i / w) | 0;
+        for (const n of [i - 1, i + 1, i - w, i + w]) if (n >= 0 && n < tiles.length && !seen[n] && tiles[n] === T.BRIDGE && Math.abs((n % w) - x) + Math.abs(((n / w) | 0) - y) === 1) { seen[n] = 1; q.push(n); }
+      }
+      let x0 = w, x1 = 0, y0 = h, y1 = 0, sx = 0, sy = 0;
+      for (const i of comp) { const x = i % w, y = (i / w) | 0; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); sx += x; sy += y; }
+      const cxm = Math.round(sx / comp.length), cym = Math.round(sy / comp.length);
+      // Wasser ober-/unterhalb ⇒ Steg verläuft West–Ost, sonst Nord–Süd
+      let ns = 0, ew = 0;
+      for (let x = x0; x <= x1; x++) { if (tiles[I(x, y0 - 1)] === T.LIQUID) ns++; if (tiles[I(x, y1 + 1)] === T.LIQUID) ns++; }
+      for (let y = y0; y <= y1; y++) { if (tiles[I(x0 - 1, y)] === T.LIQUID) ew++; if (tiles[I(x1 + 1, y)] === T.LIQUID) ew++; }
+      const horizontal = ns >= ew;
+      for (const i of comp) tiles[i] = T.LIQUID;
+      const wet = (x: number, y: number) => inb(x, y) && (tiles[I(x, y)] === T.LIQUID || tiles[I(x, y)] === T.BRIDGE);
+      if (horizontal) {
+        let a = x0, b = x1;
+        while (a > 2 && (wet(a - 1, cym - 1) || wet(a - 1, cym) || wet(a - 1, cym + 1))) a--;
+        while (b < w - 3 && (wet(b + 1, cym - 1) || wet(b + 1, cym) || wet(b + 1, cym + 1))) b++;
+        for (let x = a - 2; x <= b + 2; x++) for (let y = cym - 1; y <= cym + 1; y++) {
+          if (!inb(x, y)) continue;
+          if (x >= a && x <= b) { tiles[I(x, y)] = T.BRIDGE; seen[I(x, y)] = 1; }
+          else if (tiles[I(x, y)] !== T.PATH) tiles[I(x, y)] = x === a - 1 || x === b + 1 ? T.PATH : tiles[I(x, y)] === T.WALL || tiles[I(x, y)] === T.HAZARD ? T.GROUND : tiles[I(x, y)];
+          reserved[I(x, y)] = 1;
+        }
+      } else {
+        let a = y0, b = y1;
+        while (a > 2 && (wet(cxm - 1, a - 1) || wet(cxm, a - 1) || wet(cxm + 1, a - 1))) a--;
+        while (b < h - 3 && (wet(cxm - 1, b + 1) || wet(cxm, b + 1) || wet(cxm + 1, b + 1))) b++;
+        for (let y = a - 2; y <= b + 2; y++) for (let x = cxm - 1; x <= cxm + 1; x++) {
+          if (!inb(x, y)) continue;
+          if (y >= a && y <= b) { tiles[I(x, y)] = T.BRIDGE; seen[I(x, y)] = 1; }
+          else if (tiles[I(x, y)] !== T.PATH) tiles[I(x, y)] = y === a - 1 || y === b + 1 ? T.PATH : tiles[I(x, y)] === T.WALL || tiles[I(x, y)] === T.HAZARD ? T.GROUND : tiles[I(x, y)];
+          reserved[I(x, y)] = 1;
+        }
+      }
+    }
+  }
+
   const objects: ObjSpawn[] = [];
   const decor: DecorSpawn[] = [];
   const labels: GameMap['labels'] = [];
@@ -647,7 +693,7 @@ function genDungeon(def: ZoneDef): GameMap {
     }
     if (hash2(room.id, 1, seed) < 0.6) decor.push({ f: 'd_cobweb', x: x0 * TILE + 9, y: y0 * TILE + 12 });
     if (hash2(room.id, 2, seed) < 0.6) decor.push({ f: 'd_cobweb', x: (x1 + 1) * TILE - 9, y: y0 * TILE + 12 });
-    if ((room.role === 'combat' || room.role === 'treasure' || room.role === 'key' || room.role === 'entrance') && hw >= 5) decor.push({ f: hash2(room.id, 3, seed) < 0.5 ? 'd_rug_a' : 'd_rug_b', x: cx * TILE, y: cy * TILE + 16 });
+    // (Teppiche entfallen: Der Geländemaler setzt in großen Räumen ein Bodenmedaillon in die Mitte.)
     switch (room.role) {
       case 'entrance': {
         start = { x: px(cx) - 8, y: px(cy) };

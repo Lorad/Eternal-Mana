@@ -38,14 +38,29 @@
  *   4. STEMPEL:        `c.cells((cx, cy, t) => …)` läuft zeilenweise über alle Zellen, die in den Kern hineinragen
  *                      können. Pro Zelle `seedAt(cx, cy, salz)` und dann `rf()/ri()` für Zufall; Stempel mit
  *                      `c.blit` / `c.blitK` (nur auf erlaubten Oberflächen) setzen.
- *   5. LICHT/SCHATTEN: `c.darken(i, t)` / `c.tint(i, farbe, t)`; Wandschatten über `c.wallShadow(F)`.
+ *   5. LICHT/SCHATTEN: `c.darken(i, t)` / `c.tint(i, farbe, t)`; Wandschatten über `c.wallShadow(F, c.dist(F), länge)`
+ *                      (Schlagschatten nach unten rechts + Kontaktschatten am Wandfuß, Stärke 0..1 je Pixel).
+ *   6. AUFBAUTEN:      was über dem Schatten liegen soll (Geländer, Pfosten, Wurzeln an Wandfronten) zuletzt stempeln.
+ *
+ * HILFSMITTEL IN DIESEM MODUL
+ * ---------------------------
+ *   Chunk        noise · cover · cellMask · dist · resolveWalls · wallShadow · darken · tint · set/setK · blit/blitK ·
+ *                kindAt · cells · tile
+ *   Zufall       seedAt(cx, cy, salz) → rf() 0..1, ri(n), rr(a, b)        (hash2/rnd2/vnoise kommen aus palette.ts)
+ *   Stempel      stampOf(Px, ax, ay) · stampRows(['.ab.', …], {a: farbe}) · flipStamp
+ *   Sonstiges    lut(...kacheln) · allow(...oberflächen) · tones(n, ...farben) · over(dst, src) · voro()/V ·
+ *                mapCache(map, key, build) für einmalige Vorberechnungen je Karte · tileAt · SHADE
  *
  * REGELN
  * ------
  *   - Determinismus: kein Math.random/Date. Zufall nur über hash2/rnd2 (Weltkoordinaten!) bzw. seedAt/rf/ri.
  *     NIE Pufferkoordinaten oder Chunk-Indizes in Hashes stecken – immer Weltpixel (c.x0 + x) oder Zellkoordinaten.
- *   - Reichweite: Der Beitrag einer Zelle (Stempel, Linien) darf höchstens `BLEED` (16) px über ihren Rand ragen.
- *     Felder sind bis PAD (48) px um den Kern exakt; resolveWalls braucht davon 38 px (2 Kacheln Front + Lippe).
+ *   - Reichweite: Der Beitrag einer Zelle (Stempel, Linien) darf höchstens `BLEED` (16) px über ihren Rand ragen –
+ *     auch nach unten hängende oder weit oben verankerte Stempel mitrechnen (Anker + Stempelgröße!).
+ *     Felder sind bis PAD (48) px um den Kern exakt. Daraus folgt für Distanzfelder (c.dist): im Kern nur mit
+ *     Schwellen ≤ ~40 px arbeiten, an Stempel-Ankern (bis 16 px außerhalb des Kerns) nur ≤ ~28 px; größere Werte
+ *     vorher kappen (`d > 28 ? 28 : d`). resolveWalls liefert tn nur bis 40 und ts nur bis 15 exakt (sonst 255).
+ *   - Prüfen: /preview-terrain.html?map=<zone>&seamtest=1 vergleicht zwei Chunk-Aufteilungen pixelgenau (muss 0 sein).
  *   - Nie aus `buf` Nachbarpixel LESEN, um etwas zu entscheiden (außerhalb des Kerns ist buf leer) – dafür `kind`
  *     oder Felder benutzen.
  *   - LIQUID bleibt transparent (Alpha 0) bzw. halbtransparent schattiert; Ufer werden deckend hineingemalt.
