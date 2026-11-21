@@ -1,0 +1,217 @@
+/** Gemeinsame Datentypen von Server und Client. */
+export type Element = 'phys' | 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark';
+export type ClassId = 'krieger' | 'magier' | 'waldlaeufer' | 'paladin' | 'schattenjaeger';
+export type AttrKey = 'str' | 'dex' | 'int' | 'vit';
+export type Slot = 'weapon' | 'helm' | 'armor' | 'acc1' | 'acc2';
+export const SLOTS: Slot[] = ['weapon', 'helm', 'armor', 'acc1', 'acc2'];
+export const SLOT_NAME: Record<Slot, string> = { weapon: 'Waffe', helm: 'Kopf', armor: 'Rüstung', acc1: 'Accessoire', acc2: 'Accessoire' };
+export const ATTR_NAME: Record<AttrKey, string> = { str: 'Stärke', dex: 'Geschick', int: 'Intelligenz', vit: 'Vitalität' };
+
+/** Modifikatoren – von Affixen, Passiven und Buffs gemeinsam genutzt. *Pct = Prozentpunkte. */
+export type ModKey =
+  | 'str' | 'dex' | 'int' | 'vit' | 'hp' | 'mp' | 'power' | 'def'
+  | 'powerPct' | 'defPct' | 'hpPct' | 'mpPct' | 'speedPct'
+  | 'crit' | 'critDmg' | 'cdr' | 'lifesteal' | 'hpRegen' | 'mpRegen'
+  | 'elemPct' | 'healPct' | 'goldPct' | 'xpPct' | 'dodgeCdr';
+export type Mods = Partial<Record<ModKey, number>>;
+
+export const MOD_LABEL: Record<ModKey, string> = {
+  str: 'Stärke', dex: 'Geschick', int: 'Intelligenz', vit: 'Vitalität', hp: 'Leben', mp: 'Mana', power: 'Angriff', def: 'Verteidigung',
+  powerPct: '% Angriff', defPct: '% Verteidigung', hpPct: '% Leben', mpPct: '% Mana', speedPct: '% Tempo',
+  crit: '% Krit-Chance', critDmg: '% Krit-Schaden', cdr: '% Abklingzeit-Reduktion', lifesteal: '% Lebensraub',
+  hpRegen: 'Leben/s', mpRegen: 'Mana/s', elemPct: '% Elementarschaden', healPct: '% Heilung', goldPct: '% Goldfund', xpPct: '% Erfahrung',
+  dodgeCdr: '% schnellere Ausweichrolle',
+};
+
+export interface ItemInstance {
+  uid: string;
+  base: string;        // ItemBase.id
+  rarity: number;      // 0..4
+  ilvl: number;
+  up: number;          // Verbesserungsstufe +0..+10
+  affixes: [ModKey, number][];
+  element?: Element;
+  name?: string;       // Eigenname (Boss-Unikate)
+  qty?: number;        // stapelbare Gegenstände
+}
+
+export interface QuestState {
+  s: 'active' | 'done';
+  p: number[];         // Fortschritt je Ziel
+  n?: number;          // wie oft abgeschlossen (wiederholbare)
+}
+
+/** Persistenter Charakterstand (wird als JSON in SQLite gespeichert). */
+export interface CharData {
+  v: number;
+  name: string;
+  cls: ClassId;
+  level: number;
+  xp: number;
+  gold: number;
+  attrs: Record<AttrKey, number>;
+  attrPoints: number;
+  skillPoints: number;
+  skills: Record<string, number>;
+  hotbar: (string | null)[];
+  inv: ItemInstance[];
+  equip: Partial<Record<Slot, ItemInstance>>;
+  quests: Record<string, QuestState>;
+  /** Fortschritts-Flags: `c:<zone>:<id>` Truhe, `s:<zone>:<id>` Quellsplitter, `t:<zone>` Quellstein, `b:<boss>` Boss, `z:<zone>` besucht, `x:<zone>:<id>` Geheimnis */
+  flags: Record<string, number>;
+  zone: string;
+  x: number;
+  y: number;
+  respawn: { zone: string; x: number; y: number };
+  hp: number;
+  mp: number;
+  playtime: number;
+  kills: number;
+  deaths: number;
+}
+
+export interface Derived {
+  maxHp: number; maxMp: number;
+  power: number; def: number;
+  crit: number; critDmg: number;
+  speed: number;
+  hpRegen: number; mpRegen: number;
+  cdr: number; lifesteal: number;
+  elemPct: number; healPct: number; goldPct: number; xpPct: number;
+  dodgeCd: number;
+  attackElement: Element;
+  attrs: Record<AttrKey, number>;
+}
+
+export type StatusId = 'burn' | 'poison' | 'slow' | 'stun' | 'weak' | 'mark';
+export const STATUS_BIT: Record<StatusId, number> = { burn: 1, poison: 2, slow: 4, stun: 8, weak: 16, mark: 32 };
+export const FLAG_BUFF = 64, FLAG_SHIELD = 128, FLAG_ROLL = 256, FLAG_DEAD = 512, FLAG_ELITE = 1024, FLAG_INVULN = 2048;
+export const STATUS_NAME: Record<StatusId, string> = { burn: 'Brennen', poison: 'Gift', slow: 'Verlangsamt', stun: 'Betäubt', weak: 'Geschwächt', mark: 'Gezeichnet' };
+
+export interface StatusSpec { id: StatusId; dur: number; chance?: number }
+
+// ------------------------------------------------------------------ Netzwerkprotokoll
+/** Animationszustand in Snapshots */
+export const enum Anim { Idle = 0, Move = 1, Attack = 2, Cast = 3, Hurt = 4, Roll = 5, Dead = 6, Windup = 7, Special = 8 }
+
+/** Spieler im Snapshot: [id, x, y, facing(rad*100), anim, hp, maxHp, flags] */
+export type SnapPlayer = [number, number, number, number, number, number, number, number];
+/** Gegner im Snapshot: [id, x, y, facingLeft(0/1), anim, hp, flags] */
+export type SnapMob = [number, number, number, number, number, number, number];
+
+export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number }
+export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string }
+export interface ObjInfo { id: number; type: string; x: number; y: number; state: number; tag?: string; props?: Record<string, any> }
+export interface DropInfo { id: number; x: number; y: number; kind: 'gold' | 'item'; icon: string; rarity: number; name: string }
+export interface ProjInfo { id: number; spr: string; x: number; y: number; vx: number; vy: number; el: Element; life: number; r: number; hostile: boolean }
+export interface ZoneFx { id: number; kind: 'zone' | 'tele'; x: number; y: number; r: number; el: Element; dur: number; hostile: boolean; shape?: 'circle' | 'line'; x2?: number; y2?: number; w?: number }
+
+export type GameEvent =
+  | { k: 'dmg'; id: number; a: number; c?: 1; el: Element; pl?: 1; x: number; y: number; kb?: [number, number] }
+  | { k: 'heal'; id: number; a: number; x: number; y: number }
+  | { k: 'txt'; x: number; y: number; s: string; col?: string }
+  | { k: 'atk'; id: number; ang: number; kind: string; el: Element; combo?: number; range?: number }
+  | { k: 'cast'; id: number; skill: string; ang: number; el: Element }
+  | { k: 'fx'; n: string; x: number; y: number; r?: number; el?: Element; ang?: number; d?: number }
+  | { k: 'sfx'; n: string; x?: number; y?: number }
+  | { k: 'mob+'; m: MobInfo }
+  | { k: 'mob-'; id: number; died?: 1 }
+  | { k: 'proj+'; p: ProjInfo }
+  | { k: 'proj-'; id: number; hit?: 1 }
+  | { k: 'zone+'; z: ZoneFx }
+  | { k: 'zone-'; id: number }
+  | { k: 'obj'; id: number; state: number; props?: Record<string, any> }
+  | { k: 'obj+'; o: ObjInfo }
+  | { k: 'obj-'; id: number }
+  | { k: 'pl+'; p: PlayerInfo }
+  | { k: 'pl-'; id: number }
+  | { k: 'boss'; id: number; name: string; phase: number; el: Element }
+  | { k: 'bossend'; id: number; won: boolean };
+
+export interface PartyMember { id: number; charId: number; name: string; cls: ClassId; level: number; hp: number; maxHp: number; zone: string; online: boolean }
+
+/** Auszug der Charakterdaten für die Charakterauswahl */
+export interface CharSummary { id: number; slot: number; name: string; cls: ClassId; level: number; zone: string; playtime: number }
+
+export type ClientMsg =
+  | { t: 'hello'; token: string; name: string; v: string }
+  | { t: 'charCreate'; slot: number; name: string; cls: ClassId }
+  | { t: 'charDelete'; id: number }
+  | { t: 'enter'; id: number }
+  | { t: 'leave' }
+  | { t: 'm'; x: number; y: number; f: number; e: number; mv: 0 | 1 }
+  | { t: 'atk'; ang: number }
+  | { t: 'skill'; id: string; ang: number; tx: number; ty: number }
+  | { t: 'dodge'; ang: number }
+  | { t: 'interact'; id: number }
+  | { t: 'revive'; id: number }
+  | { t: 'respawn' }
+  | { t: 'equip'; uid: string; slot?: Slot }
+  | { t: 'unequip'; slot: Slot }
+  | { t: 'use'; uid: string }
+  | { t: 'quick'; kind: 'hp' | 'mp' }
+  | { t: 'drop'; uid: string }
+  | { t: 'sell'; uid: string; qty?: number }
+  | { t: 'buy'; npc: string; idx: number; qty?: number }
+  | { t: 'upgrade'; uid: string; npc: string }
+  | { t: 'attr'; a: AttrKey; n?: number }
+  | { t: 'learn'; id: string }
+  | { t: 'hotbar'; slots: (string | null)[] }
+  | { t: 'respec'; npc: string }
+  | { t: 'qAccept'; id: string; npc: string }
+  | { t: 'qTurnIn'; id: string; npc: string }
+  | { t: 'qAbandon'; id: string }
+  | { t: 'talk'; npc: string }
+  | { t: 'teleport'; zone: string }
+  | { t: 'chat'; s: string }
+  | { t: 'party'; a: 'invite' | 'accept' | 'decline' | 'leave'; id?: number }
+  | { t: 'save' }
+  | { t: 'settings'; data: string }
+  | { t: 'sortInv' }
+  | { t: 'ping'; c: number };
+
+export interface ZoneInit {
+  zone: string;
+  x: number; y: number; epoch: number;
+  players: PlayerInfo[];
+  mobs: MobInfo[];
+  objs: ObjInfo[];
+  drops: DropInfo[];
+  zones: ZoneFx[];
+  weather: string;
+  tod: number;       // Tageszeit 0..1
+  you: number;       // eigene Entity-ID
+  boss?: { id: number; name: string; phase: number; el: Element };
+}
+
+export type ServerMsg =
+  | { t: 'welcome'; account: number; name: string; chars: CharSummary[]; settings: string | null; server: ServerInfo }
+  | { t: 'chars'; chars: CharSummary[] }
+  | { t: 'entered'; char: CharData; charId: number; init: ZoneInit }
+  | { t: 'zone'; init: ZoneInit }
+  | { t: 's'; n: number; p: SnapPlayer[]; m: SnapMob[]; ev?: GameEvent[]; me?: number[]; k?: number } // me = [hp, maxHp, mp, maxMp, flags]; k = Schlüssel im Dungeon
+  | { t: 'pos'; x: number; y: number; e: number; dash?: 1 }
+  | { t: 'char'; d: Partial<CharData> }
+  | { t: 'cd'; id: string; cd: number }
+  | { t: 'buffs'; b: { id: string; name: string; dur: number; glyph: string }[] }
+  | { t: 'drop+'; d: DropInfo }
+  | { t: 'drop-'; id: number; got?: 1 }
+  | { t: 'toast'; s: string; kind?: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string }
+  | { t: 'loot'; item: ItemInstance }
+  | { t: 'chat'; from: string; s: string; ch: 'all' | 'party' | 'sys' }
+  | { t: 'party'; members: PartyMember[]; invite?: { from: number; name: string } }
+  | { t: 'dead'; by: string }
+  | { t: 'story'; id: string; lines: string[]; title?: string }
+  | { t: 'env'; weather?: string; tod?: number }
+  | { t: 'online'; players: { name: string; cls: ClassId; level: number; zone: string; id: number }[] }
+  | { t: 'saved' }
+  | { t: 'err'; s: string }
+  | { t: 'pong'; c: number; n: number };
+
+export interface ServerInfo {
+  name: string;
+  version: string;
+  port: number;
+  addresses: { label: string; url: string; kind: 'local' | 'lan' | 'tailscale' }[];
+  tailscale: { available: boolean; ip?: string; dns?: string };
+}

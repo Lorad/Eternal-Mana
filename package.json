@@ -1,0 +1,34 @@
+{
+  "name": "eternal-mana",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Eternal Mana – ein Browser-Action-RPG mit autoritativem Server und Koop-Multiplayer über Tailscale",
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "dev": "concurrently -k -n server,client \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:client": "vite --config client/vite.config.ts",
+    "build": "vite build --config client/vite.config.ts",
+    "start": "tsx server/src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "node tests/e2e/smoke.mjs",
+    "backup": "tsx server/src/backup-cli.ts"
+  },
+  "dependencies": {
+    "tsx": "^4.19.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.9.0",
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "concurrently": "^9.1.0",
+    "phaser": "^3.90.0",
+    "preact": "^10.25.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

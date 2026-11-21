@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Eternal Mana – Audio-Hörprobe</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 20px 16px 60px; background: #14161c; color: #e6e2d6; font: 15px/1.5 system-ui, sans-serif; }
+      main { max-width: 980px; margin: 0 auto; }
+      h1 { font-size: 22px; margin: 0 0 4px; }
+      h2 { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: #9fb4a0; margin: 26px 0 8px; }
+      h3 { font-size: 13px; color: #8a8f9c; margin: 12px 0 6px; font-weight: 500; }
+      p { color: #a3a7b3; margin: 0 0 12px; }
+      .row { display: flex; flex-wrap: wrap; gap: 6px; }
+      button { background: #232733; color: inherit; border: 1px solid #343a4a; border-radius: 6px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+      button:hover { background: #2d3342; border-color: #6f8f72; }
+      button:active { transform: translateY(1px); }
+      #unlock { background: #2f5a3a; border-color: #4f8a5c; font-size: 15px; padding: 10px 18px; }
+      label { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+      label span:first-child { width: 150px; }
+      input[type='range'] { flex: 1; max-width: 320px; }
+      output { font-variant-numeric: tabular-nums; color: #9fb4a0; width: 40px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Eternal Mana – Audio-Hörprobe</h1>
+      <p>Alles wird im Browser synthetisiert. Zuerst entsperren, dann anhören.</p>
+      <button id="unlock">Audio entsperren</button>
+
+      <h2>Lautstärke</h2>
+      <label><span>Musik</span><input id="vol-music" type="range" min="0" max="1" step="0.01" /><output id="vol-music-val"></output></label>
+      <label><span>Effekte + Ambience</span><input id="vol-sfx" type="range" min="0" max="1" step="0.01" /><output id="vol-sfx-val"></output></label>
+      <label><span>Effekt-Panorama</span><input id="pan" type="range" min="-1" max="1" step="0.1" value="0" /><output></output></label>
+
+      <h2>Musik</h2>
+      <div class="row" id="music"></div>
+      <h2>Jingles</h2>
+      <div class="row" id="jingles"></div>
+      <h2>Ambience</h2>
+      <div class="row" id="ambience"></div>
+
+      <h2>Effekte</h2>
+      <h3>UI</h3>
+      <div class="row" id="sfx-ui"></div>
+      <h3>Kampf</h3>
+      <div class="row" id="sfx-kampf"></div>
+      <h3>Welt</h3>
+      <div class="row" id="sfx-welt"></div>
+      <h3>Belastung</h3>
+      <div class="row" id="stress"></div>
+    </main>
+    <script type="module" src="/src/audio/preview.ts"></script>
+  </body>
+</html>
