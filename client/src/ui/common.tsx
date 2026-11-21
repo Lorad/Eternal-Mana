@@ -3,7 +3,7 @@ import type { ComponentChildren, JSX } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio';
 import type { SfxName } from '../audio';
-import { iconUrl, portraitUrl } from '../gfx';
+import { iconUrl, portraitUrl } from '../gfx/runtime';
 import { net } from '../net/net';
 import { onSettingsChange, settings } from '../state/settings';
 import { store } from '../state/store';

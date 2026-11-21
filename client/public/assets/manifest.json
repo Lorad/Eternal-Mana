@@ -1,0 +1,647 @@
+{
+ "version": 2,
+ "generated": "npm run assets",
+ "sheets": {
+  "char_krieger": {
+   "file": "sprites/chars/char_krieger.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "char_magier": {
+   "file": "sprites/chars/char_magier.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "char_paladin": {
+   "file": "sprites/chars/char_paladin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "char_schattenjaeger": {
+   "file": "sprites/chars/char_schattenjaeger.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "char_waldlaeufer": {
+   "file": "sprites/chars/char_waldlaeufer.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_aelteste": {
+   "file": "sprites/chars/npc_aelteste.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_archaeologin": {
+   "file": "sprites/chars/npc_archaeologin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_bergfrau": {
+   "file": "sprites/chars/npc_bergfrau.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_echo": {
+   "file": "sprites/chars/npc_echo.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_einsiedler": {
+   "file": "sprites/chars/npc_einsiedler.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_fellhaendlerin": {
+   "file": "sprites/chars/npc_fellhaendlerin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_geist": {
+   "file": "sprites/chars/npc_geist.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_gelehrter": {
+   "file": "sprites/chars/npc_gelehrter.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_haendlerin": {
+   "file": "sprites/chars/npc_haendlerin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_jaegerin": {
+   "file": "sprites/chars/npc_jaegerin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_kind": {
+   "file": "sprites/chars/npc_kind.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_kraemer": {
+   "file": "sprites/chars/npc_kraemer.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_nomade": {
+   "file": "sprites/chars/npc_nomade.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_schmied": {
+   "file": "sprites/chars/npc_schmied.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_wache": {
+   "file": "sprites/chars/npc_wache.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "mob_arkanauge": {
+   "file": "sprites/mobs/mob_arkanauge.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_aschenhund": {
+   "file": "sprites/mobs/mob_aschenhund.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_dornkaefer": {
+   "file": "sprites/mobs/mob_dornkaefer.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_eiswicht": {
+   "file": "sprites/mobs/mob_eiswicht.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_fledermaus": {
+   "file": "sprites/mobs/mob_fledermaus.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_fluchgeist": {
+   "file": "sprites/mobs/mob_fluchgeist.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_frostwisp": {
+   "file": "sprites/mobs/mob_frostwisp.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_frostwolf": {
+   "file": "sprites/mobs/mob_frostwolf.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_glimmerwisp": {
+   "file": "sprites/mobs/mob_glimmerwisp.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_glutimp": {
+   "file": "sprites/mobs/mob_glutimp.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_hohlritter": {
+   "file": "sprites/mobs/mob_hohlritter.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_kristallkrabbler": {
+   "file": "sprites/mobs/mob_kristallkrabbler.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_leerenbrut": {
+   "file": "sprites/mobs/mob_leerenbrut.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_magmaschleim": {
+   "file": "sprites/mobs/mob_magmaschleim.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_moosling": {
+   "file": "sprites/mobs/mob_moosling.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_nachtmahr": {
+   "file": "sprites/mobs/mob_nachtmahr.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_pilzling": {
+   "file": "sprites/mobs/mob_pilzling.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_runenwaechter": {
+   "file": "sprites/mobs/mob_runenwaechter.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_schattenwandler": {
+   "file": "sprites/mobs/mob_schattenwandler.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_schlackengolem": {
+   "file": "sprites/mobs/mob_schlackengolem.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_schneebrute": {
+   "file": "sprites/mobs/mob_schneebrute.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_skelettkrieger": {
+   "file": "sprites/mobs/mob_skelettkrieger.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_tropfschleim": {
+   "file": "sprites/mobs/mob_tropfschleim.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_waldwolf": {
+   "file": "sprites/mobs/mob_waldwolf.png",
+   "fw": 48,
+   "fh": 40,
+   "cols": 22,
+   "rows": 1
+  },
+  "mob_wurzelschleicher": {
+   "file": "sprites/mobs/mob_wurzelschleicher.png",
+   "fw": 32,
+   "fh": 32,
+   "cols": 22,
+   "rows": 1
+  },
+  "boss_archivar": {
+   "file": "sprites/bosses/boss_archivar.png",
+   "fw": 24.923076923076923,
+   "fh": 72,
+   "cols": 26,
+   "rows": 1
+  },
+  "boss_dornenmutter": {
+   "file": "sprites/bosses/boss_dornenmutter.png",
+   "fw": 27.692307692307693,
+   "fh": 80,
+   "cols": 26,
+   "rows": 1
+  },
+  "boss_hohlkoenig": {
+   "file": "sprites/bosses/boss_hohlkoenig.png",
+   "fw": 33.23076923076923,
+   "fh": 96,
+   "cols": 26,
+   "rows": 1
+  },
+  "boss_ignarok": {
+   "file": "sprites/bosses/boss_ignarok.png",
+   "fw": 27.692307692307693,
+   "fh": 88,
+   "cols": 26,
+   "rows": 1
+  },
+  "boss_kristallkoloss": {
+   "file": "sprites/bosses/boss_kristallkoloss.png",
+   "fw": 27.692307692307693,
+   "fh": 80,
+   "cols": 26,
+   "rows": 1
+  },
+  "boss_ysolde": {
+   "file": "sprites/bosses/boss_ysolde.png",
+   "fw": 22.153846153846153,
+   "fh": 80,
+   "cols": 26,
+   "rows": 1
+  }
+ },
+ "atlases": {
+  "obj": {
+   "file": "atlases/obj.png",
+   "json": "atlases/obj.json",
+   "frames": 313
+  },
+  "fx": {
+   "file": "atlases/fx.png",
+   "json": "atlases/fx.json",
+   "frames": 186
+  },
+  "icons": {
+   "file": "atlases/icons.png",
+   "json": "atlases/icons.json",
+   "frames": 318
+  }
+ },
+ "liquids": {
+  "gruenwald": {
+   "file": "liquids/gruenwald.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
+  },
+  "kristall": {
+   "file": "liquids/kristall.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4
+  },
+  "glut": {
+   "file": "liquids/glut.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4
+  },
+  "frost": {
+   "file": "liquids/frost.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4
+  },
+  "ruinen": {
+   "file": "liquids/ruinen.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4
+  },
+  "schatten": {
+   "file": "liquids/schatten.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4
+  }
+ },
+ "overlays": {},
+ "mobMeta": {
+  "mob_moosling": {
+   "w": 32,
+   "h": 32
+  },
+  "moosling": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_dornkaefer": {
+   "w": 32,
+   "h": 32
+  },
+  "dornkaefer": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_pilzling": {
+   "w": 32,
+   "h": 32
+  },
+  "pilzling": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_waldwolf": {
+   "w": 48,
+   "h": 40
+  },
+  "waldwolf": {
+   "w": 48,
+   "h": 40
+  },
+  "mob_wurzelschleicher": {
+   "w": 32,
+   "h": 32
+  },
+  "wurzelschleicher": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_fledermaus": {
+   "w": 32,
+   "h": 32
+  },
+  "fledermaus": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_kristallkrabbler": {
+   "w": 32,
+   "h": 32
+  },
+  "kristallkrabbler": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_glimmerwisp": {
+   "w": 32,
+   "h": 32
+  },
+  "glimmerwisp": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_tropfschleim": {
+   "w": 32,
+   "h": 32
+  },
+  "tropfschleim": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_glutimp": {
+   "w": 32,
+   "h": 32
+  },
+  "glutimp": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_aschenhund": {
+   "w": 32,
+   "h": 32
+  },
+  "aschenhund": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_magmaschleim": {
+   "w": 32,
+   "h": 32
+  },
+  "magmaschleim": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_schlackengolem": {
+   "w": 32,
+   "h": 32
+  },
+  "schlackengolem": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_frostwolf": {
+   "w": 32,
+   "h": 32
+  },
+  "frostwolf": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_eiswicht": {
+   "w": 32,
+   "h": 32
+  },
+  "eiswicht": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_schneebrute": {
+   "w": 32,
+   "h": 32
+  },
+  "schneebrute": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_frostwisp": {
+   "w": 32,
+   "h": 32
+  },
+  "frostwisp": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_runenwaechter": {
+   "w": 32,
+   "h": 32
+  },
+  "runenwaechter": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_skelettkrieger": {
+   "w": 32,
+   "h": 32
+  },
+  "skelettkrieger": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_fluchgeist": {
+   "w": 32,
+   "h": 32
+  },
+  "fluchgeist": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_arkanauge": {
+   "w": 32,
+   "h": 32
+  },
+  "arkanauge": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_schattenwandler": {
+   "w": 32,
+   "h": 32
+  },
+  "schattenwandler": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_leerenbrut": {
+   "w": 32,
+   "h": 32
+  },
+  "leerenbrut": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_nachtmahr": {
+   "w": 32,
+   "h": 32
+  },
+  "nachtmahr": {
+   "w": 32,
+   "h": 32
+  },
+  "mob_hohlritter": {
+   "w": 32,
+   "h": 32
+  },
+  "hohlritter": {
+   "w": 32,
+   "h": 32
+  }
+ },
+ "bossMeta": {
+  "boss_dornenmutter": {
+   "w": 80,
+   "h": 80
+  },
+  "boss_kristallkoloss": {
+   "w": 80,
+   "h": 80
+  },
+  "boss_ignarok": {
+   "w": 80,
+   "h": 88
+  },
+  "boss_ysolde": {
+   "w": 64,
+   "h": 80
+  },
+  "boss_archivar": {
+   "w": 72,
+   "h": 72
+  },
+  "boss_hohlkoenig": {
+   "w": 96,
+   "h": 96
+  }
+ }
+}

@@ -95,7 +95,7 @@ export const hammer: ItemFn = (l, k, hx, hy, ang) => {
   // Schattenseite: wohin die Normale nach unten/rechts zeigt
   const dn = -dy + dx >= 0 ? 1 : -1;
   // von vorn/hinten senkrecht gehalten sieht man die schmale Stirnseite
-  const end = k.dir !== 1 && Math.abs(dy) > 0.9, hw = end ? 2.5 : 4.5;
+  const end = k.dir !== 1 && Math.abs(dy) > 0.9 && !k.ps.tag.includes('hwide'), hw = end ? 2.5 : 4.5;
   for (let t = 8; t <= 12.01; t += 0.5) for (let s = -hw; s <= hw + 0.01; s += 0.5) {
     const as = Math.abs(s), far = s * dn > 0;
     let c = P.cream[3];

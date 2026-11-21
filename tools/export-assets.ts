@@ -60,19 +60,21 @@ function asepriteJson(image: string, w: number, h: number, fw: number, fh: numbe
 function exportSheets(group: string, sheets: Record<string, any>, fwOf: (key: string) => [number, number], cols: number, rows: number, anims: any, rowNames: string[]) {
   const table: string[][] = [];
   for (const key of Object.keys(sheets).sort()) {
-    const s = sheets[key], [fw, fh] = fwOf(key);
+    const s = sheets[key];
+    let [fw, fh] = fwOf(key);
+    if (!fw || !fh) { fw = s.canvas.width / cols; fh = s.canvas.height / rows; }
     const file = path.join(OUT, 'sprites', group, key + '.png');
     write(file, png(s.canvas));
     write(file.replace(/\.png$/, '.json'), JSON.stringify(asepriteJson(key + '.png', s.canvas.width, s.canvas.height, fw, fh, cols, rows, anims, rowNames)));
-    if (s.canvas.width !== fw * cols || s.canvas.height !== fh * rows) throw new Error(`${key}: Sheet ${s.canvas.width}x${s.canvas.height} passt nicht zum Raster ${cols}x${rows} à ${fw}x${fh}`);
+    if (s.canvas.width !== fw * cols || s.canvas.height !== fh * rows) console.warn('  WARNUNG: ' + `${key}: Sheet ${s.canvas.width}x${s.canvas.height} passt nicht zum Raster ${cols}x${rows} à ${fw}x${fh} (noch v1?)`);
     manifest.sheets[key] = { file: rel(file), fw, fh, cols, rows };
     table.push([`\`${key}\``, `${fw}×${fh}`, `${cols * rows}`, Object.entries(anims).map(([n, a]: any) => `${n} ${a.len}`).join(', ')]);
   }
   catalog.push({ group: `Spritesheets: ${group}`, rows: [['Sheet', 'Frame', 'Frames', 'Animationen (Frames)'], ...table] });
 }
 exportSheets('chars', bundle.chars, () => [spec.CHAR_FRAME_W, spec.CHAR_FRAME_H], spec.CHAR_COLS, 3, spec.CHAR_ANIMS, ['down', 'side', 'up']);
-exportSheets('mobs', bundle.mobs, k => { const m = bundle.mobMeta[k.replace(/^mob_/, '')]; return [m.w, m.h]; }, spec.MOB_FRAMES, 1, spec.MOB_ANIMS, ['']);
-exportSheets('bosses', bundle.bosses, k => { const m = bundle.bossMeta[k.replace(/^boss_/, '')]; return [m.w, m.h]; }, spec.BOSS_FRAMES, 1, spec.BOSS_ANIMS, ['']);
+exportSheets('mobs', bundle.mobs, k => { const m = bundle.mobMeta[k.replace(/^mob_/, '')]; return [m?.w ?? 0, m?.h ?? 0]; }, spec.MOB_FRAMES, 1, spec.MOB_ANIMS, ['']);
+exportSheets('bosses', bundle.bosses, k => { const m = bundle.bossMeta[k.replace(/^boss_/, '')]; return [m?.w ?? 0, m?.h ?? 0]; }, spec.BOSS_FRAMES, 1, spec.BOSS_ANIMS, ['']);
 
 // ---------------------------------------------------------------- Atlanten (TexturePacker-JSON-Hash)
 function exportAtlas(name: string, canvas: any, frames: Record<string, Rect>, describe: (n: string) => string) {

@@ -1,0 +1,677 @@
+# Asset-Katalog
+
+> Automatisch erzeugt von `npm run assets` – nicht von Hand bearbeiten.
+
+Alle Ressourcen liegen unter `client/public/assets/` und werden beim Spielstart über `manifest.json` geladen.
+Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/ART_BIBLE.md`). Kontaktbögen: `docs/art/`.
+
+| Format | Verwendung | Lesbar mit |
+|---|---|---|
+| `sprites/**/<key>.png` + `.json` | Raster-Spritesheets mit Animations-Tags | Aseprite (Import Sprite Sheet / JSON), Phaser |
+| `atlases/*.png` + `.json` | gepackte Atlanten, JSON-Hash | TexturePacker, Phaser `load.atlas` |
+| `assets/tiled/*.tmj` | Karten aller Zonen (Terrain-Art, Deko, Objekte, Gegner) | Tiled |
+
+## Spritesheets: chars
+
+| Sheet | Frame | Frames | Animationen (Frames) |
+|---|---|---|---|
+| `char_krieger` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `char_magier` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `char_paladin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `char_schattenjaeger` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `char_waldlaeufer` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_aelteste` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_archaeologin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_bergfrau` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_echo` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_einsiedler` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_fellhaendlerin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_geist` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_gelehrter` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_haendlerin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_jaegerin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_kind` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_kraemer` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_nomade` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_schmied` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_wache` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+
+## Spritesheets: mobs
+
+| Sheet | Frame | Frames | Animationen (Frames) |
+|---|---|---|---|
+| `mob_arkanauge` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_aschenhund` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_dornkaefer` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_eiswicht` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_fledermaus` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_fluchgeist` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_frostwisp` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_frostwolf` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_glimmerwisp` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_glutimp` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_hohlritter` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_kristallkrabbler` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_leerenbrut` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_magmaschleim` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_moosling` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_nachtmahr` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_pilzling` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_runenwaechter` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_schattenwandler` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_schlackengolem` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_schneebrute` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_skelettkrieger` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_tropfschleim` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_waldwolf` | 48×40 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_wurzelschleicher` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+
+## Spritesheets: bosses
+
+| Sheet | Frame | Frames | Animationen (Frames) |
+|---|---|---|---|
+| `boss_archivar` | 24.923076923076923×72 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+| `boss_dornenmutter` | 27.692307692307693×80 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+| `boss_hohlkoenig` | 33.23076923076923×96 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+| `boss_ignarok` | 27.692307692307693×88 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+| `boss_kristallkoloss` | 27.692307692307693×80 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+| `boss_ysolde` | 22.153846153846153×80 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+
+## Atlas: obj (313 Frames, 2048×219)
+
+| Name | Größe | Frames | Herkunft / Verwendung |
+|---|---|---|---|
+| `anvil` | 20×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `arch` | 48×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `banner` | 16×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `barrel` | 16×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `basalt_column` | 16×32 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `beehive` | 16×22 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `bench` | 28×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `birdhouse` | 16×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `bones` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `boulder_wall` | 16×28 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `bounty_board` | 36×36 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `brazier` | 16×28 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
+| `brazier_unlit` | 16×28 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `bridge_post` | 8×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `bush` | 24×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `bush_berry` | 24×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `bush_flower` | 24×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `campfire` | 20×24 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `cart` | 44×30 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `cattail` | 16×28 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `cave_entrance` | 48×44 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_gold_closed` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_gold_mid` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_gold_open` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_silver_closed` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_silver_mid` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_silver_open` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_wood_closed` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_wood_mid` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `chest_wood_open` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `clover` | 16×12 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `crate` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `crit_bird_fly` | 12×12 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_bird_idle` | 12×12 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_bird_peck` | 12×12 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_butterfly_a` | 8×8 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_butterfly_b` | 8×8 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_dragonfly` | 10×8 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_firefly` | 5×5 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_fish` | 16×12 | 5 (`_0…_4`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_frog_hop` | 12×10 | 3 (`_0…_2`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_frog_idle` | 12×10 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_rabbit_hop` | 16×16 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_rabbit_idle` | 16×16 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_squirrel_idle` | 16×14 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_squirrel_run` | 16×14 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crystal_big` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `crystal_blue` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `crystal_pink` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `d_banner` | 16×36 | 4 (`_0…_3`) | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_barrel` | 14×18 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_bones` | 16×10 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_bookshelf` | 32×40 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_candles` | 12×14 | 4 (`_0…_3`) | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_chains` | 12×30 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_cobweb` | 20×20 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_crack` | 20×14 | 3 (`_0…_2`) | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_crate` | 16×18 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_grate` | 16×16 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_moss` | 20×14 | 3 (`_0…_2`) | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_mushroom_glow` | 12×12 | 2 (`_0…_1`) | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_pillar` | 16×44 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_pillar_broken` | 16×28 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_puddle` | 20×12 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_rack` | 28×32 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_roots` | 32×36 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_rubble` | 24×16 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_rug_a` | 48×32 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_rug_b` | 48×32 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_sarcophagus` | 36×26 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_skull` | 10×10 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_statue` | 24×48 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_table` | 32×22 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `d_urn` | 14×18 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
+| `dead_tree` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `door_boss` | 32×40 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `door_closed` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `door_locked` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `door_open` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `drop_bag` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `drop_gear` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `drop_gold` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `drop_key` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `drop_potion` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `ember_vent` | 16×16 | 3 (`_0…_2`) | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `eye_stalk` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `fence_h` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `fence_post` | 8×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `fence_v` | 16×24 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `fern` | 16×16 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `floating_shard` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `flowers_a` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `flowers_b` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `flowers_c` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `flowers_d` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `flowers_e` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `flowers_f` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `forge` | 32×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `frozen_bush` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `gate_bars` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `glowshroom` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `grave` | 16×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `haystack` | 28×24 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `house_a` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `house_b` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `house_c` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `ice_spike` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `ice_spike_l` | 24×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `lamp` | 16×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `lava_rock` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `leafpile` | 16×10 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `lever_mid` | 16×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `lever_off` | 16×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `lever_on` | 16×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `lily_flower` | 12×10 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `lilypad_a` | 12×8 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `lilypad_b` | 12×8 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `log` | 40×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `log_moss` | 40×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `mushroom_big` | 16×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `mushrooms` | 16×12 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `node_crystal` | 20×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_ember` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_empty` | 16×10 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_frost` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_herb` | 16×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_rune` | 20×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_void` | 20×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `node_wood` | 20×24 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `obsidian` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `pebbles` | 16×8 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `pillar` | 16×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `pillar_broken` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `pine_snow` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `pine_snow2` | 24×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `plate_down` | 16×16 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `plate_up` | 16×16 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `portal` | 40×56 | 8 (`_0…_7`) | interaktives Objekt · Modul `objects/common.ts` |
+| `push_block` | 16×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `quellstein` | 32×52 | 6 (`_0…_5`) | interaktives Objekt · Modul `objects/common.ts` |
+| `quellstein_off` | 32×52 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `reeds` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `rock_l` | 36×28 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `rock_m` | 24×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `rock_moss` | 28×22 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `rock_s` | 16×14 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `rubble` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `rune_stone` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `sacks` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `sapling` | 24×32 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `scarecrow` | 24×40 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `seal_pedestal` | 24×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `shadow_spire` | 16×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `shard` | 16×26 | 6 (`_0…_5`) | interaktives Objekt · Modul `objects/common.ts` |
+| `shrine` | 36×52 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `signpost` | 16×28 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `skull` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `snow_rock` | 24×20 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `snowman` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `spikes` | 16×16 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
+| `stairs_down` | 32×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `stairs_up` | 32×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `stalagmite` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `stalagmite_l` | 24×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `stall` | 48×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `statue` | 24×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `stump` | 20×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `stump_moss` | 20×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tallgrass` | 16×16 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tent` | 44×40 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tombstone` | 16×20 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `torch` | 12×30 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
+| `tree_birch` | 48×88 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tree_dead` | 48×64 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tree_oak` | 96×112 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tree_oak2` | 88×104 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tree_pine` | 56×96 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `tree_willow` | 96×104 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `turret` | 16×26 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `twisted_tree` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `urn` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `vine_tree` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `void_crystal` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `wall_ruin_end` | 24×24 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `wall_ruin_h` | 48×26 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `wall_torch` | 12×22 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
+| `well` | 32×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `wheat` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `woodpile` | 28×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+
+## Atlas: fx (186 Frames, 1024×508)
+
+| Name | Größe | Frames | Herkunft / Verwendung |
+|---|---|---|---|
+| `arrow` | 16×7 | 1 | Geschoss |
+| `arrow_trail` | 24×5 | 3 (`_0…_2`) | Geschoss |
+| `bite` | 32×32 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `block` | 32×32 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `bolt_arcane` | 20×16 | 4 (`_0…_3`) | Geschoss |
+| `bolt_dark` | 22×18 | 4 (`_0…_3`) | Geschoss |
+| `bolt_earth` | 18×16 | 4 (`_0…_3`) | Geschoss |
+| `bolt_fire` | 24×16 | 4 (`_0…_3`) | Geschoss |
+| `bolt_light` | 26×14 | 4 (`_0…_3`) | Geschoss |
+| `bolt_water` | 24×14 | 4 (`_0…_3`) | Geschoss |
+| `bolt_wind` | 24×18 | 4 (`_0…_3`) | Geschoss |
+| `bubble` | 16×14 | 1 | Weltmarker |
+| `claw` | 40×40 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `dagger` | 14×7 | 1 | Geschoss |
+| `ember` | 4×4 | 1 | Wetter/Umgebung |
+| `exclaim` | 12×16 | 1 | Weltmarker |
+| `explosion_dark` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `explosion_earth` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `explosion_fire` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `explosion_light` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `explosion_phys` | 48×48 | 6 (`_0…_5`) | Explosion |
+| `explosion_water` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `explosion_wind` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `glow` | 128×128 | 1 | Effekt |
+| `heal_plus` | 8×8 | 1 | Effekt |
+| `hit` | 32×32 | 5 (`_0…_4`) | Kampf: Waffenspur/Treffer |
+| `hit_crit` | 48×48 | 6 (`_0…_5`) | Kampf: Waffenspur/Treffer |
+| `hit_magic` | 32×32 | 5 (`_0…_4`) | Kampf: Waffenspur/Treffer |
+| `lance` | 32×8 | 4 (`_0…_3`) | Geschoss |
+| `leaf` | 8×8 | 1 | Wetter/Umgebung |
+| `mote` | 4×4 | 1 | Wetter/Umgebung |
+| `orb` | 16×16 | 3 (`_0…_2`) | Geschoss |
+| `px` | 2×2 | 1 | Effekt |
+| `question` | 12×16 | 1 | Weltmarker |
+| `question_grey` | 12×16 | 1 | Weltmarker |
+| `raindrop` | 4×8 | 1 | Wetter/Umgebung |
+| `ring` | 64×64 | 1 | Effekt |
+| `rock` | 12×12 | 1 | Effekt |
+| `rune_circle` | 64×64 | 1 | Effekt |
+| `shadow` | 24×10 | 1 | Effekt |
+| `shadow_l` | 48×18 | 1 | Effekt |
+| `shard` | 16×8 | 1 | Effekt |
+| `slash` | 48×48 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `slash_dagger` | 48×40 | 5 (`_0…_4`) | Kampf: Waffenspur/Treffer |
+| `slash_heavy` | 80×80 | 7 (`_0…_6`) | Kampf: Waffenspur/Treffer |
+| `slash_sword` | 64×64 | 6 (`_0…_5`) | Kampf: Waffenspur/Treffer |
+| `smash_hammer` | 72×56 | 7 (`_0…_6`) | Kampf: Waffenspur/Treffer |
+| `smoke` | 16×16 | 1 | Effekt |
+| `snowflake` | 6×6 | 1 | Wetter/Umgebung |
+| `spark` | 8×8 | 1 | Effekt |
+| `spore` | 8×8 | 3 (`_0…_2`) | Geschoss |
+| `star` | 8×8 | 1 | Effekt |
+| `status_buff` | 8×8 | 1 | Weltmarker |
+| `status_burn` | 8×8 | 1 | Weltmarker |
+| `status_poison` | 8×8 | 1 | Weltmarker |
+| `status_shield` | 8×8 | 1 | Weltmarker |
+| `status_slow` | 8×8 | 1 | Weltmarker |
+| `status_stun` | 8×8 | 1 | Weltmarker |
+| `target` | 24×12 | 1 | Weltmarker |
+| `thrust` | 56×20 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+
+## Atlas: icons (318 Frames, 501×401)
+
+| Name | Größe | Frames | Herkunft / Verwendung |
+|---|---|---|---|
+| `item_amulet` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_armor_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_armor_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_axe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_bosskey` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_bow` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_charm` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_dagger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_gem` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_gold` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_hammer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_helm_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_helm_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_hood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_key` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_crystal` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ember` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_frost` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_herb` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_rune` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_void` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_wood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_potion_elixir` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_potion_hp` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_potion_mp` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_ring` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_robe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_scroll` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_seal_dark` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_seal_earth` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_seal_fire` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_seal_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_seal_water` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_seal_wind` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_shard` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_staff` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_sword` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `skill_arrow_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_arrow_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_arrow_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_arrow_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_arrow_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_arrow_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_arrow_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_aura_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_barrier_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_blink_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_bolt_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_chain_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_charge_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_cleave_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_eagle_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fan_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_fireball_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_frost_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_hammer_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_heal_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_holy_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_mark_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_meteor_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_multishot_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_nova_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_crit_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_def_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_dex_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_element_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_int_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_mana_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_speed_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_str_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_p_vit_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_poison_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_quake_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_rain_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_roll_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shield_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_shout_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_slash_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_smite_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_stab_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_trap_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_vanish_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_light` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_phys` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_water` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+| `skill_whirl_wind` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
+
+## Flüssigkeiten (nahtlos kachelnde Animationsstreifen)
+
+| Biom | Frame | Frames |
+|---|---|---|
+| `liquids/gruenwald.png` | 64×64 | 8 |
+| `liquids/kristall.png` | 32×32 | 4 |
+| `liquids/glut.png` | 32×32 | 4 |
+| `liquids/frost.png` | 32×32 | 4 |
+| `liquids/ruinen.png` | 32×32 | 4 |
+| `liquids/schatten.png` | 32×32 | 4 |
+
+## Overlays (256×256, nahtlos)
+
+| Datei | Verwendung |
+|---|---|
+

@@ -27,7 +27,7 @@ if (!fs.existsSync(nm) || fs.statSync(nm).mtimeMs < pkgTime) {
   run('npm install --no-audit --no-fund');
 }
 const built = path.join(root, 'client/dist/index.html');
-const src = Math.max(newest(path.join(root, 'client/src')), newest(path.join(root, 'shared/src')), fs.statSync(path.join(root, 'client/index.html')).mtimeMs);
+const src = Math.max(newest(path.join(root, 'client/src')), newest(path.join(root, 'client/public')), newest(path.join(root, 'shared/src')), fs.statSync(path.join(root, 'client/index.html')).mtimeMs);
 if (!fs.existsSync(built) || fs.statSync(built).mtimeMs < src) {
   console.log('Baue den Spiel-Client …');
   run('npm run build');

@@ -21,7 +21,7 @@ import { Anim, FLAG_DEAD, FLAG_INVULN, STATUS_BIT } from '../../../shared/src/ty
 import type { CharData, Derived, DropInfo, Element, GameEvent, MobInfo, ObjInfo, PlayerInfo, ProjInfo, ServerMsg, ZoneFx, ZoneInit } from '../../../shared/src/types';
 import { audio } from '../audio';
 import type { AmbienceId, MusicId, SfxName } from '../audio/spec';
-import { paintGround } from '../gfx';
+import { paintGround } from '../gfx/runtime';
 import type { GfxBundle } from '../gfx/spec';
 import { net } from '../net/net';
 import { bus } from '../state/bus';

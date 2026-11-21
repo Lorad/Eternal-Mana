@@ -80,17 +80,16 @@ const moosling: MobFn = (p, fr) => {
 
 // ================================================================ Dornkäfer
 interface KP { bx: number; by: number; rot: number; open: number; ant: number; eye: boolean; ph: number; walk: number; splay: number }
-const KAEFER: Ramp = [P.wood[0], P.wood[1], P.wood[2], P.wood[3], P.tan[3]];
+const KAEFER: Ramp = [P.forest[0], P.forest[1], P.forest[2], P.forest[3], P.forest[4]];
 function kaeferBody(b: Px, o: KP, thorns = true): void {
-  if (thorns) for (const [x, y, h] of [[6.5, 14.6, 3], [11, 12.8, 3.6], [15.5, 14.2, 3]] as const) {
-    b.poly([[x - 1.6, y + 1.5], [x - 1.4, y - h], [x + 1.8, y + 1.5]], P.tan[3]); b.set(R(x - 1.4), R(y - h), P.tan[4]); b.set(R(x - 1), R(y - h + 1), P.tan[4]); b.set(R(x + 0.6), R(y), P.tan[1]);
+  if (thorns) for (const [x, y, h] of [[6.5, 14.8, 2.2], [11, 13, 2.8], [15.5, 14.4, 2.2]] as const) {
+    b.poly([[x - 1.6, y + 1.5], [x - 1.4, y - h], [x + 1.8, y + 1.5]], P.tan[2]); b.set(R(x - 1.4), R(y - h), P.tan[4]); b.set(R(x - 1), R(y - h + 1), P.tan[4]); b.set(R(x + 0.6), R(y), P.tan[1]);
   }
   form(b, (m) => { m.ell(11, 19.2, 8, 7, 1); m.rect(0, 24, 32, 8, 0); }, KAEFER, 1, 4, 0.1);
   // Flügeldecken-Rillen, Glanz, Moosfleck
-  for (const pt of bez([5, 22.5], [8, 14.5], [17, 15.5], 14)) b.set(R(pt[0]), R(pt[1]), P.wood[1]);
-  for (const pt of bez([9.5, 23], [11.5, 18], [18.4, 19], 10)) b.set(R(pt[0]), R(pt[1]), P.wood[1]);
-  b.px([6, 16, 7, 15, 8, 14, 9, 14, 10, 13, 11, 13], P.tan[4]); b.px([7, 16, 8, 15, 9, 15], WHITE); b.px([12, 17, 13, 16, 14, 16], P.tan[3]); b.set(13, 21, P.tan[3]);
-  b.px([4, 21, 5, 22, 4, 22, 6, 23, 7, 23, 5, 23], P.forest[3]); b.px([4, 20, 5, 21, 8, 22], P.green[3]); b.rect(4, 23, 15, 1, P.wood[0]);
+  for (const pt of bez([8.5, 23], [10.5, 17.5], [18.4, 18.5], 10)) b.set(R(pt[0]), R(pt[1]), P.forest[1]);
+  b.px([6, 17, 6, 16, 7, 15, 8, 14, 9, 14, 10, 13], P.green[4]); b.px([7, 16, 8, 15], WHITE); b.px([13, 16, 14, 16, 15, 17], P.green[4]); b.px([5, 21, 12, 21, 15, 22], P.gold[3]);
+  b.rect(4, 23, 15, 1, P.forest[0]);
   // Halsschild + Kopf
   form(b, (m) => { m.ell(19.6, 20.6, 3.5, 4.1, 1); m.rect(0, 24, 32, 8, 0); }, P.wood, 1, 3, 0.04);
   b.line(17, 17, 16, 23, P.wood[0]); b.px([19, 17, 20, 17], P.tan[3]); b.set(18, 18, P.wood[4]);
@@ -178,6 +177,7 @@ function pilzDraw(p: Px, o: PZ): void {
     form(l, (m) => { m.ell(cx, sb - o.sh * 0.36, 4.9 + o.fat, o.sh * 0.62, 1); m.rect(R(cx - 3.5), st, 7, R(o.sh * 0.6), 1); }, P.cream, 2, 4, 0.16);
     l.rect(R(cx - 3.5), st, 7, 2, P.cream[1]); l.rect(R(cx - 3.5), st + 2, 7, 1, P.cream[2]);
     for (let x = R(cx - 3); x <= cx + 3; x += 2) l.set(x, st + 1, P.cream[0]);
+    if (o.sh < 7) return;
     // Gesicht
     const ex = R(cx), ex2 = ex + 4, D = INK2;
     if (o.mood === 'blink' || o.mood === 'squint') { l.rect(ex, fy + 1, 2, 1, D); l.rect(ex2, fy + 1, 2, 1, D); }

@@ -1,7 +1,7 @@
-/** Startet Phaser, erzeugt die prozeduralen Grafiken und verbindet Netzwerkereignisse mit der Spielszene. */
+/** Startet Phaser, lädt die Grafik-Assets und verbindet Netzwerkereignisse mit der Spielszene. */
 import Phaser from 'phaser';
 import type { ZoneInit } from '../../../shared/src/types';
-import { buildGfx } from '../gfx';
+import { loadGfx } from '../gfx/runtime';
 import { bus } from '../state/bus';
 import { GameScene } from './GameScene';
 import { initInput } from './input';
@@ -10,10 +10,10 @@ import { registerTextures } from './textures';
 const nextFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
 
 export async function startGame(parent: HTMLElement, onProgress: (p: number) => void): Promise<void> {
-  onProgress(0.1);
-  await nextFrame(); await nextFrame();
-  const gfx = buildGfx();
-  onProgress(0.6);
+  onProgress(0.05);
+  await nextFrame();
+  // Grafiken aus den exportierten Sheets und Atlanten laden (client/public/assets, erzeugt von `npm run assets`)
+  const gfx = await loadGfx(p => onProgress(0.05 + p * 0.8));
   await nextFrame();
   let booted!: () => void;
   const bootDone = new Promise<void>(r => (booted = r));

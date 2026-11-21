@@ -193,3 +193,26 @@ export function debris(p: Px, cx: number, gy: number, t: number, seed: number, n
 }
 /** Punkt je Frame aus einer Liste (letzter Eintrag gilt weiter). */
 export function pk(a: ReadonlyArray<Pt>, i: number): Pt { return a[Math.min(i, a.length - 1)]; }
+/** Standard-Zerfall eines fertigen Bildes für Todesframes 1–4: zerbrechen, nach oben zerfasern oder verpuffen. */
+export function deathFx(p: Px, snap: Px, i: number, kind: 'shatter' | 'shred' | 'burst', gy: number, seed: number, o: ShatterOpt & { cy?: number; dist?: number } = {}): void {
+  let s: Px;
+  if (kind === 'shatter') { s = shatter(snap, [0, 0.4, 0.75, 1, 1][i], gy, seed, o); if (i === 4) dissolve(s, 0.62, seed + 1); }
+  else if (kind === 'shred') s = shredUp(snap, [0, 0.22, 0.45, 0.7, 0.9][i], seed);
+  else s = burst(snap, [0, 0.25, 0.5, 0.75, 0.93][i], o.cx ?? snap.w / 2, o.cy ?? snap.h / 2, seed, o.dist ?? 10);
+  if (i === 4) s.alphaMul(0.5); else if (i === 3 && kind !== 'shatter') s.alphaMul(0.78);
+  p.draw(s);
+}
+/** Schwebezustand für Flieger/Geister: Versatz, Aufleuchten, Neigung. */
+export interface Fl { dx: number; dy: number; flare: number; tilt: number; shut: boolean; t: number }
+export function floatState(fr: Fr): Fl {
+  const i = fr.i, z: Fl = { dx: 0, dy: 0, flare: 0, tilt: 0, shut: false, t: i };
+  switch (fr.a) {
+    case 'idle': z.dy = [0, -1, -2, -1][i]; break;
+    case 'move': z.dy = [0, -1, -1, 0, 1, 1][i]; z.tilt = 1; z.dx = 1; break;
+    case 'windup': z.dx = [-1, -2][i]; z.dy = [-1, -2][i]; z.flare = [0.6, 1][i]; z.tilt = -1; break;
+    case 'attack': z.dx = [3, 2, 1][i]; z.dy = [0, 0, -1][i]; z.flare = [1, 0.5, 0.15][i]; z.tilt = [2, 1, 0][i]; break;
+    case 'hit': z.dx = [-3, -1][i]; z.dy = [-1, 0][i]; z.shut = true; z.tilt = [-2, -1][i]; break;
+    case 'death': z.dx = -1; z.shut = true; z.flare = i === 0 ? 1 : 0; break;
+  }
+  return z;
+}

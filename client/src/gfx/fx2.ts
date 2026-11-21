@@ -8,6 +8,11 @@ import type { Item } from './fx2/kit';
 import { weaponItems } from './fx2/weapons';
 import { projectileItems } from './fx2/projectiles';
 import { explosionItems } from './fx2/explosions';
+import { magicItems } from './fx2/magic';
+import { groundItems } from './fx2/ground';
+import { particleItems } from './fx2/particles';
+import { markerItems } from './fx2/markers';
+import { buildOverlaysImpl } from './fx2/overlays';
 
 /** Animationen/Einzelbilder, die weiß→grau gezeichnet sind und von der Engine eingefärbt werden. */
 export const FX2_TINTABLE: ReadonlySet<string> = new Set([
@@ -27,6 +32,10 @@ export function fx2Items(): Array<[string, Px]> {
   weaponItems(out);
   projectileItems(out);
   explosionItems(out);
+  magicItems(out);
+  groundItems(out);
+  particleItems(out);
+  markerItems(out);
   cache = out;
   return out;
 }
@@ -44,4 +53,5 @@ export function fx2Catalog(): Fx2Entry[] {
 }
 
 /** Große, nahtlos kachelbare Overlay-Texturen (Nebel, Wolkenschatten, Blätterschatten). */
-export function buildOverlays(): Record<string, HTMLCanvasElement> { return {}; }
+let ovCache: Record<string, HTMLCanvasElement> | null = null;
+export function buildOverlays(): Record<string, HTMLCanvasElement> { return (ovCache ??= buildOverlaysImpl()); }

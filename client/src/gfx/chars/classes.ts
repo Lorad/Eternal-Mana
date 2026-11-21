@@ -540,8 +540,8 @@ const pTab: Tab = {
   attack: [
     [
       { mh: [0, -3], wa: -112.5, two: 3, lean: -1 },
-      { mh: [5, -1], wa: 90, two: 3, y: 1, tag: 'wtop', tr: 2, flare: 1 },
-      { mh: [5, 0], wa: 90, two: 3, y: 2, hy: 1, tag: 'wtop', tr: 2, flare: 2 },
+      { mh: [5, -2], wa: 90, two: 3, y: 1, tag: 'wtop hwide', tr: 2, flare: 1 },
+      { mh: [5, 0], wa: 90, two: 3, y: 2, hy: 1, tag: 'wtop hwide', tr: 2, flare: 2 },
       { mh: [2, 1], wa: 112.5, two: 3, y: 1, sw: 1 },
     ],
     [
@@ -562,8 +562,8 @@ const pTab: Tab = {
       { mh: [5, 1], wa: 180, two: 3, y: 1, lean: -1, tag: 'wtop' },
       { rdir: 2, mh: [-5, 1], wa: 0, two: 3, y: 1, tr: 3, wz: 1, sw: 1 },
       { mh: [5, 0], wa: 0, two: 3, y: 0, tr: 3, tag: 'wtop', sw: -1, flare: 1 },
-      { mh: [5, -1], wa: 90, two: 3, y: 2, hy: 1, tr: 3, tag: 'wtop', flare: 3 },
-      { mh: [4, 0], wa: 90, two: 3, y: 2, tag: 'wtop', flare: 1, sw: 1 },
+      { mh: [5, -1], wa: 90, two: 3, y: 2, hy: 1, tr: 3, tag: 'wtop hwide', flare: 3 },
+      { mh: [5, 0], wa: 90, two: 3, y: 2, tag: 'wtop hwide', flare: 1, sw: 1 },
     ],
     [
       { mh: [-1, 2], wa: 157.5, two: 3, y: 1, lean: -1, fa: [2, 0, 0], fb: [-2, 0, 0] },
