@@ -134,15 +134,16 @@ export function joint(s: Pt, h: Pt, len: number, pref: V2): V2 {
   return [Math.round(mx + px * k * sgn), Math.round(my + py * k * sgn)];
 }
 
-export interface ArmCols { up: V2; low: V2; hand: V2 }
+export interface ArmCols { up: V2; low: V2; hand: V2; w?: number }
 export interface LegCols { c: V3; boot: V3; bootH?: number; robe?: boolean; none?: boolean; cuff?: number }
 const dk2 = (c: ReadonlyArray<number>): number[] => c.map((v) => darker(v));
 
 export function drawArm(l: Px, s: Pt, h: Pt, len: number, pref: V2, a: ArmCols, far = false): void {
   const e = joint(s, h, len, pref);
   const up = far ? dk2(a.up) : a.up, low = far ? dk2(a.low) : a.low, hand = far ? dk2(a.hand) : a.hand;
-  seg(l, s[0], s[1], e[0], e[1], 2, up);
-  seg(l, e[0], e[1], h[0], h[1], 2, low);
+  const w = a.w ?? 2;
+  seg(l, s[0], s[1], e[0], e[1], w, [up[0], up[1], up[1]]);
+  seg(l, e[0], e[1], h[0], h[1], w, [low[0], low[1], low[1]]);
   l.rect(h[0], h[1], 2, 2, hand[1]); l.set(h[0], h[1], hand[0]);
 }
 
@@ -209,7 +210,9 @@ export interface Costume {
   /** Armschwung beim Gehen [Waffenhand, Nebenhand] 0..1 */
   swing?: V2;
   reach?: 'm' | 'o';
-  npc?: boolean; ghost?: boolean;
+  npc?: boolean;
+  /** Geisterwesen: Tod = Verblassen statt Hinfallen */
+  fade?: boolean;
 }
 
 const FRONT_BASE = art([

@@ -141,6 +141,12 @@ export function renderAnim(c: Costume, dir: Dir, anim: CharAnim, f: number): Px 
     const ps = merge(t, own('dodge', 3)); ps.y -= 2; ps.hy -= 2; ps.tr = 1;
     return drawFrame(c, dir, ps);
   }
+  if (anim === 'death' && c.fade) {
+    const ps = generic(c, dir, f === 0 ? 'hit' : 'idle', f === 0 ? 0 : 1);
+    ps.label = `death${f}`; ps.face = f ? 'blink' : 'hurt'; ps.y += f > 2 ? 1 : 0; ps.up = 1;
+    return drawFrame(c, dir, ps);
+  }
+  if (anim === 'cast' && c.npc) return drawFrame(c, dir, merge(generic(c, dir, 'interact', [0, 1, 2, 1][f]), own('cast', f)));
   if (anim === 'death') {
     if (f >= 3) return lyingFrame(c, dir, f === 3 ? 1 : 0);
     const ps = generic(c, dir, 'hit', 0);

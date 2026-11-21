@@ -11,7 +11,7 @@ type Tab = Record<string, PP[][]>;
 const table = (t: Tab) => (anim: string, dir: Dir, f: number): PP | null => t[anim]?.[dir]?.[f] ?? null;
 
 /** Geflochtener Zopf: n Zeilen ab (x,y), Schrittrichtung d, Pendel sw. */
-function braid(l: Px, x: number, y: number, n: number, d: V2, sw: number, cA: number, cB: number, tie: number): void {
+export function braid(l: Px, x: number, y: number, n: number, d: V2, sw: number, cA: number, cB: number, tie: number): void {
   for (let i = 0; i <= n; i++) {
     const t = i / n, px = Math.round(x + d[0] * i + sw * t * t * 1.5), py = Math.round(y + d[1] * i);
     if (i === n) { l.set(px, py, tie); l.set(px + 1, py, tie); l.set(px, py + 1, cB); break; }
@@ -228,7 +228,7 @@ const mTab: Tab = {
     ],
   ],
 };
-function mSatchel(k: K, L: LayerFn): void {
+export function mSatchel(k: K, L: LayerFn): void {
   const x = k.dir === 0 ? k.cx + 2 : k.dir === 1 ? k.cx - 4 : k.cx - 6, y = k.hipY - 2 + (k.ps.sw > 0 ? 0 : 0);
   if (k.ps.tag.includes('tuck')) return;
   L((l) => {
@@ -373,9 +373,9 @@ const wLg = legend(P.skin, W_HAIR, [P.green, P.forest, P.tan, P.gold, P.wood]);
 const wTab: Tab = {
   attack: [
     [
-      { oh: [-4, 3], wa2: 90, mh: [4, 2], bow: 0.5, arrow: true, y: 0 },
-      { oh: [-4, 4], wa2: 90, mh: [4, 0], bow: 1, arrow: true, hy: 1, tag: 'tipglint' },
-      { oh: [-4, 4], wa2: 90, mh: [4, -1], bow: 0, arrow: false, hy: 1, y: 1, tr: 2 },
+      { oh: [-4, 2], wa2: 90, mh: [4, 0], bow: 0.5, arrow: true, y: 0 },
+      { oh: [-4, 3], wa2: 90, mh: [4, -1], bow: 1, arrow: true, hy: 1, tag: 'tipglint' },
+      { oh: [-4, 3], wa2: 90, mh: [4, -2], bow: 0, arrow: false, hy: 1, y: 1, tr: 2 },
       { oh: [-2, 4], wa2: 67.5, mh: [2, 3], sw: 1 },
     ],
     [
@@ -385,10 +385,10 @@ const wTab: Tab = {
       { oh: [5, 2], wa2: 22.5, mh: [0, 4], fa: [2, 0, 0], fb: [-2, 0, 0], sw: 1 },
     ],
     [
-      { oh: [5, -2], wa2: -90, mh: [-4, 0], bow: 0.5, arrow: true },
-      { oh: [5, -4], wa2: -90, mh: [-4, 0], bow: 1, arrow: true, hy: -1 },
-      { oh: [5, -4], wa2: -90, mh: [-4, 1], bow: 0, arrow: false, y: 1, tr: 2 },
-      { oh: [2, 2], wa2: -135, mh: [-2, 3], sw: 1 },
+      { oh: [0, -2], wa2: 180, mh: [-5, 0], bow: 0.5, arrow: true, tag: 'aup' },
+      { oh: [0, -3], wa2: 180, mh: [-5, 0], bow: 1, arrow: true, hy: -1, tag: 'aup tipglint' },
+      { oh: [0, -3], wa2: 180, mh: [-5, 1], bow: 0, arrow: false, y: 1, tr: 2 },
+      { oh: [-1, 2], wa2: 180, mh: [-2, 3], sw: 1 },
     ],
   ],
   heavy: [
@@ -407,15 +407,15 @@ const wTab: Tab = {
       { oh: [5, 2], wa2: 22.5, mh: [0, 3], y: 2, fa: [3, 0, 0], fb: [-3, 0, 0], sw: 1 },
     ],
     [
-      { oh: [5, -2], wa2: -90, mh: [-4, 0], bow: 0.5, arrow: true, y: 2 },
-      { oh: [5, -4], wa2: -90, mh: [-4, 0], bow: 1, arrow: true, kneel: true, y: 5, tag: 'tipglint', glint: 1 },
-      { oh: [5, -4], wa2: -90, mh: [-4, 1], bow: 1, arrow: true, kneel: true, y: 5, tag: 'tipglint', glint: 2, up: 1 },
-      { oh: [5, -4], wa2: -90, mh: [-4, 1], bow: 0, arrow: false, kneel: true, y: 5, hy: 1, tr: 3 },
-      { oh: [3, 1], wa2: -112.5, mh: [-2, 3], y: 2, sw: 1 },
+      { oh: [0, -2], wa2: 180, mh: [-5, 0], bow: 0.5, arrow: true, y: 2, tag: 'aup' },
+      { oh: [0, -3], wa2: 180, mh: [-5, 0], bow: 1, arrow: true, kneel: true, y: 5, tag: 'aup tipglint', glint: 1 },
+      { oh: [0, -3], wa2: 180, mh: [-5, 1], bow: 1, arrow: true, kneel: true, y: 5, tag: 'aup tipglint', glint: 2, up: 1 },
+      { oh: [0, -3], wa2: 180, mh: [-5, 1], bow: 0, arrow: false, kneel: true, y: 5, hy: 1, tr: 3 },
+      { oh: [-1, 1], wa2: 180, mh: [-2, 3], y: 2, sw: 1 },
     ],
   ],
 };
-function wQuiver(l: Px, k: K): void {
+export function wQuiver(l: Px, k: K): void {
   const { dir, topX: tx, shTop: sy } = k;
   if (dir === 0) {
     l.rect(tx - 8, sy - 3, 3, 5, P.wood[2]); l.rect(tx - 8, sy - 3, 1, 5, P.wood[3]);

@@ -71,16 +71,18 @@ export const bow: ItemFn = (l, k, hx, hy, ang) => {
     for (const q of linePts(tipB[0], tipB[1], m[0], m[1])) put(l, q, sc);
   } else for (const q of linePts(tipA[0], tipA[1], tipB[0], tipB[1])) put(l, q, sc);
   if (k.ps.arrow) {
-    const a = (ang * Math.PI) / 180, m: V2 = pull > 0 ? [k.mh[0] + 1, k.mh[1] + 1] : at(-1);
-    const e: V2 = [Math.round(m[0] + Math.cos(a) * 12), Math.round(m[1] + Math.sin(a) * 12)];
+    // 'aup': Schuss von der Kamera weg – der Pfeil zeigt neben dem Bogen nach oben
+    const aup = k.ps.tag.includes('aup'), a = ((aup ? -90 : ang) * Math.PI) / 180, m: V2 = aup ? at(-2, 2 + pull * 2) : pull > 0 ? [k.mh[0] + 1, k.mh[1] + 1] : at(-1);
+    const len = aup ? 10 : Math.abs(Math.sin(a)) > 0.9 ? 10 : 12;
+    const e: V2 = [Math.round(m[0] + Math.cos(a) * len), Math.round(m[1] + Math.sin(a) * len)];
     const pts = linePts(m[0], m[1], e[0], e[1]);
     pts.forEach((q, i) => put(l, q, i >= pts.length - 2 ? P.steel[4] : i < 2 ? P.red[3] : P.tan[4]));
     k.tip = e;
   } else k.tip = at(3);
   for (let s = -8; s <= 8; s += 0.25) {
     const a = Math.abs(s);
-    put(l, at(curve(s), s), a > 7.2 ? P.gold[3] : a < 1.6 ? P.forest[4] : s < 0 ? P.tan[4] : P.tan[3]);
-    if (a < 6.5 && a > 1.6) put(l, at(curve(s) + 1, s), P.tan[s < 0 ? 3 : 2]);
+    put(l, at(curve(s), s), a > 7.2 ? P.gold[3] : a < 1.6 ? P.forest[4] : s < 0 ? P.tan[3] : P.tan[2]);
+    if (a < 6.5 && a > 1.6) put(l, at(curve(s) + 1, s), P.tan[s < 0 ? 2 : 1]);
   }
 };
 
@@ -132,3 +134,24 @@ export function spear(l: Px, hx: number, hy: number, ang: number, up: number, do
   put(l, at(up - 1), t3(P.red[2])); put(l, at(up - 1, 1), t3(P.red[2])); put(l, at(up - 2, 1), t3(P.red[1]));
   for (let t = up; t <= up + 4; t++) { put(l, at(t), t3(P.steel[4])); if (t < up + 3 && t > up) { put(l, at(t, 1), t3(P.steel[2])); put(l, at(t, -1), t3(P.steel[3])); } }
 }
+
+/** Schmiedehammer */
+export function smithHammer(l: Px, hx: number, hy: number, ang: number): void {
+  const at = axis(hx, hy, ang);
+  for (let t = -1; t <= 5; t++) put(l, at(t), P.wood[3]);
+  for (let t = 5; t <= 7; t++) for (let s = -2; s <= 2; s++) put(l, at(t, s), s < -1 ? P.steel[4] : s > 1 ? P.steel[1] : t === 5 ? P.steel[3] : P.steel[2]);
+}
+/** Spitzhacke */
+export function pickaxe(l: Px, hx: number, hy: number, ang: number): void {
+  const at = axis(hx, hy, ang);
+  for (let t = -2; t <= 11; t += 0.5) put(l, at(t), Math.round(t) % 4 === 0 ? P.wood[2] : P.wood[3]);
+  for (let s = -5; s <= 5; s += 0.5) { const u = s / 5, t = 11 - u * u * 2.6; put(l, at(t, s), Math.abs(s) > 3.4 ? P.steel[4] : P.steel[3]); if (Math.abs(s) < 3.5) put(l, at(t + 1, s), P.steel[2]); }
+  put(l, at(11), P.steel[1]); put(l, at(12), P.steel[1]);
+}
+/** Aufgeschlagenes Buch */
+export function book(l: Px, x: number, y: number, side = false): void {
+  if (side) { l.rect(x, y, 4, 5, P.red[2]); l.rect(x + 1, y, 3, 4, P.cream[4]); l.rect(x + 1, y + 3, 3, 1, P.cream[2]); l.rect(x, y, 1, 5, P.red[1]); return; }
+  l.rect(x, y, 8, 5, P.red[2]); l.rect(x, y + 4, 8, 1, P.red[1]);
+  l.rect(x + 1, y, 3, 4, P.cream[4]); l.rect(x + 4, y, 3, 4, P.cream[3]); l.rect(x + 1, y + 1, 2, 1, P.cream[2]); l.rect(x + 5, y + 2, 2, 1, P.cream[2]); l.set(x + 4, y + 1, P.cream[2]);
+}
+void mix;
