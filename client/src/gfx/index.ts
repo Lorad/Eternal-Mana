@@ -8,7 +8,7 @@ import { buildBosses } from './bosses';
 import { buildObjects } from './objects/index';
 import { buildFx } from './fx';
 import { buildOverlays } from './fx2';
-import { buildLiquids, paintGround as paintGroundImpl } from './tiles';
+import { buildLiquids, paintGround as paintGroundImpl } from './tiles/index';
 import { iconUrl as iconUrlImpl } from './icons';
 import { CHAR_FRAME_H, CHAR_FRAME_W } from './spec';
 import type { ElementKey, GfxApi, GfxBundle, PaintableMap, Sheet } from './spec';

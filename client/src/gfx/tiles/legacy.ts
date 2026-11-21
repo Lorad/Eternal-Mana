@@ -1,11 +1,10 @@
 /**
- * Bodenmaler: malt die Kachel-Ebene einer Karte pixelweise (16 px je Kachel), nachbarschaftsbewusst.
- * Weiche Bodenarten (GROUND/GROUND2/PATH/HAZARD) gehen über verrauschte Grenzen organisch ineinander über,
- * Wände bekommen in 3/4-Sicht eine Frontfläche, Flüssigkeiten bleiben transparent bis auf das Ufer.
+ * LEGACY (v1): alter Bodenmaler – wird nur noch für Biome benutzt, die noch keinen v2-Maler haben
+ * (kristall, glut, frost, ruinen, schatten). Neue Arbeit bitte in tiles/<biom>.ts nach dem Muster von gruenwald.ts.
  */
-import { P, Ramp, INK, WHITE, alpha, hash2, mix, rnd2 } from './palette';
-import type { PaintableMap } from './spec';
-import type { BiomeId } from '../../../shared/src/maps/tiles';
+import { P, Ramp, INK, WHITE, alpha, hash2, mix, rnd2 } from '../palette';
+import type { PaintableMap } from '../spec';
+import type { BiomeId } from '../../../../shared/src/maps/tiles';
 
 const VOID = 0, GROUND = 1, GROUND2 = 2, PATH = 3, FLOOR = 4, WALL = 5, LIQUID = 6, BRIDGE = 7, HAZARD = 8;
 const TS = 16;
@@ -552,7 +551,7 @@ function softEdgeColor(c: Ctx, tn: number, wx: number, wy: number, i: number): n
 }
 
 let scratch: HTMLCanvasElement | null = null;
-export function paintGround(ctx: CanvasRenderingContext2D, map: PaintableMap, tx0: number, ty0: number, tx1: number, ty1: number): void {
+export function paintGroundLegacy(ctx: CanvasRenderingContext2D, map: PaintableMap, tx0: number, ty0: number, tx1: number, ty1: number): void {
   tx0 = Math.max(0, Math.floor(tx0)); ty0 = Math.max(0, Math.floor(ty0)); tx1 = Math.min(map.w, Math.ceil(tx1)); ty1 = Math.min(map.h, Math.ceil(ty1));
   if (tx1 <= tx0 || ty1 <= ty0) return;
   const CH = 32;
@@ -571,7 +570,7 @@ export function paintGround(ctx: CanvasRenderingContext2D, map: PaintableMap, tx
 }
 
 // ================================================================ Flüssigkeiten (4 Frames, 32x32, nahtlos)
-import { Px } from './draw';
+import { Px } from '../draw';
 const TAU = Math.PI * 2;
 function liquidFrame(biome: BiomeId, f: number): Px {
   const p = new Px(32, 32), ph = (f / 4) * TAU;
@@ -615,7 +614,7 @@ function liquidFrame(biome: BiomeId, f: number): Px {
   if (biome === 'glut') { for (let k = 0; k < 3; k++) { const h = hash2(k, 78, 6), x = h & 31, y = (h >> 5) & 31, s = (f + k) % 4; if (s < 3) { p.set(x, y, WHITE); if (s > 0) { p.set(wrap(x + 1), y, P.fire[4]); p.set(x, wrap(y + 1), P.fire[4]); p.set(wrap(x - 1), y, P.fire[4]); p.set(x, wrap(y - 1), P.fire[4]); } } } }
   return p;
 }
-export function buildLiquids(): Record<BiomeId, HTMLCanvasElement[]> {
+export function buildLiquidsLegacy(): Record<BiomeId, HTMLCanvasElement[]> {
   const out = {} as Record<BiomeId, HTMLCanvasElement[]>;
   for (const b of ['gruenwald', 'kristall', 'glut', 'frost', 'ruinen', 'schatten'] as BiomeId[]) out[b] = [0, 1, 2, 3].map((f) => liquidFrame(b, f).toCanvas());
   return out;

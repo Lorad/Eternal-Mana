@@ -145,14 +145,19 @@ export function Icon({ k, el, size = 48, class: c }: { k: string; el?: Element; 
   return <img class={cx('px', c)} src={iconUrl(k, el)} width={size} height={size} alt="" draggable={false} />;
 }
 export function Portrait({ k, scale = 2, class: c }: { k: string; scale?: number; class?: string }) {
-  return <img class={cx('px portrait', c)} src={portraitUrl(k, 2)} width={24 * scale} height={32 * scale} alt="" draggable={false} />;
+  // Sprite-Frames sind 32×40 px; gezeigt wird der Ausschnitt 24×32 um die Figur (ganzzahlig vergrößert → scharfe Pixel)
+  return (
+    <span class={cx('portrait', c)} style={{ display: 'inline-block', overflow: 'hidden', width: 24 * scale + 'px', height: 32 * scale + 'px' }}>
+      <img class="px" src={portraitUrl(k, 2)} alt="" draggable={false} style={{ display: 'block', maxWidth: 'none', width: 32 * scale + 'px', height: 40 * scale + 'px', marginLeft: -4 * scale + 'px', marginTop: -6 * scale + 'px' }} />
+    </span>
+  );
 }
 /** Nur Kopf und Schultern eines Charakter-Sprites (für Rahmen im HUD). */
 export function Face({ k, size = 48, class: c }: { k: string; size?: number; class?: string }) {
-  const s = size / 16; // sichtbarer Ausschnitt: 16×16 px des 24×32-Frames
+  const s = size / 16; // sichtbarer Ausschnitt: 16×16 px des 32×40-Frames (Kopfbereich)
   return (
     <span class={cx('face', c)} style={{ width: size + 'px', height: size + 'px' }}>
-      <img class="px" src={portraitUrl(k, 2)} alt="" draggable={false} style={{ width: 24 * s + 'px', height: 32 * s + 'px', marginLeft: -4 * s + 'px', marginTop: -3 * s + 'px' }} />
+      <img class="px" src={portraitUrl(k, 2)} alt="" draggable={false} style={{ maxWidth: 'none', width: 32 * s + 'px', height: 40 * s + 'px', marginLeft: -8 * s + 'px', marginTop: -8 * s + 'px' }} />
     </span>
   );
 }

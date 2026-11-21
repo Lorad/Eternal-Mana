@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:e2e": "node tests/e2e/smoke.mjs",
-    "backup": "tsx server/src/backup-cli.ts"
+    "backup": "tsx server/src/backup-cli.ts",
+    "assets": "tsx tools/export-assets.ts"
   },
   "dependencies": {
     "tsx": "^4.19.0",

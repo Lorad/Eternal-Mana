@@ -16,6 +16,8 @@ export function registerTextures(scene: Phaser.Scene, g: GfxBundle) {
   addSheet(scene, 'fx', g.fx);
   for (const biome in g.liquids) g.liquids[biome as keyof typeof g.liquids].forEach((c, i) => {
     const key = `liq_${biome}_${i}`;
-    if (!scene.textures.exists(key)) scene.textures.addCanvas(key, c);
+    if (scene.textures.exists(key)) scene.textures.remove(key);
+    scene.textures.addCanvas(key, c);
   });
+  for (const k in g.overlays ?? {}) { if (scene.textures.exists('ov_' + k)) scene.textures.remove('ov_' + k); scene.textures.addCanvas('ov_' + k, g.overlays[k]); }
 }

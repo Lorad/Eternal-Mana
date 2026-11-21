@@ -102,35 +102,64 @@ export class Tone {
     for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) { const t = this.i[y * this.w + x]; if (t >= 0) p.set(x + dx, y + dy, ramp[Math.min(ramp.length - 1, t)]); }
   }
 }
-export interface LeafStyle { lw: number; lh: number }
-export const LEAF_ROUND: LeafStyle = { lw: 3, lh: 2 };
-export const LEAF_FINE: LeafStyle = { lw: 2, lh: 2 };
-export const LEAF_NEEDLE: LeafStyle = { lw: 2, lh: 3 };
+export interface LeafStyle { lw: number; lh: number; /** 0 = feine Tupfer (kleines Laub), 1 = normale Blatt-Tupfer */ dab: number }
+export const LEAF_ROUND: LeafStyle = { lw: 3, lh: 2, dab: 1 };
+export const LEAF_FINE: LeafStyle = { lw: 2, lh: 2, dab: 0 };
+export const LEAF_NEEDLE: LeafStyle = { lw: 2, lh: 3, dab: 0 };
+/** Blatt-Tupfer (Pixelmuster, dx/dy-Paare) */
+const DABS: ReadonlyArray<ReadonlyArray<number>> = [
+  [0, 0, 1, 0, 1, 1, 2, 1], [1, 0, 2, 0, 0, 1, 1, 1], [0, 0, 1, 0, 2, 0, 0, 1, 1, 1], [0, 0, 1, 0, 2, 0, 1, 1], [1, 0, 0, 1, 1, 1, 2, 1], [0, 0, 1, 0, 2, 0, 3, 0, 1, 1, 2, 1],
+];
+const DABS_FINE: ReadonlyArray<ReadonlyArray<number>> = [[0, 0, 1, 0], [0, 0, 1, 0, 1, 1], [0, 0, 0, 1, 1, 0], [0, 0, 1, 1], [0, 0, 1, 0, 2, 0]];
 
 /**
- * Ein Laubbüschel: Ellipse aus versetzten "Blattzellen" (lw×lh), Licht von oben links. Tonwert = Band + level.
- * Die Zellen hängen am Büschelmittelpunkt → beim Wiegen verschiebt sich das Büschel starr (kein Flimmern).
+ * Ein Laubbüschel, Licht von oben links: gezackte Grundform (Blattzellen lw×lh) im Schattenton mit dunklem unteren
+ * Saum, darauf Blatt-Tupfer in Mittel-, Licht- und Glanzton (hellste zuletzt, damit sie als ganze Blättchen stehen).
+ * Alles hängt am Büschelmittelpunkt → beim Wiegen verschiebt sich das Büschel starr (kein Flimmern).
  * flat ≥ 0: einfarbige Füllung (dunkle Rückschicht) mit vereinzelten helleren Blättern.
  */
 export function tuft(t: Tone, cx: number, cy: number, rx: number, ry: number, level: number, seed: number, max = 6, st: LeafStyle = LEAF_ROUND, flat = -1): void {
-  const ox = Math.round(cx), oy = Math.round(cy), { lw, lh } = st, half = (lw + 1) >> 1;
+  const ox = Math.round(cx), oy = Math.round(cy), { lw, lh } = st, half = (lw + 1) >> 1, base = Math.round(3 + level);
   for (let y = Math.floor(-ry) - lh; y <= Math.ceil(ry) + lh; y++) {
     const r = Math.floor(y / lh), sh = r & 1 ? half : 0;
     for (let x = Math.floor(-rx) - lw; x <= Math.ceil(rx) + lw; x++) {
       const c = Math.floor((x + sh) / lw);
       const u = (c * lw - sh + lw / 2) / rx, v = (r * lh + lh / 2) / ry, h = hash2(c, r, seed);
       const h1 = (h & 255) / 255, h2 = ((h >> 8) & 255) / 255;
-      const lim = 0.82 + h1 * 0.36;
-      if (u * u + v * v > lim * lim) continue;
+      const lim = 0.84 + h1 * 0.3, d2 = u * u + v * v;
+      if (d2 > lim * lim) continue;
       let tone: number;
-      if (flat >= 0) tone = flat + (h2 > 0.86 ? 1 : 0);
+      if (flat >= 0) tone = flat + (h2 > 0.88 ? 1 : 0);
       else {
-        tone = Math.round(3.1 + -(u * 0.42 + v * 0.92) * 2.5 + (h2 - 0.5) * 0.9 + level);
-        const ix = x + sh - c * lw, iy = y - r * lh;
-        if (iy === lh - 1 && ix === lw - 1) tone -= 1;
+        const lit = -(u * 0.38 + v * 0.92) + (h2 - 0.5) * 0.2;
+        tone = base + (lit > 0.66 ? 2 : lit > 0.36 ? 1 : lit > 0.06 ? 0 : lit > -0.22 ? -1 : -2) - (v > 0.45 && d2 > 0.55 ? 1 : 0);
       }
       t.set(ox + x, oy + y, clamp(tone, 0, max));
     }
+  }
+  if (flat >= 0) return;
+  const shapes = st.dab ? DABS : DABS_FINE, n = Math.round((rx + ry) * (st.dab ? 0.9 : 1.1));
+  const dab = (u: number, v: number, tn: number, h: number): void => {
+    const sp = shapes[(h >>> 20) % shapes.length], X = ox + Math.round(u * rx) - 1, Y = oy + Math.round(v * ry);
+    for (let k = 0; k < sp.length; k += 2) t.set(X + sp[k], Y + sp[k + 1], clamp(tn, 0, max));
+  };
+  for (let i = 0; i < n; i++) {
+    const h = hash2(i, 5, seed), a = (h & 255) / 255, b = ((h >> 8) & 255) / 255;
+    // Mitteltupfer, die in die Schattenzone hineinragen
+    const u1 = a * 1.5 - 0.75, v1 = -0.08 + b * 0.26 - u1 * 0.4;
+    if (u1 * u1 + v1 * v1 < 0.75) dab(u1, v1, base - (i & 1), h);
+  }
+  for (let i = 0; i < n; i++) {
+    const h = hash2(i, 6, seed), a = (h & 255) / 255, b = ((h >> 8) & 255) / 255;
+    // Lichttupfer am unteren Rand der Kappe
+    const u1 = a * 1.6 - 0.8, v1 = -0.42 + b * 0.26 - u1 * 0.4;
+    if (u1 * u1 + v1 * v1 < 0.8) dab(u1, v1, base + 1, h);
+  }
+  for (let i = 0; i < Math.ceil(n * 0.4); i++) {
+    const h = hash2(i, 7, seed), a = (h & 255) / 255, b = ((h >> 8) & 255) / 255;
+    // Glanzlichter oben links
+    const u1 = -0.75 + a * 1.1, v1 = -0.85 + b * 0.4 + Math.max(0, u1) * 0.5;
+    if (u1 * u1 + v1 * v1 < 0.85) dab(u1, v1, base + 2 + (i === 0 ? 1 : 0), h);
   }
 }
 
@@ -162,31 +191,31 @@ export function crown(p: Px, lobes: ReadonlyArray<Lobe>, o: CrownOpts): Tuft[] {
   if (o.back !== false) lobes.forEach((l, k) => { if (l.back !== false) tuft(t, l.x, l.y, l.rx * 0.9, l.ry * 0.88, 0, o.seed + k * 31, 6, st, 0); });
   lobes.forEach((l, k) => {
     const amp = l.amp ?? o.sway ?? 1.5, ph = l.ph ?? ((k * 0.83) % 1.1) - 0.55;
-    if (k > 0) t.shade(l.x + 2 + sw(f, amp, ph), l.y + 4, l.rx * 1.02, l.ry * 1.02, 1);
+    if (k > 0) t.shade(l.x + 2 + sw(f, amp, ph), l.y + 4, l.rx * 1.04, l.ry * 1.04, 2);
     const list: Tuft[] = [];
     let j = 0;
-    for (let gy = l.y - l.ry + s * 0.5; gy <= l.y + l.ry - s * 0.2; gy += (s * 0.82) / dens, j++) {
+    for (let gy = l.y - l.ry + s * 0.55; gy <= l.y + l.ry - s * 0.3; gy += (s * 1.08) / dens, j++) {
       let i = 0;
-      for (let gx = l.x - l.rx + s * 0.4 + (j & 1 ? s * 0.62 : 0); gx <= l.x + l.rx - s * 0.2; gx += (s * 1.22) / dens, i++) {
+      for (let gx = l.x - l.rx + s * 0.5 + (j & 1 ? s * 0.72 : 0); gx <= l.x + l.rx - s * 0.3; gx += (s * 1.45) / dens, i++) {
         const sd = hash2(i, j, o.seed + k * 977);
         const x = gx + ((sd & 255) / 255 - 0.5) * s * 0.6, y = gy + (((sd >> 8) & 255) / 255 - 0.5) * s * 0.5;
         const nx = (x - l.x) / l.rx, ny = (y - l.y) / l.ry;
-        if (nx * nx + ny * ny > 0.88) continue;
+        if (nx * nx + ny * ny > 0.9) continue;
         const lobeLit = -(nx * 0.45 + ny * 0.85), crownLit = -(((x - ccx) / crx) * 0.5 + ((y - ccy) / cry) * 0.7);
         const tph = (((sd >> 16) & 255) / 255 - 0.5) * 0.7;
-        list.push({ x: x + sw(f, amp, ph + tph), y, r: s * (0.85 + (((sd >> 24) & 255) / 255) * 0.4), lv: (l.lv ?? 0) + (lobeLit * 1.5 + crownLit * 0.9) * form, lobe: k, seed: sd });
+        list.push({ x: x + sw(f, amp, ph + tph), y, r: s * (0.9 + (((sd >>> 24) & 255) / 255) * 0.35), lv: (l.lv ?? 0) - 0.5 + (lobeLit * 1.4 + crownLit * 1.2) * form, lobe: k, seed: sd });
       }
     }
     list.sort((a, b) => a.y - b.y);
-    for (const q of list) { tuft(t, q.x, q.y, q.r, q.r * 0.84, q.lv, q.seed, 6, st); out.push(q); }
+    for (const q of list) { t.shade(q.x + 0.5, q.y - 0.5, q.r + 1.7, q.r * 0.84 + 1.7, 2, 1); tuft(t, q.x, q.y, q.r, q.r * 0.84, q.lv, q.seed, 6, st); out.push(q); }
   });
   t.toPx(p, o.ramp);
   return out;
 }
 /** Standard-Laubrampen (7 Töne): tief blaugrün → gelbgrünes Licht. */
 export const LEAF = {
-  oak: [P.forest[0], P.forest[1], P.green[1], P.green[2], mix(P.green[2], P.green[3], 0.6), P.green[3], P.green[4]] as Ramp,
-  light: [P.forest[1], P.green[1], mix(P.green[1], P.green[2], 0.6), mix(P.green[2], P.green[3], 0.5), P.green[3], mix(P.green[3], P.green[4], 0.6), mix(P.green[4], P.gold[4], 0.35)] as Ramp,
+  oak: [P.forest[0], P.forest[1], P.green[1], P.green[2], P.green[3], P.green[4], mix(P.green[4], P.gold[4], 0.4)] as Ramp,
+  light: [P.forest[1], P.green[1], mix(P.green[1], P.green[2], 0.7), mix(P.green[2], P.green[3], 0.55), mix(P.green[3], P.green[4], 0.4), mix(P.green[4], P.gold[4], 0.2), mix(P.green[4], P.gold[4], 0.55)] as Ramp,
   fir: [mix(P.forest[0], INK, 0.3), P.forest[0], P.forest[1], P.forest[2], mix(P.forest[2], P.forest[3], 0.6), P.forest[3], P.forest[4]] as Ramp,
   birch: [P.forest[1], P.green[1], P.green[2], mix(P.green[2], P.green[3], 0.7), mix(P.green[3], P.green[4], 0.45), P.green[4], mix(P.green[4], P.gold[4], 0.5)] as Ramp,
   willow: [P.forest[0], P.forest[1], mix(P.forest[2], P.green[2], 0.5), mix(P.green[2], P.sand[2], 0.25), mix(P.green[3], P.sand[3], 0.3), mix(P.green[4], P.sand[3], 0.25), mix(P.green[4], P.sand[4], 0.45)] as Ramp,
