@@ -49,8 +49,8 @@ export { lerpC };
 
 /** Himmelslicht im Tagesverlauf: [Tageszeit 0..1, Farbe] */
 const SKY: [number, number][] = [
-  [0, 0x39457f], [0.2, 0x3b4884], [0.255, 0xc88a8c], [0.3, 0xffe9d6], [0.36, 0xffffff],
-  [0.66, 0xffffff], [0.72, 0xffd9a8], [0.775, 0xf08a6a], [0.83, 0x4c4c8e], [0.9, 0x39457f], [1, 0x39457f],
+  [0, 0x4a5a9c], [0.2, 0x4c5ca0], [0.255, 0xc88a8c], [0.3, 0xffe9d6], [0.36, 0xffffff],
+  [0.66, 0xffffff], [0.72, 0xffd9a8], [0.775, 0xf08a6a], [0.83, 0x5a5a9c], [0.9, 0x4a5a9c], [1, 0x4a5a9c],
 ];
 export function skyColor(tod: number): number {
   for (let i = 0; i + 1 < SKY.length; i++) if (tod <= SKY[i + 1][0]) return lerpC(SKY[i][1], SKY[i + 1][1], (tod - SKY[i][0]) / (SKY[i + 1][0] - SKY[i][0]));

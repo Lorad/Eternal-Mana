@@ -95,12 +95,12 @@ export function groundItems(out: Item[]): void {
   });
   // Boss-Schockwelle (tintbar, ¾): heller Wellenkamm außen, aufspritzende Zacken, zerfällt in Striche
   anim(out, 'shockwave', 6, 96, 72, (p, k) => {
-    const cx = 48, cy = 39, rx = [13, 24, 33, 40, 44.5, 47][k], ry = rx * 0.66, th = [13, 7, 6, 4.6, 3, 1.6][k], sp = burst(31, 18);
+    const cx = 48, cy = 39, rx = [13, 24, 33, 40, 44.5, 47][k], ry = rx * 0.66, th = [13, 10, 8.5, 6.4, 3.6, 1.8][k], sp = burst(31, 18);
     const spike = (front: boolean): void => {
       if (k < 1 || k > 3) return;
       for (const s of sp) {
         if (Math.sin(s.a) > 0 !== front) continue;
-        const x = cx + Math.cos(s.a) * (rx - 1), y = cy + Math.sin(s.a) * (ry - 1), h = [0, 9, 11, 6][k] * (0.5 + 0.7 * s.s) * (front ? 1 : 0.7);
+        const x = cx + Math.cos(s.a) * (rx - 1), y = cy + Math.sin(s.a) * (ry - 1), h = [0, 12, 15, 9][k] * (0.5 + 0.7 * s.s) * (front ? 1 : 0.7);
         needle(p, x, y + 1, -Math.PI / 2 + Math.cos(s.a) * 0.3, h, 3.4, front ? G(0.8) : G(0.62));
         if (front) needle(p, x, y + 1, -Math.PI / 2 + Math.cos(s.a) * 0.3, h * 0.6, 1.4, WH);
       }

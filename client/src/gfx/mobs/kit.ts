@@ -200,6 +200,7 @@ export function deathFx(p: Px, snap: Px, i: number, kind: 'shatter' | 'shred' | 
   else if (kind === 'shred') s = shredUp(snap, [0, 0.22, 0.45, 0.7, 0.9][i], seed);
   else s = burst(snap, [0, 0.25, 0.5, 0.75, 0.93][i], o.cx ?? snap.w / 2, o.cy ?? snap.h / 2, seed, o.dist ?? 10);
   if (i === 4) s.alphaMul(0.5); else if (i === 3 && kind !== 'shatter') s.alphaMul(0.78);
+  s.rect(0, gy + 2, s.w, s.h, 0);
   p.draw(s);
 }
 /** Schwebezustand für Flieger/Geister: Versatz, Aufleuchten, Neigung. */

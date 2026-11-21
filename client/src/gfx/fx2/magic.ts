@@ -79,7 +79,7 @@ export function magicItems(out: Item[]): void {
   // Lichtsäule (Anker unten Mitte): Stufenaufstieg, heilige Schläge
   anim(out, 'pillar', 7, 32, 96, (p, k) => {
     const cx = 16, gy = 91, hw = [1, 3.5, 7, 9.5, 6.5, 4.5, 0][k], top = [44, 0, 0, 0, 0, 0, 0][k], bot = [gy, gy, gy, gy, gy - 8, gy - 30, 0][k];
-    const br = [0, 0, 0, 0.04, 0.3, 0.58, 1][k];
+    const br = [0, 0, 0, 0, 0.3, 0.58, 1][k];
     if (k >= 1 && k <= 5) { const rx = [0, 9, 13, 14.5, 15, 15.5][k]; ering(p, cx, gy, rx, rx * 0.3, k <= 3 ? 20 : k === 4 ? 2 : 1.2, (a, e) => (k === 5 && Math.sin(a * 6) > 0 ? 0 : k <= 3 ? (e > 0.4 ? WH : G(0.8)) : G(0.8, k === 5 ? 180 : 255))); }
     if (k === 0) p.ell(cx, gy, 6, 2, WH);
     if (hw) for (let y = top; y <= bot; y++) for (let dx = -Math.ceil(hw); dx < Math.ceil(hw); dx++) {

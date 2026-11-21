@@ -208,7 +208,7 @@ export function weaponItems(out: Item[]): void {
     if (k === 1) { ering(p, 16, 16, 8.5, 8.5, 3.2, (_a, e) => (e < 0.55 ? WH : G(0.78))); twinkle(p, 16, 16, 4, WH, G(0.85)); p.rect(15, 15, 3, 3, WH); for (const s of sp) p.set(16 + Math.cos(s.a) * 6, 16 + Math.sin(s.a) * 6, WH); }
     if (k === 2) { ering(p, 16, 16, 12, 12, 2.2, (_a, e) => (e < 0.5 ? WH : G(0.74))); for (const s of sp) twinkle(p, 16 + Math.cos(s.a + 0.4) * (7.5 + s.s), 16 + Math.sin(s.a + 0.4) * (7.5 + s.s), s.q > 0.5 ? 2 : 1, WH, G(0.8)); twinkle(p, 16, 16, 1, G(0.9)); }
     if (k === 3) { ering(p, 16, 16, 14.6, 14.6, 1.5, (a) => (Math.sin(a * 7 + 1) > -0.25 ? G(0.8) : 0)); for (const s of sp) twinkle(p, 16 + Math.cos(s.a + 0.8) * (10 + 2 * s.s), 16 + Math.sin(s.a + 0.8) * (10 + 2 * s.s), s.q > 0.5 ? 1 : 0, WH); }
-    if (k === 4) { ering(p, 16, 16, 15.6, 15.6, 1.1, (a) => (Math.sin(a * 7 + 1.6) > 0.55 ? G(0.66, 200) : 0)); for (const s of sp) p.set(16 + Math.cos(s.a + 1.1) * (12 + 2 * s.s), 16 + Math.sin(s.a + 1.1) * (12 + 2 * s.s), G(0.85)); }
+    if (k === 4) { ering(p, 16, 16, 15.2, 15.2, 1.1, (a) => (Math.sin(a * 7 + 1.6) > 0.55 ? G(0.66, 200) : 0)); for (const s of sp) p.set(16 + Math.cos(s.a + 1.1) * (12 + 2 * s.s), 16 + Math.sin(s.a + 1.1) * (12 + 2 * s.s), G(0.85)); }
   });
 
   // ------------------------------------------------------------ Block (blass, eisweiß): Schildblitz

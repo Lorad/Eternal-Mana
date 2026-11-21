@@ -65,7 +65,7 @@ export function biped(p: Px, L: BLook, b: BPose): BKey {
   const leg = (l: Px, near: boolean): void => {
     if (L.legs === false) return;
     const f = b.feet[near ? 0 : 1], r = near ? L.skin : L.far, a: Pt = [hip[0] + (near ? -1 : 1.5), hip[1]];
-    const ft: Pt = [cx + b.dx + (near ? -L.stance : L.stance) + f[0], G - 0.9 - f[1]], j = ik(a, ft, L.hip / 2 + 0.5, L.hip / 2 + 0.5, -1);
+    const ft: Pt = [cx + b.dx + (near ? -L.stance : L.stance) + f[0], G + 0.4 - Math.max(1.3, L.legR[1]) - f[1]], j = ik(a, ft, L.hip / 2 + 0.5, L.hip / 2 + 0.5, -1);
     limb(l, a, j, L.legR[0], (L.legR[0] + L.legR[1]) / 2, r, near ? 1 : 0); limb(l, j, ft, (L.legR[0] + L.legR[1]) / 2, L.legR[1], r, near ? 1 : 0);
     if (L.foot) L.foot(l, ft[0], ft[1], near); else l.ell(ft[0] + 1, ft[1] - 0.1, L.legR[1] + 1, 1.2, r[near ? 2 : 1]);
   };

@@ -41,7 +41,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | Sheet | Frame | Frames | Animationen (Frames) |
 |---|---|---|---|
 | `mob_arkanauge` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
-| `mob_aschenhund` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_aschenhund` | 48×40 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_dornkaefer` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_eiswicht` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_fledermaus` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
@@ -59,7 +59,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `mob_pilzling` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_runenwaechter` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_schattenwandler` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
-| `mob_schlackengolem` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
+| `mob_schlackengolem` | 48×48 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_schneebrute` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_skelettkrieger` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
 | `mob_tropfschleim` | 32×32 | 22 | idle 4, move 6, windup 2, attack 3, hit 2, death 5 |
@@ -271,13 +271,16 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `wheat` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `woodpile` | 28×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 
-## Atlas: fx (186 Frames, 1024×508)
+## Atlas: fx (318 Frames, 1024×729)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
 | `arrow` | 16×7 | 1 | Geschoss |
+| `arrow_marker` | 12×12 | 2 (`_0…_1`) | Geschoss |
 | `arrow_trail` | 24×5 | 3 (`_0…_2`) | Geschoss |
+| `ash` | 4×4 | 2 (`_0…_1`) | Wetter/Umgebung |
 | `bite` | 32×32 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `blink` | 32×40 | 6 (`_0…_5`) | Effekt |
 | `block` | 32×32 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
 | `bolt_arcane` | 20×16 | 4 (`_0…_3`) | Geschoss |
 | `bolt_dark` | 22×18 | 4 (`_0…_3`) | Geschoss |
@@ -287,10 +290,19 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `bolt_water` | 24×14 | 4 (`_0…_3`) | Geschoss |
 | `bolt_wind` | 24×18 | 4 (`_0…_3`) | Geschoss |
 | `bubble` | 16×14 | 1 | Weltmarker |
+| `buff` | 32×40 | 5 (`_0…_4`) | Effekt |
+| `burn` | 16×20 | 4 (`_0…_3`) | Effekt |
+| `cast` | 40×40 | 6 (`_0…_5`) | Effekt |
 | `claw` | 40×40 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `crack` | 48×32 | 3 (`_0…_2`) | Effekt |
 | `dagger` | 14×7 | 1 | Geschoss |
-| `ember` | 4×4 | 1 | Wetter/Umgebung |
-| `exclaim` | 12×16 | 1 | Weltmarker |
+| `death_poof` | 32×32 | 6 (`_0…_5`) | Effekt |
+| `dodge_trail` | 32×24 | 4 (`_0…_3`) | Effekt |
+| `drip` | 6×14 | 4 (`_0…_3`) | Wetter/Umgebung |
+| `dust` | 16×16 | 5 (`_0…_4`) | Effekt |
+| `dust_run` | 12×8 | 4 (`_0…_3`) | Effekt |
+| `ember` | 3×3 | 2 (`_0…_1`) | Wetter/Umgebung |
+| `exclaim` | 12×18 | 1 | Weltmarker |
 | `explosion_dark` | 64×64 | 8 (`_0…_7`) | Explosion |
 | `explosion_earth` | 64×64 | 8 (`_0…_7`) | Explosion |
 | `explosion_fire` | 64×64 | 8 (`_0…_7`) | Explosion |
@@ -298,43 +310,62 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `explosion_phys` | 48×48 | 6 (`_0…_5`) | Explosion |
 | `explosion_water` | 64×64 | 8 (`_0…_7`) | Explosion |
 | `explosion_wind` | 64×64 | 8 (`_0…_7`) | Explosion |
+| `footprint` | 6×5 | 1 | Effekt |
+| `frost` | 16×20 | 4 (`_0…_3`) | Effekt |
 | `glow` | 128×128 | 1 | Effekt |
-| `heal_plus` | 8×8 | 1 | Effekt |
+| `glow_small` | 48×48 | 1 | Effekt |
+| `godray` | 48×160 | 1 | Wetter/Umgebung |
+| `heal` | 32×48 | 6 (`_0…_5`) | Effekt |
+| `heat` | 16×24 | 4 (`_0…_3`) | Wetter/Umgebung |
 | `hit` | 32×32 | 5 (`_0…_4`) | Kampf: Waffenspur/Treffer |
 | `hit_crit` | 48×48 | 6 (`_0…_5`) | Kampf: Waffenspur/Treffer |
 | `hit_magic` | 32×32 | 5 (`_0…_4`) | Kampf: Waffenspur/Treffer |
-| `lance` | 32×8 | 4 (`_0…_3`) | Geschoss |
-| `leaf` | 8×8 | 1 | Wetter/Umgebung |
-| `mote` | 4×4 | 1 | Wetter/Umgebung |
-| `orb` | 16×16 | 3 (`_0…_2`) | Geschoss |
+| `lance` | 48×12 | 3 (`_0…_2`) | Geschoss |
+| `leaf` | 8×8 | 4 (`_0…_3`) | Wetter/Umgebung |
+| `levelup` | 64×64 | 8 (`_0…_7`) | Effekt |
+| `mark` | 16×16 | 2 (`_0…_1`) | Effekt |
+| `mote` | 3×3 | 1 | Wetter/Umgebung |
+| `petal` | 5×5 | 2 (`_0…_1`) | Wetter/Umgebung |
+| `pillar` | 32×96 | 7 (`_0…_6`) | Effekt |
+| `poison` | 16×20 | 4 (`_0…_3`) | Effekt |
 | `px` | 2×2 | 1 | Effekt |
-| `question` | 12×16 | 1 | Weltmarker |
-| `question_grey` | 12×16 | 1 | Weltmarker |
-| `raindrop` | 4×8 | 1 | Wetter/Umgebung |
+| `question` | 12×18 | 1 | Weltmarker |
+| `question_grey` | 12×18 | 1 | Weltmarker |
+| `rain_splash` | 8×5 | 3 (`_0…_2`) | Wetter/Umgebung |
+| `raindrop` | 2×10 | 1 | Wetter/Umgebung |
 | `ring` | 64×64 | 1 | Effekt |
-| `rock` | 12×12 | 1 | Effekt |
+| `ripple` | 16×10 | 4 (`_0…_3`) | Effekt |
 | `rune_circle` | 64×64 | 1 | Effekt |
+| `rune_circle_big` | 112×80 | 1 | Effekt |
+| `scorch` | 40×28 | 1 | Effekt |
 | `shadow` | 24×10 | 1 | Effekt |
 | `shadow_l` | 48×18 | 1 | Effekt |
-| `shard` | 16×8 | 1 | Effekt |
-| `slash` | 48×48 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `shield` | 40×44 | 4 (`_0…_3`) | Effekt |
+| `shockwave` | 96×72 | 6 (`_0…_5`) | Effekt |
 | `slash_dagger` | 48×40 | 5 (`_0…_4`) | Kampf: Waffenspur/Treffer |
 | `slash_heavy` | 80×80 | 7 (`_0…_6`) | Kampf: Waffenspur/Treffer |
 | `slash_sword` | 64×64 | 6 (`_0…_5`) | Kampf: Waffenspur/Treffer |
 | `smash_hammer` | 72×56 | 7 (`_0…_6`) | Kampf: Waffenspur/Treffer |
-| `smoke` | 16×16 | 1 | Effekt |
-| `snowflake` | 6×6 | 1 | Wetter/Umgebung |
-| `spark` | 8×8 | 1 | Effekt |
-| `spore` | 8×8 | 3 (`_0…_2`) | Geschoss |
-| `star` | 8×8 | 1 | Effekt |
+| `smoke` | 16×16 | 4 (`_0…_3`) | Effekt |
+| `snowflake` | 7×7 | 3 (`_0…_2`) | Wetter/Umgebung |
+| `spark` | 5×5 | 1 | Effekt |
+| `sparkle` | 8×8 | 4 (`_0…_3`) | Effekt |
+| `spawn` | 32×32 | 6 (`_0…_5`) | Effekt |
+| `splash` | 16×16 | 5 (`_0…_4`) | Effekt |
+| `spore` | 8×8 | 2 (`_0…_1`) | Geschoss |
+| `star` | 7×7 | 1 | Effekt |
 | `status_buff` | 8×8 | 1 | Weltmarker |
 | `status_burn` | 8×8 | 1 | Weltmarker |
 | `status_poison` | 8×8 | 1 | Weltmarker |
 | `status_shield` | 8×8 | 1 | Weltmarker |
 | `status_slow` | 8×8 | 1 | Weltmarker |
 | `status_stun` | 8×8 | 1 | Weltmarker |
-| `target` | 24×12 | 1 | Weltmarker |
+| `stun` | 24×12 | 4 (`_0…_3`) | Effekt |
+| `target` | 28×14 | 1 | Weltmarker |
+| `tele_ring` | 64×64 | 1 | Effekt |
 | `thrust` | 56×20 | 4 (`_0…_3`) | Kampf: Waffenspur/Treffer |
+| `void_mote` | 5×5 | 3 (`_0…_2`) | Wetter/Umgebung |
+| `weak` | 16×16 | 2 (`_0…_1`) | Effekt |
 
 ## Atlas: icons (318 Frames, 501×401)
 
@@ -664,7 +695,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | Biom | Frame | Frames |
 |---|---|---|
 | `liquids/gruenwald.png` | 64×64 | 8 |
-| `liquids/kristall.png` | 32×32 | 4 |
+| `liquids/kristall.png` | 64×64 | 8 |
 | `liquids/glut.png` | 32×32 | 4 |
 | `liquids/frost.png` | 32×32 | 4 |
 | `liquids/ruinen.png` | 32×32 | 4 |
@@ -674,4 +705,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 
 | Datei | Verwendung |
 |---|---|
+| `overlays/fog.png` | ziehender Nebel |
+| `overlays/cloud_shadow.png` | Wolkenschatten über der Oberwelt |
+| `overlays/leaf_shadow.png` | Blätterschatten im Grünwald |
 

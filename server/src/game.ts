@@ -49,7 +49,8 @@ export class Game {
   constructor(public db: Db, public info: ServerInfo) {}
 
   clock() { return this.now; }
-  tod() { return (this.now / CFG.world.dayLengthSec + 0.32) % 1; }
+  private todOffset = 0.32;
+  tod() { return (((this.now / CFG.world.dayLengthSec + this.todOffset) % 1) + 1) % 1; }
 
   start() {
     const step = 1000 / CFG.net.tickRate;
@@ -316,6 +317,8 @@ export class Game {
     if (cmd === 'lvl') { const n = Math.max(1, Math.min(CFG.player.maxLevel, +a[0] || 1)); while (c.level < n) { c.xp = CFG.xpToNext(c.level); p.gainXp(0.0001); } }
     else if (cmd === 'gold') p.gainGold(+a[0] || 1000);
     else if (cmd === 'tp' && ZONES[a[0]]) this.transfer(p, a[0], '');
+    else if (cmd === 'time') { this.todOffset += (+a[0] || 0.5) - this.tod(); const tod = this.tod(); for (const q of this.players.values()) q.send({ t: 'env', tod }); }
+    else if (cmd === 'weather') { p.zone.weather = a[0] ?? 'clear'; p.zone.weatherUntil = this.now + 600; for (const q of p.zone.players.values()) q.send({ t: 'env', weather: p.zone.weather }); }
     else if (cmd === 'god') { p.god = !p.god; p.toast('Unverwundbar: ' + p.god); }
     else if (cmd === 'gear') { for (const k of ['weapon', 'helm', 'armor', 'accessory'] as const) p.give(generateGear(this.rng, c.level, +a[0] || 3, c.cls, k)); }
     else if (cmd === 'item' && ITEMS[a[0]]) p.give(makeStack(a[0], +a[1] || 1));
@@ -324,7 +327,7 @@ export class Game {
     else if (cmd === 'boss') { const r = p.zone.map.bossRoom; if (r) { p.x = (r.cx) * 16; p.y = (r.y1 - 1) * 16; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); } }
     else if (cmd === 'kill') { for (const m of [...p.zone.mobs.values()]) if (Math.hypot(m.x - p.x, m.y - p.y) < 300 && !m.invuln) p.zone.hitMob(m, p, 1e7, 'phys'); }
     else if (cmd === 'goto') { p.x = +a[0]; p.y = +a[1]; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
-    else p.toast('Dev: /lvl n, /gold n, /tp zone, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y');
+    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y');
   }
 
   // ------------------------------------------------------------------ Gruppen

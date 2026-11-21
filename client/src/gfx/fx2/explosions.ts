@@ -145,7 +145,7 @@ export function explosionItems(out: Item[]): void {
     if (k === 1) {
       p.poly([[cx - 10, gy], [cx - 7, gy - 16], [cx - 2, gy - 25], [cx + 3, gy - 21], [cx + 8, gy - 14], [cx + 10, gy]], dust[0]);
       puff(p, cx - 1, gy - 9, 10, dust, 3, 5); puff(p, cx, gy - 20, 7, dust, 4, 4);
-      for (const [x, h, c2] of [[-8, 22, P.tan[3]], [-1, 34, P.cream[4]], [6, 26, P.tan[3]]] as const) needle(p, cx + x, gy - 10, -Math.PI / 2 + x * 0.04, h, 1.8, c2);
+      for (const [x, y] of [[-6, 31], [1, 35], [7, 29]] as const) p.rect(cx + x, gy - y, 2, 2, P.tan[3]);
     }
     if (k === 2) {
       p.poly([[cx - 9, gy], [cx - 8, gy - 20], [cx - 5, gy - 36], [cx + 5, gy - 36], [cx + 8, gy - 20], [cx + 9, gy]], dust[0]);
@@ -177,7 +177,7 @@ export function explosionItems(out: Item[]): void {
       const t = k - 0.45, land = gy + 2 + s.q * 6;
       const x = cx + Math.cos(s.a) * (0.5 + s.v) * 4.3 * t, y = gy - 6 + Math.sin(s.a) * (0.75 + 0.3 * s.v) * 12.5 * t + 1.3 * t * t;
       if (y >= land) { if (k < 7 || i % 2) { p.rect(Math.round(x), Math.round(land), 2, 1, rk[1]); p.set(x, land - 1, rk[2]); } continue; }
-      const isClod = i % 3 === 0, r = (k >= 6 ? 1.5 : 2.2 + s.s * 2.6);
+      const isClod = i % 3 === 0, r = (k >= 6 ? 1.6 : 2.6 + s.s * 2.8);
       rock(p, x, y, r, t * 0.9 + i, isClod ? clod : rk, i);
       if (isClod && r > 2) p.set(x, y + 1, P.wood[1]);
     }

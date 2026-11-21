@@ -82,8 +82,9 @@ export function buildFx(): Sheet {
 
   const have = new Set(items.map((i) => i[0]));
   for (const n of FX_FRAMES) if (!have.has(n)) { const p = new Px(8, 8); p.rect(0, 0, 8, 8, P.pink[3]); items.push([n, p]); console.warn('[gfx] fehlender fx-Frame', n); }
-  // v2-Effekte überschreiben gleichnamige v1-Frames
-  const merged = new Map<string, Px>(items);
+  // Der fx-Atlas besteht aus den v2-Effekten; aus v1 bleibt nur der weiche Ring (für Lichtwellen) erhalten.
+  const KEEP = new Set(['ring']);
+  const merged = new Map<string, Px>(items.filter(([n]) => KEEP.has(n)));
   for (const [n, px] of fx2Items()) merged.set(n, px);
   return atlasSheet([...merged], 1024);
 }

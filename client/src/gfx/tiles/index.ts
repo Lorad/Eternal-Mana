@@ -8,10 +8,12 @@ import type { BiomeId } from '../../../../shared/src/maps/tiles';
 import type { PaintableMap } from '../spec';
 import { Chunk, TS, type BiomePainter } from './core';
 import { gruenwald } from './gruenwald';
+import { kristall } from './kristall';
 import { buildLiquidsLegacy, paintGroundLegacy } from './legacy';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   gruenwald,
+  kristall,
 };
 
 const CH = 32;

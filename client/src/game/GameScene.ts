@@ -219,9 +219,9 @@ export class GameScene extends Phaser.Scene {
     for (const ds of this.decorShadows) ds.indoor = this.lightShadow(ds.x, ds.y);
     const fxTex = this.textures.get('fx');
     const pick = (...names: string[]) => names.find(f => fxTex.has(f)) ?? 'px';
-    this.sparks = this.add.particles(0, 0, 'fx', { frame: pick('spark'), lifespan: { min: 220, max: 520 }, speed: { min: 20, max: 95 }, scale: { start: 1, end: 0.3 }, alpha: { start: 1, end: 0 }, emitting: false, blendMode: 'ADD' }).setDepth(6000);
-    this.smoke = this.add.particles(0, 0, 'fx', { frame: [pick('smoke_0', 'smoke'), pick('smoke_1', 'smoke'), pick('smoke_2', 'smoke')], lifespan: { min: 350, max: 700 }, speed: { min: 6, max: 26 }, scale: { start: 0.6, end: 1.1 }, alpha: { start: 0.75, end: 0 }, emitting: false }).setDepth(6000);
-    this.stars = this.add.particles(0, 0, 'fx', { frame: pick('star'), lifespan: { min: 400, max: 800 }, speedY: { min: -52, max: -15 }, speedX: { min: -18, max: 18 }, scale: { start: 1, end: 0.3 }, alpha: { start: 1, end: 0 }, emitting: false, blendMode: 'ADD' }).setDepth(6000);
+    this.sparks = this.add.particles(0, 0, 'fx', { frame: pick('spark'), lifespan: { min: 220, max: 520 }, speed: { min: 20, max: 95 }, scale: { start: 1, end: 0.3 }, alpha: { start: 1, end: 0 }, emitting: false, blendMode: 'ADD' }).setDepth(9100);
+    this.smoke = this.add.particles(0, 0, 'fx', { frame: [pick('smoke_1', 'smoke_0'), pick('smoke_2', 'smoke_0'), pick('smoke_3', 'smoke_0')], lifespan: { min: 350, max: 700 }, speed: { min: 6, max: 26 }, scale: { start: 0.6, end: 1.1 }, alpha: { start: 0.75, end: 0 }, emitting: false }).setDepth(6000);
+    this.stars = this.add.particles(0, 0, 'fx', { frame: pick('star'), lifespan: { min: 400, max: 800 }, speedY: { min: -52, max: -15 }, speedX: { min: -18, max: 18 }, scale: { start: 1, end: 0.3 }, alpha: { start: 1, end: 0 }, emitting: false, blendMode: 'ADD' }).setDepth(9100);
     this.ambient = new Ambient(this, map, this.fx, rayAnchors);
     // Entitäten
     const st = store.state;
@@ -520,7 +520,11 @@ export class GameScene extends Phaser.Scene {
   private attackFx(x: number, y: number, ang: number, kind: string, el: Element, combo: number, range: number, own: boolean) {
     const c = this.animClock, tint = elTint(el), fin = combo === 2;
     const dx = Math.cos(ang), dy = Math.sin(ang), hy = y - 9;
-    const arc = (name: string | null, scale: number, t = tint) => this.fx.play(name, x + dx * 4, hy + dy * 4, { rot: ang, tint: t, scale, originX: 0.22, add: true, fps: 22, depth: y + (dy > 0 ? 30 : -2) }, c);
+    // Drehpunkte laut Effekt-Katalog: Schwertbögen links-mittig, Dolchschnitte kreuzen vor der Figur
+    const arc = (name: string | null, scale: number, t = tint) => {
+      const ox = name === 'slash_dagger' ? 0.3 : name === 'thrust' ? 0 : 0.1;
+      return this.fx.play(name, x + dx * 3, hy + dy * 3, { rot: ang, tint: t, scale, originX: ox, add: true, fps: 24 }, c);
+    };
     switch (kind) {
       case 'sword':
         if (fin) { arc(this.fx.pick('slash_heavy', 'slash'), Math.max(0.55, range / 56), el === 'phys' ? 0xfff0c8 : tint); if (own) this.shake(0.006, 90); }
@@ -561,10 +565,10 @@ export class GameScene extends Phaser.Scene {
         const tint = e.pl ? 0xff6050 : elTint(e.el);
         if (settings.damageNumbers) this.floatText(e.x, e.y - h - 2, (e.c ? '✦' : '') + e.a, e.pl ? '#ff6a5a' : e.c ? '#ffe45a' : hexStr(ELEMENT_COLOR[e.el]), e.c ? 11 : 8, !!e.c);
         if (e.c) {
-          this.fx.play(this.fx.pick('hit_crit', 'hit'), hx, hy, { fps: 20, depth: e.y + 40, scale: mv?.boss ? 1.4 : 1 }, c);
+          this.fx.play(this.fx.pick('hit_crit', 'hit'), hx, hy, { fps: 20, depth: 9100, scale: mv?.boss ? 1.4 : 1 }, c);
           this.flash(hx, hy, 60, 0xffe890, 0.9, 200);
           if (!e.pl) { this.hitStop(55); this.shake(0.007, 90); }
-        } else this.fx.play(this.fx.pick(e.el === 'phys' ? 'hit' : 'hit_magic', 'hit'), hx, hy, { tint, add: true, fps: 22, depth: e.y + 40, rot: Math.random() * 6.28 }, c);
+        } else this.fx.play(this.fx.pick(e.el === 'phys' ? 'hit' : 'hit_magic', 'hit'), hx, hy, { tint, fps: 22, depth: 9100, rot: Math.random() * 6.28 }, c);
         this.burst(this.sparks, e.c ? 8 : 3, hx, hy, tint);
         if (mv && !mv.boss) this.tweens.add({ targets: mv.sprite, scaleX: mv.scale * 1.18, scaleY: mv.scale * 0.86, duration: 55, yoyo: true });
         if (mine) {
@@ -667,7 +671,7 @@ export class GameScene extends Phaser.Scene {
     const hostilePhys = p.hostile && p.el === 'phys';
     let anim = '', frame = p.spr, coloured = false;
     const el = p.el === 'phys' ? 'arcane' : p.el;
-    if (p.spr === 'orb') { anim = this.fx.pick(`bolt_${el}`, 'bolt_arcane') ?? ''; coloured = anim !== 'bolt_arcane' && anim !== ''; if (!anim) frame = 'orb_0'; }
+    if (p.spr === 'orb') { anim = this.fx.pick(`bolt_${el}`, 'bolt_arcane') ?? ''; coloured = anim !== 'bolt_arcane' && anim !== ''; }
     else if (p.spr === 'shard') { anim = this.fx.pick('bolt_water') ?? ''; coloured = !!anim; }
     else if (p.spr === 'rock') { anim = this.fx.pick('bolt_earth') ?? ''; coloured = !!anim; }
     else if (p.spr === 'lance') { anim = this.fx.pick(p.el === 'light' ? 'bolt_light' : p.el === 'wind' ? 'bolt_wind' : 'lance', 'lance') ?? ''; coloured = anim.startsWith('bolt_'); }
@@ -675,9 +679,10 @@ export class GameScene extends Phaser.Scene {
     else coloured = true; // Pfeil, Dolch
     const n = anim ? this.fx.frames(anim) : 0;
     if (anim) frame = n ? `${anim}_0` : anim;
-    if (!tex.has(frame)) frame = tex.has(p.spr) ? p.spr : 'orb_0';
+    if (!tex.has(frame)) frame = tex.has(p.spr) ? p.spr : 'bolt_arcane_0';
     const tint = hostilePhys ? 0xff7060 : elTint(p.el);
-    const s = this.add.image(p.x, p.y, 'fx', frame).setDepth(p.y + 40).setRotation(Math.atan2(p.vy, p.vx));
+    const emissive = p.spr !== 'arrow' && p.spr !== 'dagger' && p.spr !== 'rock';
+    const s = this.add.image(p.x, p.y, 'fx', frame).setDepth(emissive ? 9100 : p.y + 40).setRotation(Math.atan2(p.vy, p.vx));
     if (!coloured) s.setTint(tint).setBlendMode(Phaser.BlendModes.ADD);
     if (p.r > 6) s.setScale(Math.min(2, p.r / 5));
     this.projs.set(p.id, { p, s, x: p.x, y: p.y, born: nowP, trail: 0, anim, n, tint });
@@ -689,7 +694,7 @@ export class GameScene extends Phaser.Scene {
       case 'explosion': {
         const r = e.r ?? 30, el = e.el ?? 'phys';
         const name = this.fx.pick(`explosion_${el}`, 'explosion_phys');
-        if (name) this.fx.play(name, e.x, e.y - 4, { scale: Math.max(0.6, r / 26), fps: 16, depth: e.y + 40 }, c); else this.ring(e.x, e.y, r, tint, 380);
+        if (name) this.fx.play(name, e.x, e.y - 4, { scale: Math.max(0.6, r / 26), fps: 16, depth: 9100 }, c); else this.ring(e.x, e.y, r, tint, 380);
         this.burst(this.sparks, 12, e.x, e.y, tint);
         this.flash(e.x, e.y, r * 2.4, tint, 1, 320);
         if (r >= 24) this.decal(el === 'fire' ? 'scorch' : 'crack', e.x, e.y + 2, el === 'fire' ? 0xffffff : tint);
@@ -700,7 +705,7 @@ export class GameScene extends Phaser.Scene {
       case 'spin': {
         const r = e.r ?? 40;
         if (!this.fx.play(this.fx.pick('shockwave'), e.x, e.y, { tint, add: true, depth: 3, fps: 22, scale: r / 44 }, c)) this.ring(e.x, e.y - 6, r, tint, 260);
-        for (let k = 0; k < 3; k++) this.fx.play(this.fx.pick('slash_heavy', 'slash'), e.x, e.y - 9, { rot: (k * Math.PI * 2) / 3, tint, originX: 0.22, add: true, scale: r / 52, fps: 22, delay: k * 40 }, c);
+        for (let k = 0; k < 3; k++) this.fx.play(this.fx.pick('slash_heavy', 'slash'), e.x, e.y - 9, { rot: (k * Math.PI * 2) / 3, tint, originX: 0.1, add: true, scale: r / 52, fps: 22, delay: k * 40 }, c);
         this.shake(0.008, 120);
         break;
       }
@@ -1007,9 +1012,9 @@ export class GameScene extends Phaser.Scene {
   private updateProjs(dt: number, now: number) {
     for (const [id, v] of this.projs) {
       v.x += v.p.vx * dt; v.y += v.p.vy * dt;
-      v.s.setPosition(v.x, v.y).setDepth(v.y + 40);
+      v.s.setPosition(v.x, v.y);
+      if (v.s.depth < 9000) v.s.setDepth(v.y + 40);
       if (v.n > 1) v.s.setFrame(`${v.anim}_${Math.floor((now - v.born) / 70) % v.n}`);
-      else if (!v.anim && v.p.spr === 'orb') v.s.setFrame('orb_' + (Math.floor(now / 90) % 3));
       if (now - v.trail > 45) {
         v.trail = now;
         if (v.p.spr === 'arrow' || v.p.spr === 'dagger') this.fx.play(this.fx.pick('arrow_trail'), v.x - v.p.vx * 0.03, v.y - v.p.vy * 0.03, { rot: v.s.rotation, tint: v.tint, alpha: 0.5, fps: 30, add: true }, this.animClock);

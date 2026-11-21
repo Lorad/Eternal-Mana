@@ -36,7 +36,8 @@ export class Fx {
     const n = this.frames(name);
     const frame = n ? `${name}_0` : name;
     if (!this.tex.has(frame)) return null;
-    const img = this.scene.add.image(x, y, 'fx', frame).setDepth(o.depth ?? y + 30).setOrigin(o.originX ?? 0.5, o.originY ?? 0.5);
+    // leuchtende (additive) Effekte liegen über der Lichtkarte, damit sie nachts und in Höhlen strahlen
+    const img = this.scene.add.image(x, y, 'fx', frame).setDepth(o.depth ?? (o.add ? 9100 : y + 30)).setOrigin(o.originX ?? 0.5, o.originY ?? 0.5);
     if (o.rot) img.setRotation(o.rot);
     if (o.tint !== undefined) img.setTint(o.tint);
     if (o.scale) img.setScale(o.scale, o.scaleY ?? o.scale);
@@ -59,7 +60,7 @@ export class Fx {
       if (t < 0) continue;
       if (!a.img.visible) a.img.setVisible(true);
       const idx = Math.floor((t * a.fps) / 1000);
-      if (a.o.follow) { const p = a.o.follow(); if (!p) { a.dead = true; a.img.destroy(); this.active.splice(i, 1); continue; } a.img.setPosition(p.x, p.y); if (a.o.depth === undefined) a.img.setDepth(p.y + 30); }
+      if (a.o.follow) { const p = a.o.follow(); if (!p) { a.dead = true; a.img.destroy(); this.active.splice(i, 1); continue; } a.img.setPosition(p.x, p.y); if (a.o.depth === undefined && !a.o.add) a.img.setDepth(p.y + 30); }
       if (a.o.loop) { if (a.n > 1) a.img.setFrame(`${a.name}_${idx % a.n}`); continue; }
       if (idx >= a.n) {
         if (a.o.fade) { const k = (t - (a.n * 1000) / a.fps) / a.o.fade; if (k < 1) { a.img.setAlpha((a.o.alpha ?? 1) * (1 - k)); continue; } }

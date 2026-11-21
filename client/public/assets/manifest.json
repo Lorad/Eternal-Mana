@@ -151,8 +151,8 @@
   },
   "mob_aschenhund": {
    "file": "sprites/mobs/mob_aschenhund.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 40,
    "cols": 22,
    "rows": 1
   },
@@ -277,8 +277,8 @@
   },
   "mob_schlackengolem": {
    "file": "sprites/mobs/mob_schlackengolem.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 48,
    "cols": 22,
    "rows": 1
   },
@@ -369,7 +369,7 @@
   "fx": {
    "file": "atlases/fx.png",
    "json": "atlases/fx.json",
-   "frames": 186
+   "frames": 318
   },
   "icons": {
    "file": "atlases/icons.png",
@@ -386,9 +386,9 @@
   },
   "kristall": {
    "file": "liquids/kristall.png",
-   "fw": 32,
-   "fh": 32,
-   "frames": 4
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
   },
   "glut": {
    "file": "liquids/glut.png",
@@ -415,7 +415,17 @@
    "frames": 4
   }
  },
- "overlays": {},
+ "overlays": {
+  "fog": {
+   "file": "overlays/fog.png"
+  },
+  "cloud_shadow": {
+   "file": "overlays/cloud_shadow.png"
+  },
+  "leaf_shadow": {
+   "file": "overlays/leaf_shadow.png"
+  }
+ },
  "mobMeta": {
   "mob_moosling": {
    "w": 32,
@@ -498,12 +508,12 @@
    "h": 32
   },
   "mob_aschenhund": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "aschenhund": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "mob_magmaschleim": {
    "w": 32,
@@ -514,12 +524,12 @@
    "h": 32
   },
   "mob_schlackengolem": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "schlackengolem": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "mob_frostwolf": {
    "w": 32,

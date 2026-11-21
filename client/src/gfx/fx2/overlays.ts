@@ -23,16 +23,22 @@ export function buildOverlaysImpl(): Record<string, HTMLCanvasElement> {
   // Nebel: waagerecht gestreckte Schwaden, 5 Bänder bis 0.5
   const fog = new Float32Array(N * N);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const v = pnoise(x, y, 3, 6, 11) * 0.56 + pnoise(x, y, 6, 12, 12) * 0.28 + pnoise(x, y, 16, 24, 13) * 0.16;
-    const t = (v - 0.44) / 0.3;
-    fog[y * N + x] = t <= 0 ? 0 : Math.min(5, Math.ceil(t * 5)) * 0.1;
+    const v = pnoise(x, y, 2, 5, 11) * 0.62 + pnoise(x, y, 5, 10, 12) * 0.3 + pnoise(x, y, 12, 20, 13) * 0.08;
+    const t = (v - 0.47) / 0.24;
+    fog[y * N + x] = t <= 0 ? 0 : [0.14, 0.26, 0.38, 0.5][Math.min(3, Math.floor(t * 4))];
   }
   // Wolkenschatten: wenige große Formen, viel freie Fläche, 3 Bänder bis 0.35
-  const cloud = new Float32Array(N * N);
+  const cloud = new Float32Array(N * N), RC = rng(905), lobes: number[][] = [];
+  for (const [bx, by] of [[52, 44], [176, 86], [92, 178], [226, 214]]) {
+    const n = 2 + Math.floor(RC() * 2);
+    for (let i = 0; i < n; i++) lobes.push([bx + (RC() - 0.5) * 56, by + (RC() - 0.5) * 26, 26 + RC() * 22, 15 + RC() * 12]);
+  }
+  const wrap = (d: number): number => ((((d + N / 2) % N) + N) % N) - N / 2;
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const v = pnoise(x, y, 3, 3, 21) * 0.6 + pnoise(x, y, 6, 6, 22) * 0.27 + pnoise(x, y, 14, 14, 23) * 0.13;
-    const t = (v - 0.57) / 0.16;
-    cloud[y * N + x] = t <= 0 ? 0 : t < 0.33 ? 0.13 : t < 0.75 ? 0.24 : 0.35;
+    let f = -1;
+    for (const [lx, ly, rx, ry] of lobes) f = Math.max(f, 1 - Math.hypot(wrap(x - lx) / rx, wrap(y - ly) / ry));
+    f += (pnoise(x, y, 8, 8, 22) - 0.5) * 0.5 + (pnoise(x, y, 20, 20, 23) - 0.5) * 0.16;
+    cloud[y * N + x] = f < 0.06 ? 0 : f < 0.26 ? 0.13 : f < 0.5 ? 0.24 : 0.35;
   }
   // Blätterschatten: Büschel kleiner Blattflecken mit Sonnenlücken, bis 0.3
   const leaf = new Float32Array(N * N), R = rng(4711);

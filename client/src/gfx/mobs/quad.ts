@@ -64,7 +64,7 @@ export function quadPose(fr: Fr, style: QStyle): QPose {
       q.eye = 'shut'; q.ear = 1; q.tail = -1;
       if (i === 0) { q.hip = [-2, 1]; q.sh = [-3, -3]; q.head = [-4, -4]; q.jaw = 2; F([0, 0], [0, 4], [-1, 0], [-1, 3]); }
       else if (i === 1) { q.hip = [0, 5]; q.sh = [0, 6]; q.head = [1, 6]; q.jaw = 1; F([-3, 0], [5, 0], [-4, 0], [4, 0]); }
-      else { q.hip = [0, 8]; q.sh = [1, 7]; q.head = [2, 10]; q.lie = true; F([5, 0], [9, 0], [3, 0], [8, 0]); }
+      else { q.hip = [0, 8]; q.sh = [1, 7]; q.head = [2, 10]; q.lie = true; q.tail = 0; F([5, 0], [9, 0], [3, 0], [8, 0]); }
       break;
   }
   return q;
