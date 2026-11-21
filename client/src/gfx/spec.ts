@@ -16,6 +16,8 @@ export interface Sheet {
 /** Karte, wie sie der Boden-Maler sieht. tiles = T.* aus shared/src/maps/tiles.ts, zeilenweise. */
 export interface PaintableMap {
   w: number; h: number;
+  /** Dungeon-Räume in Kachelkoordinaten (inklusive Grenzen) – für raumbezogene Bodenmuster. */
+  rooms?: { x0: number; y0: number; x1: number; y1: number; role: string }[];
   tiles: Uint8Array;
   biome: BiomeId;
   /** true = Dungeon-Stil (gemauert), false = Oberwelt */
@@ -46,22 +48,33 @@ export const NPC_LOOKS = [
 ] as const;
 
 /**
- * Charakter-Sheet-Layout (Klassen und NPCs): Frame 24x32 px, Fußpunkt unten Mitte.
- * 16 Spalten x 4 Zeilen. Zeile 0 = Blick nach unten, 1 = Blick nach rechts (links = gespiegelt), 2 = Blick nach oben, 3 = Sonstiges.
- * Spalten: 0-1 Idle (Atmen), 2-5 Laufen, 6-8 Angriff (Ausholen, Schlag, Nachschwung – klassenspezifische Waffe sichtbar!),
- *          9-10 Zaubern (Arme erhoben), 11 Getroffen, 12-15 Ausweichrolle.
- * Zeile 3: Spalte 0 = am Boden liegend (besiegt), Spalte 1 = Jubel/Level-Up.
- * Frame-Namen: einfach der Index als String ("0" … "63"), Index = zeile*16 + spalte.
+ * Charakter-Sheet-Layout v2 (Klassen und NPCs): Frame 32x40 px, Standpunkt bei (16, 37).
+ * 3 Zeilen: 0 = Blick nach unten, 1 = Blick nach rechts (links = gespiegelt), 2 = Blick nach oben.
+ * Spalten je Animation laut CHAR_ANIMS; Frame-Name = Index als String, Index = zeile * CHAR_COLS + spalte.
  */
-export const CHAR_FRAME_W = 24;
-export const CHAR_FRAME_H = 32;
-export const CHAR_COLS = 16;
+export const CHAR_FRAME_W = 32;
+export const CHAR_FRAME_H = 40;
+export const CHAR_FOOT_Y = 37;
+export interface AnimDef { start: number; len: number; fps: number; loop: boolean }
+export const CHAR_ANIMS = {
+  idle: { start: 0, len: 4, fps: 5, loop: true },       // Atmen, Blinzeln, leichtes Gewichtverlagern
+  walk: { start: 4, len: 6, fps: 10, loop: true },      // ruhiger Gang
+  run: { start: 10, len: 6, fps: 13, loop: true },      // vorgebeugt, große Schritte, Haare/Umhang wehen
+  attack: { start: 16, len: 4, fps: 16, loop: false },  // schneller Standardangriff mit der Klassenwaffe
+  heavy: { start: 20, len: 5, fps: 13, loop: false },   // weites Ausholen, wuchtiger Schlag, Nachschwung
+  dodge: { start: 25, len: 4, fps: 13, loop: false },   // Hechtrolle in Blickrichtung
+  hit: { start: 29, len: 2, fps: 8, loop: false },      // Zurückzucken
+  cast: { start: 31, len: 4, fps: 9, loop: true },      // Arme/Waffe erhoben, Energie sammelt sich
+  interact: { start: 35, len: 3, fps: 8, loop: false }, // vorbeugen, Hand ausstrecken
+  death: { start: 38, len: 5, fps: 8, loop: false },    // taumeln, auf die Knie, zu Boden (letzter Frame liegt)
+} as const satisfies Record<string, AnimDef>;
+export type CharAnim = keyof typeof CHAR_ANIMS;
+export const CHAR_COLS = 43;
 
 // ---------------------------------------------------------------- Gegner
 /**
- * Gegner → Sheet-Key `mob_<id>`. Eine Zeile, Blick nach rechts (links = gespiegelt).
- * Frames "0"-"3" Bewegung/Idle-Zyklus, "4"-"5" Angriff (4 = Ausholen/Telegraph, 5 = Schlag), "6" Getroffen.
- * Framegröße frei wählbar je Gegner (typisch 24x24, große 32x32) – steht in MobMeta.
+ * Gegner → Sheet-Key `mob_<id>`. Eine Zeile mit 22 Frames laut MOB_ANIMS, Blick nach rechts (links = gespiegelt).
+ * Framegröße je Gegner (32x32 klein, 48x40 Vierbeiner, 48x48 groß) steht in mobMeta; Standpunkt unten Mitte, 3 px über der Unterkante.
  * Kommentar = Archetyp / Aussehen / Element.
  */
 export const MOB_IDS = [
@@ -99,8 +112,8 @@ export const MOB_IDS = [
 ] as const;
 
 /**
- * Bosse → Sheet-Key `boss_<id>`. Eine Zeile, Blick nach rechts bzw. frontal.
- * Frames "0"-"3" Idle, "4"-"5" Angriff, "6"-"7" Spezial (Zaubern/Aufladen), "8" Getroffen. Größe 64x64 bis 96x96 (BossMeta).
+ * Bosse → Sheet-Key `boss_<id>`. Eine Zeile mit 26 Frames laut BOSS_ANIMS, Blick nach rechts bzw. frontal.
+ * Größe 96x96 bis 128x128 (bossMeta); Standpunkt unten Mitte, 6 px über der Unterkante.
  */
 export const BOSS_IDS = [
   'dornenmutter',   // riesige fleischfressende Blüte auf Dornenranken (Erde)
@@ -111,6 +124,25 @@ export const BOSS_IDS = [
   'hohlkoenig',     // Der Hohle König: hagere gekrönte Gestalt in zerfließendem Schattenmantel, leere Brust mit Lichtfunken (Dunkel), 96x96
 ] as const;
 
+export const MOB_ANIMS = {
+  idle: { start: 0, len: 4, fps: 5, loop: true },
+  move: { start: 4, len: 6, fps: 10, loop: true },
+  windup: { start: 10, len: 2, fps: 6, loop: false },   // deutliche Ankündigung (Ausholen, Aufblähen, Aufleuchten)
+  attack: { start: 12, len: 3, fps: 14, loop: false },
+  hit: { start: 15, len: 2, fps: 8, loop: false },
+  death: { start: 17, len: 5, fps: 10, loop: false },   // artgerechtes Vergehen (zerfließen, zerbröckeln, verpuffen); letzter Frame fast leer
+} as const satisfies Record<string, AnimDef>;
+export const MOB_FRAMES = 22;
+export const BOSS_ANIMS = {
+  idle: { start: 0, len: 6, fps: 6, loop: true },
+  windup: { start: 6, len: 2, fps: 5, loop: false },
+  attack: { start: 8, len: 4, fps: 12, loop: false },
+  special: { start: 12, len: 4, fps: 8, loop: true },   // Zaubern/Aufladen
+  hit: { start: 16, len: 2, fps: 8, loop: false },
+  death: { start: 18, len: 8, fps: 8, loop: false },
+} as const satisfies Record<string, AnimDef>;
+export const BOSS_FRAMES = 26;
+
 export interface SpriteMeta { w: number; h: number }
 
 // ---------------------------------------------------------------- Objekte
@@ -118,6 +150,7 @@ export interface SpriteMeta { w: number; h: number }
  * Objekt-Atlas, Sheet-Key `obj`. Jeder Name unten ist ein Frame (animierte: `<name>_0`, `<name>_1`, …; Anzahl in Klammern).
  * Fußpunkt = unten Mitte. Größen sind Richtwerte.
  */
+/** v1-Liste (wird durch die v2-Listen unten ersetzt) */
 export const OBJ_FRAMES = [
   // Grünwald
   'tree_oak', 'tree_oak2', 'tree_pine',      // ~32x48
@@ -228,8 +261,10 @@ export interface GfxBundle {
   bossMeta: Record<string, SpriteMeta>;
   obj: Sheet;
   fx: Sheet;
-  /** Pro Biom 4 nahtlos kachelbare 32x32-Frames der animierten Flüssigkeit (Wasser, Lava, Eiswasser, Leere …). */
+  /** Pro Biom 8 nahtlos kachelbare 64x64-Frames der animierten Flüssigkeit (v1-Biome: 4 Frames 32x32). */
   liquids: Record<BiomeId, HTMLCanvasElement[]>;
+  /** Große nahtlose Overlay-Texturen: `fog`, `cloud_shadow`, `leaf_shadow` (je 256x256, Alpha) */
+  overlays: Record<string, HTMLCanvasElement>;
 }
 
 export interface GfxApi {

@@ -1,5 +1,6 @@
 /** Effekt-Sheet (`fx`): weiß/grau für Tint, einige farbig. Weiche Alphaverläufe sind hier erlaubt. */
 import { Px, atlasSheet } from './draw';
+import { fx2Items } from './fx2';
 import { P, INK, WHITE, alpha, mix } from './palette';
 import { FX_FRAMES } from './spec';
 import type { Sheet } from './spec';
@@ -81,5 +82,8 @@ export function buildFx(): Sheet {
 
   const have = new Set(items.map((i) => i[0]));
   for (const n of FX_FRAMES) if (!have.has(n)) { const p = new Px(8, 8); p.rect(0, 0, 8, 8, P.pink[3]); items.push([n, p]); console.warn('[gfx] fehlender fx-Frame', n); }
-  return atlasSheet(items, 256);
+  // v2-Effekte überschreiben gleichnamige v1-Frames
+  const merged = new Map<string, Px>(items);
+  for (const [n, px] of fx2Items()) merged.set(n, px);
+  return atlasSheet([...merged], 1024);
 }

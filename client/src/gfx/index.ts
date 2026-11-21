@@ -5,8 +5,9 @@
 import { buildChars, buildCharSheet } from './chars';
 import { buildMobs } from './mobs';
 import { buildBosses } from './bosses';
-import { buildObjects } from './objects';
+import { buildObjects } from './objects/index';
 import { buildFx } from './fx';
+import { buildOverlays } from './fx2';
 import { buildLiquids, paintGround as paintGroundImpl } from './tiles';
 import { iconUrl as iconUrlImpl } from './icons';
 import { CHAR_FRAME_H, CHAR_FRAME_W } from './spec';
@@ -19,7 +20,7 @@ export function buildGfx(): GfxBundle {
   if (bundle) return bundle;
   const { mobs, mobMeta } = buildMobs();
   const { bosses, bossMeta } = buildBosses();
-  bundle = { chars: buildChars(), mobs, mobMeta, bosses, bossMeta, obj: buildObjects(), fx: buildFx(), liquids: buildLiquids() };
+  bundle = { chars: buildChars(), mobs, mobMeta, bosses, bossMeta, obj: buildObjects(), fx: buildFx(), liquids: buildLiquids(), overlays: buildOverlays() };
   return bundle;
 }
 

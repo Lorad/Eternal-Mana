@@ -1,0 +1,28 @@
+/** Objekt-Atlas: führt die Biom-Module zusammen (spätere Module überschreiben gleichnamige Frames). */
+import { Px, atlasSheet } from '../draw';
+import type { Sheet } from '../spec';
+import { commonObjects } from './common';
+import { frostObjects } from './frost';
+import { glutObjects } from './glut';
+import { gruenwaldObjects } from './gruenwald';
+import { kristallObjects } from './kristall';
+import { legacyObjects } from './legacy';
+import { ruinenObjects } from './ruinen';
+import { schattenObjects } from './schatten';
+
+/** Herkunft jedes Frames (für den Asset-Katalog): Framename → Modul */
+export const objSource = new Map<string, string>();
+
+export function buildObjects(): Sheet {
+  const merged = new Map<string, Px>();
+  const add = (mod: string, list: Array<[string, Px]>) => { for (const [n, px] of list) { merged.set(n, px); objSource.set(n, mod); } };
+  add('legacy', legacyObjects());
+  add('common', commonObjects());
+  add('gruenwald', gruenwaldObjects());
+  add('kristall', kristallObjects());
+  add('glut', glutObjects());
+  add('frost', frostObjects());
+  add('ruinen', ruinenObjects());
+  add('schatten', schattenObjects());
+  return atlasSheet([...merged], 2048);
+}

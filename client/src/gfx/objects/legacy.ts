@@ -1,8 +1,8 @@
 /** Objekt-Atlas (`obj`): Bäume, Häuser, Deko, Interaktives. Fußpunkt = unten Mitte. */
-import { Px, Pt, atlasSheet, bez, crystal, tube } from './draw';
-import { P, Ramp, INK, WHITE, alpha, mix, rng } from './palette';
-import { OBJ_FRAMES } from './spec';
-import type { Sheet } from './spec';
+import { Px, Pt, atlasSheet, bez, crystal, tube } from '../draw';
+import { P, Ramp, INK, WHITE, alpha, mix, rng } from '../palette';
+import { OBJ_FRAMES } from '../spec';
+import type { Sheet } from '../spec';
 
 type Fn = (p: Px) => void;
 const items: Array<[string, Px]> = [];
@@ -442,8 +442,5 @@ add('seal_pedestal', 24, 32, (p) => { const S = P.stone; glow(p, 12, 6, 7, P.gol
   l.rect(3, 8, 18, 4, S[3]); l.rect(3, 8, 18, 1, S[4]); l.rect(3, 11, 18, 1, S[1]); l.rect(16, 9, 5, 2, S[2]); l.ell(12, 8, 6, 2, S[1]); l.ell(12, 7.6, 4.5, 1.3, P.gold[2]); l.rect(10, 7, 3, 1, P.gold[4]);
   l.rect(11, 16, 2, 5, P.teal[3]); l.rect(9, 18, 6, 1, P.teal[3]); l.set(11, 18, WHITE); l.px([3, 24, 4, 23, 19, 24], P.green[2]); }); }, false);
 
-export function buildObjects(): Sheet {
-  const have = new Set(items.map((i) => i[0]));
-  for (const n of OBJ_FRAMES) if (!have.has(n)) { const p = new Px(16, 16); p.rect(2, 2, 12, 12, P.pink[3]); items.push([n, p]); console.warn('[gfx] fehlender obj-Frame', n); }
-  return atlasSheet(items, 512);
-}
+/** Bisherige Objektgrafiken (v1). Werden schrittweise durch die Biom-Module ersetzt. */
+export function legacyObjects(): Array<[string, Px]> { return items; }

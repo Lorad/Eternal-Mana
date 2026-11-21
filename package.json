@@ -4,7 +4,9 @@
   "private": true,
   "description": "Eternal Mana – ein Browser-Action-RPG mit autoritativem Server und Koop-Multiplayer über Tailscale",
   "type": "module",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "dev": "concurrently -k -n server,client \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "tsx watch --disable-warning=ExperimentalWarning server/src/index.ts",
@@ -21,6 +23,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.2.0",
     "@preact/preset-vite": "^2.9.0",
     "@types/node": "^22.10.0",
     "@types/ws": "^8.5.13",
