@@ -24,9 +24,9 @@ export function gruenwaldLiquid(): Px[] {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const u = (x / N) * TAU, v = (y / N) * TAU;
       // große, träge atmende Tiefenflecken
-      const s = Math.sin(u + 1.25 * Math.sin(v + ph)) + Math.sin(2 * v - u + 0.9 * Math.sin(2 * u - ph)) + 0.55 * Math.sin(2 * u + v + Math.sin(v - ph) * 1.1);
+      const s = Math.sin(u + 1.2 * Math.sin(v) + 0.32 * Math.sin(v + ph)) + Math.sin(2 * v - u + 0.9 * Math.sin(2 * u) + 0.36 * Math.sin(u - ph)) + 0.55 * Math.sin(2 * u + v + 1.1 * Math.sin(v) + 0.4 * Math.sin(u + v + ph));
       // feine Querwellen, die stromab laufen
-      const r = Math.sin(3 * v + 2 * Math.sin(u + ph) + ph) + 0.5 * Math.sin(5 * v - 2 * u - ph);
+      const r = Math.sin(3 * v + 2 * Math.sin(u) + 0.4 * Math.sin(2 * u + ph) - ph) + 0.5 * Math.sin(5 * v - 2 * u - ph);
       let col = s < -1.45 ? W_DEEP : s < -0.75 ? W_MID : s > 1.5 ? W_LIGHT : W_BASE;
       if (r > 1.32 && s > -0.75) col = s > 0.6 ? W_PALE : W_LIGHT;
       else if (r < -1.38 && s < 1) col = s < -0.75 ? W_DEEP : W_MID;

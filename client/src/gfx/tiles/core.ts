@@ -178,9 +178,9 @@ export interface WallGeom {
   fv: Uint8Array;
   /** Gesamthöhe der Front in dieser Spalte (für Front-Pixel). */
   fh: Uint8Array;
-  /** Oberseite: Abstand zur Nordkante des Wandkörpers (1 = Kante; 255 = weit/unbekannt); 0 = keine Oberseite. */
+  /** Oberseite: Abstand zur Nordkante des Wandkörpers (1 = Kante … 40; 255 = weiter/unbekannt); 0 = keine Oberseite. */
   tn: Uint8Array;
-  /** Oberseite: Abstand zur Abbruchkante im Süden (1 = direkt an der Lippe; 255 = weit/keine Front darunter). */
+  /** Oberseite: Abstand zur Abbruchkante im Süden (1 = direkt an der Lippe … 15; 255 = weiter/keine Front darunter). */
   ts: Uint8Array;
 }
 
@@ -304,8 +304,9 @@ export class Chunk {
   /**
    * Zerlegt eine Wand-Fußabdruckmaske F (1 = Wandkörper) in ¾-Sicht: Die südlichen `h` Pixel jeder Spalte sind die
    * Frontfläche (h = min(hmax, Tiefe − lip); bei ≥ 2 Kacheln Tiefe also 2 Kacheln hoch), der Rest ist Oberseite.
+   * minFaceW > 1 unterdrückt Frontstücke, die waagerecht schmaler sind (sinnvoll bei organisch ausgefransten Masken).
    */
-  resolveWalls(F: Uint8Array, hmax = 32, lip = 6): WallGeom {
+  resolveWalls(F: Uint8Array, hmax = 32, lip = 6, minFaceW = 1): WallGeom {
     const { W, H } = this, n = W * H;
     const fv = new Uint8Array(n), fh = new Uint8Array(n), tn = new Uint8Array(n), ts = new Uint8Array(n);
     for (let x = 0; x < W; x++) {
@@ -320,8 +321,18 @@ export class Chunk {
         for (let yy = yS; yy >= yN; yy--) {
           const sd = yS - yy + 1, i = yy * W + x;
           if (sd <= h) { fv[i] = sd; fh[i] = h; }
-          else { tn[i] = openN ? Math.min(255, yy - yN + 1) : 255; ts[i] = openS ? Math.min(255, sd - h) : 255; }
+          else { const a = yy - yN + 1, b = sd - h; tn[i] = openN && a <= 40 ? a : 255; ts[i] = openS && b <= 15 ? b : 255; }
         }
+      }
+    }
+    // schmale Frontsplitter (ausgefranste senkrechte Kanten) gehören zur Oberseite
+    if (minFaceW > 1) for (let y = 0; y < H; y++) {
+      let x = 0;
+      while (x < W) {
+        if (!fv[y * W + x]) { x++; continue; }
+        const xa = x;
+        while (x < W && fv[y * W + x]) x++;
+        if (x - xa < minFaceW && xa > 0 && x < W) for (let k = xa; k < x; k++) { const i = y * W + k; fv[i] = 0; fh[i] = 0; tn[i] = tn[i - 1] || tn[i + 1] ? 255 : 1; ts[i] = 255; }
       }
     }
     return { fv, fh, tn, ts };
@@ -342,8 +353,13 @@ export class Chunk {
         if (sx < 0 || sy < 0) break;
         if (F[sy * W + sx]) { s = 1 - (k - 1) / len; break; }
       }
-      // Kontaktschatten rundum (Ambient Occlusion)
-      const ao = near[i] < 3.2 ? 0.55 - near[i] * 0.14 : 0;
+      // Kontaktschatten am Wandfuß (unter Fronten) und rechts neben Wänden – nicht auf der Lichtseite
+      let ao = 0;
+      if (near[i] < 3.5) {
+        for (let k = 1; k <= 3; k++) {
+          if ((y >= k && F[i - k * W]) || (x >= k && F[i - k])) { ao = 0.62 - k * 0.14; break; }
+        }
+      }
       out[i] = s > ao ? s : ao;
     }
     return out;

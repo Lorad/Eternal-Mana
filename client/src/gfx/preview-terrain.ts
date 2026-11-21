@@ -9,7 +9,9 @@
  *     decor=1 Deko-Sprites der Karte aus dem Objekt-Atlas darüberlegen (y-sortiert, Anker unten Mitte)
  *     chunks=1  Chunk-Grenzen einzeichnen;  grid=1  Kachelraster;  kinds=1  Kachelarten als Buchstaben
  *     f=0..7  Flüssigkeits-Frame;  anim=1  Flüssigkeit animieren;  noliquid=1  Flüssigkeit weglassen (Magenta)
+ *     poke=x,y,w,h,t;…  Kacheln in einer Kopie der Karte überschreiben (z. B. Becken im Dungeon testen)
  *     perf=1  Zeitmessung: ganze Karte + synthetische 128×128-Karte
+ *     seamtest=1  Nahtprobe: Spiel-Chunks gegen versetzte Aufteilung, zählt abweichende Pixel
  *     liquid=1  Kontaktbogen der Flüssigkeits-Frames (3×3 gekachelt)
  *   window.__spots() liefert interessante Orte der Karte (Brücken, Gefahrenfelder, Räume …).
  */
@@ -25,7 +27,13 @@ const view = document.getElementById('view') as HTMLCanvasElement;
 const info = document.getElementById('info')!;
 const done = (): void => { (window as unknown as { __done: boolean }).__done = true; };
 
-const map = getMap(q.get('map') ?? 'gruenwald');
+const map0 = getMap(q.get('map') ?? 'gruenwald');
+/** poke=x,y,w,h,t;… überschreibt in einer KOPIE der Karte Rechtecke mit Kachelart t (zum Testen seltener Kacheln). */
+const map = q.has('poke') ? { ...map0, tiles: map0.tiles.slice() } : map0;
+for (const part of (q.get('poke') ?? '').split(';')) {
+  const [x, y, w, h, t] = part.split(',').map(Number);
+  if (part && [x, y, w, h, t].every(Number.isFinite)) for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) map.tiles[j * map.w + i] = t;
+}
 const pm: PaintableMap = { w: map.w, h: map.h, tiles: map.tiles, biome: map.biome, dungeon: map.dungeon, seed: map.seed, rooms: map.rooms };
 const liquids = buildLiquids()[map.biome];
 
@@ -61,6 +69,34 @@ function liquidSheet(): void {
   view.width = n * (s * 3 + 4) * z; view.height = s * 3 * z;
   const x = view.getContext('2d')!; x.imageSmoothingEnabled = false;
   liquids.forEach((fr, k) => { for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) x.drawImage(fr, (k * (s * 3 + 4) + i * s) * z, j * s * z, s * z, s * z); });
+  done();
+}
+
+/** Nahtprobe: derselbe Ausschnitt einmal aus den Spiel-Chunks (0/32/64 …) und einmal mit versetzter Aufteilung – muss pixelgleich sein. */
+function seamTest(): void {
+  const a0 = 16, n = Math.min(64, map.w - a0 - 1, map.h - a0 - 1), S = n * TILE;
+  const A = document.createElement('canvas'); A.width = S; A.height = S;
+  const ax = A.getContext('2d', { willReadFrequently: true })!;
+  for (let cy = 0; cy < a0 + n; cy += C) for (let cx = 0; cx < a0 + n; cx += C) ax.drawImage(chunk(cx, cy), (cx - a0) * TILE, (cy - a0) * TILE);
+  const B = document.createElement('canvas'); B.width = S; B.height = S;
+  const bx = B.getContext('2d', { willReadFrequently: true })!;
+  bx.translate(-a0 * TILE, -a0 * TILE);
+  paintGround(bx, pm, a0, a0, a0 + n, a0 + n);
+  const da = ax.getImageData(0, 0, S, S).data, db = bx.getImageData(0, 0, S, S).data;
+  let diff = 0;
+  const where: string[] = [];
+  for (let i = 0; i < da.length; i += 4) if (da[i] !== db[i] || da[i + 1] !== db[i + 1] || da[i + 2] !== db[i + 2] || da[i + 3] !== db[i + 3]) { diff++; if (where.length < 12) where.push(`${a0 * TILE + ((i / 4) % S)},${a0 * TILE + Math.floor(i / 4 / S)}`); }
+  // zweiter Durchlauf derselben Aufteilung: Determinismus
+  const B2 = document.createElement('canvas'); B2.width = S; B2.height = S;
+  const b2 = B2.getContext('2d', { willReadFrequently: true })!;
+  b2.translate(-a0 * TILE, -a0 * TILE);
+  paintGround(b2, pm, a0, a0, a0 + n, a0 + n);
+  const dc = b2.getImageData(0, 0, S, S).data;
+  let diff2 = 0;
+  for (let i = 0; i < db.length; i++) if (db[i] !== dc[i]) diff2++;
+  info.textContent = `Nahtprobe ${map.id}: ${diff} abweichende Pixel von ${S * S} (versetzte Chunk-Aufteilung), ${diff2} abweichende Bytes bei Wiederholung${where.length ? ' – Weltpixel: ' + where.join(' ') : ''}`;
+  console.log('[seam] ' + info.textContent);
+  view.width = S; view.height = S; view.getContext('2d')!.drawImage(B, 0, 0);
   done();
 }
 
@@ -131,7 +167,7 @@ function render(): void {
 }
 
 try {
-  if (q.get('liquid') === '1') liquidSheet(); else if (q.get('perf') === '1') perf(); else render();
+  if (q.get('liquid') === '1') liquidSheet(); else if (q.get('perf') === '1') perf(); else if (q.get('seamtest') === '1') seamTest(); else render();
 } catch (e) {
   info.textContent = 'FEHLER: ' + (e as Error).stack;
   console.error(e);

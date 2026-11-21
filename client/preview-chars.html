@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>Eternal Mana – Figuren-Vorschau</title>
+<style>
+  body { margin: 0; padding: 8px; background: #2b2d35; color: #e8e4d8; font: 11px/1.25 monospace; }
+  h2 { margin: 12px 0 4px; font-size: 13px; color: #f6d250; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin-bottom: 6px; }
+  .cell { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+  canvas { image-rendering: pixelated; display: block; }
+  nav a { color: #9ad; margin-right: 10px; }
+  pre { color: #f88; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<nav><a href="?">strips</a><a href="?sec=lineup">lineup</a><a href="?sec=sil">silhouetten</a><a href="?anim=1">animiert</a></nav>
+<pre id="report"></pre>
+<div id="root"></div>
+<script type="module" src="/src/gfx/preview-chars.ts"></script>
+</body>
+</html>

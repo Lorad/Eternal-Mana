@@ -190,6 +190,8 @@ export class GameScene extends Phaser.Scene {
       const r = this.resolveFrame(d.f);
       if (!r) continue;
       const flat = FLAT.test(d.f);
+      // flache Decals mit Nummer sind Varianten, keine Animation
+      if (flat && r.n > 1) { r.frame = `${d.f}_${(Math.floor(d.x) * 7 + Math.floor(d.y) * 13) % r.n}`; r.n = 0; }
       const s = this.add.image(d.x, d.y, 'obj', r.frame).setOrigin(0.5, 1).setDepth(flat ? 3 : d.y);
       const fh = s.height, fw = s.width;
       const flick = FLICKER.test(d.f);

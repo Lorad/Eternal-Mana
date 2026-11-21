@@ -6,7 +6,7 @@ import { Px } from './draw';
 import { gruenwaldObjects } from './objects/gruenwald';
 import { commonObjects } from './objects/common';
 import { checkFrames } from './objects/kit';
-import type { GfxBundle, PaintableMap } from './spec';
+import type { PaintableMap, Sheet } from './spec';
 import { T } from '../../../shared/src/maps/tiles';
 import type { BiomeId } from '../../../shared/src/maps/tiles';
 
@@ -26,7 +26,33 @@ console.log(`[t] gruenwald ${tGw.toFixed(0)} ms (${gw.length} Frames), common ${
 const F = new Map<string, Px>();
 for (const [n, p] of [...cm, ...gw]) F.set(n, p);
 const errs = checkFrames([...cm, ...gw]);
+// Standflächen-Prüfung: unterhalb der angegebenen Zeile müssen alle Wiege-Frames identisch sein (Stamm/Fuß bewegt sich nicht)
+for (const [n, y0] of [['tree_oak', 76], ['tree_oak2', 72], ['tree_pine', 88], ['tree_birch', 62], ['tree_willow', 99], ['sapling', 26], ['bush', 19], ['wheat', 23], ['reeds', 22], ['cattail', 24], ['tallgrass', 13], ['fern', 14], ['lamp', 18], ['banner', 36]] as const) {
+  const a = F.get(`${n}_0`); if (!a) continue;
+  let diff = 0; for (let f = 1; f < 4; f++) { const b = F.get(`${n}_${f}`); if (!b) continue; for (let y = y0; y < a.h; y++) for (let x = 0; x < a.w; x++) if (a.get(x, y) !== b.get(x, y)) diff++; }
+  if (diff) errs.push(`${n}: ${diff} abweichende Pixel in der festen Basis (ab y=${y0})`);
+}
 for (const e of errs) console.log('FEHLER ' + e);
+
+// ---------------------------------------------------------------- Soll-Liste (Auftrag) → fehlende Frames melden
+const A4 = (n: string): string[] => [0, 1, 2, 3].map((k) => `${n}_${k}`), AN = (n: string, c: number): string[] => Array.from({ length: c }, (_, k) => `${n}_${k}`);
+const EXPECTED: string[] = [
+  ...['tree_oak', 'tree_oak2', 'tree_pine', 'tree_birch', 'tree_willow', 'sapling', 'bush', 'bush_berry', 'bush_flower', 'fern', 'tallgrass', 'wheat', 'reeds', 'cattail', 'lamp', 'forge', 'banner', 'campfire'].flatMap(A4),
+  'tree_dead', 'lilypad_a', 'lilypad_b', 'lily_flower', ...'abcdef'.split('').map((c) => `flowers_${c}`), 'clover', 'mushrooms', 'mushroom_big', 'stump', 'stump_moss', 'log', 'log_moss', 'rock_s', 'rock_m', 'rock_l', 'rock_moss', 'pebbles', 'leafpile',
+  'house_a', 'house_b', 'house_c', 'well', 'stall', 'barrel', 'crate', 'sacks', 'cart', 'signpost', 'bounty_board', 'anvil', 'haystack', 'tent', 'bench', 'woodpile', 'scarecrow', 'beehive', 'shrine', 'birdhouse', 'fence_h', 'fence_v', 'fence_post', 'wall_ruin_h', 'wall_ruin_end', 'bridge_post',
+  ...A4('crit_butterfly_a'), ...A4('crit_butterfly_b'), ...AN('crit_bird_idle', 2), ...AN('crit_bird_peck', 2), ...A4('crit_bird_fly'), ...AN('crit_rabbit_idle', 2), ...A4('crit_rabbit_hop'), ...AN('crit_squirrel_idle', 2), ...A4('crit_squirrel_run'),
+  ...AN('crit_firefly', 2), ...AN('crit_frog_idle', 2), ...AN('crit_frog_hop', 3), ...AN('crit_dragonfly', 2), ...AN('crit_fish', 5),
+  ...['wood', 'silver', 'gold'].flatMap((m) => ['closed', 'mid', 'open'].map((st) => `chest_${m}_${st}`)), 'door_closed', 'door_locked', 'door_open', 'door_boss', 'gate_bars', 'lever_off', 'lever_mid', 'lever_on', 'plate_up', 'plate_down',
+  'brazier_unlit', ...A4('brazier'), ...A4('torch'), ...A4('wall_torch'), 'boulder_wall', 'push_block', 'quellstein_off', ...AN('quellstein', 6), ...AN('portal', 8), 'cave_entrance', 'stairs_down', 'stairs_up', ...A4('spikes'), 'turret',
+  'node_herb', 'node_wood', 'node_crystal', 'node_ember', 'node_frost', 'node_rune', 'node_void', 'node_empty', ...AN('shard', 6), 'drop_bag', 'drop_gold', 'drop_potion', 'drop_gear', 'drop_key', 'grave', 'seal_pedestal',
+  'd_pillar', 'd_pillar_broken', ...A4('d_banner'), 'd_chains', 'd_cobweb', 'd_crate', 'd_barrel', 'd_bookshelf', 'd_table', 'd_rack', 'd_statue', 'd_sarcophagus', 'd_rubble', 'd_bones', 'd_skull', 'd_urn', 'd_rug_a', 'd_rug_b',
+  ...AN('d_crack', 3), ...AN('d_moss', 3), 'd_puddle', 'd_grate', ...A4('d_candles'), 'd_roots', ...AN('d_mushroom_glow', 2),
+];
+{
+  const miss = EXPECTED.filter((n) => !F.has(n)), extra = [...F.keys()].filter((n) => !EXPECTED.includes(n));
+  console.log(`[soll] ${EXPECTED.length} erwartet, ${F.size} geliefert, fehlend: ${miss.join(', ') || '–'}; zusätzlich: ${extra.join(', ') || '–'}`);
+  for (const m of miss) errs.push(`Frame fehlt: ${m}`);
+}
 
 function h2(t: string): void { const e = document.createElement('h2'); e.textContent = t; root.append(e); }
 function row(): HTMLDivElement { const d = document.createElement('div'); d.className = 'row'; root.append(d); return d; }
@@ -77,7 +103,7 @@ const WALLHUNG = /^(wall_torch|d_banner|d_chains|d_roots|d_cobweb)/;
 
 function wheatRows(x0: number, y0: number, cols: number, rows: number): Sp[] {
   const out: Sp[] = [];
-  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) out.push(['wheat', x0 + i * 9 + (j & 1 ? 4 : 0) + ((i * 7 + j * 3) % 3), y0 + j * 7 + ((i * 5 + j) % 2), `ph${(i + j) % 4}`]);
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) out.push(['wheat', x0 + i * 11 + (j & 1 ? 5 : 0) + ((i * 7 + j * 3) % 3), y0 + j * 9 + ((i * 5 + j) % 2), `ph${(i + j) % 4}`]);
   return out;
 }
 const SCENES: Scene[] = [
@@ -129,7 +155,7 @@ const SCENES: Scene[] = [
     id: 'wheat', title: 'Kornfeld', w: 22, h: 12, biome: 'gruenwald', dungeon: false,
     paint: (set, rect) => { rect(0, 9, 22, 2, T.PATH); rect(3, 2, 14, 6, T.GROUND2); },
     sprites: [
-      ...wheatRows(44, 50, 22, 12), ['scarecrow', 150, 80], ['haystack', 300, 120], ['haystack', 318, 138], ['cart', 300, 60], ['fence_h', 40, 140], ['fence_h', 56, 140], ['fence_h', 72, 140], ['fence_h', 88, 140], ['fence_h', 104, 140], ['fence_post', 116, 140],
+      ...wheatRows(46, 52, 18, 9), ['scarecrow', 150, 80], ['haystack', 300, 120], ['haystack', 318, 138], ['cart', 300, 60], ['fence_h', 40, 140], ['fence_h', 56, 140], ['fence_h', 72, 140], ['fence_h', 88, 140], ['fence_h', 104, 140], ['fence_post', 116, 140],
       ['fence_v', 28, 60], ['fence_v', 28, 84], ['fence_v', 28, 108], ['fence_v', 28, 132], ['sacks', 280, 150], ['crit_bird_idle', 258, 104], ['crit_rabbit_idle', 266, 60], ['flowers_a', 20, 170], ['flowers_c', 250, 180], ['tallgrass', 330, 176], ['beehive', 20, 44], ['birdhouse', 270, 40],
       ['@char', 160, 108], ['@char', 240, 160],
     ],
@@ -154,7 +180,8 @@ const SCENES: Scene[] = [
   },
 ];
 
-let bundle: GfxBundle | null = null, paintGroundFn: ((ctx: CanvasRenderingContext2D, map: PaintableMap, a: number, b: number, c: number, d: number) => void) | null = null;
+interface Lite { chars: Record<string, Sheet>; liquids: Partial<Record<BiomeId, HTMLCanvasElement[]>> }
+let bundle: Lite | null = null, paintGroundFn: ((ctx: CanvasRenderingContext2D, map: PaintableMap, a: number, b: number, c: number, d: number) => void) | null = null;
 function frameOf(name: string, opt: string | undefined, k: number): Px | undefined {
   if (F.has(name) && !F.has(`${name}_0`)) return F.get(name);
   let n = 0; while (F.has(`${name}_${n}`)) n++;
@@ -178,8 +205,8 @@ function renderScene(s: Scene, sc: number): HTMLCanvasElement {
   const base = document.createElement('canvas'); base.width = W; base.height = H; const bx = base.getContext('2d')!; bx.imageSmoothingEnabled = false;
   bx.fillStyle = s.dungeon ? '#15131c' : '#4f8f3a'; bx.fillRect(0, 0, W, H);
   if (bundle && paintGroundFn) {
-    const liq = bundle.liquids[s.biome][0];
-    for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) if (tiles[ty * s.w + tx] === T.LIQUID) bx.drawImage(liq, (tx * 16) % liq.width, (ty * 16) % liq.height, 16, 16, tx * 16, ty * 16, 16, 16);
+    const liq = bundle.liquids[s.biome]?.[0];
+    for (let ty = 0; ty < s.h; ty++) for (let tx = 0; tx < s.w; tx++) if (tiles[ty * s.w + tx] === T.LIQUID) { if (liq) bx.drawImage(liq, (tx * 16) % liq.width, (ty * 16) % liq.height, 16, 16, tx * 16, ty * 16, 16, 16); else { bx.fillStyle = '#2a7f9a'; bx.fillRect(tx * 16, ty * 16, 16, 16); } }
     const gc = document.createElement('canvas'); gc.width = W; gc.height = H;
     try { paintGroundFn(gc.getContext('2d')!, map, 0, 0, s.w, s.h); bx.drawImage(gc, 0, 0); } catch (e) { console.log('paintGround-Fehler ' + String(e)); }
   }
@@ -199,7 +226,7 @@ function renderScene(s: Scene, sc: number): HTMLCanvasElement {
     for (const [name, px, py, opt] of sorted) {
       if (name.startsWith('@')) {
         if (!bundle) continue;
-        const sh = bundle.chars[name === '@npc' ? 'npc_haendlerin' : 'char_waldlaeufer']; if (!sh) continue;
+        const sh = bundle.chars[name === '@npc' ? 'npc_haendlerin' : 'char_waldlaeufer'] ?? Object.values(bundle.chars)[0]; if (!sh) continue;
         const f = sh.frames['0']; wx.drawImage(sh.canvas, f.x, f.y, f.w, f.h, px - 16, py - 37, f.w, f.h);
         continue;
       }
@@ -221,7 +248,18 @@ async function main(): Promise<void> {
   for (const e of errs) { const d = document.createElement('div'); d.className = 'err'; d.textContent = e; root.append(d); }
   if (view === 'all' || view === 'sheet') { sheet('Grünwald – Kontaktbogen', gw); sheet('Allgemein – Kontaktbogen', cm); }
   if (view === 'all' || view === 'scenes') {
-    try { const m = await import('./index'); bundle = m.buildGfx(); paintGroundFn = m.paintGround; } catch (e) { console.log('buildGfx nicht verfügbar: ' + String(e)); }
+    // Bevorzugt das komplette Bundle; fällt auf Einzelteile zurück, solange Nachbarmodule im Umbau sind.
+    try {
+      const m = await import('./index'); paintGroundFn = m.paintGround;
+      try { const g = m.buildGfx(); bundle = { chars: g.chars, liquids: g.liquids }; }
+      catch (e) {
+        console.log('buildGfx nicht verfügbar (' + String(e) + ') – Einzelteile');
+        bundle = { chars: {}, liquids: {} };
+        try { const t = await import('./tiles/index'); bundle.liquids = t.buildLiquids(); } catch (e2) { console.log('Flüssigkeiten fehlen: ' + String(e2)); }
+        const c = await import('./chars');
+        for (const k of ['char_waldlaeufer', 'npc_haendlerin', 'char_krieger']) { try { bundle.chars[k] = c.buildCharSheet(k); } catch { /* im Umbau */ } }
+      }
+    } catch (e) { console.log('gfx/index nicht ladbar: ' + String(e)); }
     for (const s of SCENES) {
       if (onlyScene && s.id !== onlyScene) continue;
       for (const sc of [2, 3]) { if (sceneScale && Number(sceneScale) !== sc) continue; h2(`Szene: ${s.title} (${sc}×)`); const r = row(); r.append(renderScene(s, sc)); }

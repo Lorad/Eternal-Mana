@@ -67,7 +67,7 @@ function win(p: Px, x: number, y: number, w: number, h: number, o: WinOpts = {})
     for (let i = -2; i < w + 2; i++) {
       const hh = hash2(i, by, x);
       p.set(x + i, by - 1, hh & 1 ? G[2] : G[3]); if ((hh & 6) !== 0) p.set(x + i, by - 2, hh & 8 ? G[3] : G[4]);
-      if (i % 2 === 0) p.set(x + i, by - 2 - ((hh >> 4) & 1), fl[(hh >> 5) % fl.length]);
+      if (i % 2 === 0) p.set(x + i, by - 2 - ((hh >> 4) & 1), fl[(hh >>> 5) % fl.length]);
     }
     p.px([x - 2, by + 3, x + w, by + 3, x + w, by + 4], G[2]); p.set(x + w, by + 5, G[3]);
   }
@@ -122,12 +122,16 @@ function houseA(p: Px): void {
     // Ortgang
     l.line(12, 9, 2, 56, W[1], 2); l.line(12, 9, 2, 56, W[2]); l.line(67, 9, 77, 56, W[0], 2); l.line(67, 9, 77, 56, W[1]);
     eave(l, 3, 77, 56, ROOF_RED);
-    // Gaube
-    shadeArea(l, (x, y) => x >= 47 && x <= 52 && y >= 26 + (x - 47) && y <= 44, SHADE, 0.35);
-    plaster(l, 33, 30, 14, 14, 2); vbeam(l, 33, 30, 14, 2); vbeam(l, 45, 30, 14, 2); hbeam(l, 33, 42, 14, 2);
-    win(l, 37, 33, 6, 7, { panes: 2 });
-    l.poly([[40, 19], [51, 32], [29, 32]], MARK2); roofTiles(l, ROOF_RED, 19, 13, 12, 3, 4, MARK2);
-    l.line(40, 18, 28, 32, ROOF_RED[4]); l.line(40, 18, 52, 32, ROOF_RED[1]); l.rect(29, 32, 23, 1, ROOF_RED[0]);
+    // Gaube: kleiner Giebel mit Fenster
+    shadeArea(l, (x, y) => x >= 48 && x <= 53 && y >= 30 + (x - 48) && y <= 45, SHADE, 0.35);
+    l.poly([[40, 16], [55, 35], [25, 35]], MARK2); roofTiles(l, ROOF_RED, 16, 19, 12, 3, 4, MARK2);
+    shadeArea(l, (x, y) => y >= 16 && y < 35 && x > 40 && x - 40 < (y - 16) * 0.8 + 1, SHADE, 0.3);
+    shadeArea(l, (x, y) => y >= 16 && y < 35 && x <= 40 && 40 - x < (y - 16) * 0.8 + 1, ROOF_RED[4], 0.3);
+    l.line(40, 15, 24, 35, ROOF_RED[4]); l.line(40, 15, 56, 35, ROOF_RED[0]);
+    l.poly([[40, 23], [49, 35], [49, 45], [32, 45], [32, 35]], MARK2);
+    texFill(l, MARK2, (x, y) => { const n = rnd2(x, y, 4); return y < 26 + Math.abs(x - 40) * 1.25 ? C[2] : n < 0.05 ? C[2] : n > 0.93 ? C[4] : C[3]; });
+    l.line(40, 22, 31, 35, W[1]); l.line(40, 22, 49, 35, W[0]); l.line(40, 23, 32, 35, W[2]); vbeam(l, 32, 35, 10, 2); vbeam(l, 47, 35, 10, 2); hbeam(l, 32, 43, 17, 2);
+    win(l, 37, 31, 6, 8, { panes: 2 });
     chimney(l, 58, 6, 8, 20, 9);
     shadeArea(l, (x, y) => x >= 66 && x <= 69 && y >= 12 && y <= 28, SHADE, 0.3);
   });
@@ -174,10 +178,10 @@ function houseB(p: Px): void {
   wallShadow(p, 12, 65, 60);
   // Bücherstapel und Fernrohr neben der Tür
   part(p, (l) => {
-    for (const [y, c, w] of [[96, P.red, 7], [94, P.teal, 6], [92, P.gold, 7]] as const) { l.rect(64, y, w, 2, c[2]); l.rect(64, y, w, 1, c[3]); l.rect(64 + w - 1, y, 1, 2, C[4]); }
+    for (const [y, c, w] of [[96, P.red, 7], [94, P.teal, 6], [92, P.gold, 7]] as const) { l.rect(60, y, w, 2, c[2]); l.rect(60, y, w, 1, c[3]); l.rect(60 + w - 1, y, 1, 2, C[4]); }
     // Fernrohr auf Dreibein
-    l.line(73, 97, 75, 88, W[2]); l.line(78, 97, 76, 88, W[1]); l.line(75, 97, 75, 89, W[0]);
-    l.line(70, 89, 79, 83, P.gold[2], 2); l.line(70, 89, 79, 83, P.gold[3]); l.px([79, 82, 79, 83], P.gold[4]); l.px([70, 90, 69, 90], P.gold[1]); l.set(78, 82, WHITE);
+    l.line(71, 97, 73, 88, W[2]); l.line(76, 97, 74, 88, W[1]); l.line(73, 97, 73, 89, W[0]);
+    l.line(68, 89, 77, 83, P.gold[2], 2); l.line(68, 89, 77, 83, P.gold[3]); l.px([77, 82, 77, 83], P.gold[4]); l.px([68, 90, 67, 90], P.gold[1]); l.set(76, 82, WHITE);
   });
 }
 

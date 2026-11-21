@@ -419,12 +419,15 @@ export function band(p: Px, x: number, y: number, w: number, h: number, ramp: Ra
   if (h >= w) { p.rect(x, y, 1, h, ramp[2]); if (rivets) for (let j = y + 1; j < y + h - 1; j += 4) p.set(x + ((w - 1) >> 1), j, ramp[3]); }
   else { p.rect(x, y, w, 1, ramp[2]); if (rivets) for (let i = x + 1; i < x + w - 1; i += 4) p.set(i, y + ((h - 1) >> 1), ramp[3]); }
 }
-/** Grashalm/Blatt als gebogene Linie von (x0,y0) nach (x1,y1) mit Krümmung; Spitze heller. */
-export function blade(p: Px, x0: number, y0: number, x1: number, y1: number, bend: number, c: number, tip?: number, thick = false): void {
+/**
+ * Grashalm/Blatt als gebogene Linie von (x0,y0) nach (x1,y1) mit Krümmung; Spitze heller.
+ * sway verschiebt nur die oberen 70 % (quadratisch anlaufend) – der Fuß bleibt in allen Wiege-Frames pixelgleich.
+ */
+export function blade(p: Px, x0: number, y0: number, x1: number, y1: number, bend: number, c: number, tip?: number, thick = false, sway = 0): void {
   const n = Math.max(2, Math.ceil(Math.hypot(x1 - x0, y1 - y0)));
   for (let i = 0; i <= n; i++) {
     const t = i / n, u = 1 - t, mx = (x0 + x1) / 2 + bend, my = (y0 + y1) / 2;
-    const x = u * u * x0 + 2 * u * t * mx + t * t * x1, y = u * u * y0 + 2 * u * t * my + t * t * y1;
+    const e = t < 0.3 ? 0 : (t - 0.3) / 0.7, x = u * u * x0 + 2 * u * t * mx + t * t * x1 + sway * e * e, y = u * u * y0 + 2 * u * t * my + t * t * y1;
     const col = tip !== undefined && t > 0.62 ? tip : c;
     p.set(Math.round(x), Math.round(y), col);
     if (thick && t < 0.55) p.set(Math.round(x) + 1, Math.round(y), c);

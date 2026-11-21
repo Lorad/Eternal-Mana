@@ -8,7 +8,7 @@ const W = P.wood, G = P.green, FO = P.forest;
 
 // ---------------------------------------------------------------- Sträucher
 const BUSH: Lobe[] = [
-  { x: 12, y: 8, rx: 8, ry: 5.5, lv: 0, amp: 1 }, { x: 6, y: 12, rx: 5, ry: 4.5, lv: 0.2, amp: 1.2 }, { x: 18.5, y: 12, rx: 5, ry: 4.5, lv: -0.3, amp: 1.2 }, { x: 12, y: 13.5, rx: 7, ry: 4, lv: 0.3, amp: 0.8 },
+  { x: 12, y: 8, rx: 8, ry: 5.5, lv: 0, amp: 1.5 }, { x: 6, y: 12, rx: 5, ry: 4.5, lv: 0.2, amp: 0.6 }, { x: 18.5, y: 12, rx: 5, ry: 4.5, lv: -0.3, amp: 0.6 }, { x: 12, y: 13.5, rx: 7, ry: 4, lv: 0.3, amp: 0 },
 ];
 function bush(p: Px, f: number, kind: number): void {
   // Stämmchen
@@ -35,28 +35,32 @@ function bush(p: Px, f: number, kind: number): void {
 
 // ---------------------------------------------------------------- Farn, Gras, Korn, Schilf
 function frond(p: Px, x0: number, y0: number, x1: number, y1: number, lift: number, c: number, hi: number, dk: number): void {
-  const pts = bez([x0, y0], [(x0 + x1) / 2, Math.min(y0, y1) - lift], [x1, y1], 12);
-  pts.forEach(([x, y], i) => {
-    const t = i / 12, len = t < 0.15 ? 0 : t > 0.9 ? 0 : 1;
-    p.set(x, y, c);
-    if (len && i % 2 === 0) { p.set(x, y - 1, hi); p.set(x + (x1 > x0 ? -1 : 1), y + 1, dk); }
-    else if (len) p.set(x, y + 1, dk);
-  });
-  p.set(x1, y1, hi);
+  const pts = bez([x0, y0], [(x0 * 0.35 + x1 * 0.65), Math.min(y0, y1) - lift], [x1, y1], 14), out = x1 >= x0 ? 1 : -1;
+  let lx = -99, ly = -99, k = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const x = Math.round(pts[i][0]), y = Math.round(pts[i][1]), t = i / 14;
+    if (x === lx && y === ly) continue;
+    lx = x; ly = y; k++;
+    p.set(x, y, t > 0.8 ? hi : c);
+    if (t < 0.18 || t > 0.93) continue;
+    // Fiederblättchen: abwechselnd oben (hell) und unten (dunkel), zur Spitze kürzer
+    if (k % 2 === 0) { p.set(x, y - 1, hi); if (t < 0.6) p.set(x - out, y - 2, c); }
+    else { p.set(x, y + 1, dk); if (t < 0.5 && t > 0.3) p.set(x - out, y + 2, dk); }
+  }
 }
 function fern(p: Px, f: number): void {
-  const tips: Array<[number, number, number]> = [[1, 9, 5], [3, 4, 5], [6, 1, 4], [10, 1, 4], [13, 4, 5], [15, 9, 5], [8, 3, 3]];
-  tips.forEach(([x, y, lift], k) => {
-    const o = sw(f, y < 5 ? 1.2 : 0.8, k * 0.45 - 0.9), lit = x < 8;
-    frond(p, 8, 15, x + o, y, lift, lit ? G[3] : G[2], lit ? G[4] : G[3], lit ? G[1] : FO[1]);
-  });
-  p.px([7, 15, 8, 15, 8, 14], FO[1]);
+  const tips: Array<[number, number, number, number]> = [[0, 11, 5, 0], [15, 11, 5, 0], [3, 5, 4, 1], [13, 5, 4, 1], [8, 1, 1, 2]];
+  for (const [x, y, lift, r] of tips) {
+    const o = sw(f, r === 2 ? 1.4 : r === 1 ? 1.1 : 0.7, x * 0.12 - 0.9), lit = x < 9;
+    frond(p, x < 8 ? 7 : 8, 15, x + o, y, lift, lit ? G[3] : G[2], lit ? G[4] : G[3], lit ? G[1] : FO[1]);
+  }
+  p.px([7, 15, 8, 15], FO[1]); p.px([7, 14, 8, 13], G[1]);
 }
 function tallgrass(p: Px, f: number): void {
   const bl: Array<[number, number, number, number]> = [[2, 6, -2, 0], [4, 3, -1, 2], [5, 8, 1, 1], [7, 1, 0, 3], [8, 6, -1, 0], [10, 3, 2, 2], [11, 9, 1, 1], [13, 5, 2, 3], [6, 10, -2, 0], [12, 11, 2, 0], [9, 12, 0, 1]];
   bl.forEach(([x, top, lean, c], k) => {
     const o = sw(f, top < 5 ? 1.6 : 1, k * 0.37 - 0.8);
-    blade(p, x, 15, x + lean + o, top, lean * 0.6 + o * 0.5, [FO[2], G[2], G[3], G[3]][c], [G[2], G[3], G[4], mix(G[4], P.gold[4], 0.4)][c], c === 3);
+    blade(p, x, 15, x + lean, top, lean * 0.6, [FO[2], G[2], G[3], G[3]][c], [G[2], G[3], G[4], mix(G[4], P.gold[4], 0.4)][c], c === 3, o);
   });
   // Rispen
   const o = sw(f, 1.6, -0.3);
@@ -69,19 +73,19 @@ function ear(p: Px, x: number, y: number, h: number, dir: number): void {
   p.set(x, y - 2, Y[3]); p.set(x - 1, y - 3, mix(Y[3], P.tan[3], 0.5)); p.set(x + 1, y - 2, P.tan[3]); p.set(x + dir * 2, y - 1, Y[3]);
   p.set(x, y - 1, Y[4]);
   for (let j = 0; j < h; j++) {
-    const xx = x + (j > h - 3 ? 0 : 0), odd = j & 1;
-    p.set(xx - 1, y + j, odd ? Y[2] : Y[3]); p.set(xx, y + j, odd ? Y[3] : Y[4]); p.set(xx + 1, y + j, odd ? Y[1] : Y[2]);
+    const odd = j & 1;
+    p.set(x - 1, y + j, odd ? Y[2] : Y[4]); p.set(x, y + j, j < 2 ? Y[4] : Y[3]); p.set(x + 1, y + j, odd ? Y[1] : Y[2]);
   }
-  p.set(x - 1, y, Y[4]); p.set(x + 1, y + h - 1, Y[1]);
+  p.set(x + 1, y + h - 1, Y[1]); p.set(x - 1, y + h - 1, Y[2]);
 }
 function wheat(p: Px, f: number): void {
   const Y = P.gold, st: Array<[number, number, number, number]> = [[3, 7, -2, 7], [5, 2, -1, 8], [8, 5, 0, 7], [10, 1, 1, 8], [12, 8, 2, 6], [7, 10, -1, 6], [13, 3, 2, 7]];
   // Halmblätter
   const o0 = sw(f, 1, -0.4);
-  blade(p, 5, 25, 1 + o0, 15, -2, mix(Y[2], G[3], 0.45), mix(Y[3], G[4], 0.4)); blade(p, 10, 25, 15 + o0, 16, 2, mix(Y[2], G[3], 0.55), mix(Y[3], G[4], 0.4)); blade(p, 8, 25, 6 + o0, 17, -1, mix(Y[1], G[2], 0.5));
+  blade(p, 5, 25, 1, 15, -2, mix(Y[2], G[3], 0.45), mix(Y[3], G[4], 0.4), false, o0); blade(p, 10, 25, 15, 16, 2, mix(Y[2], G[3], 0.55), mix(Y[3], G[4], 0.4), false, o0); blade(p, 8, 25, 6, 17, -1, mix(Y[1], G[2], 0.5), undefined, false, o0);
   st.forEach(([x, top, lean, h], k) => {
     const o = sw(f, 1.7, k * 0.33 - 0.7), tx = x + lean + o;
-    blade(p, x, 25, tx, top + h, lean * 0.5 + o * 0.4, k % 3 === 0 ? Y[1] : k % 3 === 1 ? Y[2] : P.tan[2], Y[2]);
+    blade(p, x, 25, x + lean, top + h, lean * 0.5, k % 3 === 0 ? Y[1] : k % 3 === 1 ? Y[2] : P.tan[2], Y[2], false, o);
     ear(p, tx, top, h, lean >= 0 ? 1 : -1);
   });
 }
@@ -89,7 +93,7 @@ function reeds(p: Px, f: number): void {
   const bl: Array<[number, number, number, number]> = [[3, 8, -1, 0], [5, 2, 0, 1], [7, 5, 1, 2], [8, 0, -1, 1], [10, 3, 1, 2], [12, 7, 2, 0], [13, 11, 2, 1], [6, 12, -2, 0], [9, 9, 0, 0]];
   bl.forEach(([x, top, lean, c], k) => {
     const o = sw(f, top < 5 ? 1.8 : 1.2, k * 0.4 - 0.9);
-    blade(p, x, 25, x + lean + o, top, lean * 0.4 + o * 0.5, [FO[2], G[2], mix(G[2], G[3], 0.6)][c], [G[2], G[3], mix(G[4], P.sand[4], 0.4)][c], k % 2 === 0);
+    blade(p, x, 25, x + lean, top, lean * 0.4, [FO[2], G[2], mix(G[2], G[3], 0.6)][c], [G[2], G[3], mix(G[4], P.sand[4], 0.4)][c], k % 2 === 0, o);
   });
   // geknickter Halm und Rispe
   const o = sw(f, 1.8, -0.2);
@@ -100,12 +104,12 @@ function cattail(p: Px, f: number): void {
   const bl: Array<[number, number, number, number]> = [[3, 12, -2, 0], [12, 10, 2, 1], [6, 15, -1, 1], [10, 16, 2, 0], [8, 13, 0, 2]];
   bl.forEach(([x, top, lean, c], k) => {
     const o = sw(f, 1.2, k * 0.4 - 0.6);
-    blade(p, x, 27, x + lean + o, top, lean * 0.5 + o * 0.5, [FO[2], G[2], G[3]][c], [G[2], G[3], G[4]][c], true);
+    blade(p, x, 27, x + lean, top, lean * 0.5, [FO[2], G[2], G[3]][c], [G[2], G[3], G[4]][c], true, o);
   });
   const heads: Array<[number, number, number]> = [[5, 4, -0.5], [9, 1, 0], [12, 7, 0.5]];
   heads.forEach(([x, top, ph], k) => {
     const o = sw(f, 1.5, ph), X = x + o;
-    blade(p, x + (k - 1), 27, X, top + 7, o * 0.5, G[2], G[2]);
+    blade(p, x + (k - 1), 27, x, top + 7, 0, G[2], G[2], false, o);
     p.set(X, top, P.tan[3]); p.set(X, top + 1, P.tan[2]);
     p.rect(X - 1, top + 2, 3, 6, W[1]); p.rect(X - 1, top + 2, 1, 6, W[2]); p.set(X - 1, top + 3, W[3]); p.set(X, top + 2, W[2]); p.rect(X + 1, top + 3, 1, 5, W[0]); p.set(X, top + 7, W[0]);
   });
@@ -192,11 +196,11 @@ function flowersF(p: Px): void { // Malven
   p.px([3, 12, 2, 11, 9, 13, 8, 12, 13, 14, 14, 13], G[3]); p.px([4, 12, 10, 13], G[2]); p.rect(7, 2, 2, 2, K[2]); p.set(7, 2, K[4]); stem(p, 8, 4, 8);
 }
 function clover(p: Px): void {
-  for (let k = 0; k < 13; k++) {
-    const x = 2 + ((k * 5 + (k >> 1) * 3) % 13), y = 2 + ((k * 7) % 9), lit = (x + y) % 3 === 0, c = lit ? G[4] : k % 2 ? G[3] : G[2];
+  for (let k = 0; k < 20; k++) {
+    const a = rnd2(k, 1, 41) * 6.283, r = Math.sqrt(rnd2(k, 2, 41)), x = Math.round(8 + Math.cos(a) * r * 6), y = Math.round(5.5 + Math.sin(a) * r * 3.6), lit = hash2(k, 3, 41) % 3 === 0, c = lit ? G[4] : k % 2 ? G[3] : G[2];
     p.px([x, y, x - 1, y + 1, x + 1, y + 1], c); p.set(x, y + 1, G[1]); if (lit) p.set(x, y, mix(G[4], WHITE, 0.3));
   }
-  for (const [x, y] of [[5, 4], [11, 7]] as const) { p.px([x, y, x + 1, y, x, y - 1], WHITE); p.set(x + 1, y - 1, P.pink[4]); p.set(x + 1, y + 1, P.pink[3]); p.set(x, y + 1, G[1]); }
+  for (const [x, y] of [[5, 4], [11, 7], [8, 9]] as const) { p.px([x, y, x + 1, y, x, y - 1], WHITE); p.set(x + 1, y - 1, P.pink[4]); p.set(x + 1, y + 1, P.pink[3]); p.set(x, y + 1, G[1]); }
 }
 function shroom(p: Px, x: number, base: number, r: number, h: number, C: Ramp, dots = true): void {
   const S = P.cream, sw2 = Math.max(1, Math.round(r * 0.45));

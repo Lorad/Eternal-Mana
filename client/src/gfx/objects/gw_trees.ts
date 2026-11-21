@@ -205,8 +205,8 @@ function curtain(t: Tone, f: number, x0: number, x1: number, step: number, top: 
   for (const [x, y0, L, kk] of ls) lock(t, f, x, y0, L, wd + (rnd2(kk, 4, seed) < 0.4 ? 1 : 0), base - ((x - 48) / 46) * 0.9 + (rnd2(kk, 5, seed) - 0.5) * 1.2, amp, x * 0.05 + rnd2(kk, 3, seed) * 0.6, seed + kk);
 }
 const WILLOW_LOBES: Lobe[] = [
-  { x: 48, y: 16, rx: 26, ry: 12, lv: -0.3, amp: 0.8 }, { x: 22, y: 27, rx: 17, ry: 12, lv: -0.2, amp: 1 }, { x: 74, y: 28, rx: 17, ry: 12, lv: -0.7, amp: 1 },
-  { x: 35, y: 21, rx: 16, ry: 10, lv: 0.4, amp: 0.9 }, { x: 61, y: 22, rx: 15, ry: 10, lv: 0.1, amp: 0.9 }, { x: 12, y: 38, rx: 9, ry: 8, lv: 0, amp: 1.2 }, { x: 84, y: 39, rx: 9, ry: 8, lv: -0.5, amp: 1.2 },
+  { x: 48, y: 14, rx: 22, ry: 11, lv: -0.3, amp: 0.8 }, { x: 22, y: 28, rx: 17, ry: 11, lv: -0.2, amp: 1 }, { x: 74, y: 29, rx: 17, ry: 11, lv: -0.7, amp: 1 },
+  { x: 34, y: 20, rx: 15, ry: 10, lv: 0.4, amp: 0.9 }, { x: 62, y: 21, rx: 14, ry: 10, lv: 0.1, amp: 0.9 }, { x: 12, y: 38, rx: 9, ry: 8, lv: 0, amp: 1.2 }, { x: 84, y: 39, rx: 9, ry: 8, lv: -0.5, amp: 1.2 },
   { x: 48, y: 33, rx: 20, ry: 9, lv: 0.2, amp: 1 },
 ];
 function willow(p: Px, f: number): void {

@@ -24,5 +24,7 @@ export function buildObjects(): Sheet {
   add('frost', frostObjects());
   add('ruinen', ruinenObjects());
   add('schatten', schattenObjects());
+  // Animierte v2-Frames (`name_0..n`) ersetzen gleichnamige Einzelbilder aus v1
+  for (const n of [...merged.keys()]) if (merged.has(n + '_0')) { merged.delete(n); objSource.delete(n); }
   return atlasSheet([...merged], 2048);
 }
