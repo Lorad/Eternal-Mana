@@ -143,7 +143,7 @@ export const BOSS_ANIMS = {
 } as const satisfies Record<string, AnimDef>;
 export const BOSS_FRAMES = 26;
 
-export interface SpriteMeta { w: number; h: number }
+export interface SpriteMeta { w: number; h: number; /** sichtbare Höhe über dem Standpunkt (zur Laufzeit gemessen) */ top?: number }
 
 // ---------------------------------------------------------------- Objekte
 /**

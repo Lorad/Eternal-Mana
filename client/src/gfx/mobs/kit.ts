@@ -68,7 +68,7 @@ export function limb(l: Px, a: Pt, b: Pt, r0: number, r1: number, r: Ramp, lo = 
 export function shade(m: Px, r: Ramp, lo = 0, hi = r.length - 1, bias = 0, vw = 0.64): Px {
   const { w, h, d } = m, n = hi - lo + 1;
   const op = new Uint8Array(w * h);
-  for (let i = 0; i < d.length; i++) op[i] = d[i] >>> 24 >= 128 ? 1 : 0;
+  for (let i = 0; i < d.length; i++) op[i] = d[i] !== 0 ? 1 : 0;
   const up = new Uint8Array(w * h), dn = new Uint8Array(w * h), lf = new Uint8Array(w * h), rt = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (op[i]) { up[i] = y > 0 ? up[i - w] + 1 : 1; lf[i] = x > 0 ? lf[i - 1] + 1 : 1; } }
   for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) { const i = y * w + x; if (op[i]) { dn[i] = y < h - 1 ? dn[i + w] + 1 : 1; rt[i] = x < w - 1 ? rt[i + 1] + 1 : 1; } }

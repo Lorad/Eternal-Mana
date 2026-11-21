@@ -83,12 +83,12 @@ interface KP { bx: number; by: number; rot: number; open: number; ant: number; e
 const KAEFER: Ramp = [P.forest[0], P.forest[1], P.forest[2], P.forest[3], P.forest[4]];
 function kaeferBody(b: Px, o: KP, thorns = true): void {
   if (thorns) for (const [x, y, h] of [[6.5, 14.8, 2.2], [11, 13, 2.8], [15.5, 14.4, 2.2]] as const) {
-    b.poly([[x - 1.6, y + 1.5], [x - 1.4, y - h], [x + 1.8, y + 1.5]], P.tan[2]); b.set(R(x - 1.4), R(y - h), P.tan[4]); b.set(R(x - 1), R(y - h + 1), P.tan[4]); b.set(R(x + 0.6), R(y), P.tan[1]);
+    b.poly([[x - 1.6, y + 1.5], [x - 1.4, y - h], [x + 1.8, y + 1.5]], P.green[3]); b.set(R(x - 1.4), R(y - h), P.green[4]); b.set(R(x - 1), R(y - h + 1), P.green[4]); b.set(R(x + 0.6), R(y), P.forest[2]);
   }
-  form(b, (m) => { m.ell(11, 19.2, 8, 7, 1); m.rect(0, 24, 32, 8, 0); }, KAEFER, 1, 4, 0.1);
+  form(b, (m) => { m.ell(11, 19.2, 8, 7, 1); m.rect(0, 24, 32, 8, 0); }, KAEFER, 1, 4, 0.26);
   // Flügeldecken-Rillen, Glanz, Moosfleck
   for (const pt of bez([8.5, 23], [10.5, 17.5], [18.4, 18.5], 10)) b.set(R(pt[0]), R(pt[1]), P.forest[1]);
-  b.px([6, 17, 6, 16, 7, 15, 8, 14, 9, 14, 10, 13], P.green[4]); b.px([7, 16, 8, 15], WHITE); b.px([13, 16, 14, 16, 15, 17], P.green[4]); b.px([5, 21, 12, 21, 15, 22], P.gold[3]);
+  b.px([5, 18, 5, 17, 6, 16, 7, 15, 8, 15, 9, 14], WHITE); b.px([6, 17, 7, 16, 6, 18], P.green[4]); b.px([13, 16, 14, 16, 15, 17], P.green[4]); b.px([12, 21, 15, 22], P.forest[1]);
   b.rect(4, 23, 15, 1, P.forest[0]);
   // Halsschild + Kopf
   form(b, (m) => { m.ell(19.6, 20.6, 3.5, 4.1, 1); m.rect(0, 24, 32, 8, 0); }, P.wood, 1, 3, 0.04);

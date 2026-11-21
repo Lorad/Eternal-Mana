@@ -101,9 +101,11 @@ function starFloor(c: Chunk, f: GF_, i: number, wx: number, wy: number, h: numbe
   const ex = ux < 10 ? ux : 19 - ux, ey = uy < 10 ? uy : 18.75 - uy, dm = ex + ey;
   if (dm < 6.2) {
     // Kristallraute auf der Fliesenecke (gehört vier Achtecken gemeinsam)
-    const qx = ux < 10 ? kx : kx + 1, qy = uy < 10 ? ky : ky + 1, R = (qx + qy) & 1 ? CYR : (qx * 3 + qy) % 5 === 0 ? MGR : VIR;
+    const qx = ux < 10 ? kx : kx + 1, qy = uy < 10 ? ky : ky + 1, hq = hash2(qx, qy, c.seed + 2308), R = hq % 3 === 0 ? CYR : hq % 7 === 0 ? MGR : VIR;
     if (dm > 5) return GF[0];
     const sx = ux < 10 ? 1 : -1, sy = uy < 10 ? 1 : -1;
+    // nur ein Teil der Ecksteine ist Kristall (in Nestern), die übrigen sind dunkler Stein
+    if (f.nL[i] * 0.6 + f.nM[i] * 0.4 + ((hq >>> 8) & 15) / 60 < 0.62) return sx + sy > 0 ? GF[1] : sx + sy < 0 ? GF[3] : GF[2];
     return dm < 1.2 ? WHITE : sx + sy > 0 ? R[1] : sx + sy < 0 ? R[3] : sx > 0 ? R[2] : R[4];
   }
   const hh = hash2(kx, ky, c.seed + 2302);
@@ -212,7 +214,7 @@ function sunburst(f: GF_, i: number, dx: number, dy: number, r: number, inset: n
   // radial verlegte Ringe, nach außen dunkler
   const k = r < 30 ? 0 : r < 60 ? 1 + (((r - 33) / 13.5) | 0) : 3 + (((r - 64) / 15) | 0);
   const r0 = k === 0 ? 9 : k < 3 ? 33 + (k - 1) * 13.5 : 64 + (k - 3) * 15, r1 = k === 0 ? 30 : k < 3 ? r0 + 13.5 : r0 + 15;
-  const col = ring(f, i, a, r, r0 - 1, k === 0 || k === 2 ? r1 + 2 : r1, 12 + k * 6, (k & 1) * 0.5, room * 16 + k, lit, h);
+  const col = ring(f, i, a, r, r0 - 1, k === 0 || k === 2 ? r1 + 2 : r1, 12 + k * 6, rnd2(k, room, 2392), room * 16 + k, lit, h);
   return r > 64 && col !== GF[0] && ((k & 1) || f.nM[i] > 0.6) ? mix(col, GF[1], 0.22) : col;
 }
 
@@ -262,8 +264,11 @@ function topCol(c: Chunk, f: GF_, i: number, wx: number, wy: number, h: number):
     // Säulenkopf: Kristallspitze von oben
     const lx = wx & 15, R = hash2(wx >> 4, (wy + ts + 6) >> 4, seed + 2310) & 1 ? CYR : VIR;
     if (lx === 0 || lx === 15 || g.tn[i] === 1) return R[0];
-    const m = Math.abs(lx - 7.5) / 7.5 + Math.abs(g.tn[i] - 4.5) / 6;
-    return m < 0.25 ? WHITE : lx < 8 ? (g.tn[i] < 5 ? R[4] : R[3]) : g.tn[i] < 5 ? R[3] : R[2];
+    // vier Facetten, die sich in der Spitze treffen
+    const fx = (lx - 7.5) / 7.5, fy = (g.tn[i] - (g.tn[i] + ts) / 2) / ((g.tn[i] + ts) / 2);
+    if (Math.abs(fx) < 0.14 && Math.abs(fy) < 0.3) return WHITE;
+    if (Math.abs(Math.abs(fx) - Math.abs(fy)) < 0.12) return fx + fy < 0 ? R[4] : R[0];
+    return Math.abs(fx) > Math.abs(fy) ? (fx < 0 ? R[3] : R[1]) : fy < 0 ? R[4] : R[2];
   }
   if (ts <= 2) { const cj = ((wx + (hash2(wy >> 4, 2, seed + 2311) % 13)) % 13 + 13) % 13; return cj === 0 ? DS[2] : ts === 1 ? DS[4] : DS[3]; }
   if (ts === 3) return DS[0];

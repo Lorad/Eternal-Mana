@@ -108,7 +108,7 @@ export class MobView {
     this.boss = !!info.boss;
     this.key = (this.boss ? 'boss_' : 'mob_') + info.mob;
     const meta = (this.boss ? ctx.gfx.bossMeta : ctx.gfx.mobMeta)[info.mob] ?? { w: 32, h: 32 };
-    this.w = meta.w; this.h = meta.h;
+    this.w = meta.w; this.h = meta.h; this.visTop = meta.top ?? 0;
     this.foot = this.boss ? 6 : 3;
     this.originY = (meta.h - this.foot) / meta.h;
     this.x = info.x; this.y = info.y; this.hp = info.hp;
@@ -121,7 +121,8 @@ export class MobView {
     this.bar = sc.add.graphics();
   }
   /** sichtbare Höhe über dem Standpunkt */
-  get top() { return (this.h - this.foot) * this.scale * 0.8; }
+  private visTop = 0;
+  get top() { return (this.visTop || (this.h - this.foot) * 0.8) * this.scale; }
   play(a: string, restart = false) { if (this.dying) return; if (a !== this.anim || restart) { this.anim = a; this.animStart = this.ctx.clock(); } }
   die() { this.dying = true; this.anim = 'death'; this.animStart = this.ctx.clock(); this.bar.destroy(); this.label?.destroy(); this.label = undefined; this.status.destroy(this.ctx); }
   deathDone(): boolean { const d = this.boss ? BOSS_ANIMS.death : MOB_ANIMS.death; return animDone(d, this.ctx.clock() - this.animStart); }

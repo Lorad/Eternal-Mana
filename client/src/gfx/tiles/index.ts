@@ -9,11 +9,13 @@ import type { PaintableMap } from '../spec';
 import { Chunk, TS, type BiomePainter } from './core';
 import { gruenwald } from './gruenwald';
 import { kristall } from './kristall';
+import { glut } from './glut';
 import { buildLiquidsLegacy, paintGroundLegacy } from './legacy';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   gruenwald,
   kristall,
+  glut,
 };
 
 const CH = 32;

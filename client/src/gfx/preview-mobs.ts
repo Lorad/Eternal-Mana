@@ -4,6 +4,7 @@
  *   ?scale=4               Vergrößerung der Streifen
  *   ?sec=strips|lineup|sil nur ein Abschnitt (Standard: alle)
  *   ?wrap=1                Streifen in zwei Zeilen (12 + 10 Frames) – für Screenshots
+ *   ?frames=a-b            nur die Frames a..b (Zoom auf einzelne Posen)
  *   ?bg=<css>              Hintergrund erzwingen
  *   ?anim=1                animierte Ansicht mit den fps aus MOB_ANIMS; ?t=<ms> friert sie zu einem Zeitpunkt ein
  */
@@ -83,7 +84,8 @@ if (q.get('anim') === '1') {
     h2('Streifen: idle 4 | move 6 | windup 2 | attack 3 | hit 2 | death 5');
     for (const id of ids) {
       const s = mobs[`mob_${id}`], m = meta[id]; if (!s) continue;
-      const rows = wrap ? [[0, 12], [12, 22]] : [[0, 22]];
+      const fq = (q.get('frames') ?? '').split('-').map(Number);
+      const rows = fq.length === 2 ? [[fq[0], fq[1] + 1]] : wrap ? [[0, 12], [12, 22]] : [[0, 22]];
       const cols = Math.max(...rows.map((r) => r[1] - r[0]));
       const [c, x] = mk(cols * m.w * SC, rows.length * m.h * SC);
       x.fillStyle = bgOf(id); x.fillRect(0, 0, c.width, c.height);

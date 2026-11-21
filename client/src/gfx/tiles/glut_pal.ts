@@ -13,7 +13,7 @@ export const BAS = tones(7, mix(A[0], INK, 0.3), A[1], mix(A[2], P.steel[0], 0.3
 /** Schlacke: rötlich-schwarz, porös. */
 export const SLAG = tones(6, A[0], mix(A[1], P.red[0], 0.4), mix(A[2], P.red[1], 0.3), mix(A[3], F[0], 0.4), mix(A[4], P.red[3], 0.35));
 /** Nomadenpfad: festgetretene helle Asche. */
-export const PASH = tones(6, mix(A[3], P.wood[1], 0.3), mix(A[4], P.tan[1], 0.3), mix(P.cream[1], P.tan[2], 0.25), mix(P.cream[2], P.tan[3], 0.25), P.cream[3]);
+export const PASH = tones(6, mix(A[3], P.wood[1], 0.2), mix(A[4], SN[2], 0.3), mix(P.cream[1], SN[3], 0.4), mix(P.cream[2], SN[3], 0.35), mix(P.cream[3], SN[4], 0.3));
 /** Erkaltete Lavakruste. */
 export const CRUST = tones(5, mix(A[0], INK, 0.4), A[0], A[1], mix(A[2], P.red[0], 0.25), mix(A[3], P.red[1], 0.2));
 /** Glut: dunkelrot → weißgelb. */
@@ -22,4 +22,4 @@ export const VOIDR = mix(INK, P.red[0], 0.22);
 export const VOIDR2 = mix(VOIDR, A[1], 0.5);
 export const IRON = [mix(P.steel[0], INK, 0.35), P.steel[0], mix(P.steel[0], P.steel[1], 0.6), P.steel[1], mix(P.steel[1], P.steel[2], 0.5), P.steel[2], P.steel[3]];
 /** Steinplatten der Brücke und der Trittsteine. */
-export const SLABR = tones(6, BAS[1], BAS[3], BAS[5], mix(SN[3], P.cream[2], 0.3));
+export const SLABR = tones(6, BAS[1], BAS[3], BAS[5], mix(SN[3], P.steel[3], 0.45));

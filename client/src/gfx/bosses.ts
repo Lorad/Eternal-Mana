@@ -9,8 +9,11 @@ import type { Sheet, SpriteMeta } from './spec';
 import { buildBoss } from './bosses/kit';
 import type { BossDef } from './bosses/kit';
 import { dornenmutter } from './bosses/dornenmutter';
+import { kristallkoloss } from './bosses/kristallkoloss';
+import { ignarok } from './bosses/ignarok';
+import { ysolde } from './bosses/ysolde';
 
-const DEFS: Partial<Record<(typeof BOSS_IDS)[number], BossDef>> = { dornenmutter };
+const DEFS: Partial<Record<(typeof BOSS_IDS)[number], BossDef>> = { dornenmutter, kristallkoloss, ignarok, ysolde };
 
 export function buildBosses(): { bosses: Record<string, Sheet>; bossMeta: Record<string, SpriteMeta> } {
   const bosses: Record<string, Sheet> = {}, bossMeta: Record<string, SpriteMeta> = {};

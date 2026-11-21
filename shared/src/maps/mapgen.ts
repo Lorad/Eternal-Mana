@@ -48,9 +48,9 @@ export function getMap(zoneId: string): GameMap {
 }
 
 const px = (t: number) => t * TILE + TILE / 2;
-const WIDE = new Set(['rock_l', 'log', 'log_moss', 'arch', 'stall']);
+const WIDE = new Set(['rock_l', 'log', 'log_moss', 'arch', 'stall', 'stalagmite_cluster', 'rock_cave_l', 'basalt_cluster', 'obsidian_big', 'ribcage', 'snow_rock_l', 'icicle_log', 'pillar_fallen', 'wall_frag', 'broken_arch', 'shadow_spire_l']);
 /** Große Bäume halten Abstand zueinander, damit Kronen nicht zu einer Wand verschmelzen. */
-const BIG_TREES = new Set(['tree_oak', 'tree_oak2', 'tree_pine', 'tree_birch', 'tree_willow', 'tree_dead', 'pine_snow', 'pine_snow2', 'vine_tree', 'twisted_tree', 'dead_tree']);
+const BIG_TREES = new Set(['tree_oak', 'tree_oak2', 'tree_pine', 'tree_birch', 'tree_willow', 'tree_dead', 'pine_snow', 'pine_snow2', 'birch_bare', 'vine_tree', 'cypress', 'twisted_tree', 'dead_tree', 'crystal_big']);
 
 function finishSolid(tiles: Uint8Array, solid: Uint8Array) {
   for (let i = 0; i < tiles.length; i++) {
@@ -332,15 +332,24 @@ function genOverworld(def: ZoneDef): GameMap {
       for (const [f, dx, dy, s, wc] of D) addDecor(f, p.x + dx, p.y + dy, s, wc ?? 1);
       safe.push({ x: px(p.x), y: px(p.y), r: (p.r + 9) * TILE });
     } else if (p.kind === 'camp') {
-      addDecor('campfire', p.x, p.y, true);
-      addDecor('tent', p.x - 5, p.y - 1, true, 3, 2);
-      addDecor('woodpile', p.x - 2, p.y - 3, true, 2);
-      addDecor('crate', p.x + 5, p.y + 1, true);
-      addDecor('barrel', p.x + 5, p.y + 2, true);
+      // Lagerausstattung je Biom: [Frame, dx, dy, Breite, Höhe]
+      const CAMP: Record<string, [string, number, number, number?, number?][]> = {
+        gruenwald: [['campfire', 0, 0], ['tent', -5, -1, 3, 2], ['woodpile', -2, -3, 2], ['crate', 5, 1], ['barrel', 5, 2]],
+        kristall: [['campfire', 0, 0], ['mine_support', -6, -2, 3], ['mine_cart', 5, 2, 2], ['ore_crate', 5, -1], ['ore_crate', 6, -1], ['pickaxe_rack', -1, -4], ['lantern_post', 2, -4], ['lantern_post', -4, 3], ['tent', -6, 2, 3, 2]],
+        glut: [['nomad_brazier', 0, 0], ['nomad_tent', -6, -1, 3, 2], ['nomad_tent', 5, 3, 3, 2], ['nomad_banner', 2, -4], ['nomad_banner', -2, -4], ['water_skins', 6, -1], ['cairn', -4, 3]],
+        frost: [['campfire', 0, 0], ['cabin', -9, -3, 4, 3], ['fur_rack', 6, -3, 2], ['sled', -2, 4, 2], ['woodpile_snow', 1, -4, 2], ['lantern_frost', -4, -1], ['lantern_frost', 4, 1], ['prayer_flags', 6, 5, 3]],
+        ruinen: [['campfire', 0, 0], ['dig_tent', -7, -1, 3, 2], ['dig_table', 5, -1, 2], ['dig_crates', 6, 2, 2], ['brazier_blue', -1, -4], ['brazier_blue', 2, -4], ['urn', -4, 3]],
+        schatten: [['last_light', 0, 0], ['memory_frame', -4, -2], ['chain_pillar', 5, -3], ['chain_pillar', -5, 3], ['lost_toy', 3, 3]],
+      };
+      for (const [f, dx, dy, wc, hc] of CAMP[def.biome] ?? CAMP.gruenwald) addDecor(f, p.x + dx, p.y + dy, f !== 'memory_frame' && f !== 'lost_toy', wc ?? 1, hc ?? 1);
+      if (def.biome === 'schatten') for (let k = 0; k < 10; k++) decor.push({ f: 'ghost_flower', x: px(p.x) + Math.round(Math.cos(k * 0.63) * 34), y: px(p.y) + Math.round(Math.sin(k * 0.63) * 26) });
       if (p.npcs?.length) addObj('stone', p.x, p.y + 4, 'stone');
       safe.push({ x: px(p.x), y: px(p.y), r: (p.r + 6) * TILE });
     }
     for (const [npc, dx, dy] of p.npcs ?? []) addObj('npc', p.x + dx, p.y + dy, npc);
+    if (def.id === 'frost' && p.id === 'gipfel') addDecor('prayer_flags', p.x - 1, p.y - 2, true, 3);
+    if (def.id === 'glut' && p.id === 'feld') addDecor('forge_ruin', p.x - 1, p.y - 2, true, 3, 2);
+    if (def.id === 'schatten' && p.id === 'westen') decor.push({ f: 'lost_toy', x: px(p.x) + 10, y: px(p.y) + 6 });
     if (p.id === 'schrein') { addDecor('shrine', p.x - 1, p.y - 1, true, 2); addDecor('wall_ruin_h', p.x - 5, p.y - 2, true, 3); addDecor('wall_ruin_h', p.x + 2, p.y - 3, true, 3); addDecor('wall_ruin_end', p.x + 5, p.y - 3, true, 1); }
     const lore = LORE[`${def.id}:${p.id}`];
     if (lore) addObj('sign', p.x + (p.kind === 'camp' ? -2 : 1), p.y + (p.kind === 'camp' ? 3 : -2), undefined, { text: lore });

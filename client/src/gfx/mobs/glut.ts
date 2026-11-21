@@ -155,10 +155,10 @@ const BAS: Ramp = [P.ash[0], P.ash[2], P.ash[3], P.ash[4], P.stone[2]];
 const BAS_FAR: Ramp = [P.ash[0], P.ash[1], P.ash[2], P.ash[2], P.ash[3]];
 function golemLit(a: string, i: number): number { return a === 'windup' ? [0.7, 1][i] : a === 'attack' ? [1, 0.8, 0.4][i] : a === 'hit' ? -1 : a === 'death' ? (i === 0 ? 1.2 : -1) : [0, 0.25, 0.5, 0.25, 0, 0.25][i]; }
 const GOLEM: BLook = {
-  w: 48, h: 48, cx: -1, hip: 9, torsoH: 13, stance: 4.5, legR: [3.4, 3.2], armL: 14, armR: [3.6, 4.2], armRF: [2.4, 2.6], shN: [-6, 3], shF: [7, 4], skin: BAS, far: BAS_FAR,
+  w: 48, h: 48, cx: -1, hip: 10, torsoH: 15, stance: 4.5, legR: [3.4, 3.2], armL: 14, armR: [3.6, 4.2], armRF: [2.4, 2.6], shN: [-6, 3], shF: [7, 4], skin: BAS, far: BAS_FAR,
   torso: (l, k, b) => {
     const cx = (k.hip[0] + k.sh[0]) / 2, cy = (k.hip[1] + k.sh[1]) / 2, lit = golemLit(b.fr.a, b.fr.i);
-    form(l, (m) => { m.ell(cx, cy, 9.5, 8.6, 1); m.ell(k.sh[0] - 3, k.sh[1] + 3.5, 9, 6, 1); m.ell(k.sh[0] + 5, k.sh[1] + 4.5, 5.5, 4.5, 1); }, BAS, 1, 4, 0.08);
+    form(l, (m) => { m.ell(cx, cy, 9.8, 9.6, 1); m.ell(k.sh[0] - 3, k.sh[1] + 3.5, 9, 6, 1); m.ell(k.sh[0] + 5, k.sh[1] + 4.5, 5.5, 4.5, 1); }, BAS, 1, 4, 0.08);
     // Basaltsäulen-Fugen
     for (const [dx, y0, y1] of [[-7, -3, 6], [-3, -7, 8], [2, 2, 8], [6, -4, 6]] as const) for (let y = R(cy + y0); y <= cy + y1; y++) if (l.get(R(cx + dx), y) >>> 24) l.set(R(cx + dx), y, BAS[1]);
     l.px([cx - 5, cy - 6, cx - 4, cy - 6, cx - 1, cy - 8, cx, cy - 8, cx + 4, cy - 5], BAS[4]);

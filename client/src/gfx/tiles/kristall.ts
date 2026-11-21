@@ -142,10 +142,11 @@ function groundCol(c: Chunk, f: KF, i: number, wx: number, wy: number, z: number
   const W = c.W, seed = c.seed;
   // Sedimentlinsen: feiner brauner Schlamm in flachen Mulden
   const sd = f.nS[i] * 0.62 + f.nB[i] * 0.38;
-  if (sd > 0.632) {
-    if (f.nS[i - W] * 0.62 + f.nB[i - W] * 0.38 <= 0.632 || f.nS[i - 1] * 0.62 + f.nB[i - 1] * 0.38 <= 0.632) return SED[0];
+  if (sd > 0.66) {
+    if (f.nS[i - W] * 0.62 + f.nB[i - W] * 0.38 <= 0.66 || f.nS[i - 1] * 0.62 + f.nB[i - 1] * 0.38 <= 0.66) return SED[0];
+    if (sd < 0.675 && ((wx + wy) & 1)) return ROCKZ[z][2];
     const hd = rnd2(wx >> 1, wy, seed + 1101);
-    let t = sd > 0.7 ? 3 : 2;
+    let t = sd > 0.72 ? 3 : 2;
     if (hd < 0.14) t--; else if (hd > 0.88) t++;
     if (h > 0.992) return GRAV[4];
     return SED[t];
@@ -175,7 +176,7 @@ function lichenCol(c: Chunk, f: KF, i: number, z: number, h: number): number {
   const W = c.W, te = terr(f.lev, i, W);
   // nackter Fels schaut durch
   const bare = f.nA[i] * 0.45 + f.nC[i] * 0.3 + f.nM[i] * 0.25;
-  if (bare < 0.36) { const R = ROCKW[z]; return te === 1 || bare > 0.345 ? R[1] : te === 3 ? R[5] : R[h < 0.2 ? 2 : 3]; }
+  if (bare < 0.41) { const R = ROCKW[z]; return te === 1 || bare > 0.395 ? R[1] : te === 3 ? R[5] : R[h < 0.2 ? 2 : 3]; }
   if (te === 1) return LICH[0];
   if (te === 2) return h < 0.5 ? LICH[0] : LICH[1];
   const v = f.nL[i] * 0.35 + f.nB[i] * 0.4 + f.nC[i] * 0.25;
@@ -240,6 +241,10 @@ function waterCol(c: Chunk, f: KF, i: number, wx: number, wy: number): number {
   if (dd > 14) return alpha(DEEP, 70);
   // seichtes Wasser über hellem Sinter
   if (dw < 5 + f.nA[i] * 4) return alpha(P.teal[3], 70);
+  // ruhende Tiefenflecken brechen die Wiederholung der Wasserkachel
+  const big = f.nS[i] * 0.6 + f.nZ2[i] * 0.4;
+  if (big < 0.4) return alpha(DEEP, 60);
+  if (big > 0.62) return alpha(P.teal[2], 45);
   return 0;
 }
 
@@ -252,7 +257,8 @@ function topCol(c: Chunk, f: KF, i: number, wx: number, wy: number, h: number): 
   const lit = g.tn[i] <= 2 || !f.wallM[i - 1] || !f.wallM[i - 2];
   if (lit) return g.tn[i] === 1 || !f.wallM[i - 1] ? (f.nC[i] > 0.35 ? FACE[4] : FACE[3]) : TOP[5];
   if (d <= 1.01 && ts === 255) return TOP[0];
-  const fade = d + (f.nB[i] - 0.5) * 12 + (f.nL[i] - 0.5) * 8;
+  // über einer Front zählt der Abstand zur Abbruchkante (ts ist nur bis 15 px exakt, deshalb auf die Staffelung gedehnt)
+  const fade = (ts < 255 && ts * 2 < d ? ts * 2 : d) + (f.nB[i] - 0.5) * 12 + (f.nL[i] - 0.5) * 8;
   if (fade > 30) {
     // tiefes Dunkel: kaum sichtbare Felsschollen
     const v = f.nL[i] * 0.5 + f.nM[i] * 0.5;
@@ -354,7 +360,7 @@ function groundCover(c: Chunk, f: KF): void {
     const r = rf(), x0 = cx * TS + 8, y0 = cy * TS + 8, i = (y0 - c.y0) * W + (x0 - c.x0);
     if (kind[i] !== S_PATH || f.dPath[i] < 8) return;
     const wetHere = f.nZ2[i] * 0.5 + f.nM[i] * 0.5 > 0.56;
-    if (r > (wetHere ? 0.3 : 0.05)) return;
+    if (r > (wetHere ? 0.14 : 0.02)) return;
     let hr = 0, vr = 0;
     for (let k = 1; k <= 3; k++) { if (isP(cx - k, cy)) hr++; if (isP(cx + k, cy)) hr++; if (isP(cx, cy - k)) vr++; if (isP(cx, cy + k)) vr++; }
     if (hr >= vr + 2) c.blitK(KS.boardV[ri(KS.boardV.length)], x0, y0, A_FLOORS);
@@ -381,7 +387,7 @@ function groundCover(c: Chunk, f: KF): void {
         else if ((q -= 0.004) < 0) c.blitK(KS.fungi[hv % KS.fungi.length], wx, wy, A_ROCK);
       } else if (kd === S_LICHEN) {
         let q = r;
-        if ((q -= 0.42) < 0) c.blitK(KS.cushion[hv % KS.cushion.length], wx, wy, A_LICHEN);
+        if ((q -= 0.24) < 0) c.blitK(KS.cushion[hv % KS.cushion.length], wx, wy, A_LICHEN);
         else if ((q -= 0.07) < 0) c.blitK(KS.fungi[hv % KS.fungi.length], wx, wy, A_ROCK);
         else if ((q -= 0.05) < 0) c.blitK(KS.shard[hv % 7 === 0 ? 1 : hv % 5 === 0 ? 2 : 0][(hv >>> 4) % 8], wx, wy, A_UP);
         else if ((q -= 0.02) < 0) c.blitK(KS.peb[hv % KS.peb.length], wx, wy, A_FLOORS);

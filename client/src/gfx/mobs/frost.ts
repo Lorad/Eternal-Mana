@@ -115,11 +115,11 @@ const FUR: Ramp = [P.snow[0], P.snow[1], P.snow[2], P.snow[3], P.snow[4]];
 const FUR_FAR: Ramp = [P.ice[0], P.snow[0], P.snow[1], P.snow[1], P.snow[2]];
 const HIDE: Ramp = [P.blue[0], P.ice[0], P.ice[1], P.ice[2], P.ice[3]];
 const BRUTE: BLook = {
-  w: 48, h: 48, cx: -1, hip: 10, torsoH: 12, stance: 4.5, legR: [3.3, 3], armL: 15, armR: [3.5, 3.3], armRF: [3, 2.8], shN: [-6, 3], shF: [7, 3], skin: FUR, far: FUR_FAR,
+  w: 48, h: 48, cx: -1, hip: 11, torsoH: 14, stance: 4.5, legR: [3.3, 3], armL: 15, armR: [3.5, 3.3], armRF: [3, 2.8], shN: [-6, 3], shF: [7, 3], skin: FUR, far: FUR_FAR,
   torso: (l, k) => {
     const cx = (k.hip[0] + k.sh[0]) / 2, cy = (k.hip[1] + k.sh[1]) / 2;
     form(l, (m) => {
-      m.ell(cx, cy - 0.5, 10, 9.5, 1); m.ell(k.sh[0] - 1, k.sh[1] + 3.5, 10.5, 6, 1);
+      m.ell(cx, cy - 0.5, 10, 10.5, 1); m.ell(k.sh[0] - 1, k.sh[1] + 3.5, 10.5, 6, 1);
       for (let s = 0; s < 7; s++) { const x = cx - 9 + s * 3, y = cy + 6.5 + (s === 0 || s === 6 ? -3 : s % 2 ? 1 : 2); m.poly([[x - 2, y - 2], [x, y + 3], [x + 2, y - 2]], 1); }
       for (let s = 0; s < 4; s++) { const y = cy - 6 + s * 4; m.poly([[cx - 9, y - 2], [cx - 12.5, y + 1.5], [cx - 8, y + 2]], 1); m.poly([[cx + 9, y - 2], [cx + 12, y + 2], [cx + 8, y + 2]], 1); }
     }, FUR, 1, 4, 0.1);
@@ -166,7 +166,7 @@ const schneebrute: MobFn = (p, fr) => {
     return;
   }
   const b = bipPose(fr, 'slam', 15);
-  b.lean += 2; b.armN = [b.armN[0] + 1, Math.min(b.armN[1], 12)]; b.armF = [b.armF[0], Math.min(b.armF[1], 12)];
+  b.lean += 2; b.armN = [b.armN[0] + 1, Math.min(b.armN[1], 13)]; b.armF = [b.armF[0], Math.min(b.armF[1], 13)];
   if (fr.a === 'move') { const c = Math.cos(fr.ph); b.armN = [1 - c * 4, 12 - Math.max(0, Math.sin(fr.ph)) * 3]; b.armF = [2 + c * 4, 12 - Math.max(0, -Math.sin(fr.ph)) * 3]; b.lean += 1; }
   biped(p, BRUTE, b);
 };
@@ -175,12 +175,14 @@ const schneebrute: MobFn = (p, fr) => {
 function frostCore(p: Px, cx: number, cy: number, rot: number, ext: number, flare: number, shut: boolean, jit: number): void {
   glow(p, cx, cy, 9 + flare * 4, P.ice[2], 50 + flare * 60);
   // Schneeflocken-Kranz: sechs Arme mit Seitenästen
-  for (let s = 0; s < 6; s++) {
-    const a = rot + (s * TAU) / 6 + (jit ? Math.sin(s * 5.1) * jit : 0), c = Math.cos(a), sn = Math.sin(a) * 0.92, r0 = 6 + ext * 0.5, r1 = 10.5 + ext + (jit ? Math.cos(s * 3.3) * jit * 4 : 0);
-    for (let r = r0; r <= r1; r += 0.8) p.set(R(cx + c * r - 0.5), R(cy + sn * r - 0.5), r > r1 - 1.2 ? WHITE : P.ice[3]);
-    const bx = cx + c * (r1 - 2.5), by = cy + sn * (r1 - 2.5);
-    p.set(R(bx - sn * 1.6 - 0.5), R(by + c * 1.5 - 0.5), P.ice[2]); p.set(R(bx + sn * 1.6 - 0.5), R(by - c * 1.5 - 0.5), P.ice[2]);
-  }
+  p.layer((l) => {
+    for (let s = 0; s < 6; s++) {
+      const a = rot + (s * TAU) / 6 + (jit ? Math.sin(s * 5.1) * jit : 0), c = Math.cos(a), sn = Math.sin(a) * 0.92, r0 = 6.5 + ext * 0.5, r1 = 10.5 + ext + (jit ? Math.cos(s * 3.3) * jit * 4 : 0);
+      for (let r = r0; r <= r1; r += 0.8) l.set(R(cx + c * r - 0.5), R(cy + sn * r - 0.5), r > r1 - 1.2 ? WHITE : P.ice[3]);
+      const bx = cx + c * (r1 - 2.5), by = cy + sn * (r1 - 2.5);
+      l.set(R(bx - sn * 1.6 - 0.5), R(by + c * 1.5 - 0.5), P.ice[2]); l.set(R(bx + sn * 1.6 - 0.5), R(by - c * 1.5 - 0.5), P.ice[2]);
+    }
+  });
   // Kältedunst
   for (let s = 0; s < 3; s++) puff(p, cx - 1 + Math.sin(s * 2 + rot * 3) * 2, cy + 9 + s * 2.6, 2.6 - s * 0.6, 1.5, P.ice[3], 110 - s * 30);
   p.layer((l) => {

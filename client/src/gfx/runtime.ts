@@ -65,6 +65,19 @@ export async function loadGfx(onProgress: (p: number) => void = () => {}): Promi
   const overlays: Record<string, HTMLCanvasElement> = {};
   for (const n in man.overlays) track(loadImage(BASE + man.overlays[n].file)).then(img => { overlays[n] = toCanvas(img, 0, 0, img.width, img.height); });
   await Promise.all(jobs);
+  // sichtbare Höhe jedes Gegners (Frame 0) messen – für Lebensbalken und Effekte über dem Kopf
+  const measure = (sheets: Record<string, Sheet>, meta: Record<string, { w: number; h: number; top?: number }>, prefix: string, foot: number) => {
+    for (const key in sheets) {
+      const id = key.slice(prefix.length), m = meta[id];
+      if (!m) continue;
+      const data = sheets[key].canvas.getContext('2d')!.getImageData(0, 0, m.w, m.h).data;
+      let first = m.h;
+      outer: for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) if (data[(y * m.w + x) * 4 + 3] > 40) { first = y; break outer; }
+      m.top = Math.max(8, m.h - foot - first);
+    }
+  };
+  measure(mobs, man.mobMeta, 'mob_', 3);
+  measure(bosses, man.bossMeta, 'boss_', 6);
   icons = atlas.icons ?? null;
   bundle = { chars, mobs, mobMeta: man.mobMeta, bosses, bossMeta: man.bossMeta, obj: atlas.obj, fx: atlas.fx, liquids, overlays };
   return bundle;

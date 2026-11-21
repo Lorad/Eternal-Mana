@@ -39,17 +39,20 @@ type Snap = Extract<ServerMsg, { t: 's' }>;
 
 const FONT = '"Trebuchet MS", Verdana, sans-serif';
 /** flach auf dem Boden liegende Deko (unter Figuren, ohne Schatten) */
-const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_)/;
+const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy)/;
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
-const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent)/;
+const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags)/;
 /** Flammen flackern schnell, alles andere wiegt sich langsam */
-const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent)/;
+const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue)/;
 /** [Radius, Farbe, Stärke, Flackern] */
 const LIGHTS: Record<string, [number, number, number, number]> = {
   campfire: [100, 0xffb060, 1, 0.07], brazier: [92, 0xffac58, 1, 0.07], lamp: [84, 0xffd89a, 0.9, 0.03], torch: [84, 0xffb870, 0.95, 0.07], wall_torch: [84, 0xffb870, 0.95, 0.07],
   forge: [72, 0xff9040, 0.9, 0.06], d_candles: [48, 0xffd890, 0.7, 0.06], crystal_blue: [52, 0x60c8ff, 0.7, 0], crystal_pink: [52, 0xff80d8, 0.7, 0], crystal_big: [76, 0x80e8ff, 0.85, 0],
   glowshroom: [42, 0x60ffd0, 0.6, 0], d_mushroom_glow: [36, 0x70ffc0, 0.5, 0], ember_vent: [58, 0xff7030, 0.8, 0.06], void_crystal: [54, 0xb070ff, 0.7, 0], rune_stone: [54, 0xffe090, 0.7, 0],
-  floating_shard: [42, 0xc090ff, 0.6, 0], lava_rock: [36, 0xff6020, 0.5, 0.03], house_a: [60, 0xffd8a0, 0.5, 0], house_b: [60, 0xffd8a0, 0.5, 0], house_c: [60, 0xffd8a0, 0.5, 0],
+  floating_shard: [42, 0xc090ff, 0.6, 0], lava_rock: [36, 0xff6020, 0.5, 0.03], crystal_teal: [46, 0x60ffe0, 0.65, 0], glowshroom_big: [50, 0x60ffd0, 0.7, 0], cave_moss: [26, 0x60ffc0, 0.35, 0],
+  lantern_post: [84, 0xffd08a, 0.95, 0.04], nomad_brazier: [96, 0xffa850, 1, 0.07], fire_geyser: [60, 0xff8030, 0.8, 0.08], magma_crack: [30, 0xff6a20, 0.5, 0.03], forge_ruin: [50, 0xff8040, 0.5, 0.04],
+  ice_crystal: [40, 0xa0e8ff, 0.5, 0], lantern_frost: [84, 0xffd8a0, 0.95, 0.04], cabin: [70, 0xffcf90, 0.6, 0.02], brazier_blue: [84, 0x70b0ff, 0.95, 0.06], obelisk: [50, 0xffe090, 0.6, 0], floating_rune: [34, 0x80c8ff, 0.6, 0],
+  void_rift: [60, 0xc070ff, 0.8, 0.04], ghost_flower: [24, 0xd8c8ff, 0.4, 0], last_light: [120, 0xfff0c0, 1, 0.03], eye_stalk: [0, 0, 0, 0], house_a: [60, 0xffd8a0, 0.5, 0], house_b: [60, 0xffd8a0, 0.5, 0], house_c: [60, 0xffd8a0, 0.5, 0],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]
   gruenwald: [0xffffff, 0x58664f], kristall: [0x4c5c94, 0x414d7c], glut: [0xffffff, 0x71463a], frost: [0xffffff, 0x586c92], ruinen: [0xffffff, 0x655c48], schatten: [0x5c4c90, 0x4c3e78],
@@ -197,13 +200,13 @@ export class GameScene extends Phaser.Scene {
       const flick = FLICKER.test(d.f);
       if (r.n > 1) this.animDecor.push({ s, base: d.f, n: r.n, period: flick ? 110 : 300, off: flick ? (d.x * 7 + d.y * 13) % 440 : d.x * 5 + d.y * 3, last: 0 });
       if (!flat && fh >= 14 && !NO_SHADOW.test(d.f)) this.decorShadows.push({ s: makeShadow(this, 'obj', r.frame, 1), x: d.x, y: d.y, indoor: { rot: 0, len: 0, alpha: 0 } });
-      if (fh >= 60 && !d.f.startsWith('house')) {
+      if (fh >= 60 && !d.f.startsWith('house') && d.f !== 'cabin') {
         this.fadeDecor.push({ s, hw: fw * 0.42, h: fh });
         if (d.f.startsWith('tree') && bigCount++ % 5 === 0) rayAnchors.push({ x: d.x, y: d.y });
       }
-      if (d.f === 'house_a' || d.f === 'house_c') this.smokeSpots.push({ x: d.x + 18, y: d.y - fh + 8 });
+      if (d.f === 'house_a' || d.f === 'house_c' || d.f === 'cabin') this.smokeSpots.push({ x: d.x + 18, y: d.y - fh + 8 });
       const L = LIGHTS[d.f];
-      if (L) {
+      if (L && L[0] > 0) {
         const ly = d.y - Math.min(fh * 0.6, 22);
         this.staticLights.push({ x: d.x, y: ly, r: L[0], color: L[1], i: L[2], flicker: L[3] });
         this.add.image(d.x, ly, 'fx', 'glow').setScale(L[0] / 110).setTint(L[1]).setAlpha(0.2).setBlendMode(Phaser.BlendModes.ADD).setDepth(d.y + 1);
