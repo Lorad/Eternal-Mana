@@ -112,7 +112,7 @@ export function SkillsPanel() {
                 <button type="button" class={cx('node', st, s.passive && 'passive', sel.id === s.id && 'sel')} style={{ left: s.pos[0] * CW + 'px', top: s.pos[1] * CH + 'px', width: CW + 'px' }}
                   aria-label={`${s.name}, Rang ${r} von ${s.maxRank}`} onClick={() => { sfx('ui_click'); setSel(s.id); }}
                   onDblClick={() => { if (s.id === sel.id && canLearn) send({ t: 'learn', id: s.id }); }}>
-                  <span class="node-icon"><Icon k={'skill_' + s.glyph} el={s.element} size={48} />{st === 'locked' && <i class="node-lock">St. {s.reqLevel}</i>}</span>
+                  <span class="node-icon"><Icon k={'skill_' + s.glyph} el={s.element} size={48} />{st === 'locked' && <i class="node-lock">{char.level < s.reqLevel ? `St. ${s.reqLevel}` : 'Vorstufe'}</i>}</span>
                   <span class="node-name">{s.name}</span>
                   <span class="pips">{Array.from({ length: s.maxRank }, (_, i) => <i class={cx(i < r && 'on')} />)}</span>
                 </button>

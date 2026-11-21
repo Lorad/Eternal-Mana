@@ -9,7 +9,7 @@ import { SKILLS } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
 import { ATTR_NAME } from '../../../shared/src/types';
 import type { AttrKey, CharSummary, ClassId } from '../../../shared/src/types';
-import { Btn, Confirm, Icon, Portrait, TextInput, copyText, cx, fmtTime, sfx, toggleFullscreen, useFullscreen } from './common';
+import { ACLASS_NAME, WTYPE_NAME, Btn, Confirm, Icon, Portrait, TextInput, copyText, cx, fmtTime, sfx, toggleFullscreen, useFullscreen } from './common';
 
 const MOTES = Array.from({ length: 26 }, (_, i) => {
   const r = (n: number) => { const x = Math.sin(i * 127.1 + n * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -244,7 +244,13 @@ function CharCreate({ slot, onBack }: { slot: number; onBack: () => void }) {
               <h3 class="class-name">{def.name}</h3>
               <div class="class-tag">{def.tagline}</div>
               <p class="class-desc">{def.desc}</p>
-              <div class="row"><span class="note">Schwierigkeit</span><Stars n={def.difficulty} /></div>
+              <div class="class-facts">
+                <span><small>Schwierigkeit</small><Stars n={def.difficulty} /></span>
+                <span><small>Waffe</small><b>{WTYPE_NAME[def.weapon]}</b></span>
+                <span><small>Rüstung</small><b>{ACLASS_NAME[def.armor]}</b></span>
+                <span><small>Leben</small><b>{def.baseHp + def.baseAttrs.vit * def.hpPerVit + 8}</b></span>
+                <span><small>Mana</small><b>{def.baseMp + def.baseAttrs.int * def.mpPerInt + 3}</b></span>
+              </div>
             </div>
           </div>
           <div class="class-cols">

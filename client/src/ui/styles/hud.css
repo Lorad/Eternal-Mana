@@ -81,7 +81,7 @@
   box-shadow: inset 0 0 0 2px var(--gold-dk), 0 0 0 1px rgba(255, 255, 255, .06), 0 4px 16px rgba(0, 0, 0, .55); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .mm-frame::after { content: ''; position: absolute; inset: 2px; box-shadow: inset 0 0 18px rgba(0, 0, 0, .65); pointer-events: none; }
 .mm-n { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font: 700 10px/1 var(--serif); color: var(--gold-hi); z-index: 1; }
-.mm-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; text-align: right; }
+.mm-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; text-align: right; padding: 3px 9px 4px 14px; background: linear-gradient(90deg, transparent, rgba(8, 10, 18, .72) 22%); border-radius: 3px; }
 .mm-info b { font: 700 14px var(--serif); font-variant: small-caps; letter-spacing: .06em; color: var(--gold-hi); }
 .mm-info span { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: #dfe3f2; }
 .sun { width: 9px; height: 9px; border-radius: 50%; background: #ffd75e; box-shadow: 0 0 6px #ffb02e; }
@@ -134,10 +134,11 @@
 
 /* ---------------------------------------------------------------- Chat */
 .chat { display: flex; flex-direction: column; gap: 4px; }
-.chat-log { display: flex; flex-direction: column; gap: 1px; max-height: 150px; overflow: hidden; font-size: 13px; line-height: 1.35; }
+.chat-log { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; max-height: 150px; overflow: hidden; font-size: 13px; line-height: 1.35; }
 .chat.open .chat-log { max-height: 220px; overflow-y: auto; background: rgba(8, 9, 16, .78); padding: 6px 8px; border-radius: 3px; pointer-events: auto; }
-.chat-line { overflow-wrap: anywhere; text-shadow: 0 1px 0 #000, 0 0 3px #000; animation: chat-fade 1.2s ease 13s forwards; }
-.chat.open .chat-line { animation: none; }
+.chat-line { padding: 1px 7px; background: rgba(8, 10, 18, .5); border-radius: 2px; overflow-wrap: anywhere; text-shadow: 0 1px 0 #000, 0 0 3px #000; animation: chat-fade 1.2s ease 13s forwards; }
+.chat.open .chat-line { animation: none; background: none; padding: 1px 0; }
+.chat.open .chat-log { align-items: stretch; }
 @keyframes chat-fade { to { opacity: 0; } }
 .chat-line b { color: #bfe1ff; font-weight: 700; }
 .chat-line.ch-party { color: #a8f0b0; }
@@ -145,7 +146,7 @@
 .chat-line.ch-sys { color: #ffe08a; font-style: italic; }
 .chat-input { pointer-events: auto; }
 .chat-input .input { min-height: 32px; background: rgba(8, 9, 16, .92); }
-.chat-hint { font-size: 11px; color: var(--dim); margin-top: 2px; }
+.chat-hint { display: inline-block; font-size: 11px; color: #c9cee0; margin-top: 2px; padding: 1px 7px; background: rgba(8, 10, 18, .7); border-radius: 2px; }
 .chat-open { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 5px; background: rgba(12, 14, 24, .6); border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; font-size: 12px; color: var(--dim); opacity: .75; }
 .chat-open:hover { opacity: 1; color: var(--text); }
 
@@ -158,7 +159,7 @@
 .mbtn.on .mbtn-key { color: #2a1c05; text-shadow: none; }
 .mbtn-badge { position: absolute; left: -5px; top: -6px; min-width: 16px; height: 16px; padding: 0 3px; background: var(--quest); color: #2a1c05; font: 800 10px/14px var(--sans); border: 1px solid #05060a; border-radius: 8px; text-shadow: none; animation: pill-pulse 1.2s infinite alternate; }
 .mbtn-badge.bad-badge { background: var(--bad); color: #fff; }
-.conn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.conn { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; background: rgba(8, 10, 18, .6); border-radius: 10px; font-size: 11px; color: #c9cee0; font-variant-numeric: tabular-nums; }
 .conn-bars { display: inline-flex; align-items: flex-end; gap: 1px; height: 11px; }
 .conn-bars i { width: 3px; background: #3a4060; }
 .conn-bars i:nth-child(1) { height: 4px; } .conn-bars i:nth-child(2) { height: 7px; } .conn-bars i:nth-child(3) { height: 11px; }
@@ -188,3 +189,6 @@
 .is-narrow .menubar { flex-direction: column; }
 .is-narrow .zone-banner b { font-size: 32px; }
 .is-narrow .zone-banner { top: 30%; }
+.is-narrow .party-frames { margin-top: 64px; }
+.is-narrow .story-toasts { bottom: 270px; }
+.is-narrow .toast { max-width: 250px; }

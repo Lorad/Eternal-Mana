@@ -19,7 +19,9 @@ import './styles/panels.css';
 function computeScale() {
   const w = window.innerWidth, h = window.innerHeight;
   const landscape = w >= h;
-  const auto = landscape ? clamp(Math.min(w / 1280, h / 720), 0.7, 1.6) : clamp(Math.min(w / 620, h / 1000), 0.62, 1.2);
+  const r = landscape ? Math.min(w / 1280, h / 720) : Math.min(w / 620, h / 1000);
+  // Kleine Fenster: proportional verkleinern (mit Untergrenze für Lesbarkeit). Große Fenster: nur gedämpft mitwachsen.
+  const auto = r < 1 ? Math.max(landscape ? 0.7 : 0.62, r) : Math.min(1.8, 1 + (r - 1) * 0.7);
   const s = Math.round(auto * clamp(settings.uiScale || 1, 0.8, 1.4) * 100) / 100;
   uiScale.s = s; uiScale.w = w / s; uiScale.h = h / s;
   return s;
@@ -58,7 +60,7 @@ function Root() {
       {screen === 'game' && hasDialog && !dead && <NpcDialog />}
       {screen === 'game' && hasSign && <SignOverlay />}
       {screen === 'game' && dead && <DeathOverlay />}
-      {hasStory && (screen === 'game' || screen === 'loading') && <StoryOverlay />}
+      {hasStory && screen === 'game' && <StoryOverlay />}
       <TooltipLayer root={() => ref.current} />
     </div>
   );

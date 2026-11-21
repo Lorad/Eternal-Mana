@@ -203,10 +203,11 @@ export function ZoneMapCanvas({ zone }: { zone: string }) {
       const tx = (wx: number) => (wx / TILE) * CELL * k, ty = (wy: number) => (wy / TILE) * CELL * k;
       const seen = new Set<string>();
       const marks = [...staticMarkers(mc.map)];
-      if (live.zone === zone) for (const o of live.objs) if (o.type === 'chest' || o.type === 'shard') marks.push(o);
+      const me = selfPos(zone);
+      // Truhen und Splitter nur in Sichtweite – die große Karte soll nichts verraten
+      if (live.zone === zone) for (const o of live.objs) if ((o.type === 'chest' || o.type === 'shard') && Math.hypot(o.x - me.x, o.y - me.y) < 280) marks.push(o);
       for (const m of marks) { const key = m.type + Math.round(m.x / 8) + ':' + Math.round(m.y / 8); if (seen.has(key)) continue; seen.add(key); drawMarker(ctx, m, tx(m.x), ty(m.y), u); }
       if (live.zone === zone) for (const p of live.players) { ctx.beginPath(); ctx.arc(tx(p.x), ty(p.y), u * 1.8, 0, 7); outlined(ctx, p.party ? '#7bdc7b' : '#6fb7ff'); }
-      const me = selfPos(zone);
       drawSelf(ctx, tx(me.x), ty(me.y), u * 1.2, now);
     };
     return onTick(draw);
@@ -219,7 +220,7 @@ export function ZoneMapCanvas({ zone }: { zone: string }) {
     <div class="zonemap" style={{ aspectRatio: `${mc.map.w} / ${mc.map.h}` }}>
       <canvas ref={ref} class="px" width={mc.cv.width * scale} height={mc.cv.height * scale} />
       {mc.map.labels.map(l => <span class="zonemap-label" style={{ left: (l.x / W) * 100 + '%', top: (l.y / H) * 100 + '%' }}>{l.name}</span>)}
-      {exits.filter(e => !mc.map.labels.some(l => Math.hypot(l.x - e.x, l.y - e.y) < 80)).map(e => (
+      {exits.filter(e => !mc.map.labels.some(l => Math.hypot(l.x - e.x, l.y - e.y) < 80 || l.name === (e.props?.label ?? ZONES[e.props?.to]?.name))).map(e => (
         <span class="zonemap-label exit" style={{ left: (e.x / W) * 100 + '%', top: (e.y / H) * 100 + '%' }}>→ {e.props?.label ?? ZONES[e.props?.to]?.name ?? 'Ausgang'}</span>
       ))}
     </div>
