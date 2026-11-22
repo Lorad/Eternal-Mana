@@ -165,46 +165,38 @@ function mineRails(p: Px): void {
   inkOutline(p);
 }
 function oreCrate(p: Px): void {
-  oreHeap(p, 3, 12, 6, 4.5, 9);
+  oreHeap(p, 3, 12, 8, 5.5, 9);
   part(p, (l) => {
-    l.rect(1, 6, 14, 3, MARK); planks(l, 1, 6, 14, 3, { ramp: T, pw: 3, vertical: true, seed: 12, mark: MARK }); shadeArea(l, (x, y) => y < 9, WHITE, 0.14);
-    l.rect(3, 6, 10, 2, 0);                                                                     // Öffnung (Erz schaut heraus)
-    l.rect(1, 9, 14, 8, MARK); planks(l, 1, 9, 14, 8, { ramp: MW, pw: 3, seed: 13, mark: MARK, worn: 0.8 });
-    l.rect(1, 9, 14, 1, MW[0]); l.rect(1, 9, 2, 8, MW[1]); l.rect(13, 9, 2, 8, MW[1]); l.rect(1, 9, 1, 8, MW[3]); l.rect(1, 16, 14, 1, MW[0]);
-    l.px([1, 10, 14, 10, 1, 15, 14, 15], I[4]); l.px([2, 10, 13, 10], I[2]);
-    // Brandzeichen: Kristall
-    l.px([8, 11, 7, 12, 8, 12, 9, 12, 8, 13, 8, 14], MW[0]); l.set(8, 12, CYAN[2]);
+    l.rect(1, 8, 14, 9, MARK); planks(l, 1, 8, 14, 9, { ramp: MW, pw: 3, seed: 13, mark: MARK, worn: 0.8 });
+    // Rahmenleisten, Eisenecken, Brandzeichen
+    l.rect(1, 8, 14, 1, T[3]); l.rect(1, 9, 14, 1, MW[0]); l.rect(1, 9, 2, 8, MW[1]); l.rect(13, 9, 2, 8, MW[1]); l.rect(1, 9, 1, 8, MW[3]); l.rect(1, 16, 14, 1, MW[0]);
+    l.px([1, 8, 2, 8], T[4]); l.px([1, 10, 14, 10, 1, 15, 14, 15], I[4]); l.px([2, 10, 13, 10], I[2]);
+    l.px([8, 11, 7, 12, 9, 12, 8, 13, 8, 14], MW[0]); l.set(8, 12, CYAN[3]);
   });
-  // Erz wieder nach vorn holen (über der Öffnung)
-  oreHeap(p, 4, 11, 7, 3.2, 14);
-  p.rect(1, 8, 14, 1, T[1]); p.rect(1, 8, 1, 1, T[3]);
-  p.px([13, 16], CAVEROCK[2]);
+  p.px([4, 8, 7, 8, 11, 8], CAVEROCK[2]); p.set(15, 16, CAVEROCK[2]);
   inkOutline(p);
-  glow(p, 8, 3, 6, CYAN[3], 28);
+  glow(p, 8, 4, 6, CYAN[3], 28);
 }
 function pickaxeRack(p: Px): void {
-  // Gestell
-  part(p, (l) => {
-    timberV(l, 2, 7, 24, 2, MW, 3); timberV(l, 16, 7, 24, 2, MW, 4);
-    timberH(l, 1, 18, 9, 2, MW, 5); timberH(l, 2, 17, 19, 2, MW, 6);
-    l.px([2, 6, 16, 6], MW[4]); l.px([1, 24, 4, 24, 15, 24, 18, 24], MW[1]);
-  });
-  // zwei Spitzhacken, angelehnt
-  const pick = (x0: number, x1: number, flip: number): void => { part(p, (l) => {
-    l.line(x0, 24, x1, 5, T[2]); l.line(x0 + 1, 24, x1 + 1, 5, T[1]); l.set(x0, 24, T[0]); l.set(x1, 9, T[3]); l.set(x0 + (x1 > x0 ? 1 : 0), 16, T[3]);
-    // Eisen: geschwungenes Blatt mit zwei Spitzen
-    const h = [[-5, 2], [-4, 1], [-3, 0], [-2, 0], [-1, -1], [0, -1], [1, -1], [2, 0], [3, 0], [4, 1], [5, 3]] as const;
-    for (const [dx, dy] of h) { l.set(x1 + dx * flip, 4 + dy, dx < -1 ? I[4] : dx > 2 ? I[2] : I[3]); if (Math.abs(dx) < 4) l.set(x1 + dx * flip, 5 + dy, I[1]); }
-    l.set(x1, 3, P.steel[4]); l.set(x1 - 5 * flip, 6, I[3]);
+  const DK: Ramp = [MW[0], MW[0], MW[1], MW[2], MW[3]], HD: Ramp = [P.steel[0], P.steel[1], P.steel[2], P.steel[3], P.steel[4]];
+  // niedriges Gestell: zwei Pfosten, ein Holm
+  part(p, (l) => { timberV(l, 1, 12, 24, 2, DK, 3); timberV(l, 17, 12, 24, 2, DK, 4); timberH(l, 0, 19, 14, 2, DK, 5); l.px([0, 24, 3, 24, 16, 24, 19, 24], DK[1]); });
+  // Spitzhacken: heller Stiel, Stahlblatt mit zwei Spitzen
+  const pick = (x0: number, x1: number, top: number, flip: number): void => { part(p, (l) => {
+    l.line(x0, 24, x1, top + 1, T[3]); l.line(x0 + 1, 24, x1 + 1, top + 1, T[1]); l.set(x1, top + 4, T[4]); l.set(x0, 23, T[2]);
+    const h = [[-5, 3], [-4, 1], [-3, 0], [-2, 0], [-1, -1], [0, -1], [1, -1], [2, 0], [3, 0], [4, 1], [5, 2]] as const;
+    for (const [dx, dy] of h) { const X = x1 + dx * flip; l.set(X, top + dy, dx * flip < -1 ? HD[4] : dx * flip > 2 ? HD[2] : HD[3]); if (Math.abs(dx) < 4) l.set(X, top + 1 + dy, HD[1]); }
+    l.set(x1, top - 1, WHITE); l.rect(x1, top + 1, 2, 1, HD[0]);
   }); };
-  pick(6, 9, 1); pick(13, 11, -1);
-  // Seilrolle am rechten Pfosten, Zinnbecher
+  pick(11, 13, 8, -1); pick(6, 6, 3, 1);
+  // Seilrolle über dem rechten Pfosten
   part(p, (l) => {
-    l.ell(16.5, 14.5, 3, 4, T[2]); l.ell(16.5, 14.5, 1.3, 2.2, 0);
-    for (let k = 0; k < 14; k++) { const a = (k / 14) * 6.283, x = 16.5 + Math.cos(a) * 2.4, y = 14.5 + Math.sin(a) * 3.3; l.set(x, y, k % 2 ? T[3] : T[1]); }
-    l.px([14, 12, 15, 11], T[4]); l.set(17, 10, I[2]); l.px([19, 16, 19, 17, 18, 18], T[2]); l.set(19, 18, T[1]);
+    const RP: Ramp = [T[1], T[2], T[3], P.cream[3]];
+    l.ell(16.5, 17.5, 3, 4.2, RP[1]); l.ell(16.5, 17.5, 1.1, 2.2, MW[0]);
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * 6.283, x = 16.5 + Math.cos(a) * 2.3, y = 17.5 + Math.sin(a) * 3.4; l.set(x, y, k % 2 ? RP[3] : RP[2]); }
+    l.px([18, 21, 19, 22], RP[1]); l.set(19, 23, RP[0]); l.px([15, 13, 16, 13, 17, 13], RP[2]);
   });
-  p.px([2, 13, 3, 13], I[2]); p.set(3, 14, I[1]);
+  inkOutline(p);
 }
 function lanternPost(p: Px, f: number): void {
   part(p, (l) => {
@@ -232,6 +224,6 @@ export function krMine(out: Frames): void {
   one(out, 'mine_cart', 30, 24, mineCart, false);
   one(out, 'mine_rails', 32, 12, mineRails, false);
   one(out, 'ore_crate', 16, 18, oreCrate, false);
-  one(out, 'pickaxe_rack', 20, 26, pickaxeRack);
+  one(out, 'pickaxe_rack', 20, 26, pickaxeRack, false);
   anim(out, 'lantern_post', 4, 14, 36, lanternPost, false);
 }

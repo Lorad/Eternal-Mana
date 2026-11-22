@@ -185,25 +185,23 @@ function skull(p: Px): void {
 }
 function ribcage(p: Px): void {
   const BN: Ramp = [mix(B[0], A[1], 0.4), mix(B[1], A[3], 0.3), B[2], B[3], B[4]];
-  // hintere Rippen (Schattenseite)
-  part(p, (l) => { for (let k = 0; k < 6; k++) { const x = 5 + k * 4, h = [7, 9, 10, 10, 8, 6][k]; for (const [qx, qy] of resample(bez([x, 17], [x + 0.5, 17 - h * 1.25], [x + 4.5, 17 - h * 0.86]))) { l.set(qx, qy, BN[1]); } } });
-  // Wirbelsäule
+  const XS = [4, 9, 14, 19, 24], HS = [9, 13, 15, 13, 9];
+  // Rippen der abgewandten Seite: kürzer, im Schatten
+  XS.forEach((x, k) => { const h = HS[k] - 3; for (const [qx, qy] of resample(bez([x + 3, 17], [x + 2.5, 17 - h * 1.1], [x + 5.5, 17 - h]))) p.set(qx, qy, BN[0]); });
+  // Wirbelsäule mit Dornfortsätzen
+  part(p, (l) => { for (let x = 1; x < 29; x++) { const y = 17 + (x > 24 ? Math.round((x - 24) * 0.5) : 0); l.set(x, y, BN[3]); l.set(x, y + 1, BN[1]); if (x % 5 === 2) { l.set(x, y - 1, BN[4]); l.set(x + 1, y - 1, BN[2]); } } });
+  // vordere Rippen: einzelne, nach rechts gekrümmte Bögen mit Lücken dazwischen
+  XS.forEach((x, k) => { part(p, (l) => {
+    const h = HS[k], pts = resample([...bez([x, 18], [x - 1.6, 18 - h * 0.7], [x + 0.5, 18 - h]), ...bez([x + 0.5, 18 - h], [x + 2, 17 - h], [x + 3.6, 19.5 - h])]);
+    pts.forEach(([qx, qy], i) => { const t = i / pts.length; l.set(qx, qy, t > 0.55 && t < 0.8 ? BN[4] : BN[3]); if (t < 0.5) l.set(qx + 1, qy, BN[2]); });
+    l.set(x, 17, BN[2]);
+    if (k === 3) { const q = pts[pts.length - 3]; l.set(q[0], q[1], 0); l.set(pts[pts.length - 1][0], pts[pts.length - 1][1], 0); l.set(pts[pts.length - 2][0], pts[pts.length - 2][1], 0); }   // abgebrochene Spitze
+  }); });
+  // Aschewehe begräbt Wirbelsäule und Rippenansätze
   part(p, (l) => {
-    for (let x = 2; x < 28; x++) { const y = 16 + Math.round(Math.sin(x * 0.22 + 0.4) * 1.2 + (x > 22 ? (x - 22) * 0.4 : 0)); l.set(x, y, BN[3]); l.set(x, y + 1, BN[1]); if (x % 3 === 0) { l.set(x, y - 1, BN[4]); l.set(x, y + 1, BN[2]); } }
+    for (let x = 0; x < 30; x++) { const top = 19 - Math.round(Math.sin((x / 29) * Math.PI) * 1.2 + vnoise(x * 0.4, 1, 5) * 1.8); for (let y = top; y < 21; y++) l.set(x, y, ASH[clamp((y === top ? 3 : y === top + 1 ? 2 : 1) + (rnd2(x, y, 3) > 0.85 ? 1 : rnd2(x, y, 3) < 0.12 ? -1 : 0), 0, 4)]); }
   });
-  // vordere Rippen: Bögen, die über den Rücken nach vorn fallen
-  for (let k = 0; k < 6; k++) part(p, (l) => {
-    const x = 3 + k * 4, h = [8, 11, 13, 13, 11, 8][k], end: Pt = [x + 6.5, 20 - (k === 0 || k === 5 ? 1 : 0)];
-    const pts = resample([...bez([x, 16], [x - 1.5, 16 - h * 1.15], [x + 3.5, 16 - h]), ...bez([x + 3.5, 16 - h], [x + 7, 16 - h * 0.8], end)]);
-    pts.forEach(([qx, qy], i) => { const t = i / pts.length; l.set(qx, qy, t < 0.45 ? BN[3] : t < 0.7 ? BN[4] : BN[3]); l.set(qx + 1, qy, t < 0.5 ? BN[2] : BN[1]); });
-    l.set(end[0], end[1], BN[2]);
-    if (k === 2) { l.set(x + 6, 12, 0); l.set(x + 7, 12, 0); l.set(x + 6, 13, 0); l.set(x + 7, 13, 0); }      // gebrochene Rippe
-  });
-  // Aschewehe begräbt den Fuß
-  part(p, (l) => {
-    for (let x = 0; x < 30; x++) { const top = 19 - Math.round(Math.sin((x / 29) * Math.PI) * 1.6 + vnoise(x * 0.4, 1, 5) * 1.6); for (let y = top; y < 21; y++) l.set(x, y, ASH[clamp((y === top ? 3 : y === top + 1 ? 2 : 1) + (rnd2(x, y, 3) > 0.85 ? 1 : rnd2(x, y, 3) < 0.12 ? -1 : 0), 0, 4)]); }
-  });
-  p.px([4, 19, 17, 18, 25, 19], B[3]); p.set(12, 19, CHAR[2]);
+  p.px([7, 19, 21, 19], B[3]); p.set(12, 19, CHAR[2]); p.set(27, 18, B[2]);
 }
 
 // ---------------------------------------------------------------- Fumarole, Geysir

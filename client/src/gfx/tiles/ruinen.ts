@@ -22,7 +22,7 @@ const A_TUFT = allow(S_G, S_G2, S_HAZ, S_BANK, S_PATH, S_TOP, S_FACE, S_FLOOR), 
 const A_FACE = allow(S_FACE), A_WALL = allow(S_TOP, S_FACE), A_FOOT = allow(S_G, S_G2, S_PATH, S_HAZ, S_FACE, S_FLOOR), A_WATER = allow(S_WATER), A_SHORE = allow(S_BANK, S_WATER);
 const A_HAZ = allow(S_HAZ), A_NOSHADE = allow(S_BRIDGE), A_ANY = allow(S_G, S_G2, S_PATH, S_HAZ, S_BANK, S_TOP, S_FACE, S_FLOOR);
 const WAVE = [0, 1, 2, 2, 1, 0, -1, -2, -2, -1];
-const zShade = (c: number): number => mix(c, mix(MOSS[0], INK, 0.3), 0.16), zSun = (c: number): number => mix(c, STN[5], 0.16);
+const zShade = (c: number): number => mix(c, mix(MOSS[0], INK, 0.3), 0.07), zSun = (c: number): number => mix(c, STN[5], 0.12);
 const PLZZ = [PLZ.map(zShade), PLZ, PLZ.map(zSun)];
 const ROAD = PLZ.map((c, k) => mix(c, STN[k], 0.55)), ROADZ = [ROAD.map(zShade), ROAD, ROAD.map(zSun)];
 

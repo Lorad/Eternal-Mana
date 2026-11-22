@@ -25,6 +25,9 @@ const A_WALL = allow(S_TOP, S_FACE), A_FACE = allow(S_FACE), A_SHORE = allow(S_B
 const A_FOOT = allow(S_G, S_G2, S_PATH, S_HAZ, S_BANK, S_FACE), A_NOSHADE = allow(S_BRIDGE);
 
 interface FF extends OW { hg: Float32Array }
+/** Hochfläche der Felsstufen: Schnee in Gletscherblau getaucht (0 = Rand, 1 = tiefes Inneres) */
+const PLAT = [SNOW[0].map((c) => mix(c, mix(ICE[4], SNSH, 0.3), 0.3)), SNOW[0].map((c) => mix(c, mix(ICE[3], SNSH, 0.45), 0.42))];
+const CONTOUR = mix(SNOW[0][0], SNSH, 0.55);
 
 function paintOverworld(c: Chunk): void {
   initFrostStamps();
@@ -212,17 +215,19 @@ function topCol(c: Chunk, f: FF, i: number, wx: number, wy: number, h: number): 
   if (ts <= 3) return ts === 3 && h < 0.35 ? SNOW[2][3] : SN[4];
   if (ts < 255 && ts <= 5 + f.nA[i] * 4) return SNOW[1][ts <= 5 ? 1 : 2];
   // Nord- und Westkanten fangen das Licht, Ostkanten bekommen eine blaue Kontur
-  const lit = g.tn[i] <= 2 || !f.wallM[i - 1] || !f.wallM[i - 2];
-  if (lit) return (g.tn[i] === 1 || !f.wallM[i - 1]) && f.nC[i] > 0.3 ? SN[4] : SNOW[2][3];
-  if (d <= 1.01 && ts === 255) return SNOW[0][0];
-  if (!f.wallM[i + 2] || !f.wallM[i + 3]) return SNOW[0][1];
+  // (gegen den ebenfalls weißen Boden braucht die Stufe eine blaue Außenkontur, dahinter liegt der Lichtsaum)
+  if (g.tn[i] === 1 || !f.wallM[i - 1]) return CONTOUR;
+  if (g.tn[i] <= 3 || !f.wallM[i - 2] || !f.wallM[i - 3]) return f.nC[i] > 0.3 ? SN[4] : SNOW[2][3];
+  if (d <= 1.01 && ts === 255) return CONTOUR;
+  if (!f.wallM[i + 2] || !f.wallM[i + 3]) return PLAT[0][0];
+  if (g.tn[i] <= 5 || !f.wallM[i - 4] || !f.wallM[i - 5]) return PLAT[0][h < 0.3 ? 1 : 2];
   // Hochfläche: nach innen schattiger; im Inneren stoßen Felsrippen durch den Schnee
   const deep = clamp((d - 12) / 26, 0, 1), sl = f.hg[i + W + 1] - f.hg[i - W - 1];
   const rk = f.nL[i] * 0.5 + f.nB[i] * 0.36 + f.nC[i] * 0.14;
-  if (d > 7 && rk > 0.63 - deep * 0.13) {
+  if (d > 15 && rk > 0.66 - deep * 0.16) {
     // Fels: dem Licht zugewandte Flanken tragen Schnee, die übrigen zeigen gebänderten Schiefer
-    if (sl > 0.02) return SNOW[deep > 0.5 ? 0 : 1][sl > 0.06 ? 4 : 3];
-    if (rk < 0.645 - deep * 0.13) return SLATE[0];
+    if (sl > 0.02) return PLAT[0][sl > 0.06 ? 4 : 3];
+    if (rk < 0.675 - deep * 0.16) return SLATE[0];
     const yy = wy + ((f.nB[i] * 9) | 0), band = ((yy % 5) + 5) % 5;
     let t = sl < -0.06 ? 1 : sl < -0.025 ? 2 : 3;
     if (band === 0) t--; else if (band === 1 && h < 0.5) t++;
@@ -231,9 +236,8 @@ function topCol(c: Chunk, f: FF, i: number, wx: number, wy: number, h: number): 
   }
   let t = sl < -0.058 ? 0 : sl < -0.03 ? 1 : sl > 0.052 ? 4 : sl > -0.006 ? 3 : 2;
   if (h > 0.992) t = 4;
-  const z = deep > 0.55 + (f.nA[i] - 0.5) * 0.3 ? 0 : 1;
-  if (z === 0 && t > 0 && deep > 0.85 && t < 4) t--;
-  return SNOW[z][t];
+  // die Hochfläche liegt in kühlem Gletscherblau – so hebt sie sich als eigene Ebene vom Neuschnee ab
+  return PLAT[deep > 0.6 + (f.nA[i] - 0.5) * 0.3 ? 1 : 0][t];
 }
 
 // ------------------------------------------------------------------ Wand: Front (Schieferbänke, Eisfälle, Schneewechte)

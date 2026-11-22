@@ -89,7 +89,7 @@ function caveRock(p: Px, size: number): void {
       // Mineralstreifen: Kalkbänder schräg durch den Block, Kupfergrün in den Rinnen
       calcite(l, [6, 20], [20, 8], 11); calcite(l, [14, 24], [30, 13], 12); calcite(l, [22, 9], [31, 7], 13, mix(TEALC[3], B[3], 0.4));
       for (const [x, y, n] of [[9, 12, 5], [24, 16, 6], [17, 6, 4]] as const) for (let i = 0; i < n; i++) if (l.get(x, y + i) >>> 24 >= 200) l.set(x, y + i, mix(l.get(x, y + i), TEALC[i < 2 ? 3 : 2], 0.45));
-      wetSpecks(l, CAVEROCK, 6, 0.9);
+      wetSpecks(l, CAVEROCK, 6, 0.35);
       moss(l, (x, y) => (y > 22 ? 0.55 : y > 15 && x > 24 ? 0.3 : 0), 9, LICHEN);
     });
     part(p, (l) => { boulder(l, 7, 29, 13, 12, { ramp: CAVEROCK, seed: 55, cracks: 1 }); wetSpecks(l, CAVEROCK, 7); moss(l, (x, y) => (y > 24 ? 0.5 : 0), 10, LICHEN); });
@@ -263,7 +263,7 @@ function caveMoss(p: Px): void {
   glow(p, 8, 5, 8, TL[3], 34);
 }
 function puddle(p: Px): void {
-  const DEEP = mix(TL[0], BL[0], 0.5), BODY = mix(TL[1], BL[1], 0.35), RIM = mix(TL[2], P.ice[1], 0.3);
+  const DEEP = mix(TL[0], BL[0], 0.5), BODY = mix(TL[1], BL[1], 0.35), RIM = mix(TL[3], P.ice[2], 0.4);
   const inside = (x: number, y: number): number => ((x + 0.5 - 10) / 9.4) ** 2 + ((y + 0.5 - 6.2) / 4.9) ** 2 + (vnoise(x * 0.45, y * 0.6, 31) - 0.5) * 0.45;
   for (let y = 0; y < 12; y++) for (let x = 0; x < 20; x++) {
     const d = inside(x, y);

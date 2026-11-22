@@ -88,7 +88,7 @@ function marble(c: Chunk, f: DG, i: number, wx: number, wy: number, h: number): 
   if (a + b <= 2 && (((lx >= 12 ? bx + 1 : bx) + (ly >= 12 ? by + 1 : by)) & 1) === 0) return a + b === 0 ? BRASS[4] : a + b === 1 ? BRASS[3] : BRASS[1];
   if (lx === 23 || ly === 23) return MB[0];
   const base = (bx + by) & 1 ? 2 : 3;
-  if (hu % 9 === 0) {
+  if (hu % 13 === 0) {
     // eingelegter Runenkreis
     const dx = lx - 11, dy = ly - 11, r = Math.sqrt(dx * dx + dy * dy);
     if (Math.abs(r - 9) < 0.75) return BRASS[dx + dy < 0 ? 3 : 2];
@@ -101,13 +101,13 @@ function marble(c: Chunk, f: DG, i: number, wx: number, wy: number, h: number): 
   if (lx === 0 || ly === 0) return MB[base + 1];
   // Äderung: Höhenlinien zweier Rauschfelder, je Platte versetzt
   const v1 = (f.nB[i] * 3.1 + ((hu >>> 12) & 15) / 16) % 1, v2 = (f.nL[i] * 5.3 + f.nA[i] * 0.6 + ((hu >>> 16) & 15) / 16) % 1;
-  if (v1 < 0.022) return h < 0.35 ? MB[5] : MB[4];
-  if (v2 < 0.014) return h < 0.6 ? MB[4] : MB[base + 1];
+  if (v1 < 0.022) return v1 < 0.008 ? MB[5] : MB[4];
+  if (v2 < 0.014) return MB[base + 1];
   let t = base;
   // Politur: schräge Glanzstreifen
   const dg = lx + ly - ((hu >>> 20) % 14);
   if ((dg === 10 || dg === 11 || dg === 15) && h < 0.85) t++;
-  if (h < 0.03) t--;
+  if (h < 0.012) t--;
   return MB[t];
 }
 function floorCol(c: Chunk, f: DG, i: number, wx: number, wy: number, h: number): number {
@@ -138,7 +138,7 @@ function floorCol(c: Chunk, f: DG, i: number, wx: number, wy: number, h: number)
       if (b === 8 || b === 23) return CP[1];
       const wv = (wx + wy) & 1;
       // fadenscheinige Stellen in der Laufspur
-      if (worn > 0.6 && Math.abs(b - 15.5) < 6) return wv ? mix(CP[2], SA[2], worn > 0.66 ? 0.5 : 0.3) : mix(CP[3], SA[3], 0.3);
+      if (worn > 0.6 && Math.abs(b - 15.5) < 6) return wv ? mix(CP[2], SA[2], worn > 0.66 ? 0.32 : 0.2) : mix(CP[3], SA[3], 0.2);
       const la = ((a % 12) + 12) % 12, dm = Math.abs(la - 5.5) + Math.abs(b - 15.5) * 0.8;
       if (dm < 1.6) return BRASS[2];
       if (dm > 3.3 && dm < 4.5) return CP[3];

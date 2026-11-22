@@ -53,14 +53,14 @@ function forgeRuin(p: Px): void {
   });
   // Runentafel aus Bronze, schief hängend
   part(p, (l) => {
-    l.poly([[14, 9], [25, 8], [26, 19], [15, 20]], BRONZE[1]); l.poly([[15, 10], [24, 9], [25, 18], [16, 19]], BRONZE[2]);
-    l.line(14, 9, 25, 8, BRONZE[4]); l.line(14, 10, 15, 20, BRONZE[3]); l.line(15, 20, 26, 19, BRONZE[0]);
-    l.px([15, 10, 24, 9, 16, 19, 25, 18], BRONZE[4]);
+    l.poly([[14, 9], [25, 8], [26, 19], [15, 20]], BRONZE[0]); l.poly([[15, 10], [24, 9], [25, 18], [16, 19]], BRONZE[1]);
+    l.line(14, 9, 25, 8, BRONZE[3]); l.line(14, 10, 15, 20, BRONZE[2]); l.line(15, 20, 26, 19, BRONZE[0]);
+    l.px([15, 10, 24, 9, 16, 19, 25, 18], BRONZE[3]); for (let k = 0; k < 9; k++) l.set(16 + (hash2(k, 1, 4) % 8), 11 + (hash2(k, 2, 4) % 7), BRONZE[2]);
     // Grünspan
     l.px([23, 16, 24, 17, 22, 17, 17, 11], mix(BRONZE[2], P.teal[2], 0.55)); l.set(23, 17, mix(BRONZE[1], P.teal[1], 0.5));
     // glühende Runen: Flamme über Amboss, zwei Zeichen
     for (const [x, y] of [[20, 11], [19, 12], [20, 12], [21, 13], [19, 13], [20, 14], [18, 15], [19, 15], [20, 15], [21, 15], [22, 15], [20, 16], [19, 17], [21, 17]] as const) l.set(x, y, y < 13 ? HOT[5] : HOT[4]);
-    l.px([17, 13, 17, 14, 23, 12, 23, 13], HOT[3]); l.px([20, 13], BRONZE[2]);
+    l.px([17, 13, 17, 14, 23, 12, 23, 13], HOT[3]); l.px([20, 13], BRONZE[0]);
   });
   // Trümmer, Schlackehaufen, Amboss-Stumpf
   part(p, (l) => { boulder(l, 4, 47, 8, 6, { ramp: MAS, seed: 3, cracks: 0 }); boulder(l, 38.5, 47, 9, 7, { ramp: MAS, seed: 5, cracks: 0 }); boulder(l, 33, 47, 5, 4, { ramp: MAS, seed: 7, cracks: 0 }); });
@@ -69,7 +69,7 @@ function forgeRuin(p: Px): void {
   inkOutline(p);
   glow(p, 21.5, 41, 8, F[1], 44); glow(p, 20, 14, 7, F[2], 26);
   // Widerschein der Runen auf der Tafel
-  for (let y = 9; y < 20; y++) for (let x = 15; x < 26; x++) { const c = p.get(x, y); if (c === BRONZE[2]) p.set(x, y, mix(c, F[2], Math.hypot(x - 20, y - 14) < 3.5 ? 0.3 : 0.1)); }
+  for (let y = 9; y < 20; y++) for (let x = 15; x < 26; x++) { const c = p.get(x, y); if (c === BRONZE[1] || c === BRONZE[2]) p.set(x, y, mix(c, F[1], Math.hypot(x - 20, y - 14) < 3.5 ? 0.4 : 0.12)); }
 }
 
 // ---------------------------------------------------------------- Nomadenzelt
@@ -105,8 +105,8 @@ function nomadTent(p: Px): void {
     // Zierborte am Boden
     for (let x = 3; x < 46; x++) if (l.get(x, 39) >>> 24) { l.set(x, 38, x % 4 < 2 ? Y[2] : C[3]); l.set(x, 39, K[0]); }
     // Eingang: dunkles Inneres, Teppich, Lampenschimmer
-    l.poly([[18, 41], [19, 26], [29, 26], [30, 41]], P.shadow[0]); l.poly([[20, 41], [21, 29], [27, 29], [28, 41]], mix(P.shadow[1], P.red[0], 0.4));
-    l.rect(22, 36, 3, 3, mix(F[1], P.shadow[1], 0.45)); l.set(23, 36, F[3]); l.set(23, 35, F[2]);
+    l.poly([[18, 41], [19, 26], [29, 26], [30, 41]], P.shadow[0]); l.rect(21, 36, 7, 4, mix(P.shadow[1], P.red[0], 0.5)); l.rect(21, 36, 7, 1, mix(P.shadow[2], P.red[1], 0.4));
+    l.px([25, 34, 25, 35], F[3]); l.set(25, 33, F[4]); l.set(24, 35, F[1]); l.set(26, 35, F[1]);
     l.rect(19, 40, 11, 1, P.teal[1]); l.px([20, 40, 23, 40, 26, 40, 29, 40], Y[2]);
     // zurückgeschlagene Zeltbahn links, hängende rechts
     l.poly([[19, 26], [22, 26], [20, 34], [17, 41], [15, 41], [17, 33]], K[3]); l.line(19, 26, 15, 41, K[4]); l.line(22, 27, 18, 40, K[1]); l.px([18, 33, 19, 33], T[2]);
@@ -181,16 +181,20 @@ function nomadBrazier(p: Px, f: number): void {
 
 // ---------------------------------------------------------------- Wasserschläuche, Steinmal
 function waterSkins(p: Px): void {
-  const L: Ramp = [mix(W[0], A[0], 0.3), mix(W[1], P.red[0], 0.25), mix(W[2], T[1], 0.4), mix(T[2], W[3], 0.4), mix(T[3], C[2], 0.3)];
-  part(p, (l) => { pole(l, 1, 2, 14, 2); pole(l, 13, 3, 14, 2); l.px([0, 1, 3, 1, 12, 2, 15, 2], POLE[3]); l.rect(0, 3, 16, 1, POLE[3]); l.rect(0, 4, 16, 1, POLE[1]); l.px([1, 3, 13, 3], T[2]); l.px([1, 15, 2, 15, 13, 15, 14, 15], POLE[1]); });
-  const skin = (x: number, y: number, w: number, h: number, k: number): void => { part(p, (l) => {
-    l.rect(x + (w >> 1), y - 2, 1, 2, T[1]);
-    l.ball(x + w / 2, y + h * 0.6, w / 2, h * 0.45, L, 1, 4); l.rect(x + (w >> 1) - 1, y, 2, Math.round(h * 0.4), L[2]); l.set(x + (w >> 1) - 1, y, L[4]);
-    l.rect(x + (w >> 1) - 1, y, 2, 1, k === 1 ? Y[2] : W[1]); l.set(x + 1, y + h - 2, L[1]); l.set(x + (w >> 1), y + h - 1, L[0]);
-    for (let j = 2; j < h - 1; j += 2) l.set(x + w - 2, y + j, L[1]);                       // Naht
+  const L: Ramp = [mix(W[1], P.red[0], 0.3), mix(W[2], T[1], 0.5), mix(T[2], F[1], 0.15), T[3], mix(T[4], C[3], 0.3)];
+  // Gestell: zwei Astgabeln, Querstange
+  part(p, (l) => { for (const x of [1, 14]) { l.rect(x, 3, 1, 12, POLE[2]); l.set(x, 15, POLE[1]); l.set(x - 1, 1, POLE[3]); l.set(x + 1, 1, POLE[2]); l.set(x, 2, POLE[2]); } l.rect(0, 3, 16, 1, POLE[3]); l.px([0, 3, 15, 3], POLE[1]); l.px([1, 4, 14, 4], T[2]); });
+  // pralle Lederschläuche an Schnüren
+  const skin = (x: number, w: number, h: number, k: number): void => { part(p, (l) => {
+    const cx = x + w / 2, top = 6;
+    l.rect(Math.floor(cx), 4, 1, 2, T[1]);
+    for (let j = 0; j < h; j++) { const t = j / (h - 1), hw = (w / 2) * (t < 0.25 ? 0.45 + t * 1.2 : Math.sqrt(Math.max(0.1, 1 - ((t - 0.62) / 0.45) ** 2))); for (let X = Math.round(cx - hw); X < Math.round(cx + hw); X++) { const u = (X + 0.5 - cx) / (w / 2); l.set(X, top + j, L[u < -0.45 ? 4 : u < 0.1 ? 3 : u < 0.55 ? 2 : 1]); } }
+    l.rect(Math.floor(cx) - 1, top, 2, 1, k ? Y[2] : W[1]); l.set(Math.floor(cx), top + h - 1, L[0]); l.set(Math.floor(cx) - 1, top + h - 1, L[1]);
+    l.set(Math.round(cx - w / 2) + 1, top + Math.round(h * 0.45), WHITE); for (let j = 2; j < h - 1; j += 2) l.set(Math.round(cx + w / 2) - 1, top + j, L[0]);
   }); };
-  skin(3, 6, 4, 7, 0); skin(7, 6, 5, 9, 1); skin(10, 6, 3, 6, 2);
-  p.set(9, 15, P.ice[2]);
+  skin(3, 6, 9, 0); skin(9, 4, 7, 1);
+  p.set(6, 15, P.ice[2]);
+  inkOutline(p);
 }
 function cairn(p: Px): void {
   const st = (cx: number, y: number, w: number, h: number, k: number): void => { part(p, (l) => {

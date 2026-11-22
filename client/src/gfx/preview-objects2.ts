@@ -119,7 +119,7 @@ const SCENES: Scene[] = [
       rect(14, 2, 2, 8, T.PATH); blob(24.5, 13.5, 3, 1.8, T.LIQUID);
     },
     sprites: [
-      ['mine_support', 240, 76], ['mine_rails', 240, 92], ['mine_rails', 240, 104], ['mine_rails', 240, 116], ['mine_cart', 240, 132], ['ore_crate', 276, 84], ['ore_crate', 290, 90], ['pickaxe_rack', 204, 84], ['lantern_post', 188, 140], ['lantern_post', 300, 150],
+      ['mine_support', 240, 76], ['mine_rails', 208, 128], ['mine_rails', 240, 128], ['mine_rails', 272, 128], ['mine_rails', 304, 128], ['mine_cart', 262, 127], ['ore_crate', 276, 84], ['ore_crate', 290, 90], ['pickaxe_rack', 204, 84], ['lantern_post', 184, 122], ['lantern_post', 330, 122],
       ['crystal_big', 96, 104], ['crystal_blue', 60, 112, 'ph1'], ['crystal_pink', 134, 100, 'ph2'], ['crystal_teal', 118, 124, 'ph3'], ['crystal_shards', 86, 120], ['crystal_shards', 150, 122],
       ['stalagmite_l', 30, 92], ['stalagmite', 50, 76], ['stalagmite_cluster', 348, 84], ['stalagmite', 322, 96], ['drip_stone', 388, 92], ['stalagmite_l', 440, 100], ['stalagmite', 462, 116], ['drip_stone', 20, 130],
       ['rock_cave_l', 404, 150], ['rock_cave_m', 436, 162], ['rock_cave_s', 380, 158], ['rock_cave_s', 160, 76], ['rock_cave_m', 30, 250],
