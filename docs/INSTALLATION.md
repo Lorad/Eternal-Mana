@@ -9,6 +9,13 @@
 
 ## 2. Starten
 
+**Mit dem Launcher (empfohlen):** `Eternal-Mana.bat` doppelklicken, unter Linux/macOS `./eternal-mana.sh`. Der Launcher öffnet
+ein eigenes Fenster, hält die Installation aktuell (siehe Abschnitt 6) und startet Spiel und Server per Knopfdruck. Das Spiel
+selbst öffnet sich im Standardbrowser. Schließt du das Launcher-Fenster, läuft ein von ihm gestarteter Server weiter; beenden
+lässt er sich im Launcher oder mit `stop-server.bat`.
+
+**Mit den Skripten:**
+
 **Windows:** `start-server.bat` doppelklicken. **Linux/macOS:** `./start-server.sh`.
 
 Das Skript prüft die Node-Version, installiert beim ersten Mal die Abhängigkeiten (`npm install`), baut den Client, falls er
@@ -75,6 +82,20 @@ wie ein Passwort. Wer den Browser-Speicher löscht, ohne den Schlüssel notiert 
 Charaktere (die Daten bleiben in der Datenbank erhalten).
 
 ## 6. Aktualisieren
+
+**Mit dem Launcher** geschieht das von selbst: Bei jedem Start vergleicht er die Installation mit dem Stand auf GitHub
+(`config/patcher.json` nennt Repository und Zweig), lädt nur abweichende Dateien, prüft jede gegen ihre Prüfsumme und setzt sie
+erst ein, wenn alles vollständig geladen ist. Danach installiert er bei Bedarf Abhängigkeiten und baut den Client neu.
+
+- Spielstände (`data/`), `config/server.json` und eigene Dateien bleiben unberührt.
+- Läuft der Server gerade, wartet die Aktualisierung, bis du „Server beenden und aktualisieren“ wählst.
+- „Dateien prüfen“ gleicht alle Dateien erneut ab und repariert beschädigte.
+- Ohne Internetverbindung startet das Spiel mit der installierten Version.
+- In einer Entwickler-Kopie (`git clone`) überschreibt der Launcher nichts; er spult nur per `git pull --ff-only` vor, wenn
+  es keine lokalen Änderungen gibt.
+- Protokoll bei Problemen: `.patcher/launcher.log`.
+
+**Von Hand:**
 
 1. Server beenden.
 2. Neue Version holen: `git pull` (oder das neue Archiv über den alten Ordner entpacken – **`data/` nicht löschen**).

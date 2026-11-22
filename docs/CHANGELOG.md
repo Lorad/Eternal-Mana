@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 – Launcher, Kamera und Licht
+
+- Launcher (`Eternal-Mana.bat`, `eternal-mana.sh`, Quellcode in `launcher/`): eigenes Fenster im Stil des Spiels mit
+  Fortschrittsbalken, Patch Notes (`PATCHNOTES.md`), „Spiel starten“ und „Server starten“.
+- Automatische Aktualisierung: Abgleich mit GitHub Datei für Datei über Git-Prüfsummen, nur Geändertes wird geladen;
+  danach bei Bedarf `npm install` und Client-Build. Der Launcher aktualisiert sich dabei auch selbst.
+- Kamera ohne Kartengrenzen: die Spielfigur bleibt überall in der Bildmitte; weicher Übergang ins Dunkel am Kartenrand.
+- Lichtkreise mit stufenlosem Verlauf statt harter Bänder.
+- Behoben: `shared/src/data/` fehlte im Repository (zu breite `.gitignore`-Regel).
+
 ## 0.2.0 – Grafik-Neuaufbau
 
 - Neuer Stil nach Art-Bible: dichter, vielschichtiger Boden ohne Rasterwiederholung, große Vegetation, kleine Figur in großer Welt.

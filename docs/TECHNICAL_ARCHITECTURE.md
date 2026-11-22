@@ -102,6 +102,22 @@ Snapshots.
 - **Leistung:** keine Re-Renders der Oberfläche pro Frame (schmale Store-Abos; Minimap liest Positionsdaten direkt),
   Bodentexturen statt Tausender Kachel-Sprites, Snapshots nur für wache Gegner.
 
+## Launcher und Patcher (launcher/)
+
+Reines JavaScript ohne Abhängigkeiten, damit der Launcher auch vor dem ersten `npm install` läuft.
+
+- `launcher.mjs`: lokaler Webserver nur auf `127.0.0.1` (Port 7780), der die Oberfläche `launcher/ui/` ausliefert und ihren
+  Zustand per Server-Sent Events meldet. Geöffnet wird sie als Fenster ohne Browserleisten (Edge/Chrome `--app`), sonst im
+  Standardbrowser. Aktionen kommen per POST mit eigenem Header; fremde `Host`-Angaben werden abgewiesen.
+- `patcher.mjs`: fragt den neuesten Commit des Zweigs ab (GitHub-API), holt den Dateibaum mit Git-Blob-Prüfsummen, vergleicht
+  lokal (`sha1("blob <Länge>\0<Inhalt>")`), lädt Abweichendes von `raw.githubusercontent.com` in `.patcher/tmp`, prüft jede
+  Datei und setzt erst dann alles ein. `.patcher/state.json` merkt sich Stand und Dateiliste, damit gelöschte Dateien entfernt
+  werden können. `data/`, `node_modules/`, `client/dist/`, `.git/` und `config/server.json` sind tabu.
+- Danach: `npm install`, wenn sich `package-lock.json` geändert hat; Client-Build, wenn Quellen neuer sind als `client/dist`.
+  Ändert ein Update den Launcher selbst, startet er sich neu und die Oberfläche verbindet sich wieder.
+- Der Spielserver läuft als unsichtbarer Kindprozess; gestoppt wird er über `/api/stop`. Der Launcher-Prozess endet, sobald
+  sein Fenster geschlossen ist und kein von ihm gestarteter Server mehr läuft.
+
 ## Tests
 
 - `tests/shared.test.ts` – Karten (Erreichbarkeit aller Objekte, Schlüssel/Türen, Splitter), Datenintegrität

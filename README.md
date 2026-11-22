@@ -10,6 +10,12 @@ im Browser synthetisiert – das Projekt enthält keine fremden Assets und brauc
 
 Voraussetzung: [Node.js 22.13 oder neuer](https://nodejs.org/).
 
+**Am einfachsten: der Launcher.** `Eternal-Mana.bat` doppelklicken (Linux/macOS: `./eternal-mana.sh`). Er sucht nach
+Aktualisierungen, lädt nur die geänderten Dateien, bereitet das Spiel vor und zeigt die Neuigkeiten. Mit „Spiel starten“ und
+„Server starten“ geht es von dort weiter – ganz ohne Konsolenfenster.
+
+Ohne Launcher geht es wie bisher mit den Skripten:
+
 | | Windows | Linux / macOS |
 |---|---|---|
 | Server starten | `start-server.bat` doppelklicken | `./start-server.sh` |

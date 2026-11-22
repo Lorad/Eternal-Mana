@@ -1,6 +1,9 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.2.0 (Grafik-Neuaufbau abgeschlossen; Spielumfang wie 0.1.0)
+Stand: Version 0.2.1 (Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen; Spielumfang wie 0.1.0)
+
+Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
+`shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
 
 ## Starten und Testen
 
