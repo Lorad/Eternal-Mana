@@ -6,21 +6,32 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // @ts-ignore – reines JavaScript ohne Typen, damit der Launcher ohne Build läuft
-import { GitHub, gitBlobSha, parseNotes, readState, safeRel, sync, toLf } from '../launcher/patcher.mjs';
+import { GitHub, gitBlobSha, parseNotes, readState, safeRel, sync, toLf, untar } from '../launcher/patcher.mjs';
 
 type Files = Record<string, string | Buffer>;
 let remote: Files = {};
 let corrupt = '';
+let apiDown = false;
+let refsDown = false;
 let server: http.Server;
 let base = '';
-const calls = { head: 0, tree: 0, file: 0 };
+const calls = { head: 0, tree: 0, file: 0, archive: 0 };
 const blob = (f: string) => { const v = remote[f]; return Buffer.isBuffer(v) ? v : Buffer.from(v); };
 const headSha = () => gitBlobSha(Buffer.from(JSON.stringify(Object.keys(remote).sort().map(f => [f, gitBlobSha(blob(f))]))));
 
 beforeAll(async () => {
   server = http.createServer((req, res) => {
     const u = decodeURIComponent(new URL(req.url!, 'http://x').pathname);
-    if (u.includes('/commits/')) { calls.head++; res.end(JSON.stringify({ sha: headSha(), commit: { tree: { sha: headSha() }, committer: { date: '2026-11-22T00:00:00Z' } } })); }
+    if (apiDown && (u.includes('/commits/') || u.includes('/git/trees/'))) { res.writeHead(403); res.end('{"message":"API rate limit exceeded"}'); return; }
+    if (u.endsWith('.git/info/refs')) {
+      if (refsDown) { res.writeHead(500); res.end(); return; }
+      res.end(`001e# service=git-upload-pack\n0000015a${headSha()} HEAD\0multi_ack\n003d${headSha()} refs/heads/x\n003f${'0'.repeat(40)} refs/heads/xy\n0000`);
+    } else if (u.includes('/archive/')) {
+      calls.archive++;
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'em-tar-')), top = path.join(dir, 'repo-abc');
+      for (const f of Object.keys(remote)) { fs.mkdirSync(path.dirname(path.join(top, f)), { recursive: true }); fs.writeFileSync(path.join(top, f), /\.bat$/.test(f) ? blob(f).toString().replace(/\n/g, '\r\n') : blob(f)); }
+      res.end(execFileSync('tar', ['-czf', '-', '--format=pax', '-C', dir, 'repo-abc'], { maxBuffer: 1e8 }));
+    } else if (u.includes('/commits/')) { calls.head++; res.end(JSON.stringify({ sha: headSha(), commit: { tree: { sha: headSha() }, committer: { date: '2026-11-22T00:00:00Z' } } })); }
     else if (u.includes('/git/trees/')) {
       calls.tree++;
       res.end(JSON.stringify({ truncated: false, tree: [
@@ -46,7 +57,7 @@ const mkRoot = (files: Files = {}) => {
   for (const [f, v] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(root, f)), { recursive: true }); fs.writeFileSync(path.join(root, f), v); }
   return root;
 };
-const gh = () => new GitHub({ repo: 'a/b', branch: 'x', api: base, raw: base + '/raw' });
+const gh = () => new GitHub({ repo: 'a/b', branch: 'x', api: base, raw: base + '/raw', web: base });
 const read = (root: string, f: string) => fs.readFileSync(path.join(root, f), 'utf8');
 
 describe('Launcher-Patcher', () => {
@@ -126,8 +137,37 @@ describe('Launcher-Patcher', () => {
     expect(read(root, 'a.txt')).toBe('alt');
   });
 
+  it('kommt ohne die API aus: Stand über das Git-Protokoll, Dateien aus dem Archiv', async () => {
+    const longName = 'sehr/tief/' + 'verschachtelt-'.repeat(9) + '/datei-mit-langem-namen.txt';
+    remote = { 'a.txt': 'neu', 'dir/b.txt': 'b', 'run.bat': 'x\ny\n', [longName]: 'lang' };
+    const root = mkRoot({ 'a.txt': 'alt', 'dir/b.txt': 'b', 'run.bat': 'x\r\ny\r\n' });
+    apiDown = true;
+    const before = { ...calls };
+    const r = await sync({ root, gh: gh() });
+    apiDown = false;
+    expect(calls.head).toBe(before.head);
+    expect(calls.archive).toBe(before.archive + 1);
+    expect(calls.file).toBe(before.file);
+    expect(r.changed.sort()).toEqual(['a.txt', longName].sort());
+    expect(read(root, 'a.txt')).toBe('neu');
+    expect(read(root, longName)).toBe('lang');
+    expect(read(root, 'run.bat')).toBe('x\r\ny\r\n');
+    expect(readState(root).sha).toBe(headSha());
+    expect(untar(Buffer.alloc(1024))).toEqual([]);
+  });
+
+  it('fragt den Stand über die API ab, wenn das Git-Protokoll nicht antwortet', async () => {
+    remote = { 'a.txt': 'eins' };
+    refsDown = true;
+    const before = calls.head;
+    const r = await sync({ root: mkRoot(), gh: gh() });
+    refsDown = false;
+    expect(calls.head).toBe(before + 1);
+    expect(r.changed).toEqual(['a.txt']);
+  });
+
   it('meldet eine fehlende Verbindung als solche', async () => {
-    const offline = new GitHub({ repo: 'a/b', branch: 'x', api: 'http://127.0.0.1:1', raw: 'http://127.0.0.1:1' });
+    const offline = new GitHub({ repo: 'a/b', branch: 'x', api: 'http://127.0.0.1:1', raw: 'http://127.0.0.1:1', web: 'http://127.0.0.1:1' });
     await expect(sync({ root: mkRoot(), gh: offline })).rejects.toMatchObject({ kind: 'offline' });
   });
 

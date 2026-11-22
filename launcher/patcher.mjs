@@ -7,6 +7,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 
 /** Dateien, die laut .gitattributes mit Windows-Zeilenenden ausgeliefert werden. */
 export const CRLF_FILES = /\.(bat|cmd)$/i;
@@ -56,8 +57,8 @@ export function writeState(root, patch) {
 
 /** Zugriff auf GitHub (öffentliches Repository, keine Anmeldung nötig). */
 export class GitHub {
-  constructor({ repo, branch, api = 'https://api.github.com', raw = 'https://raw.githubusercontent.com' }) {
-    Object.assign(this, { repo, branch, api, raw });
+  constructor({ repo, branch, api = 'https://api.github.com', raw = 'https://raw.githubusercontent.com', web = 'https://github.com' }) {
+    Object.assign(this, { repo, branch, api, raw, web });
   }
   async get(url, accept) {
     let r;
@@ -68,8 +69,13 @@ export class GitHub {
     if (!r.ok) throw new PatchError('http', `Update-Server antwortet mit Fehler ${r.status}.`);
     return r;
   }
-  /** Neuester Stand des Zweigs. */
+  /** Neuester Stand des Zweigs. Erst über das Git-Protokoll (ohne Anfragelimit), sonst über die API. */
   async head() {
+    try {
+      const t = await (await this.get(`${this.web}/${this.repo}.git/info/refs?service=git-upload-pack`, '*/*')).text();
+      const m = new RegExp(`([0-9a-f]{40}) refs/heads/${this.branch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\0\\n]`).exec(t);
+      if (m) return { sha: m[1], tree: m[1], date: null };
+    } catch (e) { if (e.kind === 'offline') throw e; }
     const j = await (await this.get(`${this.api}/repos/${this.repo}/commits/${encodeURIComponent(this.branch)}`, 'application/vnd.github+json')).json();
     return { sha: j.sha, tree: j.commit.tree.sha, date: j.commit.committer?.date ?? null };
   }
@@ -79,6 +85,19 @@ export class GitHub {
     if (j.truncated) throw new PatchError('http', 'Dateiliste unvollständig.');
     return j.tree.filter(e => e.type === 'blob' && e.mode !== '120000' && safeRel(e.path)).map(e => ({ path: e.path, sha: e.sha, size: e.size ?? 0, mode: e.mode }));
   }
+  /**
+   * Ausweichweg ohne API: das ganze Archiv eines Stands laden und daraus dieselbe Dateiliste bilden.
+   * Die Einträge tragen ihren Inhalt gleich mit (`buf`), es wird danach nichts mehr einzeln geladen.
+   */
+  async archive(commit, onBytes) {
+    const r = await this.get(`${this.web}/${this.repo}/archive/${commit}.tar.gz`, '*/*');
+    const chunks = [];
+    for await (const c of r.body) { chunks.push(c); onBytes?.(c.length); }
+    return untar(zlib.gunzipSync(Buffer.concat(chunks))).filter(e => safeRel(e.path)).map(e => {
+      const buf = CRLF_FILES.test(e.path) ? toLf(e.buf) : e.buf;
+      return { path: e.path, sha: gitBlobSha(buf), size: buf.length, mode: e.exec ? '100755' : '100644', buf };
+    });
+  }
   /** Eine Datei eines bestimmten Stands laden; onBytes meldet den Fortschritt. */
   async file(commit, rel, onBytes) {
     const r = await this.get(`${this.raw}/${this.repo}/${commit}/${rel.split('/').map(encodeURIComponent).join('/')}`, '*/*');
@@ -86,6 +105,31 @@ export class GitHub {
     for await (const c of r.body) { chunks.push(c); onBytes?.(c.length); }
     return Buffer.concat(chunks);
   }
+}
+
+/** Liest ein tar-Archiv (ustar mit pax- und GNU-Langnamen); der oberste Ordner des Archivs wird abgestreift. */
+export function untar(buf) {
+  const out = [];
+  const str = (o, n) => { const s = buf.subarray(o, o + n); const z = s.indexOf(0); return s.subarray(0, z < 0 ? n : z).toString('utf8'); };
+  let long = null;
+  for (let o = 0; o + 512 <= buf.length;) {
+    if (buf[o] === 0) break;
+    const size = parseInt(str(o + 124, 12).trim() || '0', 8), type = String.fromCharCode(buf[o + 156] || 48), mode = parseInt(str(o + 100, 8).trim() || '0', 8);
+    const data = buf.subarray(o + 512, o + 512 + size);
+    let name = long ?? (str(o + 345, 155) ? str(o + 345, 155) + '/' : '') + str(o, 100);
+    o += 512 + Math.ceil(size / 512) * 512;
+    if (type === 'x') { // pax: „<Länge> path=<Name>\n“
+      const m = /\d+ path=([^\n]*)\n/.exec(data.toString('utf8'));
+      long = m ? m[1] : null;
+      continue;
+    }
+    if (type === 'L') { long = data.toString('utf8').replace(/\0+$/, ''); continue; }
+    long = null;
+    if (type !== '0') continue; // nur gewöhnliche Dateien
+    name = name.split('/').slice(1).join('/');
+    if (name) out.push({ path: name, buf: Buffer.from(data), exec: (mode & 0o100) !== 0 });
+  }
+  return out;
 }
 
 /** Vergleicht die Installation mit dem Dateibaum: was muss geladen, was entfernt werden? */
@@ -112,7 +156,7 @@ export async function downloadPlan(root, gh, commit, plan, onProgress, parallel 
   const worker = async () => {
     while (i < plan.downloads.length) {
       const e = plan.downloads[i++];
-      let buf = null, got = 0;
+      let buf = e.buf ?? null, got = 0;
       for (let attempt = 0; attempt < 3 && !buf; attempt++) {
         bytes -= got; got = 0;
         try {
@@ -157,7 +201,14 @@ export async function sync({ root, gh, force = false, canApply = async () => tru
   const head = await gh.head();
   const state = readState(root);
   if (!force && state.sha === head.sha) return { head, changed: [], removed: [], upToDate: true };
-  const tree = await gh.tree(head.tree);
+  let tree;
+  try { tree = await gh.tree(head.tree); }
+  catch (e) {
+    // API nicht erreichbar oder Anfragelimit erreicht: das ganze Archiv laden und daraus abgleichen
+    if (e.kind === 'offline') throw e;
+    let bytes = 0;
+    tree = await gh.archive(head.sha, n => { bytes += n; onProgress({ phase: 'archive', bytes }); });
+  }
   const plan = planSync(root, tree, state, (n, total) => { if (n % 25 === 0 || n === total) onProgress({ phase: 'verifying', done: n, total }); });
   const files = tree.map(e => e.path);
   if (!plan.downloads.length && !plan.deletes.length) {

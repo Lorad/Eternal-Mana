@@ -13,7 +13,7 @@ const root = path.resolve(here, '..');
 const readJson = (f, d = {}) => { try { return JSON.parse(fs.readFileSync(path.join(root, f), 'utf8')); } catch { return d; } };
 const cfg = { repo: 'Lorad/Eternal-Mana', branch: 'main', launcherPort: 7780, ...readJson('config/patcher.json') };
 const gamePort = readJson('config/server.json').port ?? 7777;
-const gh = new GitHub({ repo: cfg.repo, branch: cfg.branch, api: process.env.EM_PATCHER_API || undefined, raw: process.env.EM_PATCHER_RAW || undefined });
+const gh = new GitHub({ repo: cfg.repo, branch: cfg.branch, api: process.env.EM_PATCHER_API || undefined, raw: process.env.EM_PATCHER_RAW || undefined, web: process.env.EM_PATCHER_WEB || undefined });
 const isWin = process.platform === 'win32';
 const devCheckout = fs.existsSync(path.join(root, '.git'));
 const settingsFile = '.patcher/settings.json';
@@ -107,6 +107,7 @@ async function pipeline({ force = false, stopServerFirst = false } = {}) {
               phase: 'downloading', busyBar: false, progress: 0.1 + 0.6 * (p.totalBytes ? Math.min(1, p.bytes / p.totalBytes) : p.done / p.total),
               label: 'Lade Aktualisierung …', detail: `${p.done} / ${p.total} Dateien · ${mb(p.bytes)} / ${mb(p.totalBytes)} MB`,
             });
+            else if (p.phase === 'archive') set({ phase: 'downloading', busyBar: true, progress: 0.3, label: 'Lade Aktualisierung …', detail: `${mb(p.bytes)} MB` });
             else if (p.phase === 'applying') set({ phase: 'applying', progress: 0.72, label: 'Setze Aktualisierung ein …', detail: '' });
           },
         });
