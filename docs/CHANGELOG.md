@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0 – Grafik-Neuaufbau
+
+- Neuer Stil nach Art-Bible: dichter, vielschichtiger Boden ohne Rasterwiederholung, große Vegetation, kleine Figur in großer Welt.
+- Gelände aller sechs Biome und aller sechs Dungeons neu (eigener Maler je Biom, zweistöckige Wandfronten, Uferböschungen,
+  raumbezogene Bodenmuster, 8-Frame-Flüssigkeiten).
+- Alle 20 Figuren neu (32×40) mit zehn Animationen in drei Blickrichtungen; alle 25 Gegner (22 Frames, eigene Todesanimationen)
+  und alle 6 Bosse (26 Frames, 96–128 px) neu.
+- Neue Objekte für alle Biome, Dorf, Lager und Dungeons; wiegende Bäume, Gras und Korn; Kleintiere je Biom.
+- 90 handanimierte Effekte (Waffenspuren je Klasse, Treffer, Geschosse und Explosionen je Element, Zauber, Zustände, Wetter).
+- Engine: dynamische Schlagschatten, farbige Lichtkarte mit Tagesverlauf, Wolken- und Blätterschatten, Nebel, Lichtstrahlen,
+  Kronen blenden aus, Fußspuren, Treffer-Stopps; ganzzahliger Zoom mit größerem Sichtfeld.
+- Welt: Bach mit Brücken, Kornfelder, Uferbewuchs, Mauerreste im Grünwald; biomtypische Lager; reichere Dungeon-Ausstattung.
+- Asset-Pipeline: Export als PNG-Sheets/Atlanten mit Aseprite- bzw. TexturePacker-JSON, Tiled-Karten, Asset-Katalog.
+- Browser-Durchlauftest (`npm run test:e2e`), Dev-Befehle `/time` und `/weather`.
+
 ## 0.1.0 – Erste spielbare Version
 
 - Sechs Gebiete (Grünwald, Kristallhöhlen, Glutlande, Frostgebirge, Verlorene Ruinen, Schattenreich) und sechs Dungeons

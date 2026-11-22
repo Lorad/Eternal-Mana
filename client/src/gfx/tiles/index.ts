@@ -1,5 +1,5 @@
 /**
- * Bodenmaler – Einstiegspunkt. Verteilt auf die Biom-Maler (v2, siehe core.ts) bzw. auf den alten v1-Maler (legacy.ts)
+ * Bodenmaler – Einstiegspunkt. Verteilt auf die Biom-Maler (v2, siehe core.ts) 
  * für Biome, die noch nicht neu gestaltet sind.
  *
  * Neues Biom anschließen: tiles/<biom>.ts nach dem Muster von gruenwald.ts schreiben und unten in PAINTERS eintragen.
@@ -13,7 +13,6 @@ import { glut } from './glut';
 import { frost } from './frost';
 import { ruinen } from './ruinen';
 import { schatten } from './schatten';
-import { buildLiquidsLegacy, paintGroundLegacy } from './legacy';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   frost,
@@ -34,7 +33,7 @@ let scratch: HTMLCanvasElement | null = null;
  */
 export function paintGround(ctx: CanvasRenderingContext2D, map: PaintableMap, tx0: number, ty0: number, tx1: number, ty1: number): void {
   const painter = PAINTERS[map.biome];
-  if (!painter) { paintGroundLegacy(ctx, map, tx0, ty0, tx1, ty1); return; }
+  if (!painter) return;
   tx0 = Math.max(0, Math.floor(tx0)); ty0 = Math.max(0, Math.floor(ty0)); tx1 = Math.min(map.w, Math.ceil(tx1)); ty1 = Math.min(map.h, Math.ceil(ty1));
   if (tx1 <= tx0 || ty1 <= ty0) return;
   if (!scratch) { scratch = document.createElement('canvas'); scratch.width = CH * TS; scratch.height = CH * TS; }
@@ -56,9 +55,9 @@ export function paintGround(ctx: CanvasRenderingContext2D, map: PaintableMap, tx
   ctx.imageSmoothingEnabled = smooth;
 }
 
-/** Animierte Flüssigkeiten je Biom: v2-Biome 8 nahtlose 64×64-Frames, übrige die v1-Frames (4 × 32×32). */
+/** Animierte Flüssigkeiten je Biom: 8 nahtlose 64×64-Frames. */
 export function buildLiquids(): Record<BiomeId, HTMLCanvasElement[]> {
-  const out = buildLiquidsLegacy();
+  const out = {} as Record<BiomeId, HTMLCanvasElement[]>;
   for (const b in PAINTERS) {
     const p = PAINTERS[b as BiomeId];
     if (p?.liquid) out[b as BiomeId] = p.liquid().map((f) => f.toCanvas());

@@ -18,7 +18,8 @@ Browser (Client)                               Node.js (Server, ein Prozess)
 |---|---|
 | `shared/src` | `config.ts` (Balancing), `types.ts` (Protokoll, Spielstand), `stats.ts`, `collision.ts`, `data/` (Klassen, Skills, Items, Gegner, Zonen, NPCs, Quests, Texte), `maps/` (Kacheln, Generator) |
 | `server/src` | `index.ts` (HTTP + WebSocket, Konsole), `game.ts` (Sitzungen, Charakteraktionen, Gruppen), `zone.ts` (Simulation), `boss.ts`, `player.ts`, `db.ts`, `tailscale.ts` |
-| `client/src` | `game/` (Phaser-Szene, Eingabe), `ui/` (Menüs, HUD), `gfx/` (Pixel-Art-Erzeugung), `audio/` (Synthese, Musik), `net/`, `state/` |
+| `client/src` | `game/` (Phaser-Szene, Licht, Effekte, Eingabe), `ui/` (Menüs, HUD), `gfx/` (Zeichenprogramme, Geländemaler, Laufzeit-Lader), `audio/` (Synthese, Musik), `net/`, `state/` |
+| `client/public/assets`, `assets/tiled`, `tools/` | exportierte Grafiken, Tiled-Karten, Asset-Pipeline |
 | `tests/` | Logiktests, Server-Integrationstests mit Bot-Clients, Browser-Test |
 
 ## Architekturentscheidungen
@@ -42,8 +43,10 @@ Browser (Client)                               Node.js (Server, ein Prozess)
 6. **Eingebautes SQLite (`node:sqlite`).** Keine nativen Abhängigkeiten, daher problemlose Installation unter Windows.
    Charaktere liegen als JSON mit SHA-1-Prüfsumme in einer Tabelle; rollierende Snapshots und `VACUUM INTO`-Backups
    schützen vor Verlust (Details in INSTALLATION.md).
-7. **Prozedurale Grafik und Musik.** Sprites, Kacheln, Icons, Soundeffekte und alle Musikstücke entstehen im Browser aus
-   Code (Canvas bzw. WebAudio). Vorteile: einheitlicher Stil, keine Lizenzfragen, keine Ladezeiten für Assets, offline lauffähig.
+7. **Grafik als Code mit Export-Pipeline, Musik als Synthese.** Jede Grafik ist ein Zeichenprogramm (`client/src/gfx`);
+   `npm run assets` exportiert daraus PNG-Spritesheets, Atlanten und JSON-Metadaten, die das Spiel lädt
+   (Details: ASSET_PIPELINE.md, Stilregeln: ART_BIBLE.md). Nur das Gelände wird zur Laufzeit aus der Karte gemalt.
+   Musik und Klänge entstehen per WebAudio. Vorteile: einheitlicher Stil, keine Lizenzfragen, offline lauffähig.
 8. **Oberfläche in HTML (Preact), Welt in WebGL (Phaser).** Menüs profitieren von Text, Layout und Zugänglichkeit des DOM;
    die Welt von schnellem Sprite-Rendering. Beide teilen sich einen kleinen Zustandsspeicher (`state/store.ts`) und einen Ereignisbus.
 9. **Ein Prozess, ein Port.** Der Server liefert den gebauten Client aus und nimmt WebSockets unter `/ws` an. Mitspieler
@@ -83,9 +86,17 @@ Snapshots.
 
 ## Client
 
-- **GameScene:** malt den Boden einmalig in 512-px-Kacheln auf Canvas-Texturen (nachbarschaftsbewusste Übergänge), legt
-  animierte Flüssigkeit als TileSprite darunter, sortiert Sprites nach y. Beleuchtung: eine RenderTexture in
-  Weltauflösung wird abgedunkelt und an Lichtquellen „ausgestanzt“. Wetter: wiederverwendete Sprites im Sichtfeld.
+- **GameScene** (`client/src/game/`): malt den Boden einmalig in 512-px-Kacheln auf Canvas-Texturen, legt die animierte
+  Flüssigkeit als TileSprite darunter und sortiert alle stehenden Sprites nach y.
+  - `anim.ts` – Animationsraster der Sheets; Figuren haben Idle, Gehen, Laufen, Angriff, schwerer Angriff, Ausweichen,
+    Treffer, Zaubern, Interagieren, Tod in drei Blickrichtungen (links = gespiegelt).
+  - `views.ts` – Spieler, Gegner, Objekte; **dynamische Schlagschatten**: dieselbe Silhouette, an der Standfläche gespiegelt,
+    gestaucht und von der Sonne (Tagesverlauf) bzw. der nächsten Lichtquelle (Nacht, Innenräume) weggedreht.
+  - `lighting.ts` – **Lichtkarte**: Umgebungsfarbe (Tageszeit, Biom, Wetter) + additiv eingezeichnete farbige Lichter,
+    multiplizierend über die Szene gelegt; leuchtende Effekte liegen darüber.
+  - `fxlib.ts` – spielt die handanimierten Effekte des fx-Atlas ab; kurze Treffer-Stopps über eine eigene Animationsuhr.
+  - `ambient.ts` – Wetter, Wolken- und Blätterschatten, Nebel, Lichtstrahlen, Kleintiere, Wasserglitzern, Fußspuren.
+  - Pixelgenauigkeit: ganzzahliger Kamerazoom (Sichtfeld ca. 640 × 360 Weltpixel), Nearest-Neighbour, gerundete Positionen.
 - **Eingabe:** Tastatur, Maus und Gamepad API werden auf Aktionen abgebildet (frei belegbar); Gamepads steuern Menüs über
   räumliche Fokus-Navigation.
 - **Leistung:** keine Re-Renders der Oberfläche pro Frame (schmale Store-Abos; Minimap liest Positionsdaten direkt),

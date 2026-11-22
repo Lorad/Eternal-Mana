@@ -3,8 +3,8 @@
 Ein eigenständiges Fantasy-Action-RPG für den Browser – Pixel-Art, Echtzeitkampf, sechs Biome, sechs Dungeons mit Bossen,
 Quests und Story, Loot und Charakterentwicklung, Koop-Multiplayer für bis zu vier Spieler über ein privates Tailscale-Netz.
 
-Alle Grafiken, Musikstücke und Soundeffekte werden zur Laufzeit im Browser erzeugt – das Projekt enthält keine fremden Assets
-und braucht nach der Installation keine Internetverbindung.
+Alle Grafiken sind eigene Pixel-Art (aus Zeichenprogrammen exportierte Sprite-Sheets und Atlanten), Musik und Klänge werden
+im Browser synthetisiert – das Projekt enthält keine fremden Assets und braucht nach der Installation kein Internet.
 
 ## Schnellstart
 
@@ -44,6 +44,8 @@ Serverfenster die Adressen an, unter denen das Spiel erreichbar ist – auf dem 
 - [docs/TAILSCALE_SETUP.md](docs/TAILSCALE_SETUP.md) – Tailscale Schritt für Schritt, ACLs, Firewall
 - [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) – Welt, Klassen, Kampf, Balancing
 - [docs/TECHNICAL_ARCHITECTURE.md](docs/TECHNICAL_ARCHITECTURE.md) – Aufbau, Protokoll, Architekturentscheidungen
+- [docs/ART_BIBLE.md](docs/ART_BIBLE.md) – Stilregeln · [docs/ASSET_PIPELINE.md](docs/ASSET_PIPELINE.md) · [docs/ASSETS.md](docs/ASSETS.md) – Katalog
+- [docs/VISUAL_QUALITY_REPORT.md](docs/VISUAL_QUALITY_REPORT.md) – Qualitätsbericht zum Grafik-Neuaufbau
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) · [PROJECT_STATUS.md](PROJECT_STATUS.md)
 
 ## Für Entwickler
@@ -54,6 +56,7 @@ npm run dev        # Server (7777, automatischer Neustart) + Vite-Client (5173, 
 npm test           # Logik- und Server-Integrationstests
 npm run test:e2e   # Browser-Test (braucht einen laufenden Server und Playwright)
 npm run typecheck
+npm run assets     # Grafiken neu exportieren (Sprite-Sheets, Atlanten, Katalog, Tiled-Karten)
 ```
 
 Projektstruktur: `client/` (Phaser-Spielszene, Preact-Oberfläche, Grafik- und Audio-Erzeugung), `server/` (autoritative

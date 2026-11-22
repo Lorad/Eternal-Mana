@@ -77,17 +77,20 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `boss_kristallkoloss` | 112×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_ysolde` | 96×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 
-## Atlas: obj (367 Frames, 2048×238)
+## Atlas: obj (459 Frames, 2048×305)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
 | `anvil` | 20×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `arch` | 48×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `ash_pile` | 20×10 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `banner` | 16×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `barrel` | 16×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
-| `basalt_column` | 16×32 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `basalt_cluster` | 40×40 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `basalt_column` | 20×44 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `beehive` | 16×22 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `bench` | 28×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `birch_bare` | 36×64 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `birdhouse` | 16×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `bones` | 16×10 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `boulder_wall` | 16×28 | 1 | interaktives Objekt · Modul `objects/common.ts` |
@@ -98,11 +101,14 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `bush` | 24×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `bush_berry` | 24×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `bush_flower` | 24×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `cabin` | 80×100 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `cairn` | 14×20 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `campfire` | 20×24 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `cart` | 44×30 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `cattail` | 16×28 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `cave_entrance` | 48×44 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `cave_moss` | 16×10 | 1 | interaktives Objekt · Modul `objects/kristall.ts` |
+| `charred_stump` | 18×16 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `chest_gold_closed` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `chest_gold_mid` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `chest_gold_open` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
@@ -122,15 +128,25 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `crit_cavebat` | 12×10 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/kristall.ts` |
 | `crit_cavefish` | 16×12 | 5 (`_0…_4`) | Kleintier (Umgebung) · Modul `objects/kristall.ts` |
 | `crit_dragonfly` | 10×8 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_emberfly` | 5×5 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/glut.ts` |
 | `crit_firefly` | 5×5 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_fish` | 16×12 | 5 (`_0…_4`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_frog_hop` | 12×10 | 3 (`_0…_2`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_frog_idle` | 12×10 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_glowbug` | 5×5 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/kristall.ts` |
+| `crit_hare_hop` | 16×16 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/frost.ts` |
+| `crit_hare_idle` | 16×16 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/frost.ts` |
+| `crit_icesparkle` | 5×5 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/frost.ts` |
+| `crit_lavapop` | 16×14 | 5 (`_0…_4`) | Kleintier (Umgebung) · Modul `objects/glut.ts` |
+| `crit_lizard_idle` | 16×8 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/glut.ts` |
+| `crit_lizard_run` | 16×8 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/glut.ts` |
 | `crit_newt_idle` | 14×8 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/kristall.ts` |
 | `crit_newt_run` | 14×8 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/kristall.ts` |
 | `crit_rabbit_hop` | 16×16 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_rabbit_idle` | 16×16 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
+| `crit_snowbird_fly` | 12×12 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/frost.ts` |
+| `crit_snowbird_idle` | 12×12 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/frost.ts` |
+| `crit_snowbird_peck` | 12×12 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/frost.ts` |
 | `crit_squirrel_idle` | 16×14 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_squirrel_run` | 16×14 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crystal_big` | 40×60 | 4 (`_0…_3`) | Weltdeko · Modul `objects/kristall.ts` |
@@ -163,7 +179,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `d_statue` | 24×48 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
 | `d_table` | 32×22 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
 | `d_urn` | 14×18 | 1 | Dungeon-Ausstattung · Modul `objects/common.ts` |
-| `dead_tree` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `dead_tree` | 44×64 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `door_boss` | 32×40 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `door_closed` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `door_locked` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
@@ -174,12 +190,13 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `drop_gold` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `drop_key` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `drop_potion` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
-| `ember_vent` | 16×16 | 3 (`_0…_2`) | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `ember_vent` | 16×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/glut.ts` |
 | `eye_stalk` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
 | `fence_h` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `fence_post` | 8×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `fence_v` | 16×24 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `fern` | 16×16 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `fire_geyser` | 16×40 | 6 (`_0…_5`) | Weltdeko · Modul `objects/glut.ts` |
 | `floating_shard` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
 | `flowers_a` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `flowers_b` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
@@ -188,7 +205,10 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `flowers_e` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `flowers_f` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `forge` | 32×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
-| `frozen_bush` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `forge_ruin` | 44×48 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `frozen_bush` | 22×18 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `frozen_statue` | 20×40 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `fur_rack` | 28×30 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `gate_bars` | 16×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `glowshroom` | 16×18 | 4 (`_0…_3`) | Weltdeko · Modul `objects/kristall.ts` |
 | `glowshroom_big` | 20×30 | 4 (`_0…_3`) | Weltdeko · Modul `objects/kristall.ts` |
@@ -197,11 +217,15 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `house_a` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `house_b` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `house_c` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
-| `ice_spike` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
-| `ice_spike_l` | 24×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `ice_crack` | 24×14 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `ice_crystal` | 20×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
+| `ice_spike` | 16×28 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `ice_spike_l` | 28×48 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `icicle_log` | 40×18 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `lamp` | 16×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `lantern_frost` | 14×36 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
 | `lantern_post` | 14×36 | 4 (`_0…_3`) | Weltdeko · Modul `objects/kristall.ts` |
-| `lava_rock` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `lava_rock` | 22×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/glut.ts` |
 | `leafpile` | 16×10 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `lever_mid` | 16×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `lever_off` | 16×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
@@ -211,6 +235,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `lilypad_b` | 12×8 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `log` | 40×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `log_moss` | 40×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `magma_crack` | 24×14 | 3 (`_0…_2`) | Weltdeko · Modul `objects/glut.ts` |
 | `mine_cart` | 30×24 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `mine_rails` | 32×12 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `mine_support` | 48×56 | 1 | Weltdeko · Modul `objects/kristall.ts` |
@@ -224,22 +249,29 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `node_rune` | 20×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `node_void` | 20×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `node_wood` | 20×24 | 1 | interaktives Objekt · Modul `objects/common.ts` |
-| `obsidian` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `nomad_banner` | 16×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/glut.ts` |
+| `nomad_brazier` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/glut.ts` |
+| `nomad_tent` | 48×44 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `obsidian` | 18×26 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `obsidian_big` | 36×48 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `ore_crate` | 16×18 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `pebbles` | 16×8 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `pickaxe_rack` | 20×26 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `pillar` | 16×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
 | `pillar_broken` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
-| `pine_snow` | 32×48 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
-| `pine_snow2` | 24×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `pine_snow` | 48×88 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
+| `pine_snow_small` | 24×36 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
+| `pine_snow2` | 40×72 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
 | `plate_down` | 16×16 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `plate_up` | 16×16 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `portal` | 40×56 | 8 (`_0…_7`) | interaktives Objekt · Modul `objects/common.ts` |
+| `prayer_flags` | 48×40 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
 | `puddle_cave` | 20×12 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `push_block` | 16×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `quellstein` | 32×52 | 6 (`_0…_5`) | interaktives Objekt · Modul `objects/common.ts` |
 | `quellstein_off` | 32×52 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `reeds` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `ribcage` | 30×22 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `rock_cave_l` | 36×30 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `rock_cave_m` | 24×20 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `rock_cave_s` | 16×14 | 1 | Weltdeko · Modul `objects/kristall.ts` |
@@ -252,14 +284,18 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `sacks` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `sapling` | 24×32 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `scarecrow` | 24×40 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `scorched_bush` | 20×16 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `seal_pedestal` | 24×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `shadow_spire` | 16×40 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
 | `shard` | 16×26 | 6 (`_0…_5`) | interaktives Objekt · Modul `objects/common.ts` |
 | `shrine` | 36×52 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `signpost` | 16×28 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
-| `skull` | 16×16 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
-| `snow_rock` | 24×20 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
-| `snowman` | 16×24 | 1 | Weltdeko · Modul `objects/legacy.ts` (v1) |
+| `skull` | 12×10 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `sled` | 30×16 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `snow_rock` | 24×18 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `snow_rock_l` | 38×28 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `snowdrift` | 24×10 | 1 | Weltdeko · Modul `objects/frost.ts` |
+| `snowman` | 18×26 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `spikes` | 16×16 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
 | `stairs_down` | 32×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `stairs_up` | 32×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
@@ -288,9 +324,11 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `wall_ruin_end` | 24×24 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `wall_ruin_h` | 48×26 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `wall_torch` | 12×22 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
+| `water_skins` | 16×16 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `well` | 32×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `wheat` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `woodpile` | 28×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `woodpile_snow` | 28×20 | 1 | Weltdeko · Modul `objects/frost.ts` |
 
 ## Atlas: fx (318 Frames, 1024×729)
 
@@ -720,7 +758,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `liquids/glut.png` | 64×64 | 8 |
 | `liquids/frost.png` | 64×64 | 8 |
 | `liquids/ruinen.png` | 64×64 | 8 |
-| `liquids/schatten.png` | 32×32 | 4 |
+| `liquids/schatten.png` | 64×64 | 8 |
 
 ## Overlays (256×256, nahtlos)
 
