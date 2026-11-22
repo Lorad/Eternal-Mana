@@ -356,12 +356,15 @@ function bridgeCol(c: Chunk, dirs: Uint8Array, wx: number, wy: number): number {
     return alpha(GLOW[0], 225);
   }
   if (m === 5) return GLOW[1];
+  // Kante zum festen Boden: eine schlichte Lichtleiste
+  const land = (x: number, y: number): boolean => { const q = tileAt(map, x, y); return q !== LIQUID && q !== BRIDGE; };
+  if ((across === 0 && !sideA && (dir === 1 ? land(cx, cy - 1) : land(cx - 1, cy))) || (across === 15 && !sideB && (dir === 1 ? land(cx, cy + 1) : land(cx + 1, cy)))) return GLOW[1];
   // durchscheinende Tafeln
   const pk = Math.floor((u + 3) / 11), pi = u + 3 - pk * 11, row = dir === 1 ? cy : cx, hp = hash2(pk, row, seed + 3201);
   if (pi === 0) return alpha(GLOW[4], 215);
   if (pi === 10) return alpha(GLOW[0], 200);
   if ((((u + across * 2) % 13) + 13) % 13 === hp % 13) return alpha(WHITE, 215);
-  return alpha(pi < 3 ? GLOW[3] : mix(GLOW[2], P.violet[4], 0.3), 125 + (hp >>> 8) % 3 * 22);
+  return alpha(pi < 3 ? GLOW[3] : mix(GLOW[2], P.violet[4], 0.3), 160 + (hp >>> 8) % 3 * 22);
 }
 
 // ------------------------------------------------------------------ Bodendecker
