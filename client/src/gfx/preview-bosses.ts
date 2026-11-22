@@ -4,6 +4,7 @@
  *   ?scale=2                Vergrößerung der Streifen
  *   ?a=idle,death           nur diese Animationen
  *   ?sec=strips|lineup|sil  nur ein Abschnitt (Standard: alle)
+ *   ?frames=0,6,9           nur diese Frames als ein Streifen (mit ?scale=4 für Detailkritik)
  *   ?bg=<css>               Hintergrund erzwingen
  *   ?anim=1                 animierte Ansicht mit den fps aus BOSS_ANIMS; ?t=<ms> friert sie ein
  */
@@ -40,18 +41,18 @@ for (const id of ids) {
   if (!s || !m) { report.textContent += `\nFEHLT ${id}`; continue; }
   if (s.canvas.width !== m.w * BOSS_FRAMES || s.canvas.height !== m.h) report.textContent += `\n${id}: Sheet ${s.canvas.width}x${s.canvas.height} passt nicht zu ${m.w}x${m.h}`;
   const d = s.canvas.getContext('2d')!.getImageData(0, 0, s.canvas.width, s.canvas.height).data;
-  const edge: number[] = [], low: number[] = [], bases: number[] = [];
+  const edge: string[] = [], low: number[] = [], bases: number[] = [];
   for (let f = 0; f < BOSS_FRAMES; f++) {
-    let e = false, l = false, base = 0;
+    let e = '', l = false, base = 0;
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
       const a = d[(y * s.canvas.width + f * m.w + x) * 4 + 3];
       if (a < 8) continue;
-      if (x === 0 || x === m.w - 1 || y === 0) e = true;
+      if (a >= 128) { if (x <= 1) e = 'L'; else if (x >= m.w - 2) e = 'R'; else if (y <= 1) e = 'T'; }
       if (a >= 128) { if (y > m.h - 6) l = true; base = Math.max(base, y); }
     }
-    if (e) edge.push(f); if (l) low.push(f); bases.push(m.h - 1 - base);
+    if (e) edge.push(f + e); if (l) low.push(f); bases.push(m.h - 1 - base);
   }
-  if (edge.length) report.textContent += `\n${id}: berührt den Rand in Frames ${edge.join(',')}`;
+  if (edge.length) report.textContent += `\n${id}: reicht bis an den Rand (evtl. beschnitten) in Frames ${edge.join(',')}`;
   if (low.length) report.textContent += `\n${id}: unter der Standlinie in Frames ${low.join(',')}`;
   report.textContent += `\n${id}: Abstand unten je Frame ${bases.join(' ')}`;
 }
@@ -71,7 +72,17 @@ if (q.get('anim') === '1') {
     cell(r, c, `${id}: ${names.join(' | ')}`);
   }
 } else {
-  if (!sec || sec === 'strips') {
+  const pick = (q.get('frames') ?? '').split(',').filter(Boolean).map(Number);
+  if (pick.length) {
+    // Einzelbilder groß: ?frames=0,6,9&scale=4
+    for (const id of ids) {
+      const s = bosses[`boss_${id}`], m = meta[id]; if (!s) continue;
+      const [c, x] = mk(pick.length * m.w * SC, m.h * SC);
+      x.fillStyle = BG; x.fillRect(0, 0, c.width, c.height);
+      pick.forEach((f, k) => x.drawImage(s.canvas, f * m.w, 0, m.w, m.h, k * m.w * SC, 0, m.w * SC, m.h * SC));
+      cell(root, c, `${id} frames ${pick.join(',')}`);
+    }
+  } else if (!sec || sec === 'strips') {
     for (const id of ids) {
       const s = bosses[`boss_${id}`], m = meta[id]; if (!s) continue;
       h2(`${id} ${m.w}x${m.h}`);

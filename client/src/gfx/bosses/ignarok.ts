@@ -3,17 +3,17 @@ import { Px, bez, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { R, boulder, clamp, cracks, glow, lay, lerp, lp, normal, puff, rmix, spline } from './kit';
+import { pk, R, boulder, clamp, cracks, cut, glow, lay, lerp, lp, normal, puff, rmix, spline } from './kit';
 import type { BFr, BossDef } from './kit';
 
 const BAS: Ramp = P.ash;
 const STONE: Ramp = [P.stone[0], mix(P.stone[0], P.stone[1], 0.6), P.stone[1], P.stone[2], P.stone[3]];
 const HORN: Ramp = [P.ash[2], P.cream[0], P.cream[1], P.cream[2], P.cream[3]];
-const BELLY: Ramp = [P.fire[0], mix(P.fire[0], P.fire[1], 0.5), P.fire[1], P.fire[2], P.fire[3]];
+const BELLY: Ramp = [mix(P.ash[1], P.fire[0], 0.35), mix(P.ash[2], P.fire[0], 0.6), mix(P.fire[0], P.fire[1], 0.35), P.fire[1], P.fire[2]];
 
 interface I { b1: Pt; b2: Pt; b3: Pt; H: Pt; ha: number; jaw: number; heat: number; throat: number; dim: number; cool: number; breath: number; tail: Pt; f: BFr }
 
-const COIL = { b1: [30, 84] as Pt, b2: [48, 73] as Pt, b3: [70, 78] as Pt, H: [78, 90] as Pt, ha: 0.42 };
+const COIL = { b1: [28, 84] as Pt, b2: [40, 71] as Pt, b3: [56, 75] as Pt, H: [63, 88] as Pt, ha: 0.22 };
 
 function pose(f: BFr): I {
   const s = Math.sin(f.ph), c = Math.cos(f.ph), i = f.i;
@@ -23,17 +23,17 @@ function pose(f: BFr): I {
       z.b1 = [32 + R(s * 2), 80]; z.b2 = [38 - R(s * 2), 59 + R(c)]; z.b3 = [50 + R(c * 1.5), 41 + R(c * 1.5)]; z.H = [61 + R(s * 2), 35 + R(c * 2)];
       z.ha = 0.22 + s * 0.07; z.jaw = i === 3 || i === 4 ? 0.2 : 0.08; z.heat = 0.3 + 0.15 * c; z.tail = [97 + R(c * 2), 78 + R(s * 2)]; break;
     case 'windup':
-      z.b1 = [[35, 80], [37, 80]][i] as Pt; z.b2 = [[46, 62], [51, 64]][i] as Pt; z.b3 = [[39, 45], [35, 44]][i] as Pt; z.H = [[51, 31], [45, 28]][i] as Pt;
-      z.ha = [-0.12, -0.32][i]; z.jaw = [0.06, 0.22][i]; z.heat = [0.6, 0.9][i]; z.throat = [0.8, 1.4][i]; z.tail = [[98, 74], [99, 72]][i] as Pt; break;
+      z.b1 = pk([[35, 80], [37, 80]], i); z.b2 = pk([[46, 62], [51, 64]], i); z.b3 = pk([[39, 45], [35, 44]], i); z.H = pk([[51, 31], [45, 28]], i);
+      z.ha = [-0.12, -0.32][i]; z.jaw = [0.06, 0.22][i]; z.heat = [0.6, 0.9][i]; z.throat = [0.8, 1.4][i]; z.tail = pk([[98, 74], [99, 72]], i); break;
     case 'attack':
-      z.b1 = [[32, 80], [31, 80], [31, 80], [32, 80]][i] as Pt; z.b2 = [[40, 60], [43, 63], [43, 63], [40, 60]][i] as Pt; z.b3 = [[52, 44], [56, 51], [56, 51], [52, 45]][i] as Pt;
-      z.H = [[63, 40], [65, 48], [64, 48], [62, 40]][i] as Pt; z.ha = [0.2, 0.4, 0.4, 0.28][i]; z.jaw = [0.5, 0.8, 0.75, 0.35][i];
-      z.heat = [1, 1, 0.8, 0.5][i]; z.throat = [1.4, 1.2, 1, 0.5][i]; z.breath = [0.35, 1, 0.85, 0.25][i]; z.tail = [[95, 80], [93, 82], [93, 82], [96, 79]][i] as Pt; break;
+      z.b1 = pk([[32, 80], [31, 80], [31, 80], [32, 80]], i); z.b2 = pk([[40, 60], [43, 63], [43, 63], [40, 60]], i); z.b3 = pk([[52, 44], [56, 51], [56, 51], [52, 45]], i);
+      z.H = pk([[61, 40], [61, 48], [60, 48], [60, 40]], i); z.ha = [0.2, 0.4, 0.4, 0.28][i]; z.jaw = [0.5, 0.8, 0.75, 0.35][i];
+      z.heat = [1, 1, 0.8, 0.5][i]; z.throat = [1.4, 1.2, 1, 0.5][i]; z.breath = [0.35, 1, 0.85, 0.25][i]; z.tail = pk([[95, 80], [93, 82], [93, 82], [96, 79]], i); break;
     case 'special':
-      z.b1 = [33, 80]; z.b2 = [38 + [0, 1, 0, -1][i], 62]; z.b3 = [45, 47]; z.H = [53 + [0, 1, 0, -1][i], 35 + [0, -1, 0, 1][i]];
-      z.ha = -1.12 + [0, 0.05, 0, -0.05][i]; z.jaw = [0.7, 0.85, 0.7, 0.85][i]; z.heat = [1.1, 1.5, 1.1, 1.5][i]; z.throat = 1.3; z.tail = [[99, 72], [97, 70], [99, 72], [100, 74]][i] as Pt; break;
+      z.b1 = [33, 80]; z.b2 = [38 + [0, 1, 0, -1][i], 62]; z.b3 = [45, 51]; z.H = [53 + [0, 1, 0, -1][i], 41 + [0, -1, 0, 1][i]];
+      z.ha = -1.12 + [0, 0.05, 0, -0.05][i]; z.jaw = [0.7, 0.85, 0.7, 0.85][i]; z.heat = [1.1, 1.5, 1.1, 1.5][i]; z.throat = 1.3; z.tail = pk([[99, 72], [97, 70], [99, 72], [100, 74]], i); break;
     case 'hit':
-      z.b2 = [[35, 60], [37, 59]][i] as Pt; z.b3 = [[43, 42], [47, 41]][i] as Pt; z.H = [[53, 33], [57, 34]][i] as Pt; z.ha = [-0.15, 0.08][i]; z.jaw = 0.4; z.heat = 0.1; break;
+      z.b2 = pk([[35, 60], [37, 59]], i); z.b3 = pk([[43, 42], [47, 41]], i); z.H = pk([[53, 33], [57, 34]], i); z.ha = [-0.15, 0.08][i]; z.jaw = 0.4; z.heat = 0.1; break;
     case 'death': {
       const t = [0, 0, 0.3, 0.6, 0.85, 1, 1, 1][i], up: I = { ...z, b1: [33, 80], b2: [37, 60], b3: [44, 42], H: [55, 32], ha: -0.4 };
       z.b1 = lp(up.b1, COIL.b1, t); z.b2 = lp(up.b2, COIL.b2, t); z.b3 = lp(up.b3, COIL.b3, t); z.H = lp(up.H, COIL.H, t); z.ha = lerp(i === 0 ? -0.45 : 0, COIL.ha, t);
@@ -48,7 +48,7 @@ function pool(p: Px, z: I, front: boolean): void {
   const cool = z.cool, f = z.f, ph = f.a === 'idle' || f.a === 'special' ? f.i : 0;
   const lava = (k: number): number => mix(P.fire[k], [P.ash[1], P.ash[2], P.ash[3], P.stone[1], P.stone[2]][k], cool);
   if (!front) {
-    if (cool < 0.8) glow(p, 56, 97, 46, P.fire[2], 26 * (1 - cool));
+    if (cool < 0.8) for (let k = 0; k < 5; k++) glow(p, 18 + k * 19, 93, 15, P.fire[2], 24 * (1 - cool));
     lay(p, (l) => {
       l.ell(56, 98, 45, 7.5, BAS[1]); l.ell(56, 97.5, 43, 6.5, BAS[2]);
       for (const [x, w, h, sd] of [[18, 13, 9, 1], [31, 12, 8, 2], [47, 11, 6, 3], [66, 13, 7, 4], [82, 12, 8, 5], [95, 12, 9, 6]] as const) boulder(l, x, 97, w, h, { ramp: BAS, seed: sd + 20, cracks: 0 });
@@ -60,7 +60,7 @@ function pool(p: Px, z: I, front: boolean): void {
     });
   } else {
     lay(p, (l) => {
-      for (const [x, w, h, sd] of [[13, 14, 8, 7], [26, 13, 6, 8], [40, 12, 5, 9], [72, 12, 5, 10], [87, 14, 6, 11], [100, 13, 8, 12], [56, 14, 4, 13]] as const) boulder(l, x, 105, w, h, { ramp: cool > 0.6 ? rmix(BAS, STONE, 0.5) : BAS, seed: sd + 20, cracks: 0 });
+      for (const [x, w, h, sd] of [[13, 14, 8, 7], [26, 13, 6, 8], [40, 12, 5, 9], [72, 12, 5, 10], [87, 14, 6, 11], [100, 13, 8, 12], [56, 14, 4, 13]] as const) boulder(l, x, 106, w, h, { ramp: cool > 0.6 ? rmix(BAS, STONE, 0.5) : BAS, seed: sd + 20, cracks: 0 });
       if (cool < 0.7) for (const x of [20, 34, 80, 94]) { l.set(x, 100, lava(3)); l.set(x + 1, 101, lava(2)); }
     });
   }
@@ -71,7 +71,8 @@ function serpent(l: Px, path: Pt[], r0: number, r1: number, z: I, phase = 0): vo
   const n = path.length - 1, rad = (i: number): number => lerp(r0, r1, i / n);
   const body = z.dim > 0 ? rmix(BAS, STONE, z.dim) : z.heat > 1 ? rmix(BAS, [P.red[0], P.red[0], P.red[1], P.fire[1], P.fire[2]], (z.heat - 1) * 0.7) : BAS;
   const hot = clamp(z.heat), seam = z.dim > 0.5 ? body[0] : mix(P.fire[1], P.fire[3], hot), seam2 = z.dim > 0.5 ? body[1] : z.heat > 0.9 ? WHITE : mix(P.fire[2], P.fire[4], hot);
-  const belly = z.dim > 0 ? rmix(BELLY, [STONE[1], STONE[2], STONE[2], STONE[3], STONE[4]], Math.min(1, z.dim * 1.3)) : BELLY;
+  const bellyHot: Ramp = [P.fire[0], P.fire[1], mix(P.fire[1], P.fire[2], 0.5), P.fire[2], P.fire[3]];
+  const belly = z.heat > 0.7 && z.dim <= 0 ? rmix(BELLY, bellyHot, Math.min(1, (z.heat - 0.7) * 1.6)) : z.dim > 0 ? rmix(BELLY, [STONE[1], STONE[2], STONE[2], STONE[3], STONE[4]], Math.min(1, z.dim * 1.3)) : BELLY;
   // Rückenstacheln
   for (let i = 5 + phase; i < n - 3; i += 8) {
     const [nx, ny] = normal(path, i), q = path[i], r = rad(i), len = 5 + (r > 10 ? 2 : 0);
@@ -100,7 +101,8 @@ function serpent(l: Px, path: Pt[], r0: number, r1: number, z: I, phase = 0): vo
 
 function head(p: Px, z: I): void {
   const [hx, hy] = z.H, c = Math.cos(z.ha), s = Math.sin(z.ha);
-  const T = (x: number, y: number): Pt => [hx + x * c - y * s, hy + x * s + y * c];
+  const SC = 1.16;
+  const T = (x: number, y: number): Pt => [hx + (x * c - y * s) * SC, hy + (x * s + y * c) * SC];
   const TP = (pts: number[][]): Pt[] => pts.map((q) => T(q[0], q[1]));
   const body = z.dim > 0 ? rmix(BAS, STONE, z.dim) : BAS, horn = z.dim > 0 ? rmix(HORN, STONE, z.dim * 0.7) : HORN;
   const lit = z.dim < 0.5;
@@ -147,12 +149,12 @@ function head(p: Px, z: I): void {
   if (z.throat > 0.5) { const q = T(-2, 5); glow(p, q[0], q[1], 6 + z.throat * 5, P.fire[3], 50 * Math.min(1.4, z.throat)); glow(p, q[0], q[1], 3 + z.throat * 2, P.fire[4], 70); }
   if (z.breath > 0) {
     // Feuerstoß aus dem Maul
-    const o = T(27, 5), dx = Math.cos(z.ha + 0.12), dy = Math.sin(z.ha + 0.12), L = 20 * z.breath, i = z.f.i;
+    const o = T(27, 5), dx = Math.cos(z.ha + 0.12), dy = Math.sin(z.ha + 0.12), L = 26 * z.breath, i = z.f.i;
     lay(p, (l) => {
       const cols = [P.fire[1], P.fire[2], P.fire[3], P.fire[4]];
       cols.forEach((col, k) => {
         const ls = [1, 0.86, 0.68, 0.45][k], rs = [1, 0.74, 0.5, 0.26][k];
-        for (let d = 0; d < L * ls; d += 1.5) { const r = (2.2 + d * 0.36) * rs * (1 + 0.18 * Math.sin(d * 0.9 + i * 2 + k)); const x = o[0] + dx * d - dy * Math.sin(d * 0.5 + i) * 1.2, y = o[1] + dy * d + dx * Math.sin(d * 0.5 + i) * 1.2; if (x + r < 110) l.ell(x, y, r, r, col); }
+        for (let d = 0; d < L * ls; d += 1.5) { const r = (2.4 + d * 0.42) * rs * (1 - Math.pow(d / (L * ls), 3) * 0.85) * (1 + 0.18 * Math.sin(d * 0.9 + i * 2 + k)); const x = o[0] + dx * d - dy * Math.sin(d * 0.5 + i) * 1.2, y = o[1] + dy * d + dx * Math.sin(d * 0.5 + i) * 1.2; if (x + r < 110) l.ell(x, y, r, r, col); }
       });
     }, false);
     for (let k = 0; k < 6; k++) { const d = L * (0.7 + rnd2(k, i, 3) * 0.5), off = (rnd2(k, i, 5) - 0.5) * 16; const x = o[0] + dx * d - dy * off, y = o[1] + dy * d + dx * off; if (x < 109) p.set(x, y, k % 2 ? P.fire[4] : P.fire[3]); }
@@ -167,10 +169,10 @@ const fn = (p: Px, f: BFr): void => {
   // Schwanzspitze, die rechts aus der Lava ragt
   lay(p, (l) => {
     const tp = spline([[82, 99], [90, 90], [z.tail[0] - 2, z.tail[1] + 6], z.tail], 8);
-    serpent(l, tp, 6, 2, z, 3);
+    serpent(l, tp, 6, 2, z, 3); cut(l, (_x, y) => y > 100);
     const e = z.tail; l.poly([[e[0] - 3, e[1] + 1], [e[0] + 2, e[1] - 7], [e[0] + 4, e[1] + 2]], z.dim > 0.5 ? STONE[2] : BAS[3]); l.set(e[0] + 2, e[1] - 7, z.dim > 0.5 ? STONE[4] : BAS[4]);
   });
-  lay(p, (l) => serpent(l, path, 13.5, 9, z));
+  lay(p, (l) => { serpent(l, path, 13.5, 9, z); cut(l, (_x, y) => y > 101); });
   if (z.dim > 0.3 && z.dim < 1) cracks(p, [[38, 70], [44, 52], [36, 88]], z.dim, 3, INK, undefined, 16);
   if (f.a === 'death' && i >= 5) cracks(p, [[40, 80], [58, 76]], 0.8, 5, P.stone[0], P.stone[3], 14);
   // Lavasaum am Leib

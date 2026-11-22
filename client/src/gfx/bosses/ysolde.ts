@@ -3,12 +3,12 @@ import { Px, bez, crystal, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { R, TAU, clamp, cracks, dissolve, glow, lay, lerp, shatter, spark } from './kit';
+import { pk, R, TAU, clamp, cracks, dissolve, glow, lay, lerp, shatter, spark, spline } from './kit';
 import type { BFr, BossDef } from './kit';
 import { ik } from '../mobs/kit';
 
 const GY = 104;
-const SKIN: Ramp = [mix(P.skin[1], P.blue[1], 0.5), mix(P.skin[2], P.ice[0], 0.45), mix(P.skin[3], P.ice[2], 0.4), mix(P.skin[4], P.ice[3], 0.35), mix(P.skin[4], WHITE, 0.6)];
+const SKIN: Ramp = [mix(P.skin[1], P.blue[1], 0.55), mix(P.skin[2], P.ice[0], 0.5), mix(P.skin[3], P.ice[2], 0.5), mix(P.skin[4], P.ice[3], 0.45), mix(P.skin[4], WHITE, 0.7)];
 const HAIR: Ramp = [P.ice[0], P.snow[1], P.snow[2], P.snow[3], WHITE];
 const T_BLUE: Ramp = [P.blue[0], mix(P.blue[0], P.blue[1], 0.6), P.blue[1], mix(P.blue[1], P.blue[2], 0.55), P.blue[2]];
 const T_MID: Ramp = [mix(P.blue[1], P.ice[0], 0.5), P.ice[0], mix(P.ice[0], P.ice[1], 0.55), P.ice[1], P.ice[2]];
@@ -19,16 +19,17 @@ interface Y { dx: number; dy: number; lean: number; hd: Pt; L: Pt; Rh: Pt; sa: n
 
 function pose(f: BFr): Y {
   const s = Math.sin(f.ph), c = Math.cos(f.ph), i = f.i;
-  const z: Y = { dx: 0, dy: 0, lean: 0, hd: [0, 0], L: [33, 56], Rh: [66, 48], sa: -1.5, wind: 0, ph: f.ph, drift: 0, halo: 0, f };
+  const z: Y = { dx: 0, dy: 0, lean: 0, hd: [0, 0], L: [35, 57], Rh: [66, 48], sa: -1.5, wind: 0, ph: f.ph, drift: 0, halo: 0, f };
   switch (f.a) {
-    case 'idle': z.dy = [0, -1, -2, -2, -1, 0][i]; z.L = [33 + R(c), 56 + R(s)]; z.Rh = [66, 48 - R(c * 0.6)]; z.sa = -1.5 + s * 0.03; z.drift = s * 2; break;
-    case 'windup': z.dy = [-2, -3][i]; z.lean = [-1, -2][i]; z.hd = [[-1, -1], [-1, -1]][i] as Pt; z.L = [[37, 48], [40, 44]][i] as Pt; z.Rh = [[66, 40], [65, 35]][i] as Pt; z.sa = [-1.75, -1.95][i]; z.wind = [1, 2][i]; z.drift = -1; break;
-    case 'attack': z.dy = [-2, -1, -1, -1][i]; z.dx = [1, 3, 3, 1][i]; z.lean = [1, 3, 3, 1][i]; z.hd = [[1, 0], [1, 1], [1, 1], [0, 0]][i] as Pt;
-      z.L = [[60, 50], [70, 53], [69, 53], [52, 55]][i] as Pt; z.Rh = [[62, 40], [60, 44], [60, 44], [64, 46]][i] as Pt; z.sa = [-0.75, 0.04, 0.04, -0.7][i]; z.wind = [0, -2, -1, 0][i]; z.drift = [2, 4, 3, 1][i]; break;
-    case 'special': z.dy = [-3, -4, -3, -4][i]; z.hd = [0, -1]; z.L = [[22, 42], [21, 40], [22, 42], [23, 43]][i] as Pt; z.Rh = [[73, 42], [74, 40], [73, 42], [72, 43]][i] as Pt; z.sa = -1.57; z.wind = [3, 4, 3, 4][i]; z.ph = i * 1.57; z.halo = 1; z.drift = [1, 0, -1, 0][i]; break;
-    case 'hit': z.dx = [-3, -1][i]; z.lean = [-3, -1][i]; z.hd = [[-1, 1], [0, 0]][i] as Pt; z.L = [[30, 50], [32, 54]][i] as Pt; z.Rh = [[63, 44], [65, 47]][i] as Pt; z.sa = [-1.25, -1.4][i]; z.drift = -3; break;
-    case 'death': z.dx = -1; z.lean = [-2, -1, -1, -1][Math.min(i, 3)]; z.hd = [[-1, 0], [0, 1], [0, 2], [0, 2]][Math.min(i, 3)] as Pt; z.L = [[30, 50], [33, 58], [34, 60], [34, 60]][Math.min(i, 3)] as Pt; z.Rh = [[64, 44], [65, 52], [65, 56], [65, 56]][Math.min(i, 3)] as Pt; z.sa = [-1.3, -1.2, -1.1, -1.1][Math.min(i, 3)]; z.ph = 1; break;
+    case 'idle': z.dy = [0, -1, -2, -2, -1, 0][i]; z.L = [35 + R(c), 57 + R(s)]; z.Rh = [66, 48 - R(c * 0.6)]; z.sa = -1.5 + s * 0.03; z.drift = s * 2; break;
+    case 'windup': z.dy = [-2, -3][i]; z.lean = [-1, -2][i]; z.hd = pk([[-1, -1], [-1, -1]], i); z.L = pk([[37, 48], [40, 44]], i); z.Rh = pk([[66, 41], [65, 38]], i); z.sa = [-1.75, -1.95][i]; z.wind = [1, 2][i]; z.drift = -1; break;
+    case 'attack': z.dy = [-2, -1, -1, -1][i]; z.dx = [1, 3, 3, 1][i]; z.lean = [1, 3, 3, 1][i]; z.hd = pk([[1, 0], [1, 1], [1, 1], [0, 0]], i);
+      z.L = pk([[58, 50], [66, 53], [65, 53], [50, 55]], i); z.Rh = pk([[60, 40], [54, 44], [54, 44], [62, 46]], i); z.sa = [-0.75, 0.04, 0.04, -0.7][i]; z.wind = [0, -2, -1, 0][i]; z.drift = [2, 4, 3, 1][i]; break;
+    case 'special': z.dy = [-3, -4, -3, -4][i]; z.hd = [0, -1]; z.L = pk([[22, 42], [21, 40], [22, 42], [23, 43]], i); z.Rh = pk([[73, 42], [74, 40], [73, 42], [72, 43]], i); z.sa = -1.57; z.wind = [3, 4, 3, 4][i]; z.ph = i * 1.57; z.halo = 1; z.drift = [1, 0, -1, 0][i]; break;
+    case 'hit': z.dx = [-3, -1][i]; z.lean = [-3, -1][i]; z.hd = pk([[-1, 1], [0, 0]], i); z.L = pk([[30, 50], [32, 54]], i); z.Rh = pk([[63, 44], [65, 47]], i); z.sa = [-1.25, -1.4][i]; z.drift = -3; break;
+    case 'death': z.dx = -1; z.lean = [-2, -1, -1, -1][Math.min(i, 3)]; z.hd = pk([[-1, 0], [0, 1], [0, 2], [0, 2]], Math.min(i, 3)); z.L = pk([[30, 50], [33, 58], [34, 60], [34, 60]], Math.min(i, 3)); z.Rh = pk([[64, 44], [65, 52], [65, 56], [65, 56]], Math.min(i, 3)); z.sa = [-1.3, -1.2, -1.1, -1.1][Math.min(i, 3)]; z.ph = 1; break;
   }
+  z.dy += 5; // Krone bleibt unter dem oberen Rand
   return z;
 }
 
@@ -45,17 +46,17 @@ function snowflake(p: Px, cx: number, cy: number, r: number, a0: number, a: numb
 function hairBack(p: Px, z: Y, hx: number, hy: number): void {
   lay(p, (l) => {
     const w = z.wind, strands: Array<[Pt, Pt, Pt, number]> = [
-      [[hx - 2, hy + 3], [hx - 22, hy - 1 - w * 2], [hx - 40, hy + 10 - w * 4], 4.2],
-      [[hx - 3, hy + 6], [hx - 24, hy + 10 - w * 2], [hx - 42, hy + 25 - w * 5], 4.8],
-      [[hx - 3, hy + 10], [hx - 22, hy + 20 - w], [hx - 38, hy + 39 - w * 5], 5],
-      [[hx - 2, hy + 13], [hx - 17, hy + 30], [hx - 31, hy + 51 - w * 4], 4.6],
-      [[hx, hy + 14], [hx - 11, hy + 34], [hx - 21, hy + 58 - w * 3], 4],
+      [[hx - 1, hy + 2], [hx - 15, hy - 2 - w * 1.5], [hx - 31, hy + 5 - w * 3], 4.6],
+      [[hx - 2, hy + 5], [hx - 17, hy + 5 - w], [hx - 35, hy + 15 - w * 3], 5.6],
+      [[hx - 2, hy + 9], [hx - 17, hy + 14], [hx - 34, hy + 27 - w * 3], 6.2],
+      [[hx - 2, hy + 13], [hx - 14, hy + 23], [hx - 28, hy + 39 - w * 3], 5.6],
+      [[hx - 1, hy + 15], [hx - 9, hy + 29], [hx - 19, hy + 47 - w * 2], 4.6],
     ];
     strands.forEach(([a, b, c, r], k) => {
-      const wv = Math.sin(z.ph + k * 0.9) * 2.4, wv2 = Math.cos(z.ph + k * 0.9) * 3;
-      const pts = tube(l, bez(a, [b[0], b[1] + wv], [c[0] + wv2 * 0.5, c[1] + wv2], 18), r, 1, HAIR, 1);
-      for (let q = 3; q < pts.length - 2; q++) if (q % 9 < 6) l.set(pts[q][0] + 1, pts[q][1] + 1.6, HAIR[k % 2 ? 0 : 1]);
-      const e = pts[pts.length - 1]; l.set(e[0] - 1, e[1] + 1, HAIR[3]); l.set(e[0] - 2, e[1] + 2, HAIR[2]);
+      const wv = Math.sin(z.ph + k * 0.9) * 2.2, wv2 = Math.cos(z.ph + k * 0.9) * 2.6;
+      const path = spline([a, [b[0], b[1] + wv], [c[0], c[1] + wv2], [c[0] - 6, c[1] + wv2 - 3 - wv * 0.6]], 9).map((q): Pt => [Math.max(6, q[0]), Math.max(8, q[1])]);
+      const pts = tube(l, path, r, 1.1, HAIR, 1);
+      for (let q = 4; q < pts.length - 2; q++) { if (q % 11 < 8) l.set(pts[q][0] + 1, pts[q][1] + 2, HAIR[k % 2 ? 0 : 1]); if (q % 13 < 6 && q > 8) l.set(pts[q][0] - 1, pts[q][1] - 1.5, HAIR[4]); }
     });
   });
 }
@@ -85,7 +86,7 @@ function gown(p: Px, z: Y, ox: number, oy: number): void {
       }
     }
     // Frostmuster auf der dunklen Stufe
-    for (const [dx, dy] of [[-5, 8], [4, 12], [-2, 14], [7, 6], [-8, 13]] as const) { const x = ox + dx, y = oy + dy; if (m.get(x, y)) { l.set(x, y, P.ice[2]); l.set(x - 1, y, P.blue[3]); l.set(x + 1, y, P.blue[3]); l.set(x, y - 1, P.blue[3]); l.set(x, y + 1, P.blue[3]); } }
+    for (const [dx, dy] of [[-6, 9], [5, 12], [-1, 14], [8, 7], [-9, 14], [2, 6]] as const) { const x = ox + dx, y = oy + dy; if (m.get(x, y)) { l.set(x, y, P.ice[2]); if ((dx + dy) % 2 === 0) { l.set(x - 1, y, P.blue[3]); l.set(x + 1, y, P.blue[3]); } else { l.set(x, y - 1, P.blue[3]); l.set(x, y + 1, P.blue[3]); } } }
   });
   // Saum löst sich in Frost auf
   const y0 = oy + 31;
@@ -101,8 +102,8 @@ function gown(p: Px, z: Y, ox: number, oy: number): void {
 }
 
 function arm(l: Px, sh: Pt, hand: Pt, dir: number): void {
-  const el = ik(sh, hand, 12, 13, dir);
-  tube(l, [sh, el], 2.6, 2.1, T_BLUE, 2); tube(l, [el, hand], 2.1, 1.5, T_MID, 2);
+  const el = ik(sh, hand, 11, 11, dir);
+  tube(l, [sh, el], 2.3, 1.9, T_BLUE, 2); tube(l, [el, hand], 1.9, 1.4, T_MID, 2);
   // Trompetenärmel
   l.poly([[el[0], el[1] + 1], [hand[0] - 1, hand[1] + 1], [hand[0] - 3, hand[1] + 11], [lerp(el[0], hand[0], 0.5), lerp(el[1], hand[1], 0.5) + 6]], T_MID[2]);
   l.line(hand[0] - 1, hand[1] + 2, hand[0] - 3, hand[1] + 11, T_LOW[3]); l.set(hand[0] - 3, hand[1] + 11, WHITE);
@@ -167,8 +168,8 @@ function figure(p: Px, z: Y): Pt {
     l.poly([[sx - 9, 35 + by], [sx - 3, 35 + by], [bx - 3, 51 + by], [bx - 6, 51 + by]], T_BLUE[3]);
     l.poly([[sx + 4, 36 + by], [sx + 9, 35 + by], [bx + 6, 51 + by], [bx + 3, 51 + by]], T_BLUE[1]);
     l.rect(sx - 2, 30 + by, 4, 6, SKIN[2]); l.rect(sx - 2, 30 + by, 2, 5, SKIN[3]);
-    l.poly([[sx - 5, 35 + by], [sx + 5, 35 + by], [sx, 43 + by]], SKIN[3]); l.line(sx + 1, 36 + by, sx + 4, 36 + by, SKIN[2]);
-    l.line(sx - 6, 35 + by, sx, 44 + by, WHITE); l.line(sx + 6, 35 + by, sx, 44 + by, P.ice[3]);
+    l.poly([[sx - 4, 35 + by], [sx + 4, 35 + by], [sx, 41 + by]], SKIN[3]); l.line(sx + 1, 36 + by, sx + 3, 36 + by, SKIN[2]); l.px([sx - 2, 37 + by, sx + 1, 37 + by], SKIN[1]); l.set(sx, 38 + by, P.teal[4]);
+    l.line(sx - 5, 35 + by, sx, 42 + by, WHITE); l.line(sx + 5, 35 + by, sx, 42 + by, P.ice[3]);
     l.rect(sx - 1, 44 + by, 2, 3, P.teal[4]); l.set(sx - 1, 44 + by, WHITE); l.set(sx, 47 + by, P.teal[2]);
     l.rect(bx - 6, 50 + by, 12, 2, P.ice[3]); l.rect(bx - 6, 50 + by, 6, 1, WHITE); l.rect(bx - 1, 51 + by, 2, 3, P.ice[2]); l.set(bx, 54 + by, P.teal[4]);
     // Schulterpelz
@@ -194,7 +195,7 @@ const fn = (p: Px, f: BFr): void => {
     const snap = new Px(p.w, p.h), z3 = pose({ ...f, i: 3 });
     figure(snap, z3); snap.tint(P.snow[3], 0.62);
     const t = [0.3, 0.62, 0.9, 1][i - 4];
-    if (i < 7) { const s = shatter(snap, t, GY, 12, { cell: 4, spread: 1.3, heap: 7, pop: 5 }); if (i >= 5) dissolve(s, i === 5 ? 0.25 : 0.6, 3); p.draw(s); }
+    if (i < 7) { const s = shatter(snap, t, GY, 12, { cell: 4, spread: 0.25, heap: 8, pop: 3 }); if (i >= 5) dissolve(s, i === 5 ? 0.25 : 0.6, 3); p.draw(s); }
     if (i >= 5) lay(p, (l) => {
       const k = i === 5 ? 0.6 : 1;
       l.ball(46, GY - 3 * k, 19 * k, 5 * k, P.snow, 1, 4); l.ball(56, GY - 2 * k, 13 * k, 3.5 * k, P.snow, 1, 4); l.ball(34, GY - 1.5 * k, 10 * k, 3 * k, P.snow, 2, 4);
@@ -208,7 +209,7 @@ const fn = (p: Px, f: BFr): void => {
     if (i === 7) { spark(p, 45, GY - 16, WHITE, alpha(P.ice[4], 180), 1); p.blend(60, GY - 12, alpha(WHITE, 160)); p.blend(30, GY - 9, alpha(WHITE, 120)); }
     return;
   }
-  if (z.halo) { glow(p, 48, 40 + z.dy, 34, P.ice[2], 34); snowflake(p, 48 + z.dx, 40 + z.dy, 36, f.i * (TAU / 24), 215); }
+  if (z.halo) { glow(p, 48, 46 + z.dy, 38, P.ice[2], 40); snowflake(p, 48, 46 + z.dy, 38, f.i * (TAU / 24), 235); snowflake(p, 49, 46 + z.dy, 38, f.i * (TAU / 24), 150); snowflake(p, 48, 47 + z.dy, 38, f.i * (TAU / 24), 150); }
   const tip = figure(p, z);
   if (f.a === 'windup') {
     glow(p, tip[0], tip[1], 7 + i * 4, P.ice[3], 80); spark(p, tip[0], tip[1], WHITE, P.ice[4], 2 + i);
@@ -229,18 +230,18 @@ const fn = (p: Px, f: BFr): void => {
         }
       });
       glow(p, hx, hy - 2, 7 - i, P.ice[4], 100 - i * 20);
-      for (let k = 0; k < 8; k++) p.blend(hx - 4 + rnd2(k, i, 2) * (d + 8), hy - 12 + rnd2(k, i, 3) * 22, alpha(WHITE, 220 - k * 15));
+      for (let k = 0; k < 8; k++) p.blend(Math.min(91, hx - 4 + rnd2(k, i, 2) * (d + 8)), hy - 12 + rnd2(k, i, 3) * 22, alpha(WHITE, 220 - k * 15));
       for (let k = 0; k < 6; k++) p.blend(tip[0] - 10 + k * 2, tip[1] - 3 + (k % 2) * 6, alpha(P.ice[4], 60 + k * 30));
     }
   }
   if (f.a === 'special') {
-    for (let k = 0; k < 14; k++) { const a = k * 0.449 + i * 0.26, d = 26 + (k % 4) * 5; const x = 48 + Math.cos(a) * d * 1.05, y = 46 + z.dy + Math.sin(a) * d; if (x > 2 && x < 93 && y > 2 && y < 100) { if (k % 3 === 0) spark(p, x, y, WHITE, alpha(P.ice[3], 200), 1); else p.blend(x, y, alpha(WHITE, 230)); } }
+    for (let k = 0; k < 14; k++) { const a = k * 0.449 + i * 0.26, d = 26 + (k % 4) * 5; const x = 48 + Math.cos(a) * d * 1.05, y = 46 + z.dy + Math.sin(a) * d; if (x > 4 && x < 91 && y > 5 && y < 100) { if (k % 3 === 0) spark(p, x, y, WHITE, alpha(P.ice[3], 200), 1); else p.blend(x, y, alpha(WHITE, 230)); } }
     for (const h of [z.L, z.Rh]) glow(p, h[0], h[1] + z.dy, 5, P.ice[4], 70);
   }
   if (f.a === 'death') {
     // Risse wie in Porzellan, Farbe erstarrt zu Weiß
     p.tint(P.snow[3], [0.15, 0.3, 0.45, 0.6][i]);
-    cracks(p, [[49, 24], [47, 44], [42, 66], [56, 60], [50, 80], [34, 54], [62, 46]], [0.25, 0.5, 0.8, 1][i], 21, P.blue[1], i >= 2 ? WHITE : undefined, 22);
+    cracks(p, [[49, 28], [47, 48], [42, 70], [56, 64], [50, 84], [34, 58], [62, 50]], [0.25, 0.5, 0.8, 1][i], 21, P.blue[1], i >= 2 ? WHITE : undefined, 22);
     if (i === 0) glow(p, 48, 40, 26, WHITE, 40);
     if (i === 3) for (let k = 0; k < 8; k++) p.set(20 + k * 8, 30 + ((k * 13) % 50), WHITE);
   }

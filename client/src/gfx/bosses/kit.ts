@@ -7,6 +7,7 @@ import { BOSS_ANIMS } from '../spec';
 import { inkOutline } from '../objects/kit';
 import { R, TAU, clamp, lerp } from '../mobs/kit';
 
+export { pk } from '../mobs/kit';
 export { R, TAU, clamp, lerp, glow, puff, spark, dots, shade, form, reramp, xf, dissolve, shatter, burst, shredUp } from '../mobs/kit';
 export { boulder, flame } from '../objects/kit';
 
@@ -31,6 +32,8 @@ export function buildBoss(def: BossDef): Px[] {
       const p = new Px(def.w, def.h);
       def.fn(p, { a, i, n, ph: (i / n) * TAU, u: n > 1 ? i / (n - 1) : 0 });
       if (a === 'hit') p.tint(WHITE, i === 0 ? 0.5 : 0.22);
+      // Sicherheitsrand: 1 px frei an den Seiten/oben, 6 px unter der Standlinie
+      for (let y = 0; y < p.h; y++) for (let x = 0; x < p.w; x++) if (x === 0 || x === p.w - 1 || y === 0 || y >= p.h - 6) p.d[y * p.w + x] = 0;
       out.push(p);
     }
   }

@@ -3,7 +3,7 @@ import { Px, crystal } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { R, boulder, bsel, cracks, ease, glow, lay, lerp, puff, rays, rmix, spark } from './kit';
+import { pk, R, boulder, bsel, cracks, ease, glow, lay, lerp, puff, rays, rmix, spark } from './kit';
 import type { BFr, BossDef } from './kit';
 
 const GY = 105;
@@ -16,18 +16,18 @@ interface K { tx: number; ty: number; hd: Pt; ff: Pt; bf: Pt; pulse: number; bla
 
 function pose(f: BFr): K {
   const s = Math.sin(f.ph), c = Math.cos(f.ph), i = f.i;
-  const z: K = { tx: 0, ty: 0, hd: [0, 0], ff: [95, 101], bf: [19, 91], pulse: 0.5, blaze: 0, bfFront: false, step: 0 };
+  const z: K = { tx: 0, ty: 0, hd: [0, 0], ff: [93, 101], bf: [19, 91], pulse: 0.5, blaze: 0, bfFront: false, step: 0 };
   switch (f.a) {
-    case 'idle': z.tx = R(s * 1.4); z.ty = R(0.5 - c * 0.9); z.ff = [95 + R(s * 1.2), 101 + R(0.5 - c)]; z.bf = [19 + R(s), 91 + R(0.5 + c)]; z.pulse = 0.5 + 0.5 * Math.sin(f.ph * 2); z.hd = [0, i === 2 || i === 3 ? 1 : 0]; z.step = s; break;
-    case 'windup': z.tx = [-2, -3][i]; z.ty = [-2, -3][i]; z.ff = [[100, 58], [93, 33]][i] as Pt; z.bf = [[17, 62], [25, 36]][i] as Pt; z.hd = [-1, -1]; z.pulse = [0.8, 1][i]; break;
+    case 'idle': z.tx = R(s * 1.4); z.ty = R(0.5 - c * 0.9); z.ff = [93 + R(s * 1.2), 101 + R(0.5 - c)]; z.bf = [19 + R(s), 91 + R(0.5 + c)]; z.pulse = 0.5 + 0.5 * Math.sin(f.ph * 2); z.hd = [0, i === 2 || i === 3 ? 1 : 0]; z.step = s; break;
+    case 'windup': z.tx = [-2, -3][i]; z.ty = [-2, -3][i]; z.ff = pk([[94, 60], [91, 41]], i); z.bf = pk([[18, 62], [26, 42]], i); z.hd = [-1, -1]; z.pulse = [0.8, 1][i]; break;
     case 'attack':
-      z.tx = [2, 6, 6, 3][i]; z.ty = [0, 6, 7, 3][i]; z.ff = [[103, 70], [95, 105], [95, 105], [96, 99]][i] as Pt; z.bf = [[36, 62], [64, 105], [64, 105], [40, 96]][i] as Pt;
-      z.hd = [[2, 1], [3, 4], [3, 4], [1, 2]][i] as Pt; z.bfFront = i === 1 || i === 2; z.pulse = [1, 1, 0.7, 0.5][i]; break;
+      z.tx = [2, 7, 7, 4][i]; z.ty = [-1, 8, 9, 4][i]; z.ff = pk([[94, 70], [93, 105], [93, 105], [93, 99]], i); z.bf = pk([[36, 62], [64, 105], [64, 105], [40, 96]], i);
+      z.hd = pk([[2, 1], [5, 6], [5, 7], [2, 3]], i); z.bfFront = i === 1 || i === 2; z.pulse = [1, 1, 0.7, 0.5][i]; break;
     case 'special':
-      z.tx = [3, 4, 4, 3][i]; z.ty = [5, 6, 6, 5][i]; z.hd = [[4, 6], [5, 7], [5, 7], [4, 6]][i] as Pt; z.ff = [[84, 97], [81, 95], [82, 96], [84, 97]][i] as Pt; z.bf = [[13, 86], [12, 84], [12, 85], [13, 86]][i] as Pt;
+      z.tx = [3, 4, 4, 3][i]; z.ty = [5, 6, 6, 5][i]; z.hd = pk([[4, 6], [5, 7], [5, 7], [4, 6]], i); z.ff = pk([[84, 97], [81, 95], [82, 96], [84, 97]], i); z.bf = pk([[16, 86], [15, 84], [15, 85], [16, 86]], i);
       z.blaze = [0.65, 1, 0.8, 1][i]; z.pulse = 1; break;
-    case 'hit': z.tx = [-4, -2][i]; z.ty = [-1, 0][i]; z.hd = [-2, -1]; z.ff = [[92, 96], [94, 99]][i] as Pt; z.bf = [[15, 86], [17, 89]][i] as Pt; z.pulse = 0.1; break;
-    case 'death': z.tx = [-2, -1][Math.min(i, 1)]; z.ty = [-1, 2][Math.min(i, 1)]; z.hd = [[-1, 0], [1, 3]][Math.min(i, 1)] as Pt; z.ff = [[94, 98], [96, 103]][Math.min(i, 1)] as Pt; z.bf = [[18, 88], [18, 95]][Math.min(i, 1)] as Pt; z.pulse = 0; break;
+    case 'hit': z.tx = [-3, -2][i]; z.ty = [-1, 0][i]; z.hd = [-2, -1]; z.ff = pk([[92, 96], [94, 99]], i); z.bf = pk([[17, 86], [18, 89]], i); z.pulse = 0.1; break;
+    case 'death': z.tx = [-2, -1][Math.min(i, 1)]; z.ty = [-1, 2][Math.min(i, 1)]; z.hd = pk([[-1, 0], [1, 3]], Math.min(i, 1)); z.ff = pk([[94, 98], [96, 103]], Math.min(i, 1)); z.bf = pk([[18, 88], [18, 95]], Math.min(i, 1)); z.pulse = 0; break;
   }
   return z;
 }
@@ -35,8 +35,8 @@ function pose(f: BFr): K {
 interface Cr { b: Pt; t: Pt; hw: number; k: number }
 // Rückenkristalle (hinter dem Rumpf) und Schulterkristalle (vorn)
 const BACK: Cr[] = [
-  { b: [20, 50], t: [6, 33], hw: 3.5, k: 2 }, { b: [29, 44], t: [13, 12], hw: 6.5, k: 0 }, { b: [42, 38], t: [35, 7], hw: 5.5, k: 1 }, { b: [55, 38], t: [56, 14], hw: 4.5, k: 0 },
-  { b: [72, 40], t: [83, 10], hw: 6.5, k: 0 }, { b: [88, 48], t: [104, 26], hw: 5, k: 1 }, { b: [64, 40], t: [68, 20], hw: 3.5, k: 2 },
+  { b: [21, 50], t: [9, 34], hw: 3.5, k: 2 }, { b: [29, 44], t: [13, 12], hw: 6.5, k: 0 }, { b: [42, 38], t: [35, 7], hw: 5.5, k: 1 }, { b: [55, 38], t: [56, 14], hw: 4.5, k: 0 },
+  { b: [72, 40], t: [83, 10], hw: 6.5, k: 0 }, { b: [87, 48], t: [100, 28], hw: 5, k: 1 }, { b: [64, 40], t: [68, 20], hw: 3.5, k: 2 },
 ];
 const FRONT: Cr[] = [{ b: [33, 44], t: [27, 28], hw: 3.5, k: 1 }, { b: [90, 46], t: [97, 31], hw: 4, k: 0 }, { b: [79, 43], t: [76, 27], hw: 3, k: 2 }, { b: [24, 47], t: [16, 40], hw: 2.5, k: 0 }];
 const crRamp = (k: number, blaze: number, dim: number): Ramp => {
@@ -106,7 +106,7 @@ function body(p: Px, z: K, f: BFr, heartState: number, dim: number): void {
   heart(p, 56 + tx, 62 + ty, z.pulse, heartState);
   // Schultern
   rock(p, 30 + tx, 58 + ty, 26, 24, 5);
-  rock(p, 85 + tx, 62 + ty, 31, 29, 6);
+  rock(p, 84 + tx, 62 + ty, 30, 29, 6);
   lay(p, (l) => crystals(l, FRONT, tx, ty, bl, dim));
   // Kopf: Unterkiefer, Schädel, Augenschlitze
   rock(p, hx + 1, hy + 7, 17, 9, 8, ROCK_D);
@@ -119,7 +119,7 @@ function body(p: Px, z: K, f: BFr, heartState: number, dim: number): void {
   if (dim < 0.5) { glow(p, hx - 1, hy - 7, 3, P.teal[4], 50); glow(p, hx + 6, hy - 7, 3, P.teal[4], 50); }
   // vorderer Arm (die große Faust)
   if (z.bfFront) arm([40 + tx, 62 + ty], z.bf, 22, 22, 31, true);
-  arm([89 + tx, 62 + ty], z.ff, 31, 29, 21, true);
+  arm([88 + tx, 62 + ty], z.ff, 29, 28, 21, true);
   if (bl > 0) {
     for (const c of [...BACK, ...FRONT]) { glow(p, c.t[0] + tx, c.t[1] + ty + 3, 6, WHITE, 50 * bl); if (c.hw > 4) spark(p, c.t[0] + tx, c.t[1] + ty + 1, WHITE, alpha(P.ice[4], 200), bl > 0.9 ? 3 : 2); }
   }
@@ -127,9 +127,9 @@ function body(p: Px, z: K, f: BFr, heartState: number, dim: number): void {
 
 // Trümmer: Start (cx, by, w, h) → Ruhelage
 const RUBBLE: Array<[number, number, number, number, number, number, number, number]> = [
-  [19, 95, 21, 21, 12, GY, 31, 0], [40, GY, 23, 27, 35, GY, 11, 0], [71, GY, 25, 29, 76, GY, 12, 0], [55, 91, 38, 22, 55, GY, 13, 0.1],
-  [30, 60, 26, 24, 22, GY, 5, 0.1], [40, 80, 30, 28, 44, 92, 3, 0.2], [70, 80, 32, 30, 66, 90, 4, 0.2], [85, 64, 31, 29, 92, GY, 6, 0.1],
-  [56, 58, 30, 24, 55, 80, 9, 0.3], [96, 103, 31, 29, 100, GY, 21, 0], [64, 49, 23, 20, 80, GY, 7, 0.15],
+  [19, 95, 21, 21, 15, GY, 31, 0], [40, GY, 23, 27, 35, GY, 11, 0], [71, GY, 25, 29, 76, GY, 12, 0], [55, 91, 38, 22, 55, GY, 13, 0.1],
+  [30, 60, 26, 24, 22, GY, 5, 0.1], [40, 80, 30, 28, 44, 92, 3, 0.2], [70, 80, 32, 30, 66, 90, 4, 0.2], [84, 64, 30, 29, 88, GY, 6, 0.1],
+  [56, 58, 30, 24, 55, 80, 9, 0.3], [93, 103, 29, 28, 93, GY, 21, 0], [64, 49, 23, 20, 80, GY, 7, 0.15],
 ];
 
 const fn = (p: Px, f: BFr): void => {
@@ -139,7 +139,7 @@ const fn = (p: Px, f: BFr): void => {
     const dimR = rmix(P.teal, DIM, 0.75);
     // liegende Kristallsplitter (hinten)
     lay(p, (l) => BACK.forEach((c, k) => {
-      const gx = 10 + k * 14, bx = lerp(c.b[0], gx, t), by = lerp(c.b[1], GY, t * t), a = lerp(Math.atan2(c.t[1] - c.b[1], c.t[0] - c.b[0]), k % 2 ? -0.25 : Math.PI + 0.25, t);
+      const gx = 14 + k * 13, bx = lerp(c.b[0], gx, t), by = lerp(c.b[1], GY, t * t), a = lerp(Math.atan2(c.t[1] - c.b[1], c.t[0] - c.b[0]), k < 3 ? -0.25 : Math.PI + 0.25, t);
       const len = Math.hypot(c.t[0] - c.b[0], c.t[1] - c.b[1]) * (last ? 0.6 : 0.8);
       crystal(l, bx, by - 1, bx + Math.cos(a) * len, by - 1 + Math.sin(a) * len, c.hw * 0.8, k % 3 === 2 ? rmix(P.pink, DIM, 0.7) : dimR);
     }));
@@ -152,8 +152,9 @@ const fn = (p: Px, f: BFr): void => {
       // erloschenes Herz und vordere Splitter
       const hx = lerp(56, 46, t), hy = lerp(62, GY - 5, t * t);
       l.poly([[hx, hy - 6], [hx + 5, hy], [hx, hy + 5], [hx - 5, hy]], P.steel[2]); l.poly([[hx, hy - 6], [hx, hy + 5], [hx - 5, hy]], P.steel[3]); l.line(hx - 2, hy - 3, hx + 1, hy + 2, INK);
-      FRONT.forEach((c, k) => { const gx = 24 + k * 22, bx = lerp(c.b[0], gx, t), by = lerp(c.b[1], GY, t * t); crystal(l, bx, by, bx + (k % 2 ? 9 : -9) * (0.4 + t * 0.6), by - lerp(12, 2, t), c.hw * 0.8, dimR); });
-      if (i >= 5) for (let k = 0; k < 9; k++) l.set(8 + k * 12 + (k % 2) * 3, GY - (k % 3 === 0 ? 1 : 0), k % 2 ? ROCK[3] : P.teal[2]);
+      FRONT.forEach((c, k) => { const gx = 24 + k * 22, bx = lerp(c.b[0], gx, t), by = lerp(c.b[1], GY, t * t); crystal(l, bx, by - 1, bx + (k % 2 ? 15 : -15) * (0.4 + t * 0.6), by - lerp(12, 3, t), c.hw, k === 2 ? rmix(P.pink, DIM, 0.6) : rmix(P.teal, DIM, 0.5)); });
+      if (i >= 4) { const sr = rmix(P.teal, DIM, 0.4), g = i === 4 ? 0.7 : 1; crystal(l, 27, GY - 5, 27 - 15 * g, GY - 5 - 13 * g, 4, sr); crystal(l, 84, GY - 7, 84 + 12 * g, GY - 7 - 12 * g, 4, rmix(P.ice, DIM, 0.4)); crystal(l, 60, GY - 22, 60 + 5 * g, GY - 22 - 14 * g, 3.5, sr); crystal(l, 44, GY - 3, 44 - 8 * g, GY - 3 - 9 * g, 2.5, rmix(P.pink, DIM, 0.5)); }
+      if (i >= 5) for (let k = 0; k < 9; k++) l.set(8 + k * 12 + (k % 2) * 3, GY - 1 - (k % 3 === 0 ? 1 : 0), k % 2 ? ROCK[3] : P.teal[2]);
     });
     if (i < 7) for (let k = 0; k < 6; k++) { const x = 14 + k * 17, r = rnd2(k, i, 4); puff(p, x + r * 6, GY - 3 - (i - 2) * (2 + r * 3), 5 + r * 3, 3 + r * 2, P.stone[3], Math.max(0, 110 - (i - 2) * 22)); }
     return;
@@ -168,13 +169,13 @@ const fn = (p: Px, f: BFr): void => {
       const t = i - 1;
       for (const fx of [z.ff[0], z.bf[0]]) {
         puff(p, fx - 16 - t * 4, GY - 3 - t * 2, 8, 4 + t, P.stone[4], 150 - t * 60); puff(p, fx + 13 + t * 3, GY - 2 - t * 2, 6, 3 + t, P.stone[4], 150 - t * 60);
-        for (let k = 0; k < 7; k++) { const a = Math.PI * (0.12 + k * 0.127), d = 14 + t * 9 + (k % 3) * 3; const x = fx - Math.cos(a) * d * 1.1, y = GY - Math.sin(a) * d * (0.9 - t * 0.2); if (x > 2 && x < 109) { p.set(x, y, k % 2 ? ROCK[3] : P.teal[3]); p.set(x + 1, y, ROCK[1]); if (k % 3 === 0) p.set(x, y - 1, P.ice[4]); } }
+        for (let k = 0; k < 7; k++) { const a = Math.PI * (0.12 + k * 0.127), d = 14 + t * 9 + (k % 3) * 3; const x = fx - Math.cos(a) * d * 1.1, y = GY - Math.sin(a) * d * (0.9 - t * 0.2); if (x > 3 && x < 107) { p.set(x, y, k % 2 ? ROCK[3] : P.teal[3]); p.set(x + 1, y, ROCK[1]); if (k % 3 === 0) p.set(x, y - 1, P.ice[4]); } }
       }
-      if (i === 1) for (let x = 44; x < 110; x += 2) p.blend(x, GY + 1, alpha(WHITE, 150));
+      if (i === 1) for (let x = 44; x < 108; x += 2) p.blend(x, GY - 1, alpha(WHITE, 170));
     }
   }
   if (f.a === 'special') {
-    for (let k = 0; k < 5; k++) puff(p, 30 - k * 5 - i * 2, GY - 2 - (k % 2) * 3 - i, 4, 2.5, P.stone[3], 120 - k * 20);
+    for (let k = 0; k < 5; k++) puff(p, 34 - k * 5 - i, GY - 2 - (k % 2) * 3 - i, 4, 2.5, P.stone[3], 120 - k * 20);
     for (let k = 0; k < 4; k++) p.blend(100 + k * 3, 60 + z.ty + k * 2 - (i % 2), alpha(WHITE, 200 - k * 40));
   }
   void bsel;

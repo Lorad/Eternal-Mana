@@ -87,7 +87,7 @@ function mkLedge(seed: number): Stamp {
 }
 /** Eisfläche an der Felswand: gefrorener Rinnsal-Streifen (Anker = oben Mitte). */
 function mkFaceIce(seed: number): Stamp {
-  const r = rng(seed), w = 4 + ((r() * 4) | 0), h = 12 + ((r() * 12) | 0), p = new Px(w, h);
+  const r = rng(seed), w = 4 + ((r() * 4) | 0), h = 8 + ((r() * 6) | 0), p = new Px(w, h);
   for (let x = 0; x < w; x++) {
     const len = Math.round(h * (0.5 + r() * 0.5)), tone = x === 0 ? ICE[6] : x === w - 1 ? ICE[2] : r() < 0.4 ? ICE[5] : ICE[4];
     for (let y = 0; y < len; y++) p.set(x, y, y === len - 1 ? ICE[6] : y % 5 === 4 && r() < 0.6 ? ICE[3] : tone);

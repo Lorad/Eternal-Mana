@@ -3,7 +3,7 @@ import { Px, bez, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { R, TAU, bsel, clamp, form, glow, lay, lerp, petal, shroom, spark, thorns } from './kit';
+import { pk, R, TAU, bsel, clamp, form, glow, lay, lerp, petal, shroom, spark, thorns } from './kit';
 import type { BFr, BossDef } from './kit';
 
 const CX = 56, GY = 105;
@@ -22,30 +22,30 @@ interface S {
 
 function pose(f: BFr): S {
   const s = Math.sin(f.ph), c = Math.cos(f.ph), i = f.i;
-  const z: S = { hx: 56, hy: 42, open: 0.35, spread: 0, core: 0.5, droop: 0, wr: 0, vl: [14, 46], vr: [98, 48], wilt: 0, lost: 0, f };
+  const z: S = { hx: 56, hy: 43, open: 0.35, spread: 0, core: 0.5, droop: 0, wr: 0, vl: [14, 46], vr: [98, 48], wilt: 0, lost: 0, f };
   switch (f.a) {
     case 'idle':
-      z.hx = 56 + R(s * 2); z.hy = 42 + R(c * 1.6); z.spread = s * 1.6; z.open = 0.34 + 0.12 * Math.sin(f.ph + 1); z.core = 0.5 + 0.2 * c;
+      z.hx = 56 + R(s * 2); z.hy = 43 + R(c * 1.6); z.spread = s * 1.6; z.open = 0.34 + 0.12 * Math.sin(f.ph + 1); z.core = 0.5 + 0.2 * c;
       z.vl = [14 - R(s * 3), 46 + R(c * 3)]; z.vr = [98 + R(c * 3), 48 - R(s * 3)]; z.wr = s; break;
     case 'windup':
       z.hx = [51, 47][i]; z.hy = [37, 34][i]; z.open = [0.75, 1][i]; z.core = [0.9, 1.4][i]; z.spread = [-1, -2][i];
-      z.vl = [[11, 34], [9, 25]][i] as Pt; z.vr = [[101, 32], [104, 22]][i] as Pt; z.wr = -1; break;
+      z.vl = pk([[11, 34], [9, 25]], i); z.vr = pk([[101, 32], [104, 22]], i); z.wr = -1; break;
     case 'attack':
       z.hx = [61, 67, 65, 60][i]; z.hy = [45, 50, 49, 45][i]; z.open = [1, 1, 0.8, 0.5][i]; z.core = [1.3, 1, 0.7, 0.5][i]; z.spread = [2, 3, 2, 1][i];
-      z.vl = [[20, 60], [34, 97], [31, 95], [18, 66]][i] as Pt; z.vr = [[100, 58], [93, 98], [95, 96], [101, 62]][i] as Pt; z.wr = 2; break;
+      z.vl = pk([[16, 58], [24, 93], [22, 92], [15, 66]], i); z.vr = pk([[98, 56], [92, 94], [94, 93], [100, 62]], i); z.wr = 2; break;
     case 'special':
-      z.hy = 40 + [0, -1, 0, 1][i]; z.spread = [5, 6.5, 5, 6.5][i]; z.open = [0.7, 0.85, 0.7, 0.85][i]; z.core = [1.2, 1.5, 1.2, 1.5][i];
-      z.vl = [[10, 40], [8, 37], [10, 40], [12, 43]][i] as Pt; z.vr = [[102, 40], [104, 37], [102, 40], [100, 43]][i] as Pt; z.wr = [3, 0, -3, 0][i]; break;
+      z.hy = 43 + [0, -1, 0, 1][i]; z.spread = [3.5, 5, 3.5, 5][i]; z.open = [0.7, 0.85, 0.7, 0.85][i]; z.core = [1.2, 1.5, 1.2, 1.5][i];
+      z.vl = pk([[10, 40], [8, 37], [10, 40], [12, 43]], i); z.vr = pk([[102, 40], [104, 37], [102, 40], [100, 43]], i); z.wr = [3, 0, -3, 0][i]; break;
     case 'hit':
       z.hx = [50, 53][i]; z.hy = [39, 41][i]; z.open = 0.15; z.spread = -1.5; z.core = 0.2;
-      z.vl = [[10, 52], [13, 48]][i] as Pt; z.vr = [[92, 54], [96, 50]][i] as Pt; break;
+      z.vl = pk([[10, 52], [13, 48]], i); z.vr = pk([[92, 54], [96, 50]], i); break;
     case 'death':
       z.wilt = [0.05, 0.25, 0.5, 0.72, 0.9, 1, 1, 1][i];
       z.hx = [52, 57, 63, 69, 71, 71, 71, 71][i]; z.hy = [40, 47, 59, 73, 86, 90, 92, 92][i];
       z.open = [0.9, 0.5, 0.35, 0.2, 0.1, 0, 0, 0][i]; z.core = [1.5, 0.4, 0.2, 0, 0, 0, 0, 0][i];
       z.droop = [0, 3, 6, 8, 8, 8, 8, 8][i]; z.spread = [1, -1, -3, -6, -9, -10, -10, -10][i]; z.lost = [0, 0, 2, 4, 6, 9, 9, 9][i];
-      z.vl = [[12, 40], [12, 56], [14, 76], [16, 96], [16, 100], [16, 100], [16, 100], [16, 100]][i] as Pt;
-      z.vr = [[100, 42], [101, 60], [100, 80], [98, 97], [98, 100], [98, 100], [98, 100], [98, 100]][i] as Pt; break;
+      z.vl = pk([[12, 40], [12, 56], [14, 76], [16, 92], [16, 94], [16, 94], [16, 94], [16, 94]], i);
+      z.vr = pk([[100, 42], [101, 60], [100, 80], [98, 93], [98, 94], [98, 94], [98, 94], [98, 94]], i); break;
   }
   return z;
 }
@@ -54,21 +54,21 @@ function pose(f: BFr): S {
 function mound(p: Px, z: S, dry = 0): void {
   const RT = dry ? DRY : ROOT, wr = z.wr;
   lay(p, (l) => {
-    form(l, (m) => { m.ell(CX, 99, 41, 7, 1); m.ell(CX - 2, 94, 28, 9, 1); m.ell(CX + 14, 96, 20, 7, 1); }, RT, 0, 3, -0.04);
+    form(l, (m) => { m.ell(CX, 99, 43, 7, 1); m.ell(CX - 2, 92, 30, 11, 1); m.ell(CX + 15, 95, 22, 8, 1); m.ell(CX - 20, 96, 16, 7, 1); }, RT, 0, 2, -0.04);
     for (let x = 18; x < 96; x += 3) { const r = rnd2(x, 3, 5); if (r < 0.5) l.set(x + (r * 4 | 0), 97 + (r * 12 | 0) % 7, RT[r < 0.25 ? 0 : 3]); }
     // dicke Wurzeln, die sich vom Scheitel zum Boden winden
     const roots: Array<[Pt, Pt, Pt, number]> = [
-      [[46, 88], [26 - wr, 84], [13, 103], 4.6], [[66, 88], [88 + wr, 84], [100, 103], 4.6],
+      [[46, 86], [25 - wr, 80], [13, 103], 5.4], [[66, 86], [89 + wr, 80], [100, 103], 5.4],
       [[50, 90], [38 + wr, 96 - Math.abs(wr) * 0.5], [30, 104], 3.6], [[62, 91], [76 - wr, 95 - Math.abs(wr) * 0.5], [82, 104], 3.8],
       [[56, 92], [57 + wr * 0.6, 98], [54, 104], 3.2],
     ];
     roots.forEach(([a, b, c, r], k) => {
-      const pts = tube(l, bez(a, b, c, 16), r, r * 0.45, RT, 1);
+      const pts = tube(l, bez(a, b, c, 16), r, r * 0.45, RT, 2);
       if (k < 2) thorns(l, pts, 7, 3, (i) => r - (r * 0.55 * i) / pts.length, dry ? P.cream : P.bone, 6);
     });
     // Schlinge im Vordergrund
-    tube(l, bez([34, 101], [44, 90 - wr * 0.4], [58, 100], 12), 2.4, 2, RT, 1);
-    tube(l, bez([70, 102], [80, 92 + wr * 0.4], [92, 100], 12), 2.2, 1.6, RT, 1);
+    tube(l, bez([34, 101], [44, 88 - wr * 0.4], [58, 100], 12), 2.8, 2.2, RT, 2);
+    tube(l, bez([70, 102], [80, 90 + wr * 0.4], [92, 100], 12), 2.6, 1.8, RT, 2);
     if (!dry) {
       // Moospolster auf den Oberseiten
       for (const [x, y, rx] of [[30, 88, 6], [41, 85, 5], [74, 86, 6], [86, 90, 5], [58, 88, 4], [20, 97, 4], [96, 98, 3]] as const) {
@@ -82,20 +82,22 @@ function mound(p: Px, z: S, dry = 0): void {
   });
 }
 
-function vine(l: Px, base: Pt, tip: Pt, side: number, wilt: number): void {
+function vine(l: Px, base: Pt, tip0: Pt, side: number, wilt: number): void {
+  const tip: Pt = [clamp(tip0[0], 15, 96), Math.max(13, tip0[1])];
   const mx = (side < 0 ? Math.min(base[0], tip[0]) : Math.max(base[0], tip[0])) + side * lerp(15, 6, wilt);
-  const pts = tube(l, bez(base, [clamp(mx, 4, 108), (base[1] + tip[1]) / 2 + 6], tip, 20), 5, 3, VINE, 1);
-  thorns(l, pts, 7, 4, (i) => 5 - (2 * i) / pts.length, P.bone, 5);
+  const pts = tube(l, bez(base, [clamp(mx, 16, 95), (base[1] + tip[1]) / 2 + 6], tip, 20), 6.2, 3.4, VINE, 1);
+  for (let k = 5; k < pts.length - 4; k += 6) { const q = pts[k]; l.set(q[0] + 2, q[1] + 2, VINE[0]); l.set(q[0] - 2, q[1] - 1, VINE[3]); }
+  thorns(l, pts, 7, 4, (i) => 6 - (2.6 * i) / pts.length, P.bone, 5);
   // Dornenkeule
   const [x, y] = tip;
-  for (let k = 0; k < 7; k++) { const a = (k / 7) * TAU + 0.3; l.line(x + Math.cos(a) * 4, y + Math.sin(a) * 4, x + Math.cos(a) * 8, y + Math.sin(a) * 8, P.bone[k % 2 ? 3 : 2]); l.set(x + Math.cos(a) * 8, y + Math.sin(a) * 8, P.bone[4]); }
-  l.ball(x, y, 5.5, 5.5, PET_B, 1, 4);
+  for (let k = 0; k < 7; k++) { const a = (k / 7) * TAU + 0.3; l.line(x + Math.cos(a) * 5, y + Math.sin(a) * 5, x + Math.cos(a) * 9, y + Math.sin(a) * 9, P.bone[k % 2 ? 3 : 2]); l.set(x + Math.cos(a) * 9, y + Math.sin(a) * 9, P.bone[4]); }
+  l.ball(x, y, 6.5, 6.5, PET_B, 1, 4);
   l.line(x - 3, y + 2, x, y - 4, PET_B[0]); l.line(x + 1, y + 4, x + 3, y - 3, PET_B[0]); l.set(x - 2, y - 3, P.pink[4]);
   l.ell(x - side * 4, y + 4, 2.5, 1.6, P.green[2]); l.set(x - side * 5, y + 3, P.green[4]);
 }
 
 function head(p: Px, z: S): void {
-  const { hx, hy } = z, wl = z.wilt, lenB = 24 + z.spread, lenF = 17 + z.spread * 0.7;
+  const { hx, hy } = z, wl = z.wilt, lenB = 27 + z.spread, lenF = 19.5 + z.spread * 0.7;
   const pb = wl > 0.4 ? PET_B.map((c) => mix(c, P.wood[1], (wl - 0.4) * 0.8)) : PET_B;
   const pf = wl > 0.4 ? PET_F.map((c) => mix(c, P.wood[2], (wl - 0.4) * 0.8)) : PET_F;
   // hintere Blütenblätter (karmin)
@@ -105,7 +107,7 @@ function head(p: Px, z: S): void {
       if (k < z.lost) continue;
       const a = (k / n) * TAU + 0.2 + Math.sin(k * 2.1) * 0.06, ca = Math.cos(a), sa = Math.sin(a);
       const dr = z.droop * (1 - sa * 0.5);
-      petal(l, hx + ca * 5, hy + sa * 5, hx + ca * (5 + lenB), hy + sa * (5 + lenB) * 0.92 + dr, 9.5, pb, 2, ca * 2);
+      petal(l, hx + ca * 5, hy + sa * 5, hx + ca * (5 + lenB), hy + sa * (5 + lenB) * 0.92 + dr, 10.5, pb, 2, ca * 2);
     }
   });
   // vordere Blütenblätter (magenta)
@@ -114,16 +116,16 @@ function head(p: Px, z: S): void {
     for (const k of [5, 6, 4, 0, 3, 1, 2]) {
       if (k + 2 < z.lost) continue;
       const a = (k / n) * TAU + 0.62, ca = Math.cos(a), sa = Math.sin(a), dr = z.droop * 0.7 * (1 - sa * 0.5);
-      petal(l, hx + ca * 6, hy + sa * 6, hx + ca * (6 + lenF), hy + sa * (6 + lenF) * 0.9 + dr, 7.5, pf, 2, -ca * 1.5);
+      petal(l, hx + ca * 6, hy + sa * 6, hx + ca * (6 + lenF), hy + sa * (6 + lenF) * 0.9 + dr, 8.5, pf, 2, -ca * 1.5);
       l.set(hx + ca * (4 + lenF), hy + sa * (4 + lenF) * 0.9 + dr, pf[4]);
     }
   });
   // Schlund
   lay(p, (l) => {
-    const mh = 2 + z.open * 7.5, my = hy + 1;
-    l.ball(hx, hy, 13.5, 12.5, wl > 0.5 ? DRY : LIP, 0, 4, 0.04);
-    for (let k = 0; k < 9; k++) { const a = (k / 9) * TAU + 0.5; l.set(hx + Math.cos(a) * 11.5, hy + Math.sin(a) * 10.5, LIP[wl > 0.5 ? 0 : 1]); }
-    l.ell(hx, my, 10.5, mh + 1, P.red[0]); l.ell(hx, my + 0.5, 9, mh, mix(P.red[0], INK, 0.55));
+    const mh = 2.5 + z.open * 8, my = hy + 1;
+    l.ball(hx, hy, 15, 14, wl > 0.5 ? DRY : LIP, 0, 4, 0.04);
+    for (let k = 0; k < 9; k++) { const a = (k / 9) * TAU + 0.5; l.set(hx + Math.cos(a) * 13, hy + Math.sin(a) * 12, LIP[wl > 0.5 ? 0 : 1]); }
+    l.ell(hx, my, 11.5, mh + 1, P.red[0]); l.ell(hx, my + 0.5, 10, mh, mix(P.red[0], INK, 0.55));
     if (z.open > 0.3) { l.ell(hx, my + mh * 0.35, 6.5, mh * 0.55, P.red[1]); l.ell(hx, my + mh * 0.45, 4.5, mh * 0.4, mix(P.red[1], P.fire[1], 0.5)); }
     if (z.core > 0.25 && z.open > 0.25) {
       const cr = Math.min(mh * 0.5, 2 + z.core * 1.6);
@@ -131,37 +133,42 @@ function head(p: Px, z: S): void {
     }
     // Zähne: oben nach unten, unten nach oben
     for (let k = -4; k <= 4; k++) {
-      const x = hx + k * 2.3, e = Math.sqrt(Math.max(0, 1 - (k * 2.3) ** 2 / 110)) * (mh + 0.5), tl = k % 2 ? 3 : 4;
+      const x = hx + k * 2.5, e = Math.sqrt(Math.max(0, 1 - (k * 2.5) ** 2 / 132)) * (mh + 0.5), tl = k % 2 ? 3 : 4;
       if (e < 0.8) continue;
       l.poly([[x - 1.3, my - e], [x, my - e + Math.min(tl, mh)], [x + 1.3, my - e]], P.bone[4]); l.set(x, my - e + Math.min(tl, mh) - 1, P.bone[3]);
       l.poly([[x - 1.3, my + e], [x, my + e - Math.min(tl - 1, mh)], [x + 1.3, my + e]], P.bone[3]); l.set(x, my + e - 1, P.bone[2]);
     }
     // Lippenglanz und Augenflecken
-    l.line(hx - 8, hy - 8, hx - 3, hy - 11, LIP[4]); l.set(hx - 10, hy - 5, LIP[4]);
-    if (wl < 0.5) for (const sx of [-1, 1]) { l.rect(hx + sx * 9 - 1, hy - 4 - (sx < 0 ? 0 : 1), 2, 2, P.gold[z.core > 1 ? 4 : 3]); l.set(hx + sx * 9 - 1, hy - 4 - (sx < 0 ? 0 : 1), P.gold[4]); }
+    l.line(hx - 9, hy - 9, hx - 3, hy - 12, LIP[4]); l.set(hx - 11, hy - 6, LIP[4]);
+    if (wl < 0.5) for (const sx of [-1, 1]) { l.rect(hx + sx * 11 - 1, hy - 6 - (sx < 0 ? 0 : 1), 2, 2, P.gold[z.core > 1 ? 4 : 3]); l.set(hx + sx * 11 - 1, hy - 6 - (sx < 0 ? 0 : 1), P.gold[4]); }
   });
 }
 
 function fallen(l: Px, z: S, n: number, dry: number): void {
-  const spots: Array<[number, number, number]> = [[22, 103, -1], [90, 104, 1], [38, 104, 1], [78, 102, -1], [50, 103, -1], [104, 104, 1], [10, 104, 1]];
+  const spots: Array<[number, number, number]> = [[22, 103, -1], [90, 104, 1], [38, 104, 1], [78, 102, -1], [50, 103, -1], [99, 104, 1], [13, 104, 1]];
   for (let k = 0; k < Math.min(n, spots.length); k++) {
     const [x, y, d] = spots[k], r = (k % 2 ? PET_F : PET_B).map((c) => mix(c, P.wood[1], 0.25 + dry * 0.45));
     petal(l, x - d * 5, y - 1, x + d * 6, y - (k % 3), 3.2, r, 2, d);
   }
 }
 
-const fn = (p: Px, f: BFr): void => {
+const fn = (out: Px, f: BFr): void => {
+  const p = new Px(out.w, out.h);
+  draw(p, f);
+  out.draw(p, 0, -1);
+};
+const draw = (p: Px, f: BFr): void => {
   const z = pose(f), i = f.i;
   if (f.a === 'death' && i >= 5) {
     // Überreste: Haufen trockener Ranken
     const t = i - 5;
     lay(p, (l) => {
-      form(l, (m) => { m.ell(CX, 100, 38 - t * 2, 5.5, 1); m.ell(CX + 6, 97 - (t ? 0 : 1), 22, 6 - t, 1); }, DRY, 0, 3);
+      form(l, (m) => { m.ell(CX, 100, 38 - t * 2, 5.5, 1); m.ell(CX + 6, 97 - (t ? 0 : 1), 22, 6 - t, 1); }, DRY, 0, 2);
       const loops: Array<[Pt, Pt, Pt, number]> = [
-        [[18, 102], [34, 84 + t * 3], [56, 99], 3.4], [[44, 100], [66, 80 + t * 4], [92, 102], 3.8], [[30, 103], [50, 92 + t], [74, 103], 2.6],
+        [[18, 102], [34, 78 + t * 3], [56, 99], 3.8], [[44, 100], [66, 72 + t * 4], [92, 102], 4.2], [[30, 103], [50, 88 + t], [74, 103], 3],
         [[60, 100], [84, 88 + t * 2], [100, 103], 2.8], [[12, 104], [24, 97], [40, 103], 2.2],
       ];
-      loops.forEach(([a, b, c, r], k) => { const pts = tube(l, bez(a, b, c, 16), r, r * 0.6, DRY, 1); if (k < 3) thorns(l, pts, 8, 3, () => r * 0.8, P.cream, 5); });
+      loops.forEach(([a, b, c, r], k) => { const pts = tube(l, bez(a, b, c, 16), r, r * 0.6, DRY, 2); if (k < 3) thorns(l, pts, 8, 3, () => r * 0.8, P.cream, 5); });
       if (t < 2) {
         // welker Blütenkopf als Klumpen
         const hx = 72, hy = 93 + t * 2, rr = 9 - t * 2.5;
@@ -178,8 +185,10 @@ const fn = (p: Px, f: BFr): void => {
   }
   if (z.core > 0.8) glow(p, z.hx, z.hy + 3, 14 + z.core * 6, P.gold[3], 46);
   // Peitschenranken (hinter allem)
-  lay(p, (l) => { vine(l, [29, 96], z.vl, -1, z.wilt); vine(l, [83, 96], z.vr, 1, z.wilt); });
+  const lash = f.a === 'attack' && (i === 1 || i === 2);
+  if (!lash) lay(p, (l) => { vine(l, [29, 96], z.vl, -1, z.wilt); vine(l, [83, 96], z.vr, 1, z.wilt); });
   mound(p, z);
+  if (lash) lay(p, (l) => { vine(l, [33, 92], z.vl, -1, 0.6); vine(l, [79, 92], z.vr, 1, 0.6); });
   // Stängel
   lay(p, (l) => {
     const bendX = CX - (z.hx - CX) * 1.3 - 7 + z.wilt * 4;

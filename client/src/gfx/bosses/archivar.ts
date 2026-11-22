@@ -3,7 +3,7 @@ import { Px } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { R, TAU, clamp, ease, glow, lay, lerp, lp, rays, rmix, spark } from './kit';
+import { pk, R, TAU, clamp, ease, glow, lay, lerp, lp, rays, rmix, spark } from './kit';
 import type { BFr, BossDef } from './kit';
 
 const GY = 104;
@@ -21,13 +21,13 @@ function pose(f: BFr): A {
     case 'idle': z.oy = [0, -1, -2, -2, -1, 0][i]; z.a.ph = (i / 6) * seg; z.b.ph = -(i / 6) * seg; z.orbit = s * 0.07; z.lid = i === 4 ? 0.5 : 0; break;
     case 'windup': z.oy = [-1, -2][i]; z.ox = [-1, -2][i]; z.a.tilt = [0.14, 0][i]; z.b.tilt = [-0.2, 0][i]; z.a.ry = [12, 11][i]; z.b.ry = [13, 12][i]; z.b.rx = [33, 34][i]; z.a.rx = [41, 42][i]; z.a.ph = [0.3, 0.6][i] * seg; z.b.ph = -[0.3, 0.6][i] * seg; z.lid = [0.4, 0.62][i]; z.charge = [0.6, 1][i]; z.rad = [0.94, 0.88][i]; break;
     case 'attack': z.oy = -1; z.ox = [-2, -4, -3, -1][i]; z.a.tilt = 0; z.b.tilt = 0; z.a.ry = 11; z.b.ry = 12; z.b.rx = 34; z.a.rx = 42; z.a.ph = (0.2 + i * 0.4) * seg; z.b.ph = -z.a.ph; z.lid = [0.1, 0, 0, 0.2][i]; z.charge = [1, 1, 0.8, 0.3][i]; z.beam = [0.3, 1, 0.8, 0.22][i]; z.rad = 0.9; break;
-    case 'special': z.oy = [-2, -3, -2, -3][i]; z.a = { rx: 43, ry: 16, tilt: 0.8, ph: (i / 4) * seg, cy: 0 }; z.b = { rx: 38, ry: 15, tilt: -0.85, ph: -(i / 4) * seg, cy: 0 }; z.open = 1; z.charge = [0.5, 0.7, 0.5, 0.7][i]; z.rad = 1.02; break;
+    case 'special': z.oy = [-2, -3, -2, -3][i]; z.a = { rx: 43, ry: 16, tilt: 0.8, ph: (i / 4) * seg, cy: 0 }; z.b = { rx: 38, ry: 15, tilt: -0.85, ph: -(i / 4) * seg, cy: 0 }; z.open = 1; z.charge = [0.5, 0.7, 0.5, 0.7][i]; z.rad = 0.93; break;
     case 'hit': z.ox = [-3, -1][i]; z.oy = [1, 0][i]; z.lid = 0.55; z.a.tilt = [0.5, 0.4][i]; z.b.tilt = [-0.3, -0.42][i]; z.orbit = [-0.2, -0.1][i]; break;
     case 'death': {
       const t = ease([0, 0, 0.25, 0.6, 1, 1, 1, 1][i]);
-      z.dead = i === 0 ? 0.5 : 1; z.ox = lerp(-1, 3, t); z.oy = lerp(0, 39, t * t) + (i === 5 ? -1 : 0);
-      z.a = { rx: 40, ry: lerp(13, 4, t), tilt: lerp(0.32, 0, t) + (i === 1 ? 0.2 : 0), ph: 0.4, cy: lerp(0, 53, t), broken: i >= 3 };
-      z.b = { rx: lerp(32, 30, t), ry: lerp(15, 3, t), tilt: lerp(-0.5, 0, t) - (i === 1 ? 0.2 : 0), ph: 1.1, cy: lerp(0, 55, Math.min(1, t * 1.25)), broken: i >= 2 };
+      z.dead = i === 0 ? 0.5 : 1; z.ox = lerp(-1, 3, t); z.oy = lerp(0, 38, t * t) + (i === 5 ? -1 : 0);
+      z.a = { rx: 40, ry: lerp(13, 4, t), tilt: lerp(0.32, 0, t) + (i === 1 ? 0.2 : 0), ph: 0.4, cy: lerp(0, 50, t), broken: i >= 3 };
+      z.b = { rx: lerp(32, 30, t), ry: lerp(15, 3, t), tilt: lerp(-0.5, 0, t) - (i === 1 ? 0.2 : 0), ph: 1.1, cy: lerp(0, 52, Math.min(1, t * 1.25)), broken: i >= 2 };
       z.lid = 0; break;
     }
   }
@@ -36,7 +36,7 @@ function pose(f: BFr): A {
 
 function ring(l: Px, cx: number, cy: number, r: Ring, front: boolean, dim: number, glowT: number): void {
   const ct = Math.cos(r.tilt), st = Math.sin(r.tilt), n = Math.ceil(r.rx * 7), seg = TAU / 8;
-  const B = dim ? rmix(BRASS, P.ash, 0.45) : BRASS;
+  const B = dim ? rmix(BRASS, P.ash, 0.28) : BRASS;
   const cols = front ? [B[4], B[3], B[2], B[1]] : [B[2], B[1], B[1], B[0]];
   for (let k = 0; k < n; k++) {
     const a = (k / n) * TAU, sa = Math.sin(a);
@@ -140,7 +140,7 @@ const fn = (p: Px, f: BFr): void => {
   const tomes = TOME_POS.map((a0, k) => {
     const a = a0 + z.orbit + (f.a === 'special' ? [0.1, -0.1, 0][k] : 0), bob = f.a === 'idle' || f.a === 'special' ? Math.round(Math.sin(f.ph + k * 2.1) * 1.5) : 0;
     const fly: Pt = [56 + Math.cos(a) * 42 * z.rad, 56 + z.oy * 0.5 + Math.sin(a) * 17 * z.rad + bob];
-    const rest: Pt = [[14, GY - 5], [98, GY - 5], [36, GY - 4]][k] as Pt;
+    const rest: Pt = pk([[14, GY - 5], [98, GY - 5], [36, GY - 4]], k);
     return { pos: f.a === 'death' ? lp(fly, rest, dt * dt) : fly, back: Math.sin(a) < 0, k };
   });
   const drawTome = (t: (typeof tomes)[number]): void => { lay(p, (l) => tome(l, t.pos[0], t.pos[1], COVERS[t.k], f.a === 'death' ? (1 - dt) * 0.3 : [0.25, -0.25, 0.12][t.k], z.open, t.back)); };
@@ -148,8 +148,8 @@ const fn = (p: Px, f: BFr): void => {
     if ((k % 2 === 0) !== back) return;
     const fl = f.a === 'death' ? i : f.a === 'idle' ? i : i * 2, vv = dead && dt >= 1 ? 3 : (v + ((fl + k) >> 1)) % 3;
     const wob: Pt = [Math.sin(f.ph + k * 1.3) * 2, Math.cos(f.ph + k * 1.7) * 2];
-    const flyP: Pt = [x + wob[0] + (f.a === 'special' ? (x - 56) * 0.08 : 0), y + wob[1] + z.oy * 0.5];
-    const rest: Pt = [[8, 26, 50, 104, 66, 84, 24][k], GY - 1 - (k % 2)];
+    const flyP: Pt = [clamp(x + wob[0], 8, 103), y + wob[1] + z.oy * 0.5];
+    const rest: Pt = [[8, 26, 50, 103, 66, 84, 24][k], GY - 3 - (k % 2)];
     const q = f.a === 'death' ? lp([lerp(flyP[0], rest[0], Math.min(1, dt * 1.5)), flyP[1]], rest, ease(clamp((i - 1 - (k % 3)) / 3))) : flyP;
     if (f.a === 'death' && i === 7 && k > 4) return;
     lay(p, (l) => page(l, q[0], q[1], vv));
@@ -196,7 +196,7 @@ const fn = (p: Px, f: BFr): void => {
   }
   if (f.a === 'special') {
     tomes.forEach((t, k) => glyph(p, t.pos[0], t.pos[1] - 13 - (i % 2), k + i, 255));
-    for (let k = 0; k < 5; k++) { const a = -2.6 + k * 0.52 + (i % 2) * 0.1; glyph(p, cx + Math.cos(a) * 30, cy - 4 + Math.sin(a) * 38, k + 1 + (i >> 1), (k + i) % 2 ? 235 : 150); }
+    for (let k = 0; k < 5; k++) { const a = -2.6 + k * 0.52 + (i % 2) * 0.1; glyph(p, cx + Math.cos(a) * 30, cy - 2 + Math.sin(a) * 31, k + 1 + (i >> 1), (k + i) % 2 ? 235 : 150); }
     for (let k = 0; k < 10; k++) p.blend(12 + rnd2(k, 1, 3) * 88, 10 + ((rnd2(k, 2, 3) * 80 + i * 5) % 84), alpha(P.teal[4], 200));
   }
   if (f.a === 'death') {
