@@ -262,19 +262,23 @@ function gameUrl() {
 }
 
 /**
- * Windows: Verknüpfung „Eternal Mana“ mit dem Spiel-Symbol anlegen (eine .bat kann kein eigenes Symbol tragen).
- * Sie startet den Launcher minimiert, sodass kein Konsolenfenster aufblitzt.
+ * Windows: Verknüpfung „Eternal Mana“ mit dem Spiel-Symbol (eine .bat kann kein eigenes Symbol tragen).
+ * Sie startet den Launcher über wscript.exe – ein Programm ohne Konsole, es blitzt also kein Fenster auf.
+ * 'folder' legt sie im Spielordner an und frischt eine vorhandene Desktop-Verknüpfung auf, 'desktop' legt sie dort an.
  */
+const SHORTCUT_VERSION = 2;
 function makeShortcut(where) {
   if (!isWin) return;
-  const ps = "$d = if ($env:EM_WHERE -eq 'desktop') { [Environment]::GetFolderPath('Desktop') } else { $env:EM_DIR };"
-    + " $s = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $d 'Eternal Mana.lnk'));"
-    + " $s.TargetPath = (Join-Path $env:EM_DIR 'Eternal-Mana.bat'); $s.WorkingDirectory = $env:EM_DIR;"
-    + " $s.IconLocation = (Join-Path $env:EM_DIR 'launcher\\ui\\icon.ico'); $s.WindowStyle = 7; $s.Description = 'Eternal Mana'; $s.Save()";
+  const ps = "$desk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Eternal Mana.lnk'; $here = Join-Path $env:EM_DIR 'Eternal Mana.lnk';"
+    + " $list = @(); if ($env:EM_WHERE -eq 'desktop') { $list += $desk } else { $list += $here; if (Test-Path $desk) { $list += $desk } };"
+    + " $w = New-Object -ComObject WScript.Shell;"
+    + " foreach ($f in $list) { $s = $w.CreateShortcut($f); $s.TargetPath = (Join-Path $env:SystemRoot 'System32\\wscript.exe');"
+    + " $s.Arguments = '//nologo //e:jscript \"' + (Join-Path $env:EM_DIR 'launcher\\start-hidden.js') + '\"'; $s.WorkingDirectory = $env:EM_DIR;"
+    + " $s.IconLocation = (Join-Path $env:EM_DIR 'launcher\\ui\\icon.ico'); $s.WindowStyle = 1; $s.Description = 'Eternal Mana'; $s.Save() }";
   try {
-    spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { cwd: root, windowsHide: true, stdio: 'ignore', env: { ...process.env, EM_DIR: root, EM_WHERE: where } })
+    spawn('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(ps, 'utf16le').toString('base64')], { cwd: root, windowsHide: true, stdio: 'ignore', env: { ...process.env, EM_DIR: root, EM_WHERE: where } })
       .on('error', e => log('Verknüpfung fehlgeschlagen:', e.message))
-      .on('close', c => log(`Verknüpfung (${where}) ${c === 0 ? 'angelegt' : 'fehlgeschlagen'}`));
+      .on('close', c => { log(`Verknüpfung (${where}) ${c === 0 ? 'angelegt' : 'fehlgeschlagen'}`); if (c === 0 && where === 'folder') writeState(root, { shortcut: SHORTCUT_VERSION }); });
   } catch (e) { log('Verknüpfung fehlgeschlagen:', e.message); }
 }
 
@@ -365,7 +369,7 @@ if (!(await listen(resume ? 15 : 1))) {
 }
 log(`Launcher läuft auf http://127.0.0.1:${port}/ (${cfg.repo}@${cfg.branch})`);
 refreshMeta();
-if (isWin && !fs.existsSync(path.join(root, 'Eternal Mana.lnk'))) makeShortcut('folder');
+if (isWin && (!fs.existsSync(path.join(root, 'Eternal Mana.lnk')) || readState(root).shortcut !== SHORTCUT_VERSION)) makeShortcut('folder');
 if (!resume && !process.env.EM_LAUNCHER_NO_OPEN) openWindow(`http://127.0.0.1:${port}/`);
 maybeQuit();
 pollServer();
