@@ -9,13 +9,16 @@ export function bmp(p: Px, x: number, y: number, rows: readonly string[], map: R
   rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) { const c = map[r[i]]; if (c !== undefined) p.set(x + i, y + j, c); } });
 }
 
-function radial(p: Px, bands: number, peak: number, pow: number): void {
+/** Weicher Lichtkreis ohne harte Stufen: fällt stufenlos bis auf null ab, damit kein Rand sichtbar wird. */
+function radial(p: Px, peak: number, pow: number): void {
   const c = p.w / 2;
   for (let y = 0; y < p.h; y++) for (let x = 0; x < p.w; x++) {
-    const d = Math.hypot(x + 0.5 - c, y + 0.5 - c) / c;
+    const d = Math.hypot(x + 0.5 - c, y + 0.5 - c) / (c - 1);
     if (d >= 1) continue;
-    const b = Math.floor(d * bands), a = peak * Math.pow(1 - b / bands, pow);
-    if (a >= 1) p.set(x, y, W(a));
+    // feines Rauschen gegen Farbstufen im dunklen Auslauf
+    const n = (((x * 7 + y * 13) ^ (x * 3 + y * 5)) & 3) / 4 - 0.375;
+    const a = Math.floor(peak * Math.pow(1 - d, pow) * (1 - d * d * d * 0.35) + n + 0.5);
+    if (a >= 1) p.set(x, y, W(Math.min(255, a)));
   }
 }
 function softShadow(p: Px): void {
@@ -121,8 +124,8 @@ export function particleItems(out: Item[]): void {
       }
     }
   });
-  one(out, 'glow', 128, 128, (p) => radial(p, 10, 255, 2));
-  one(out, 'glow_small', 48, 48, (p) => radial(p, 7, 255, 1.8));
+  one(out, 'glow', 128, 128, (p) => radial(p, 255, 2));
+  one(out, 'glow_small', 48, 48, (p) => radial(p, 255, 1.8));
   one(out, 'shadow', 24, 10, softShadow);
   one(out, 'shadow_l', 48, 18, softShadow);
 }
