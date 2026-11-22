@@ -34,7 +34,7 @@ export function frostLiquid(): Px[] {
     }
     // Eisschollen: Schnitt dreier Streifen = kantiges Sechseck; jede pendelt auf einer kleinen Kreisbahn
     mask.fill(0);
-    for (let k = 0; k < 9; k++) {
+    for (let k = 0; k < 6; k++) {
       const h = hash2(k, 17, 4201), h2 = hash2(k, 23, 4202);
       const cx = (h % N) + 1.6 * Math.sin(ph + k * 1.3), cy = ((h >>> 8) % N) + 1.2 * Math.cos(ph + k * 2.1);
       const r1 = 1.6 + ((h >>> 16) % 40) / 10, r2 = 1.3 + ((h >>> 22) % 30) / 10, r3 = (r1 + r2) * 0.62, a = ((h2 % 100) / 100) * TAU;
@@ -56,7 +56,7 @@ export function frostLiquid(): Px[] {
       else if (lf || rt || dn) p.d[y * N + x] = F_SUB;
     }
     // Eisbrei: kleine blasse Krümel, die kommen und gehen
-    for (let k = 0; k < 26; k++) {
+    for (let k = 0; k < 16; k++) {
       const h = hash2(k, 41, 4210), life = (f + (h % FR)) % FR, x = (h >>> 5) % N, y = (h >>> 12) % N;
       if (life > 5 || mask[y * N + x]) continue;
       const col = life === 0 || life === 5 ? W_LIGHT : life === 2 || life === 3 ? F_LOW : W_PALE;

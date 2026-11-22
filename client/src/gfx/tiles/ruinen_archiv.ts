@@ -101,8 +101,8 @@ function marble(c: Chunk, f: DG, i: number, wx: number, wy: number, h: number): 
   if (lx === 0 || ly === 0) return MB[base + 1];
   // Äderung: Höhenlinien zweier Rauschfelder, je Platte versetzt
   const v1 = (f.nB[i] * 3.1 + ((hu >>> 12) & 15) / 16) % 1, v2 = (f.nL[i] * 5.3 + f.nA[i] * 0.6 + ((hu >>> 16) & 15) / 16) % 1;
-  if (v1 < 0.03) return h < 0.7 ? MB[5] : MB[4];
-  if (v2 < 0.022) return MB[4];
+  if (v1 < 0.022) return h < 0.35 ? MB[5] : MB[4];
+  if (v2 < 0.014) return h < 0.6 ? MB[4] : MB[base + 1];
   let t = base;
   // Politur: schräge Glanzstreifen
   const dg = lx + ly - ((hu >>> 20) % 14);

@@ -129,8 +129,8 @@ function pathCol(c: Chunk, f: FF, i: number, wx: number, wy: number, h: number):
   if (d < 2 + e * 2.2) return h < 0.3 ? PACK[3] : PACK[2];
   // freigetretene Erde mit Steinen in der Wegmitte
   const er = f.nL[i] * 0.44 + f.nB[i] * 0.4 + f.nC[i] * 0.16 + clamp((d - 8) / 40, 0, 0.1);
-  if (d > 5.5 && er > 0.655) {
-    if (er < 0.672) return PACK[0];
+  if (d > 5.5 && er > 0.69) {
+    if (er < 0.705) return PACK[1];
     const off = hash2(wy, 4, seed + 60) & 3, hd = rnd2((wx + off) >> 2, wy, seed + 61);
     if (h > 0.975) return SLATE[4];
     return hd < 0.18 ? ERD[0] : hd > 0.86 ? ERD[3] : hd > 0.5 ? ERD[2] : ERD[1];
@@ -307,11 +307,11 @@ function bridgeCol(c: Chunk, f: FF, i: number, wx: number, wy: number, h: number
   // Bohlen quer zur Laufrichtung
   const u = dir === 1 ? wx + 2 : wy + 2, vv = dir === 1 ? wy : wx;
   const pk = Math.floor(u / 5), pi = u - pk * 5, hp = rnd2(pk, dir, seed + 120), hq = rnd2(pk, dir, seed + 123);
-  if (pi === 4) return alpha(PLANK[0], 220);
-  // Schnee liegt in Flecken auf den Bohlen (zur Laufmitte abgetreten)
+  // Schnee liegt in geschlossenen Flecken auf den Bohlen, an den Rändern mehr als in der abgetretenen Laufmitte
   const mid = dir === 1 ? Math.abs(ly - 7.5) : Math.abs(lx - 7.5);
-  const sn = f.nB[i] * 0.55 + f.nC[i] * 0.45 + (hq - 0.5) * 0.12;
-  if (sn > 0.56) return sn < 0.585 ? SNOW[1][1] : pi === 0 || h > 0.9 ? SN[4] : SNOW[1][3];
+  const sn = f.nB[i] * 0.6 + f.nL[i] * 0.4 + (mid - 4) * 0.012;
+  if (sn > 0.6) return sn < 0.622 ? SNOW[1][f.hg[i + c.W + 1] < f.hg[i] ? 0 : 3] : h > 0.93 ? SN[4] : SNOW[1][sn > 0.68 ? 4 : 3];
+  if (pi === 4) return alpha(PLANK[0], 220);
   let t = hp < 0.2 ? 2 : hp < 0.55 ? 3 : hp < 0.85 ? 4 : 5;
   const joint = 7 + (hash2(pk, 3, seed + 121) % 34), vj = ((vv % 48) + 48) % 48;
   if (hq > 0.5 && vj === joint) return PLANK[1];
@@ -354,14 +354,14 @@ function groundCover(c: Chunk, f: FF): void {
         // Gras stößt nur in Flecken durch den Schnee
         const gp = clamp((f.nB[i] * 0.55 + f.nL[i] * 0.45 - 0.5) * 5, 0, 1);
         let q = r;
-        if ((q -= 0.02 + gp * 0.2) < 0) c.blitK(q < -0.11 ? FS.tuftDry[hv % FS.tuftDry.length] : FS.tuft[hv % FS.tuft.length], wx, wy, A_TUFT);
-        else if ((q -= 0.07) < 0) c.blitK(FS.mound[hv % FS.mound.length], wx, wy, A_SNOW);
-        else if ((q -= 0.05) < 0) c.blitK(FS.sparkle[hv % FS.sparkle.length], wx, wy, A_SNOW);
-        else if ((q -= 0.02 + gp * 0.04) < 0) c.blitK(FS.pebble[hv % FS.pebble.length], wx, wy, A_OPEN);
-        else if ((q -= nearWall ? 0.05 : 0.008) < 0) c.blitK(FS.twig[hv % FS.twig.length], wx, wy, A_OPEN);
-        else if ((q -= nearWall ? 0.05 : 0.01) < 0) c.blitK(FS.needle[hv % FS.needle.length], wx, wy, A_OPEN);
-        else if ((q -= 0.012) < 0) c.blitK(FS.shard[hv % FS.shard.length], wx, wy, A_TUFT);
-        else if ((q -= 0.03) < 0) c.blitK(FS.tiny[hv % FS.tiny.length], wx, wy, A_TUFT);
+        if ((q -= 0.008 + gp * 0.15) < 0) c.blitK(q < -0.08 ? FS.tuftDry[hv % FS.tuftDry.length] : FS.tuft[hv % FS.tuft.length], wx, wy, A_TUFT);
+        else if ((q -= 0.05) < 0) c.blitK(FS.mound[hv % FS.mound.length], wx, wy, A_SNOW);
+        else if ((q -= 0.03) < 0) c.blitK(FS.sparkle[hv % FS.sparkle.length], wx, wy, A_SNOW);
+        else if ((q -= 0.006 + gp * 0.02) < 0) c.blitK(FS.pebble[hv % FS.pebble.length], wx, wy, A_OPEN);
+        else if ((q -= nearWall ? 0.03 : 0.003) < 0) c.blitK(FS.twig[hv % FS.twig.length], wx, wy, A_OPEN);
+        else if ((q -= nearWall ? 0.03 : 0.003) < 0) c.blitK(FS.needle[hv % FS.needle.length], wx, wy, A_OPEN);
+        else if ((q -= 0.005) < 0) c.blitK(FS.shard[hv % FS.shard.length], wx, wy, A_TUFT);
+        else if ((q -= 0.01) < 0) c.blitK(FS.tiny[hv % FS.tiny.length], wx, wy, A_TUFT);
       } else if (kd === S_G2) {
         const onIce = iceVal(f, i) > 0.64;
         let q = r;
@@ -369,19 +369,19 @@ function groundCover(c: Chunk, f: FF): void {
           if ((q -= 0.2) < 0) c.blitK(FS.flake[hv % FS.flake.length], wx, wy, A_ICE);
           else if ((q -= 0.07) < 0) c.blitK(FS.crack[hv % FS.crack.length], wx, wy, A_ICE);
           else if ((q -= 0.03) < 0) c.blitK(FS.shard[hv % FS.shard.length], wx, wy, A_TUFT);
-        } else if ((q -= 0.09) < 0) c.blitK(FS.mound[hv % FS.mound.length], wx, wy, A_SNOW);
-        else if ((q -= 0.06) < 0) c.blitK(FS.sparkle[hv % FS.sparkle.length], wx, wy, A_SNOW);
-        else if ((q -= 0.035) < 0) c.blitK(FS.shard[hv % FS.shard.length], wx, wy, A_TUFT);
+        } else if ((q -= 0.06) < 0) c.blitK(FS.mound[hv % FS.mound.length], wx, wy, A_SNOW);
+        else if ((q -= 0.04) < 0) c.blitK(FS.sparkle[hv % FS.sparkle.length], wx, wy, A_SNOW);
+        else if ((q -= 0.015) < 0) c.blitK(FS.shard[hv % FS.shard.length], wx, wy, A_TUFT);
         else if ((q -= 0.03) < 0) c.blitK(FS.flake[2 + (hv % 2)], wx, wy, A_SNOW);
-        else if ((q -= 0.02) < 0) c.blitK(FS.tiny[hv % FS.tiny.length], wx, wy, A_TUFT);
-        else if ((q -= 0.012) < 0) c.blitK(FS.pebble[hv % FS.pebble.length], wx, wy, A_OPEN);
+        else if ((q -= 0.008) < 0) c.blitK(FS.tiny[hv % FS.tiny.length], wx, wy, A_TUFT);
+        else if ((q -= 0.005) < 0) c.blitK(FS.pebble[hv % FS.pebble.length], wx, wy, A_OPEN);
       } else if (kd === S_PATH) {
         const d = f.dPath[i];
         let q = r;
         if (d < 3.5) { if (q < 0.12) c.blitK(FS.tuftDry[hv % FS.tuftDry.length], wx, wy, A_OPEN); else if (q < 0.3) c.blitK(FS.clump[hv % 4], wx, wy, A_OPEN); }
         else if ((q -= d > 6 ? 0.045 : 0.01) < 0) c.blitK(FS.boot[hv % FS.boot.length], wx, wy, A_PATH);
-        else if ((q -= 0.05) < 0) c.blitK(FS.stone[hv % FS.stone.length], wx, wy, A_PATH);
-        else if ((q -= 0.12) < 0) c.blitK(FS.grit[hv % FS.grit.length], wx, wy, A_PATH);
+        else if ((q -= 0.03) < 0) c.blitK(FS.stone[hv % FS.stone.length], wx, wy, A_PATH);
+        else if ((q -= 0.07) < 0) c.blitK(FS.grit[hv % FS.grit.length], wx, wy, A_PATH);
         else if ((q -= 0.02) < 0) c.blitK(FS.tiny[hv % FS.tiny.length], wx, wy, A_PATH);
         else if ((q -= 0.012) < 0) c.blitK(FS.mound[hv % FS.mound.length], wx, wy, A_PATH);
       } else if (kd === S_TOP) {

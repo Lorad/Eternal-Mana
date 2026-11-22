@@ -147,11 +147,11 @@ function knotMotif(dx: number, dy: number): number {
 function tileShade(f: DG, i: number, e: number, tid: number, h: number): number {
   const sh = (tid & 1023) / 1023, fr = f.nL[i] * 0.5 + f.nB[i] * 0.32 + f.nC[i] * 0.18;
   const base = sh < 0.25 ? 2 : sh < 0.7 ? 3 : 4;
-  if (fr > 0.61) {
+  if (fr > 0.635) {
     // Reiffeld: Fugen scheinen nur noch durch
-    if (e & 12) return FT[fr > 0.67 ? 4 : 2];
-    if (fr < 0.63) return h < 0.5 ? FT[base] : FT[5];
-    return h > 0.94 ? WHITE : h < 0.07 ? FT[4] : FT[5];
+    if (e & 12) return FT[fr > 0.69 ? 4 : 2];
+    if (fr < 0.655) return h < 0.5 ? FT[base] : FT[5];
+    return h > 0.96 ? WHITE : h < 0.1 ? FT[4] : FT[5];
   }
   if (e & 12) return fr < 0.4 ? FT[0] : FT[1];
   if (e & 3) return FT[base + 1];
@@ -389,7 +389,7 @@ function topCol(c: Chunk, f: DG, i: number, wx: number, wy: number, h: number): 
   }
   // dunkles Eismassiv, verliert sich im Blauschwarz; einzelne Lichtpunkte tief im Eis
   const fade = d + (f.nA[i] - 0.5) * 6;
-  if (fade > 20) return h > 0.995 ? BK[3] : VOIDG;
+  if (fade > 20) return h > 0.9988 ? BK[3] : VOIDG;
   if (fade > 15 && ((wx + wy) & 1)) return VOIDG;
   const row = wy >> 3, xx = wx + (row & 1) * 8, bx = ((xx % 16) + 16) % 16, by = wy & 7, hb = rnd2(Math.floor(xx / 16), row, seed + 351);
   if (by === 7 || bx === 15) return TOPD[0];

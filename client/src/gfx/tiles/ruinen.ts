@@ -24,6 +24,7 @@ const A_HAZ = allow(S_HAZ), A_NOSHADE = allow(S_BRIDGE), A_ANY = allow(S_G, S_G2
 const WAVE = [0, 1, 2, 2, 1, 0, -1, -2, -2, -1];
 const zShade = (c: number): number => mix(c, mix(MOSS[0], INK, 0.3), 0.16), zSun = (c: number): number => mix(c, STN[5], 0.16);
 const PLZZ = [PLZ.map(zShade), PLZ, PLZ.map(zSun)];
+const ROAD = PLZ.map((c, k) => mix(c, STN[k], 0.55)), ROADZ = [ROAD.map(zShade), ROAD, ROAD.map(zSun)];
 
 interface RF extends OW { nM: Float32Array }
 
@@ -81,14 +82,14 @@ function plazaCol(c: Chunk, f: RF, i: number, wx: number, wy: number, z: number,
   // die Grasnarbe wirft einen schmalen Schatten auf die tiefer liegende Platte
   if (ku === S_G) return mix(PLZ[1], INK, 0.12);
   const mo = f.nM[i] * 0.7 + f.nB[i] * 0.3;
-  if (mo > 0.66) return mosaic(c, wx, wy, mo, z);
+  if (mo > 0.685) return mosaic(c, wx, wy, mo, z);
   slabAt(wx, wy, seed + 500, true);
   const e = SL.e, id = SL.id, sh = (id & 1023) / 1023, sh2 = ((id >>> 10) & 1023) / 1023;
   const gr = f.nB[i] * 0.6 + f.nC[i] * 0.4;
   // Fugen: Gras, Moos oder dunkle Erde
   if (e & 12) return gr > 0.5 ? GRS[z][gr > 0.6 ? 2 : 1] : gr > 0.43 ? MOSS[1] : PLZ[0];
   let base = sh < 0.2 ? 2 : sh < 0.6 ? 3 : sh < 0.9 ? 4 : 3;
-  if ((id >>> 20) % 8 === 0 && SL.w >= 12 && SL.h >= 12) {
+  if ((id >>> 20) % 13 === 0 && SL.w >= 12 && SL.h >= 12) {
     // Runenplatte: eingemeißelter Rahmen, in der Mitte eine Glyphe mit schwacher Glutlinie
     const gx = SL.lx - ((SL.w - 5) >> 1), gy = SL.ly - ((SL.h - 7) >> 1);
     if (gx >= 0 && gx < 5 && gy >= 0 && gy < 7 && GLYPHS[(id >>> 24) % GLYPHS.length][gy * 5 + gx]) return h < 0.3 ? RUNE[2] : RUNE[1];
@@ -106,14 +107,14 @@ function plazaCol(c: Chunk, f: RF, i: number, wx: number, wy: number, z: number,
 /** Verblichener Mosaikrest: 2×2-Steinchen in Wellenbändern, viele ausgebrochen. */
 function mosaic(c: Chunk, wx: number, wy: number, mo: number, z: number): number {
   const tx = Math.floor(wx / 3), ty = Math.floor(wy / 3), ht = hash2(tx, ty, c.seed + 520);
-  if (mo < 0.672 + (ht & 7) * 0.003) return PLZ[ht & 8 ? 1 : 2];
-  if (wx - tx * 3 === 2 || wy - ty * 3 === 2) return PLZ[1];
+  if (mo < 0.697 + (ht & 7) * 0.003) return PLZ[ht & 8 ? 2 : 3];
+  if (wx - tx * 3 === 2 || wy - ty * 3 === 2) return PLZ[ht & 16 ? 2 : 3];
   if (ht % 7 === 0) return PLZ[2];
   const wv = Math.round(Math.sin(tx * 0.62) * 1.7), band = (((ty + wv) % 10) + 10) % 10;
   let col = band < 2 ? TESS[1] : band === 3 ? TESS[2] : band === 5 ? TESS[3] : band === 7 ? TESS[0] : band === 8 ? TESS[1] : TESS[4];
   // kleine Rauten im Elfenbeinband
   if (band === 4 && ((tx + (ty >> 1)) % 4 + 4) % 4 === 0) col = TESS[5];
-  col = mix(col, PLZ[3], 0.22 + ((ht >>> 8) & 3) * 0.07);
+  col = mix(col, PLZ[4], 0.1 + ((ht >>> 8) & 3) * 0.07);
   return z === 0 ? zShade(col) : col;
 }
 
@@ -125,8 +126,8 @@ function roadCol(c: Chunk, f: RF, i: number, wx: number, wy: number, z: number, 
   if (kl === S_G) return PLZ[1];
   // Flugsand, der über die Platten weht
   const sd = f.nL[i] * 0.42 + f.nB[i] * 0.4 + f.nC[i] * 0.18;
-  if (sd > 0.645 && d > 1.5) {
-    if (sd < 0.66) return h < 0.5 ? SAND[z][2] : PLZ[3];
+  if (sd > 0.675 && d > 1.5) {
+    if (sd < 0.69) return h < 0.5 ? SAND[z][2] : PLZ[3];
     const yy = wy + ((f.nB[i] * 9) | 0);
     return SAND[z][yy % 5 === 0 ? 2 : h > 0.96 ? 4 : 3];
   }
@@ -143,20 +144,18 @@ function roadCol(c: Chunk, f: RF, i: number, wx: number, wy: number, z: number, 
   }
   // Mittelrinne entlang des Grats
   if (d > 9 && ((d >= D[i - 1] && d >= D[i + 1] && d > D[i - 2] && d > D[i + 2]) || (d >= D[i - W] && d >= D[i + W] && d > D[i - 2 * W] && d > D[i + 2 * W]))) return h < 0.2 ? PLZ[2] : PLZ[1];
-  // auf weiten Plätzen eine zusätzliche Längsfuge
-  if (Math.abs(d - 27) < 0.6) return PLZ[1];
-  // Plattenreihen: Fugen quer zur Laufrichtung, je Seite versetzt
-  const rowK = (d > 27 ? 2 : 0) + side, aa = along + rowK * 7 + (hash2(rowK, vert ? 1 : 0, seed + 531) % 5), k = Math.floor(aa / 15), m = aa - k * 15;
-  const hs = rnd2(k, rowK + (vert ? 4 : 0), seed + 532), hs2 = rnd2(k, rowK + (vert ? 4 : 0), seed + 533);
-  if (m === 0) return f.nB[i] > 0.6 ? GRS[z][1] : PLZ[0];
+  // Plattenreihen im Läuferverband: breite, ausgetretene Rechteckplatten, etwas wärmer als der Platz
+  const row = Math.floor((wy + 4) / 11), ry = wy + 4 - row * 11, xx = wx + (row & 1) * 9 + (hash2(row, 3, seed + 531) % 5), k = Math.floor(xx / 19), m = xx - k * 19;
+  const hs = rnd2(k, row, seed + 532), hs2 = rnd2(k, row, seed + 533);
+  if (ry === 10 || m === 18) return f.nB[i] > 0.62 ? GRS[z][1] : ROAD[0];
   let t = hs < 0.25 ? 2 : hs < 0.7 ? 3 : 4;
-  if (m === 1) return PLZZ[z][t + 1];
-  if (m === 14) t--;
-  // ausgetretene Mulde zur Mitte hin, Verwitterung
+  if (ry === 0 || m === 0) return ROADZ[z][t + 1];
+  if (ry === 9 || m === 17) t--;
+  // Verwitterungsflecken, ausgebrochene Ecke
   if (f.nC[i] > 0.66 && hs2 > 0.4) t--;
-  if (hs2 < 0.14 && Math.abs((m - 3) - (d - 5) * 0.8 - (hash2(k, rowK, 9) % 6)) < 0.8) return PLZ[0];
+  if (hs2 < 0.14 && m + ry < 4) return ROAD[1];
   if (h < 0.04) t--; else if (h > 0.97) t++;
-  return PLZZ[z][clamp(t, 1, 5)];
+  return ROADZ[z][clamp(t, 1, 5)];
 }
 
 // ------------------------------------------------------------------ arkanes Brandfeld
@@ -366,7 +365,7 @@ function groundCover(c: Chunk, f: RF): void {
       } else if (kd === S_G2 || kd === S_FLOOR) {
         // Gras sitzt in den Fugen
         slabAt(wx, wy, seed + 500, true);
-        if ((SL.e & 12) && r < 0.5 && f.nM[i] * 0.7 + f.nB[i] * 0.3 <= 0.66) c.blitK((r < 0.2 ? RS.tuft[z][hv & 1] : RS.tiny[z])[hv % 8], wx, wy + 1, A_TUFT);
+        if ((SL.e & 12) && r < 0.5 && f.nM[i] * 0.7 + f.nB[i] * 0.3 <= 0.685) c.blitK((r < 0.2 ? RS.tuft[z][hv & 1] : RS.tiny[z])[hv % 8], wx, wy + 1, A_TUFT);
       } else if (kd === S_PATH) {
         const d = f.dPath[i];
         if (d < 3 ? r < 0.3 : r < 0.035) { const set = d < 3 && r < 0.15 ? RS.tuft[z][1] : RS.tiny[z]; c.blitK(set[hv % set.length], wx, wy, A_GROUND); }
@@ -388,7 +387,7 @@ function groundCover(c: Chunk, f: RF): void {
       if (kd === S_G) {
         // altes Pflaster schaut in Nestern heraus
         const pv = clamp((f.nM[i] - 0.42) * 3, 0, 1);
-        if ((q -= 0.012 + pv * 0.07) < 0) c.blitK(RS.slab[hv % RS.slab.length], wx, wy, A_GRASS);
+        if ((q -= 0.003 + pv * pv * 0.06) < 0) c.blitK(RS.slab[hv % RS.slab.length], wx, wy, A_GRASS);
         else if ((q -= 0.07) < 0) c.blitK(RS.bloom[hv % RS.bloom.length], wx, wy, A_GRASS);
         else if ((q -= 0.016) < 0) c.blitK(RS.thistle[hv % RS.thistle.length], wx, wy, A_TUFT);
         else if ((q -= 0.03) < 0) c.blitK(RS.pebble[hv % RS.pebble.length], wx, wy, A_GROUND);
