@@ -20,9 +20,9 @@ interface H { dy: number; lean: number; hd: Pt; L: Pt; Rh: Pt; ba: number; light
 
 function pose(f: BFr): H {
   const s = Math.sin(f.ph), c = Math.cos(f.ph), i = f.i;
-  const z: H = { dy: 0, lean: 0, hd: [0, 0], L: [39, 78], Rh: [98, 67], ba: 1.52, light: 0.6, ph: f.ph, crown: 1, held: true, spread: 0, f };
+  const z: H = { dy: 0, lean: 0, hd: [0, 0], L: [31, 76], Rh: [98, 67], ba: 1.52, light: 0.6, ph: f.ph, crown: 1, held: true, spread: 0, f };
   switch (f.a) {
-    case 'idle': z.dy = [0, 0, -1, -1, -1, 0][i]; z.hd = [0, i >= 2 && i <= 4 ? 1 : 0]; z.light = 0.55 + [0, 0.25, 0.1, 0.35, 0.05, 0.2][i]; z.L = [39 + R(s), 78 + z.dy]; z.Rh = [98, 67 + z.dy]; break;
+    case 'idle': z.dy = [0, 0, -1, -1, -1, 0][i]; z.hd = [0, i >= 2 && i <= 4 ? 1 : 0]; z.light = 0.55 + [0, 0.25, 0.1, 0.35, 0.05, 0.2][i]; z.L = [31 + R(s), 76 + z.dy]; z.Rh = [98, 67 + z.dy]; break;
     case 'windup': z.lean = [-3, -5][i]; z.dy = [1, 2][i]; z.hd = pk([[-1, 0], [-2, 1]], i); z.Rh = pk([[52, 66], [48, 60]], i); z.L = pk([[46, 62], [42, 56]], i); z.ba = [-2.1, -2.32][i]; z.light = [0.8, 1][i]; z.spread = 1; break;
     case 'attack': z.lean = [2, 6, 6, 3][i]; z.dy = [0, 2, 3, 1][i]; z.hd = pk([[1, 0], [2, 1], [2, 2], [1, 1]], i);
       z.Rh = pk([[74, 50], [68, 62], [72, 70], [86, 66]], i); z.L = pk([[68, 52], [66, 66], [66, 74], [44, 84]], i); z.ba = [-0.95, 0.08, 0.92, 1.25][i]; z.light = [1, 0.9, 0.7, 0.6][i]; z.spread = [1, 3, 2, 1][i]; break;
@@ -31,7 +31,7 @@ function pose(f: BFr): H {
     case 'death': {
       const k = Math.min(i, 3);
       z.dy = [1, 13, 30, 32][k]; z.lean = [-3, 0, 2, 3][k]; z.hd = pk([[-2, -1], [0, 2], [2, 5], [3, 7]], k); z.spread = [0, 3, 7, 8][k];
-      z.L = pk([[32, 84], [34, 104], [36, 116], [36, 117]], k); z.Rh = pk([[96, 68], [84, 84], [88, 115], [88, 116]], k); z.ba = [1.42, 0.68, 0, 0][k]; z.held = k < 2;
+      z.L = pk([[32, 84], [34, 104], [36, 116], [36, 117]], k); z.Rh = pk([[96, 68], [80, 84], [88, 115], [88, 116]], k); z.ba = [1.42, 0.74, 0, 0][k]; z.held = k < 2;
       z.light = [0.3, 0.5, 0.8, 1.2][k]; z.crown = k < 3 ? 1 : 0; z.ph = k * 0.8; break;
     }
   }
@@ -67,7 +67,7 @@ function blade(l: Px, hand: Pt, ang: number, len = 54, gw = 8): Pt {
 function tendrils(l: Px, z: H, x0: number, x1: number, flat = 0): void {
   for (let k = 0; k < 8; k++) {
     const x = lerp(x0, x1, k / 7), dir = k < 4 ? -1 : 1, sw = Math.sin(z.ph + k * 1.3) * 2.5, up = k === 0 || k === 7;
-    if (up && !flat) tube(l, bez([x, GY - 10], [x + dir * 9, GY - 1], [x + dir * (14 + sw), GY - 12 + sw], 14), 3, 0.7, MANT, 0);
+    if (up && !flat) tube(l, bez([x, GY - 12], [x + dir * 11, GY], [x + dir * (17 + sw), GY - 15 + sw], 16), 3.4, 0.7, MANT, 0);
     else tube(l, bez([x, GY - 12 + flat * 8], [x + dir * 2, GY - 3], [x + dir * (6 + sw), GY - 1 - (k % 2) * 2], 12), 3.4, 0.9, MANT, 0);
   }
 }
@@ -153,7 +153,8 @@ function figure(p: Px, z: H): { chest: Pt; tip: Pt } {
   lay(p, (l) => {
     for (const sg of [-1, 1]) {
       l.ball(S[0] + sg * 13, S[1] + 1, 8.5, 5.5, sg < 0 ? [P.bone[1], P.bone[2], P.bone[3], P.bone[4]] : [P.bone[0], P.bone[1], P.bone[2], P.bone[3]], 0, 3);
-      l.poly([[S[0] + sg * 18, S[1] - 2], [S[0] + sg * 25, S[1] - 7], [S[0] + sg * 21, S[1] + 3]], TGOLD[sg < 0 ? 3 : 2]); l.set(S[0] + sg * 25, S[1] - 7, TGOLD[4]);
+      l.poly([[S[0] + sg * 16, S[1] - 3], [S[0] + sg * 28, S[1] - 11], [S[0] + sg * 22, S[1] + 4]], TGOLD[sg < 0 ? 3 : 2]); l.line(S[0] + sg * 17, S[1] - 3, S[0] + sg * 28, S[1] - 11, TGOLD[sg < 0 ? 4 : 3]); l.set(S[0] + sg * 28, S[1] - 11, TGOLD[4]);
+      l.poly([[S[0] + sg * 20, S[1] + 1], [S[0] + sg * 27, S[1] - 2], [S[0] + sg * 23, S[1] + 6]], TGOLD[1]);
       for (const [dx, dy] of [[9, 0], [14, 2], [17, -1], [11, 4]] as const) l.set(S[0] + sg * dx, S[1] + dy, P.shadow[1]);
     }
     l.rect(S[0] - 2, S[1] - 8, 5, 6, FACE[0]); l.rect(S[0] - 2, S[1] - 8, 2, 5, FACE[1]);

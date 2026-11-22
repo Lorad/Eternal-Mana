@@ -224,7 +224,7 @@ const fn = (p: Px, f: BFr): void => {
       lay(p, (l) => {
         for (const [a, o] of [[-0.55, 0], [-0.2, 3], [0.12, 1], [0.45, 4], [0.8, 2]] as const) {
           const dd = d + o, x = hx + Math.cos(a) * dd, y = hy - 4 + Math.sin(a) * dd * 1.4, len = i === 3 ? 4 : 7;
-          if (x + len > 93) continue;
+          if (x + len > 90) continue;
           l.poly([[x - Math.sin(a) * 1.6, y + Math.cos(a) * 1.6], [x + Math.cos(a) * len, y + Math.sin(a) * len], [x + Math.sin(a) * 1.6, y - Math.cos(a) * 1.6], [x - Math.cos(a) * 2, y - Math.sin(a) * 2]], P.ice[3]);
           l.line(x, y, x + Math.cos(a) * len, y + Math.sin(a) * len, WHITE);
         }
