@@ -5,6 +5,17 @@ Stand: Version 0.2.1 (Launcher mit automatischen Updates; Grafik-Neuaufbau abges
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
 
+## Ausbau ab 0.3 (Roadmap: docs/ROADMAP.md)
+
+| Version | Inhalt | Stand |
+|---|---|---|
+| 0.3 | Geschichte: Akt II, Dialoge mit Entscheidungen, Filmszenen, Chronik, Story-Bosse | in Arbeit |
+| 0.4 | Handwerk & Elemente | in Arbeit |
+| 0.5 | Endspiel | geplant |
+| 0.6 | Lebendige Welt | geplant |
+| 0.7 | Gemeinsam & Zuhause | geplant |
+| 0.8 | Feinschliff | geplant |
+
 ## Starten und Testen
 
 ```bash
