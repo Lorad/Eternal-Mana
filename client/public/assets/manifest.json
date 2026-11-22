@@ -193,8 +193,8 @@
   },
   "mob_frostwolf": {
    "file": "sprites/mobs/mob_frostwolf.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 40,
    "cols": 22,
    "rows": 1
   },
@@ -214,8 +214,8 @@
   },
   "mob_hohlritter": {
    "file": "sprites/mobs/mob_hohlritter.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 48,
    "cols": 22,
    "rows": 1
   },
@@ -249,8 +249,8 @@
   },
   "mob_nachtmahr": {
    "file": "sprites/mobs/mob_nachtmahr.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 56,
+   "fh": 48,
    "cols": 22,
    "rows": 1
   },
@@ -263,15 +263,15 @@
   },
   "mob_runenwaechter": {
    "file": "sprites/mobs/mob_runenwaechter.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 48,
    "cols": 22,
    "rows": 1
   },
   "mob_schattenwandler": {
    "file": "sprites/mobs/mob_schattenwandler.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 40,
    "cols": 22,
    "rows": 1
   },
@@ -284,15 +284,15 @@
   },
   "mob_schneebrute": {
    "file": "sprites/mobs/mob_schneebrute.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 48,
    "cols": 22,
    "rows": 1
   },
   "mob_skelettkrieger": {
    "file": "sprites/mobs/mob_skelettkrieger.png",
-   "fw": 32,
-   "fh": 32,
+   "fw": 48,
+   "fh": 40,
    "cols": 22,
    "rows": 1
   },
@@ -319,43 +319,43 @@
   },
   "boss_archivar": {
    "file": "sprites/bosses/boss_archivar.png",
-   "fw": 24.923076923076923,
-   "fh": 72,
+   "fw": 112,
+   "fh": 112,
    "cols": 26,
    "rows": 1
   },
   "boss_dornenmutter": {
    "file": "sprites/bosses/boss_dornenmutter.png",
-   "fw": 27.692307692307693,
-   "fh": 80,
+   "fw": 112,
+   "fh": 112,
    "cols": 26,
    "rows": 1
   },
   "boss_hohlkoenig": {
    "file": "sprites/bosses/boss_hohlkoenig.png",
-   "fw": 33.23076923076923,
-   "fh": 96,
+   "fw": 128,
+   "fh": 128,
    "cols": 26,
    "rows": 1
   },
   "boss_ignarok": {
    "file": "sprites/bosses/boss_ignarok.png",
-   "fw": 27.692307692307693,
-   "fh": 88,
+   "fw": 112,
+   "fh": 112,
    "cols": 26,
    "rows": 1
   },
   "boss_kristallkoloss": {
    "file": "sprites/bosses/boss_kristallkoloss.png",
-   "fw": 27.692307692307693,
-   "fh": 80,
+   "fw": 112,
+   "fh": 112,
    "cols": 26,
    "rows": 1
   },
   "boss_ysolde": {
    "file": "sprites/bosses/boss_ysolde.png",
-   "fw": 22.153846153846153,
-   "fh": 80,
+   "fw": 96,
+   "fh": 112,
    "cols": 26,
    "rows": 1
   }
@@ -364,7 +364,7 @@
   "obj": {
    "file": "atlases/obj.png",
    "json": "atlases/obj.json",
-   "frames": 313
+   "frames": 367
   },
   "fx": {
    "file": "atlases/fx.png",
@@ -392,21 +392,21 @@
   },
   "glut": {
    "file": "liquids/glut.png",
-   "fw": 32,
-   "fh": 32,
-   "frames": 4
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
   },
   "frost": {
    "file": "liquids/frost.png",
-   "fw": 32,
-   "fh": 32,
-   "frames": 4
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
   },
   "ruinen": {
    "file": "liquids/ruinen.png",
-   "fw": 32,
-   "fh": 32,
-   "frames": 4
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
   },
   "schatten": {
    "file": "liquids/schatten.png",
@@ -532,12 +532,12 @@
    "h": 48
   },
   "mob_frostwolf": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "frostwolf": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "mob_eiswicht": {
    "w": 32,
@@ -548,12 +548,12 @@
    "h": 32
   },
   "mob_schneebrute": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "schneebrute": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "mob_frostwisp": {
    "w": 32,
@@ -564,20 +564,20 @@
    "h": 32
   },
   "mob_runenwaechter": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "runenwaechter": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "mob_skelettkrieger": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "skelettkrieger": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "mob_fluchgeist": {
    "w": 32,
@@ -596,12 +596,12 @@
    "h": 32
   },
   "mob_schattenwandler": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "schattenwandler": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 40
   },
   "mob_leerenbrut": {
    "w": 32,
@@ -612,46 +612,46 @@
    "h": 32
   },
   "mob_nachtmahr": {
-   "w": 32,
-   "h": 32
+   "w": 56,
+   "h": 48
   },
   "nachtmahr": {
-   "w": 32,
-   "h": 32
+   "w": 56,
+   "h": 48
   },
   "mob_hohlritter": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   },
   "hohlritter": {
-   "w": 32,
-   "h": 32
+   "w": 48,
+   "h": 48
   }
  },
  "bossMeta": {
-  "boss_dornenmutter": {
-   "w": 80,
-   "h": 80
+  "dornenmutter": {
+   "w": 112,
+   "h": 112
   },
-  "boss_kristallkoloss": {
-   "w": 80,
-   "h": 80
+  "kristallkoloss": {
+   "w": 112,
+   "h": 112
   },
-  "boss_ignarok": {
-   "w": 80,
-   "h": 88
+  "ignarok": {
+   "w": 112,
+   "h": 112
   },
-  "boss_ysolde": {
-   "w": 64,
-   "h": 80
-  },
-  "boss_archivar": {
-   "w": 72,
-   "h": 72
-  },
-  "boss_hohlkoenig": {
+  "ysolde": {
    "w": 96,
-   "h": 96
+   "h": 112
+  },
+  "archivar": {
+   "w": 112,
+   "h": 112
+  },
+  "hohlkoenig": {
+   "w": 128,
+   "h": 128
   }
  }
 }

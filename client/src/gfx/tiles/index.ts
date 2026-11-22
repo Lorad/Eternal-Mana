@@ -11,10 +11,12 @@ import { gruenwald } from './gruenwald';
 import { kristall } from './kristall';
 import { glut } from './glut';
 import { frost } from './frost';
+import { ruinen } from './ruinen';
 import { buildLiquidsLegacy, paintGroundLegacy } from './legacy';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   frost,
+  ruinen,
   gruenwald,
   kristall,
   glut,
