@@ -217,7 +217,7 @@ function findChromium() {
   return cands.find(f => fs.existsSync(f)) ?? null;
 }
 function detach(cmd, args) {
-  try { spawn(cmd, args, { detached: true, stdio: 'ignore' }).on('error', e => log('Öffnen fehlgeschlagen:', e.message)).unref(); return true; }
+  try { spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).on('error', e => log('Öffnen fehlgeschlagen:', e.message)).unref(); return true; }
   catch (e) { log('Öffnen fehlgeschlagen:', e.message); return false; }
 }
 /** Im Standardbrowser öffnen – dort liegen auch die bisherigen Spielstände und Einstellungen des Spiels. */

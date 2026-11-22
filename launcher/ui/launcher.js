@@ -63,7 +63,7 @@ function render() {
   $('srvOnline').hidden = !sv.running;
   $('srvOnline').textContent = sv.online === 1 ? '1 Held online' : `${sv.online} Helden online`;
   $('srvText').textContent = sv.error && !sv.running ? sv.error
-    : sv.running ? (sv.addresses.length ? 'Mitspielende erreichen dich unter:' : 'Nur auf diesem Rechner erreichbar.') + (sv.mine ? ' Der Server läuft weiter, wenn du dieses Fenster schließt.' : '')
+    : sv.running ? (sv.mine ? 'Der Server läuft weiter, wenn du dieses Fenster schließt. ' : '') + (sv.addresses.length ? 'Mitspielende erreichen dich unter:' : 'Er ist nur auf diesem Rechner erreichbar.')
     : 'Zum Alleinspielen startet der Server von selbst. Für eine Koop-Runde starte ihn hier und gib deine Adresse weiter.';
   const addrKey = JSON.stringify(sv.addresses);
   if ($('srvAddrs').dataset.k !== addrKey) {
