@@ -6,7 +6,6 @@ import { frostObjects } from './frost';
 import { glutObjects } from './glut';
 import { gruenwaldObjects } from './gruenwald';
 import { kristallObjects } from './kristall';
-import { legacyObjects } from './legacy';
 import { ruinenObjects } from './ruinen';
 import { schattenObjects } from './schatten';
 
@@ -16,7 +15,6 @@ export const objSource = new Map<string, string>();
 export function buildObjects(): Sheet {
   const merged = new Map<string, Px>();
   const add = (mod: string, list: Array<[string, Px]>) => { for (const [n, px] of list) { merged.set(n, px); objSource.set(n, mod); } };
-  add('legacy', legacyObjects());
   add('common', commonObjects());
   add('gruenwald', gruenwaldObjects());
   add('kristall', kristallObjects());

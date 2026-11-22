@@ -2,11 +2,11 @@
 import { Px } from '../draw';
 import { Frames, MARK, MARK2, P, Ramp, WHITE, band, boulder, glow, hash2, masonry, mix, part, planks, rings, rnd2, shadeArea, texFill, vnoise } from './kit';
 import { roofTiles } from './gw_houses';
-import { FROCK, FWOOD, ICE, LOG, SNOW, fAnim, fOne, fOutline, icicles, mound, snowCap } from './fr_kit';
+import { FROCK, FWOOD, ICE, LOG, SNOW, fAnim, fOne, fOutline, icicles, mound, partIn, snowCap } from './fr_kit';
 
 const T = P.tan, I = P.steel, Y = P.gold;
 const SHADE = P.shadow[2];
-const SHINGLE: Ramp = [mix(P.wood[0], I[0], 0.5), mix(P.wood[1], I[0], 0.45), mix(P.wood[2], I[1], 0.45), mix(P.wood[3], I[2], 0.45), mix(P.wood[4], I[3], 0.45)];
+const SHINGLE: Ramp = [mix(P.wood[0], I[0], 0.6), mix(P.wood[1], I[0], 0.6), mix(P.wood[1], I[1], 0.6), mix(P.wood[2], I[1], 0.55), mix(P.wood[3], I[2], 0.55)];
 
 /** Rundes Stirnholz eines Blockbalkens. */
 function logEnd(p: Px, cx: number, cy: number, seed: number): void {
@@ -62,12 +62,12 @@ function cabin(p: Px): void {
   for (const [x, y] of [[24, 94], [28.4, 94], [26.2, 90.4]] as const) { p.ell(x, y, 2.4, 2.4, LOG[1]); rings(p, x, y, 1.7, 1.7, T, Math.round(x)); }
   mound(p, 13, 100, 11, 6.4, 3); mound(p, 69, 100, 10, 5.4, 4); mound(p, 31, 100, 6, 2.4, 6); mound(p, 52, 100, 7, 3, 8);
   // Dach: dicke Schneedecke über Schindeln
-  part(p, (l) => {
+  partIn(p, (l) => {
     const eave = (x: number): number => 53 + Math.round(vnoise(x * 0.2, 1, 5) * 3);
     l.poly([[12, 14], [67, 14], [79, 58], [0, 58]], MARK);
     for (let x = 0; x < 80; x++) for (let y = eave(x) + 1; y < 60; y++) if (l.get(x, y) === MARK) l.set(x, y, 0);
     // Schmelzfleck rund um den Schornstein: nasse Schindeln
-    for (let y = 22; y < 42; y++) for (let x = 44; x < 72; x++) if (l.get(x, y) === MARK && Math.hypot((x - 58.5) / 9.5, (y - 33) / (5.2 + vnoise(x * 0.5, 2, 9) * 2)) < 1) l.set(x, y, MARK2);
+    for (let y = 22; y < 42; y++) for (let x = 44; x < 72; x++) if (l.get(x, y) === MARK && Math.hypot((x - 58.5) / 7.6, (y - 33) / (3.6 + vnoise(x * 0.5, 2, 9) * 1.6)) < 1) l.set(x, y, MARK2);
     roofTiles(l, SHINGLE, 14, 44, 7, 4, 5, MARK2);
     texFill(l, MARK, (x, y) => {
       const de = eave(x) - y, n = vnoise(x * 0.13, y * 0.3, 9), le = x - (12 - ((y - 14) * 12) / 44), re = 67 + ((y - 14) * 12) / 44 - x;
@@ -76,6 +76,7 @@ function cabin(p: Px): void {
       else if (y < 17) t = 4;
       else if (re < 2.5) t = 2; else if (le < 3) t = 4;
       else if (n > 0.62) t = 2; else if (n < 0.3 && y < 44) t = 4;
+      else if ((y - 14) % 9 === 7 && vnoise(x * 0.3, y, 4) > 0.42) t = 2;   // Schichtlinien der Schneedecke
       if (SHINGLE.includes(l.get(x, y - 1))) t = 4;   // Schneekante unter dem Schmelzfleck
       return SNOW[t];
     });
@@ -91,8 +92,7 @@ function cabin(p: Px): void {
     l.rect(53, 8, 11, 3, FROCK[3]); l.rect(53, 8, 11, 1, FROCK[4]); l.rect(53, 10, 11, 1, FROCK[1]);
     l.rect(53, 6, 11, 2, SNOW[4]); l.rect(54, 5, 4, 1, SNOW[4]); l.rect(60, 7, 4, 1, SNOW[2]); l.rect(56, 6, 5, 2, P.ash[0]); l.px([57, 7, 58, 7], P.fire[1]); l.set(59, 7, P.fire[2]);
     shadeArea(l, (x, y) => x >= 63 && x <= 66 && y >= 14 && y <= 35 && SHINGLE.includes(l.get(x, y)), SHADE, 0.3);
-    fOutline(l);
-  }, false);
+  });
   fOutline(p);
   // warmer Schein der Fenster und der Türluke auf Wand und Schnee
   glow(p, 21, 71, 11, Y[3], 46, true); glow(p, 59, 71, 11, Y[3], 46, true); glow(p, 39, 72, 6, Y[3], 40, true);
@@ -112,12 +112,11 @@ function pelt(p: Px, x: number, y: number, w: number, h: number, R: Ramp, seed: 
 function furRack(p: Px): void {
   for (const x of [5, 22]) { p.line(x - 3, 29, x, 3, FWOOD[1], 2); p.line(x - 3, 29, x, 3, FWOOD[3]); p.line(x + 3, 29, x, 3, FWOOD[1], 2); p.line(x + 3, 29, x + 1, 5, FWOOD[2]); p.rect(x - 1, 5, 3, 2, T[2]); p.set(x - 1, 5, T[4]); }
   p.rect(2, 5, 25, 2, FWOOD[2]); p.rect(2, 5, 25, 1, FWOOD[4]); p.px([1, 5, 27, 6], FWOOD[1]);
-  part(p, (l) => {
+  partIn(p, (l) => {
     pelt(l, 9, 8, 6, 15, [P.wood[0], P.wood[1], P.wood[2], P.wood[3], T[3]], 3);
     pelt(l, 19, 8, 6, 13, [P.stone[0], P.stone[1], P.stone[2], P.stone[3], P.stone[4]], 5);
     pelt(l, 14, 8, 5, 17, [SNOW[0], SNOW[1], SNOW[2], P.cream[3], WHITE], 7);
-    fOutline(l);
-  }, false);
+  });
   snowCap(p, (x) => (x > 6 && x < 21 ? 0 : 1), { raise: 1, y1: 6, seed: 2 }); p.rect(10, 4, 8, 1, SNOW[4]); p.rect(12, 3, 4, 1, SNOW[4]);
   mound(p, 3, 30, 3.4, 2, 2); mound(p, 24, 30, 3.6, 2.2, 3);
 }
@@ -129,12 +128,11 @@ function sled(p: Px): void {
   p.rect(3, 14, 22, 1, R[3]); p.rect(3, 15, 22, 1, R[1]); p.px([25, 14, 26, 13, 27, 12, 28, 11, 28, 10, 28, 9, 27, 8, 26, 8], R[3]); p.px([25, 15, 26, 14, 27, 13], R[1]); p.px([3, 14, 24, 14], I[3]);
   p.rect(3, 7, 23, 2, R[3]); p.rect(3, 7, 23, 1, R[4]); p.px([8, 8, 15, 8, 21, 8], R[1]); p.line(26, 8, 27, 8, T[2]);
   // Ladung: Fellrolle und Kiste, verschnürt, Schnee obenauf
-  part(p, (l) => {
+  partIn(p, (l) => {
     l.rect(15, 2, 8, 5, P.wood[2]); l.rect(15, 2, 8, 1, P.wood[4]); l.rect(15, 4, 8, 1, P.wood[1]); l.rect(22, 2, 1, 5, P.wood[1]);
     l.ball(9, 4.6, 5, 2.6, [P.wood[0], P.wood[1], P.wood[2], T[2], T[3]]); l.ell(4.6, 4.6, 1.2, 2.2, T[3]); l.set(4, 4, T[1]);
     l.rect(8, 2, 1, 5, T[4]); l.rect(12, 2, 1, 5, T[4]); l.rect(18, 2, 1, 5, T[3]);
-    fOutline(l);
-  }, false);
+  });
   p.rect(15, 1, 7, 1, SNOW[4]); p.rect(16, 0, 4, 1, SNOW[4]); p.px([7, 1, 8, 1, 9, 1, 10, 1, 11, 1, 8, 0, 9, 0], SNOW[4]); p.px([21, 1, 12, 2], SNOW[2]);
   p.line(28, 9, 29, 14, T[2]); p.set(29, 15, T[1]);
 }
@@ -150,22 +148,25 @@ function woodpileSnow(p: Px): void {
 }
 function lanternFrost(p: Px, f: number): void {
   const B: Ramp = [P.ash[0], I[0], I[1], I[2], I[3]];
-  // Pfahl, Ausleger mit Strebe
-  p.rect(9, 6, 3, 28, FWOOD[2]); p.rect(9, 6, 1, 28, FWOOD[3]); p.rect(11, 6, 1, 28, FWOOD[1]); for (let y = 10; y < 32; y += 5) p.set(10, y, FWOOD[1]);
-  p.rect(2, 5, 10, 2, FWOOD[2]); p.rect(2, 5, 10, 1, FWOOD[4]); p.line(5, 7, 8, 11, FWOOD[1]); p.rect(9, 18, 3, 1, T[2]); p.rect(9, 20, 3, 1, T[2]);
-  p.rect(2, 4, 10, 1, SNOW[4]); p.rect(4, 3, 7, 1, SNOW[4]); p.rect(9, 2, 3, 1, SNOW[4]); p.set(12, 4, SNOW[2]); icicles(p, 6, 8, 7, 3, 2, 2);
-  // hängende Laterne
-  p.rect(3, 7, 1, 2, B[2]); p.rect(1, 9, 5, 1, B[2]); p.rect(2, 8, 3, 1, B[1]); p.rect(1, 10, 5, 6, Y[3]); p.rect(1, 10, 1, 6, B[1]); p.rect(5, 10, 1, 6, B[0]); p.rect(1, 16, 5, 1, B[1]); p.rect(3, 10, 1, 6, mix(Y[2], B[1], 0.45));
+  // Pfahl mit Seilwicklung, Konsole
+  p.rect(6, 14, 3, 20, FWOOD[2]); p.rect(6, 14, 1, 20, FWOOD[3]); p.rect(8, 14, 1, 20, FWOOD[1]); for (let y = 18; y < 32; y += 5) p.set(7, y, FWOOD[1]);
+  p.rect(6, 22, 3, 1, T[2]); p.rect(6, 24, 3, 1, T[3]); p.set(9, 25, T[2]); p.set(9, 26, T[1]);
+  p.rect(4, 13, 7, 1, B[2]); p.px([5, 14, 9, 14], B[1]);
+  // Laternenkäfig, Eisendach mit Schneehaube und Eiszapfen
+  p.rect(4, 5, 7, 8, Y[3]); p.rect(4, 5, 1, 8, B[1]); p.rect(10, 5, 1, 8, B[0]); p.rect(7, 5, 1, 8, mix(Y[2], B[1], 0.45)); p.rect(4, 12, 7, 1, B[1]);
+  p.rect(3, 4, 9, 1, B[2]); p.rect(3, 3, 9, 1, SNOW[4]); p.rect(4, 2, 7, 1, SNOW[4]); p.rect(6, 1, 3, 1, SNOW[4]); p.px([11, 3, 10, 2, 8, 1], SNOW[2]);
+  p.set(3, 5, ICE[5]); p.set(3, 6, ICE[3]); p.set(11, 5, ICE[4]); p.set(11, 6, ICE[4]); p.set(11, 7, ICE[3]);
   const fl = [0, 1, 0, -1][f];
-  p.rect(2, 12 - (f === 1 ? 1 : 0), 1, 3, P.fire[4]); p.set(4, 13 + fl, P.fire[4]); p.px([2, 15, 4, 15], P.fire[2]); p.set(2, 11, f === 1 ? P.fire[3] : WHITE); p.rect(1, 8, 5, 1, SNOW[4]);
-  mound(p, 10.5, 36, 3.4, 2.6, 4);
+  p.rect(5, 8 - (f === 1 ? 1 : 0), 2, 3, P.fire[4]); p.set(8, 9 + fl, P.fire[4]); p.set(9, 9, P.fire[3]); p.px([5, 11, 6, 11, 8, 11, 9, 11], P.fire[2]); p.set(5, 7, f === 1 ? P.fire[3] : WHITE);
+  p.px([5, 5, 9, 5], ICE[4]);
+  mound(p, 7.5, 36, 4.4, 2.8, 4);
   fOutline(p);
-  glow(p, 3.5, 13, 8 + (f & 1), Y[3], 72 + (f === 1 ? 14 : f === 3 ? -8 : 0));
+  glow(p, 7.5, 9, 7 + (f & 1) * 0.5, Y[3], 74 + (f === 1 ? 14 : f === 3 ? -8 : 0));
 }
 function prayerFlags(p: Px, f: number): void {
   // Steinhaufen mit Stangen
   for (const [x, y0] of [[4, 3], [43, 7]] as const) { p.rect(x, y0, 2, 37 - y0, FWOOD[2]); p.rect(x, y0, 1, 37 - y0, FWOOD[3]); p.px([x, y0 - 1, x + 1, y0 - 1], SNOW[4]); p.set(x, y0 - 2, SNOW[4]); p.rect(x, y0 + 3, 2, 1, T[3]); }
-  part(p, (l) => { boulder(l, 5, 40, 9, 5, { ramp: FROCK, seed: 3, cracks: 0 }); boulder(l, 44, 40, 8, 5, { ramp: FROCK, seed: 5, cracks: 0 }); snowCap(l, 1.4, { raise: 1, seed: 2 }); }, false);
+  partIn(p, (l) => { boulder(l, 5, 40, 9, 5, { ramp: FROCK, seed: 3, cracks: 0 }); boulder(l, 44, 40, 8, 5, { ramp: FROCK, seed: 5, cracks: 0 }); snowCap(l, 1.4, { raise: 1, seed: 2 }); });
   const rope = (x: number): number => { const t = (x - 5) / 38; return 6 + 4 * t + 26 * t * (1 - t) * 1; };
   const COL: Ramp[] = [[P.blue[1], P.blue[2], P.blue[3]], [P.cream[2], P.cream[3], P.cream[4]], [P.red[1], P.red[2], P.red[3]], [P.forest[1], P.forest[2], P.forest[3]], [P.gold[1], P.gold[2], P.gold[3]]];
   for (let x = 5; x <= 43; x++) p.set(x, rope(x), T[x % 3 === 0 ? 1 : 2]);

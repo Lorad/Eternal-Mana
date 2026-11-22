@@ -76,3 +76,12 @@ export function icicles(p: Px, x0: number, x1: number, y: number | ((x: number) 
     if (len >= 5) for (let k = 0; k < len >> 1; k++) p.set(x + 1, y0 + k, ICE[3]);
   }
 }
+/** Wie part(): eigene Ebene mit Kontur – die Kontur bleibt aber nur dort stehen, wo sie über dem Sprite liegt (keine Doppelkontur außen). */
+export function partIn(p: Px, fn: (l: Px) => void, ol: (l: Px) => Px = fOutline): Px {
+  const l = new Px(p.w, p.h);
+  fn(l);
+  const raw = l.d.slice();
+  ol(l);
+  for (let i = 0; i < l.d.length; i++) if (!(raw[i] >>> 24) && p.d[i] >>> 24 < 200) l.d[i] = 0;
+  return p.draw(l);
+}

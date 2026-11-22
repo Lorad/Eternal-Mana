@@ -15,7 +15,16 @@ class TB {
       if (x < 0 || y < 0 || x >= this.w || y >= this.h) continue;
       const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry; if (u * u + v * v > 1) continue;
       const t = this.i[y * this.w + x];
-      if (t > 7) this.i[y * this.w + x] = Math.max(7, t - 2); else if (t > 0 && t < 7) this.i[y * this.w + x] = t - 1;
+      if (t > 7) this.i[y * this.w + x] = Math.max(7, t - 1); else if (t > 0 && t < 7) this.i[y * this.w + x] = t - 1;
+    }
+  }
+  /** dunkle Nadelunterseite direkt unter einer Etage (nur über vorhandenen Pixeln) */
+  under(cx: number, cy: number, rx: number, ry: number, seed: number): void {
+    for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+      if (x < 0 || y < 0 || x >= this.w || y >= this.h || this.i[y * this.w + x] < 0) continue;
+      const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry; if (u * u + v * v > 1) continue;
+      const h = hash2(x, y, seed) & 7;
+      this.i[y * this.w + x] = h === 0 ? 3 : h < 3 ? 0 : h < 6 ? 1 : 2;
     }
   }
   toPx(p: Px): void { for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) { const t = this.i[y * this.w + x]; if (t >= 0) p.set(x, y, TREE[t]); } }
@@ -32,8 +41,9 @@ function sbough(t: TB, x0: number, y0: number, x1: number, y1: number, wid: numb
     if (Math.abs(c) > 1 + (n < 0.3 ? 0.3 : -0.08)) continue;
     const cs = -0.4 + snow * 0.8 + (n - 0.5) * 0.36;
     let tone: number;
-    if (s > 0.14 && s < 0.96 && c < cs) {
-      tone = 9 + (c < cs - 0.8 ? 1 : 0) - (c > cs - 0.3 ? 1 : 0) - (side > 0.3 ? 1 : 0) + (side < -0.3 && c < cs - 0.45 ? 1 : 0);
+    if (Math.abs(side) < 0.25 && s > 0.1 && s < 0.84 + n * 0.1 && Math.abs(c) < 0.9) tone = c < -0.25 ? 10 : c < 0.45 ? 9 : 8;   // mittlerer Zweig: Schneezunge
+    else if (s > 0.14 && s < 0.96 && c < cs) {
+      tone = 9 + (c < cs - 0.8 ? 1 : 0) - (c > cs - 0.3 ? 1 : 0) - (side > 0.55 ? 1 : 0) + (side < -0.3 && c < cs - 0.45 ? 1 : 0);
       tone = clamp(tone, 7, 10);
     } else {
       tone = 3 + lv + (c > 0.45 ? -1 : 0) + (s > 0.82 ? 1.2 : 0) + (s < 0.3 ? -2.4 : s < 0.5 ? -1 : 0);
@@ -56,7 +66,7 @@ function snowPine(p: Px, f: number, o: PineO): void {
   for (let i = 0; i < N; i++) {
     const k = i / (N - 1), yB = o.y0 + (o.y1 - o.y0) * k, hw = o.hw0 + (o.hw1 - o.hw0) * k, th = o.th0 + (o.th1 - o.th0) * k;
     const off = sw(f, 0.3 + k * 2.1, -0.5 + k * 0.6) + Math.round(lean * k * k), m = Math.max(2, Math.round(o.m0 + (o.m1 - o.m0) * k));
-    if (i > 0) t.shade(cx + off + 1, yB + 2, hw * 0.98, 5);
+    if (i > 0) { t.shade(cx + off + 1, yB + 4, hw * 0.95, 4); t.under(cx + off, yB + 0.5, hw * 0.76, 2.7, o.seed + i); }
     const order = [...Array(m).keys()].sort((a, b) => Math.abs(b - (m - 1) / 2) - Math.abs(a - (m - 1) / 2));
     for (const b of order) {
       const u = m === 1 ? 0 : -1 + (2 * b) / (m - 1), jit = (rnd2(i, b, o.seed) - 0.5) * 2;
@@ -70,17 +80,17 @@ function snowPine(p: Px, f: number, o: PineO): void {
 }
 function pineA(p: Px, f: number): void {
   trunk(p, 24, 68, 88, 3, 31);
-  snowPine(p, f, { cx: 24, N: 6, y0: 80, y1: 23, hw0: 22, hw1: 7, th0: 18, th1: 12, top: 2, seed: 5, snow: 0.72, m0: 7, m1: 3 });
+  snowPine(p, f, { cx: 24, N: 6, y0: 80, y1: 23, hw0: 22, hw1: 7, th0: 18, th1: 12, top: 2, seed: 5, snow: 0.6, m0: 7, m1: 3 });
   // ein paar Zapfen im Grün
   for (const [x, y, k] of [[14, 60, 2], [33, 49, 3], [20, 37, 4]] as const) { const o = sw(f, 0.3 + (k / 5) * 2.1, -0.5 + (k / 5) * 0.6); if (p.get(x + o, y) >>> 24) { p.set(x + o, y, P.wood[3]); p.set(x + o, y + 1, P.wood[2]); p.set(x + o, y + 2, P.wood[1]); } }
 }
 function pineB(p: Px, f: number): void {
   trunk(p, 19, 54, 72, 2.5, 37);
-  snowPine(p, f, { cx: 19, N: 5, y0: 65, y1: 21, hw0: 17.5, hw1: 6, th0: 17, th1: 12, top: 3, seed: 9, snow: 0.95, lean: 2, m0: 6, m1: 3 });
+  snowPine(p, f, { cx: 19, N: 5, y0: 65, y1: 21, hw0: 17.5, hw1: 6, th0: 17, th1: 12, top: 3, seed: 9, snow: 0.8, lean: 2, m0: 6, m1: 3 });
 }
 function pineS(p: Px, f: number): void {
   trunk(p, 12, 28, 36, 1.4, 43);
-  snowPine(p, f, { cx: 12, N: 3, y0: 31, y1: 14, hw0: 10.5, hw1: 5.5, th0: 12, th1: 9, top: 1, seed: 13, snow: 0.85, bw: 3, m0: 5, m1: 3 });
+  snowPine(p, f, { cx: 12, N: 3, y0: 31, y1: 14, hw0: 10.5, hw1: 5.5, th0: 12, th1: 9, top: 1, seed: 13, snow: 0.75, bw: 3, m0: 5, m1: 3 });
 }
 
 // ---------------------------------------------------------------- kahle Birke

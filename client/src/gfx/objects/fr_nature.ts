@@ -2,7 +2,7 @@
 import { Px, resample } from '../draw';
 import { Frames, INK, MARK, P, Ramp, WHITE, alpha, boulder, glow, mix, part, rings, rnd2, texFill, vnoise } from './kit';
 import { jag, prism, twinkle } from './kr_kit';
-import { FROCK, FWOOD, ICE, SNOW, fAnim, fOne, fOutline, icicles, mound, snowCap } from './fr_kit';
+import { FROCK, FWOOD, ICE, SNOW, fAnim, fOne, fOutline, icicles, mound, partIn, snowCap } from './fr_kit';
 
 function iceSpike(p: Px): void {
   prism(p, 11.5, 27, 13.5, 12, 2.3, ICE, { seed: 2 }); prism(p, 4.5, 27, 2.5, 15, 2, ICE, { seed: 3 });
@@ -13,7 +13,7 @@ function iceSpike(p: Px): void {
 function iceSpikeL(p: Px): void {
   prism(p, 21, 47, 25, 14, 3.8, ICE, { seed: 7 }); prism(p, 6, 47, 3, 21, 3.3, ICE, { seed: 8 });
   prism(p, 13.5, 47, 12, 1, 5.6, ICE, { seed: 6 });
-  part(p, (l) => { prism(l, 9, 47, 7, 33, 2.5, ICE, { seed: 9 }); prism(l, 18, 47, 19.5, 36, 2.3, ICE, { seed: 10 }); });
+  partIn(p, (l) => { prism(l, 9, 47, 7, 33, 2.5, ICE, { seed: 9 }); prism(l, 18, 47, 19.5, 36, 2.3, ICE, { seed: 10 }); });
   // eingeschlossene Risse und Reif
   p.line(13, 12, 15, 22, ICE[5]); p.line(15, 22, 14, 28, ICE[4]); p.px([11, 30, 12, 31, 16, 17], ICE[5]); p.set(10, 8, WHITE); p.set(24, 19, WHITE);
   mound(p, 14, 48, 13.4, 4.8, 5); mound(p, 5, 48, 4, 3, 11);
@@ -22,7 +22,7 @@ const CRY: Ramp = [ICE[1], mix(ICE[2], P.teal[2], 0.25), mix(ICE[3], P.teal[3], 
 function iceCrystal(p: Px, f: number): void {
   prism(p, 5, 24, 2.5, 11, 2.5, CRY, { seed: 5, lift: f === 3 ? 1 : 0 }); prism(p, 15.5, 24, 17.5, 9, 2.6, CRY, { seed: 6, lift: f === 1 ? 1 : 0 });
   prism(p, 10, 24, 10, 2, 4, CRY, { seed: 4, lift: f === 2 ? 1 : 0 });
-  part(p, (l) => prism(l, 7.5, 24, 6.5, 16, 1.8, CRY, { seed: 3 }));
+  partIn(p, (l) => prism(l, 7.5, 24, 6.5, 16, 1.8, CRY, { seed: 3 }));
   // wandernder Glanzstreifen auf dem Hauptprisma
   const gy = [18, 13, 8, 4][f];
   for (let i = 0; i < 3; i++) if (p.get(8 + i, gy - i) >>> 24) p.set(8 + i, gy - i, WHITE);
@@ -40,7 +40,7 @@ function snowRock(p: Px): void {
 function snowRockL(p: Px): void {
   boulder(p, 20, 28, 33, 22, { ramp: FROCK, seed: 9, cracks: 2 });
   snowCap(p, (x) => 5 - Math.abs(x - 18) * 0.18, { raise: 1, seed: 3 });
-  part(p, (l) => { boulder(l, 9, 28, 14, 10, { ramp: FROCK, seed: 12, cracks: 0 }); snowCap(l, 2.4, { raise: 1, seed: 5 }); }, false);
+  partIn(p, (l) => { boulder(l, 9, 28, 14, 10, { ramp: FROCK, seed: 12, cracks: 0 }); snowCap(l, 2.4, { raise: 1, seed: 5 }); });
   icicles(p, 24, 33, (x) => 14 + Math.round(Math.abs(x - 28) * 0.3), 6, 5, 3);
   mound(p, 31, 28, 5, 2.4, 14);
 }
@@ -99,7 +99,7 @@ function frozenStatue(p: Px): void {
   fig.poly([[6, 17], [14, 17], [15, 31], [5, 31]], C[1]); fig.rect(6, 18, 3, 12, C[2]); fig.rect(9, 24, 1, 7, C[0]); fig.rect(12, 20, 1, 10, C[0]);
   fig.ell(10, 13.5, 3.4, 3.6, C[1]); fig.ell(9.5, 12.8, 2.4, 2.4, C[2]); fig.rect(8, 13, 4, 3, P.skin[2]); fig.px([9, 14, 11, 14], INK); fig.rect(8, 16, 4, 1, P.cream[3]);
   fig.line(6, 20, 3, 15, C[2]); fig.rect(3, 14, 2, 2, P.skin[2]); fig.line(3, 6, 3, 36, K[2]); fig.px([3, 5, 4, 5, 2, 6], K[3]);
-  fig.outline(); fig.tint(ICE[2], 0.52);
+  fig.outline(); fig.tint(ICE[2], 0.6);
   p.poly([[4, 7], [9, 2], [15, 4], [18, 11], [18.5, 35], [16, 39], [3, 39], [1, 34], [1.5, 13]], MARK);
   texFill(p, MARK, (x, y) => {
     const u = x - (y < 12 ? (12 - y) * 0.3 : 0);

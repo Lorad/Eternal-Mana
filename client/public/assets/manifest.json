@@ -364,7 +364,7 @@
   "obj": {
    "file": "atlases/obj.png",
    "json": "atlases/obj.json",
-   "frames": 459
+   "frames": 550
   },
   "fx": {
    "file": "atlases/fx.png",
@@ -378,6 +378,18 @@
   }
  },
  "liquids": {
+  "frost": {
+   "file": "liquids/frost.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
+  },
+  "ruinen": {
+   "file": "liquids/ruinen.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
+  },
   "gruenwald": {
    "file": "liquids/gruenwald.png",
    "fw": 64,
@@ -392,18 +404,6 @@
   },
   "glut": {
    "file": "liquids/glut.png",
-   "fw": 64,
-   "fh": 64,
-   "frames": 8
-  },
-  "frost": {
-   "file": "liquids/frost.png",
-   "fw": 64,
-   "fh": 64,
-   "frames": 8
-  },
-  "ruinen": {
-   "file": "liquids/ruinen.png",
    "fw": 64,
    "fh": 64,
    "frames": 8

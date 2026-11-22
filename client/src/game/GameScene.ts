@@ -55,7 +55,7 @@ const LIGHTS: Record<string, [number, number, number, number]> = {
   void_rift: [60, 0xc070ff, 0.8, 0.04], ghost_flower: [24, 0xd8c8ff, 0.4, 0], last_light: [120, 0xfff0c0, 1, 0.03], eye_stalk: [0, 0, 0, 0], house_a: [60, 0xffd8a0, 0.5, 0], house_b: [60, 0xffd8a0, 0.5, 0], house_c: [60, 0xffd8a0, 0.5, 0],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]
-  gruenwald: [0xffffff, 0x58664f], kristall: [0x5e6eaa, 0x4a5688], glut: [0xffffff, 0x71463a], frost: [0xffffff, 0x586c92], ruinen: [0xffffff, 0x655c48], schatten: [0x5c4c90, 0x4c3e78],
+  gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92],
 };
 const STEP_SFX: Record<string, SfxName> = { gruenwald: 'step_grass', kristall: 'step_stone', glut: 'step_ash', frost: 'step_snow', ruinen: 'step_stone', schatten: 'step_stone' };
 const PORTAL_TINT: Record<string, number> = { gruenwald: 0x80ff90, kristall: 0x70d0ff, glut: 0xff8040, frost: 0xc0f0ff, ruinen: 0xffe080, schatten: 0xb060ff };

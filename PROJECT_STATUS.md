@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.1.0 (erste vollständig spielbare Fassung)
+Stand: Version 0.2.0 (Grafik-Neuaufbau abgeschlossen; Spielumfang wie 0.1.0)
 
 ## Starten und Testen
 
@@ -12,8 +12,10 @@ npm run dev              # Entwicklung: Server + Vite mit Hot Reload (http://loc
 EM_DEV=1 npm start       # Entwickler-Chatbefehle: /lvl 20, /tp glut, /gold 5000, /gear 3, /god, /boss, /kill, /quests
 ```
 
-Hilfsseiten für die Entwicklung (nur über `npm run dev`): `/gfx-preview.html` (alle Sprites und Kacheln),
-`/audio-preview.html` (alle Klänge), `/dev-game.html?server=localhost:7777` (Spielszene ohne Menüs).
+Hilfsseiten für die Entwicklung (nur über `npm run dev`): `/preview-chars.html`, `/preview-mobs.html`, `/preview-bosses.html`,
+`/preview-objects.html` (auch `…2`, `…3`), `/preview-fx.html`, `/preview-terrain.html?map=<zone>`, `/audio-preview.html`,
+`/dev-game.html?server=localhost:7777` (Spielszene ohne Menüs). `npm run assets` exportiert alle Grafiken neu.
+Dev-Befehle zusätzlich: `/time 0..1` (Tageszeit), `/weather <art>`.
 `npx tsx scripts/mapdump.ts <zone>` gibt eine Karte als ASCII aus und validiert alle Zonen.
 
 ## Fertig
@@ -32,9 +34,14 @@ Hilfsseiten für die Entwicklung (nur über `npm run dev`): `/gfx-preview.html` 
   Bildschirmwackeln; vollständige Menüs und HUD; Tastenbelegung, Gamepad, Vollbild, UI-Skalierung.
 - **Qualität:** automatisierte Tests, Startskripte für Windows/Linux/macOS, Dokumentation.
 
+## Grafik-Neuaufbau (0.2.0) – fertig
+
+- Alle Figuren, Gegner, Bosse, Objekte, Effekte und das Gelände aller Biome und Dungeons neu; Asset-Pipeline mit Export.
+- Details, Vergleichsbilder und Schwächen: `docs/VISUAL_QUALITY_REPORT.md`.
+
 ## In Arbeit
 
-- Nichts Offenes aus dem Umfang von 0.1.0.
+- Nichts Offenes.
 
 ## Bekannte Schwächen
 
@@ -45,14 +52,14 @@ Hilfsseiten für die Entwicklung (nur über `npm run dev`): `/gfx-preview.html` 
   Korridor; Feinheiten (Bossdauer, Goldfluss, Beuteraten) werden sich beim Spielen zeigen. Alle Werte: `shared/src/config.ts`.
 - Keine Touch-Steuerung: Auf Telefonen/Tablets funktionieren die Menüs, zum Spielen braucht es Tastatur/Maus oder ein Gamepad.
 - Gamepads benötigen in manchen Browsern eine „sichere“ Seite (localhost oder HTTPS, siehe docs/TAILSCALE_SETUP.md).
-- Grafische Schwachstellen laut Selbstkritik: Ysolde und der Archivar wirken bei 1× etwas unruhig; Wandflächen sind
-  genau eine Kachel hoch; die Kachelung großer Wasserflächen ist erkennbar.
+- **Animationen wurden nur als Einzelbilder geprüft, nie in Bewegung** – der Eindruck am Bildschirm ist unbestätigt.
+- Grafik außerhalb des Grünwalds hatte weniger Überarbeitungsrunden; Liste der Schwächen im Qualitätsbericht.
 - Charaktere hängen am Profil-Schlüssel des Browsers (kein Passwort-Login). Schlüssel sichern: Einstellungen → Profil.
 - Gegner laufen durch NPCs und Spieler hindurch (kein Körperblock) – bewusst, damit niemand eingeklemmt wird.
 
 ## Als Nächstes sinnvoll
 
-1. Spieltest-Runde zu zweit/dritt über Tailscale; Balancing und Lautstärken nachziehen.
+1. Spieltest-Runde zu zweit/dritt über Tailscale; Balancing, Lautstärken und Animationen in Bewegung beurteilen.
 2. Touch-Steuerung (virtueller Stick + Aktionsknöpfe).
 3. Mehr Abwechslung im Endgame: zufällige Dungeon-Seeds („Tiefen der Quelle“), Set-Gegenstände, zweite Fähigkeiten-Seite.
 4. Handel und Gegenstandstausch zwischen Spielern.

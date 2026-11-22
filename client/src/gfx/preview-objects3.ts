@@ -24,7 +24,7 @@ const BIOMES: Biome[] = [
       ['woodpile_snow', 0, 28, 20], ['lantern_frost', 4, 14, 36], ['prayer_flags', 4, 48, 40], ['frozen_statue', 0, 20, 40],
       ['crit_hare_idle', 2, 16, 16], ['crit_hare_hop', 4, 16, 16], ['crit_snowbird_idle', 2, 12, 12], ['crit_snowbird_peck', 2, 12, 12], ['crit_snowbird_fly', 4, 12, 12], ['crit_icesparkle', 2, 5, 5],
     ],
-    base: [['pine_snow', 14], ['pine_snow2', 12], ['pine_snow_small', 5], ['ice_crystal', 3], ['lantern_frost', 18], ['prayer_flags', 5]],
+    base: [['pine_snow', 14], ['pine_snow2', 12], ['pine_snow_small', 5], ['ice_crystal', 3], ['lantern_frost', 20], ['prayer_flags', 5]],
   },
   {
     id: 'ruinen', title: 'Verlorene Ruinen', bg: '#c0b472', bg2: '#7c8a4e', build: ruinenObjects,
@@ -43,7 +43,7 @@ const BIOMES: Biome[] = [
       ['tendril', 4, 16, 30], ['void_rift', 4, 28, 40], ['chain_pillar', 0, 20, 52], ['ghost_flower', 4, 12, 16], ['lost_toy', 0, 12, 10], ['last_light', 4, 20, 40], ['broken_arch', 0, 56, 60], ['memory_frame', 0, 20, 26],
       ['crit_shadowmoth', 4, 8, 8], ['crit_eyeling_idle', 2, 10, 10], ['crit_eyeling_run', 4, 10, 10], ['crit_voidspark', 2, 5, 5],
     ],
-    base: [['twisted_tree', 30], ['void_crystal', 3], ['eye_stalk', 5], ['tendril', 3], ['ghost_flower', 2], ['last_light', 12]],
+    base: [['twisted_tree', 12], ['void_crystal', 3], ['eye_stalk', 5], ['tendril', 3], ['ghost_flower', 2], ['last_light', 12]],
   },
 ];
 
