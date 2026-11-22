@@ -6,6 +6,18 @@ const act = (a, extra = {}) => fetch('/api/action', { method: 'POST', headers: {
 
 let S = null, uiVer = null, notesKey = '', playWait = 0;
 
+// Fenster: quer liegendes DIN-A4-Format (1,414 : 1), mittig auf dem Bildschirm. In einem gewöhnlichen Browser-Tab
+// ignoriert der Browser diese Aufrufe; sie wirken nur im eigenen Launcher-Fenster.
+(function place() {
+  try {
+    const sw = screen.availWidth, sh = screen.availHeight, sx = screen.availLeft || 0, sy = screen.availTop || 0;
+    let w = Math.min(1120, Math.floor(sw * 0.92)), h = Math.round(w / 1.414);
+    if (h > sh * 0.92) { h = Math.floor(sh * 0.92); w = Math.round(h * 1.414); }
+    window.resizeTo(w, h);
+    window.moveTo(sx + Math.round((sw - w) / 2), sy + Math.round((sh - h) / 2));
+  } catch {}
+})();
+
 // Hintergrund: Bilder aus dem Spiel, langsam überblendet
 const ART = ['neu_gw', 'neu_kristall', 'neu_glut', 'neu_frost', 'neu_ruinen', 'neu_schatten'];
 let artI = 0, artTop = false;

@@ -13,6 +13,7 @@ _22.11.2026_
 - Eigenes Spiel-Symbol: Unter Windows legt der Launcher die Verknüpfung **Eternal Mana** im Spielordner an; auf Wunsch auch auf dem Desktop.
 
 ### Verbessert
+- Das Launcher-Fenster öffnet sich mittig auf dem Bildschirm im Querformat eines DIN-A4-Blatts.
 - Die Kamera hält die Spielfigur jetzt immer in der Bildmitte – auch am Kartenrand und in allen sechs Bossräumen.
 - Lichtquellen leuchten weich und rund statt mit kantigem Rand.
 

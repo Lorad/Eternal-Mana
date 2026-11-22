@@ -227,7 +227,31 @@ function openDefault(url) {
 /** Launcher-Fenster ohne Browserleisten, falls ein passender Browser vorhanden ist. */
 function openWindow(url) {
   const exe = findChromium();
-  if (!exe || !detach(exe, [`--app=${url}`, '--window-size=1040,680'])) openDefault(url);
+  const { w, h, x, y } = windowBounds();
+  const args = [`--app=${url}`, `--window-size=${w},${h}`];
+  if (x != null) args.push(`--window-position=${x},${y}`);
+  if (!exe || !detach(exe, args)) openDefault(url);
+}
+/** Fenster im Format eines quer liegenden DIN-A4-Blatts (Seitenverhältnis 1,414 : 1), mittig auf dem Hauptbildschirm. */
+function windowBounds() {
+  let area = null;
+  if (isWin) {
+    try {
+      const out = execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command',
+        "Add-Type -AssemblyName System.Windows.Forms; $a = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea; Write-Output (($a.X, $a.Y, $a.Width, $a.Height) -join ' ')"],
+        { encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] });
+      const n = out.trim().split(/\s+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 300 && n[3] > 300) area = { x: n[0], y: n[1], w: n[2], h: n[3] };
+    } catch {}
+  }
+  return fitA4(area);
+}
+function fitA4(area) {
+  let w = 1120, h = 792;
+  if (!area) return { w, h, x: null, y: null };
+  w = Math.min(w, Math.floor(area.w * 0.92)); h = Math.round(w / 1.414);
+  if (h > area.h * 0.92) { h = Math.floor(area.h * 0.92); w = Math.round(h * 1.414); }
+  return { w, h, x: area.x + Math.round((area.w - w) / 2), y: area.y + Math.round((area.h - h) / 2) };
 }
 function gameUrl() {
   let t = S.joinAddr.trim();
