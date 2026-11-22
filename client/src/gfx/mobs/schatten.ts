@@ -3,7 +3,7 @@ import { Px, bez, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha } from '../palette';
 import type { Ramp } from '../palette';
-import { R, deathFx, dots, form, glow, puff, shredUp, spark, xf } from './kit';
+import { R, box, deathFx, dots, form, glow, pk, puff, shredUp, slab, spark, xf } from './kit';
 import type { Fr, MobDef, MobFn } from './kit';
 import { slimeBody, slimeGeo, slimeState } from './slime';
 import type { Profile } from './slime';
@@ -184,65 +184,77 @@ const nachtmahr: MobFn = (p, fr) => {
 const ARM: Ramp = [P.shadow[1], P.steel[0], P.steel[1], P.steel[2], P.steel[3]];
 const ARM_FAR: Ramp = [P.shadow[0], P.shadow[1], P.steel[0], P.steel[0], P.steel[1]];
 function soul(fr: Fr): number { return fr.a === 'windup' ? [P.violet[4], WHITE][fr.i] : fr.a === 'attack' ? [WHITE, P.violet[4], P.violet[3]][fr.i] : fr.a === 'hit' ? P.violet[1] : fr.a === 'death' ? (fr.i === 0 ? WHITE : P.shadow[1]) : P.violet[[3, 3, 4, 3, 3, 4][fr.i]]; }
-function ritterDir(fr: Fr): Pt { const i = fr.i; return fr.a === 'windup' ? [[-0.94, -0.4], [-0.9, -0.55]][i] as unknown as Pt : fr.a === 'attack' ? [[0.75, -0.65], [0.8, 0.6], [0.85, 0.5]][i] as unknown as Pt : fr.a === 'hit' ? [-0.2, -1] : fr.a === 'death' ? [0.6, -0.8] : [-0.5, -1]; }
+function ritterDir(fr: Fr): Pt { const i = fr.i; return fr.a === 'windup' ? pk([[-0.94, -0.4], [-0.9, -0.55]], i) : fr.a === 'attack' ? pk([[0.75, -0.65], [0.8, 0.6], [0.85, 0.5]], i) : fr.a === 'hit' ? [-0.2, -1] : fr.a === 'death' ? [0.6, -0.8] : [-0.5, -1]; }
 const RITTER: BLook = {
-  w: 48, h: 48, cx: -3, hip: 12, torsoH: 12, stance: 3.5, legR: [2.6, 2.3], armL: 11, armR: [2.4, 2.1], shN: [-3, 2], shF: [5, 2], skin: ARM, far: ARM_FAR,
+  w: 48, h: 48, cx: -1, hip: 13, torsoH: 13, stance: 4, legR: [3, 2.8], armL: 12, armR: [2.6, 2.8], shN: [-4, 2], shF: [6, 2], skin: ARM, far: ARM_FAR,
+  // Plattenglieder; an Knie und Ellbogen eine Kachel, unter der es violett glimmt
+  seg: (l, a, b, part, idx, near, bp) => {
+    const r = near ? ARM : ARM_FAR, w = part === 'leg' ? [3, 2.7][idx] : [2.5, 2.8][idx];
+    slab(l, a, b, w, w + (idx ? 0.3 : 0), r, near ? 1 : 0);
+    if (idx === 1) { const x = R(a[0] - 2), y = R(a[1] - 2); l.rect(x, y + 4, 4, 1, soul(bp.fr) === WHITE ? P.violet[4] : soul(bp.fr)); box(l, x, y, 4, 4, r, near ? 2 : 1); }
+  },
   torso: (l, k, b) => {
     const s = k.sh, h = k.hip, cx = (s[0] + h[0]) / 2, cy = (s[1] + h[1]) / 2, g0 = soul(b.fr), g = g0 === WHITE ? P.violet[4] : g0;
-    form(l, (m) => { m.ell(cx, cy - 1, 6.4, 7.4, 1); m.poly([[h[0] - 6, h[1] - 1], [h[0] + 6, h[1] - 1], [h[0] + 5.5, h[1] + 4], [h[0] - 5.5, h[1] + 4]], 1); }, ARM, 1, 4, 0.06);
+    // Beintaschen
+    for (const dx of [-8, -3, 2]) box(l, R(h[0] + dx), R(h[1] - 1), 6, 6 + (dx === -3 ? 1 : 0), ARM, 1);
+    form(l, (m) => { m.ell(cx, cy - 2.5, 7.8, 8.4, 1); m.rect(R(cx - 6), R(cy - 2), 13, Math.max(1, R(h[1] - 2 - (cy - 2))), 1); }, ARM, 1, 4, 0.06);
     // Taillen- und Halsfuge, durch die das Leuchten dringt
-    l.rect(R(h[0] - 4), R(h[1] - 2), 9, 1, g); l.rect(R(h[0] - 4), R(h[1] - 1), 9, 1, ARM[0]); l.line(R(h[0]), R(h[1]), R(h[0]), R(h[1] + 3), ARM[1]);
-    l.line(R(cx - 1), R(cy - 6), R(cx - 1), R(cy + 2), ARM[4]); l.px([cx + 2, cy - 3, cx + 3, cy - 2, cx + 2, cy - 1, cx + 3, cy], g); l.rect(R(s[0] - 2), R(s[1]), 5, 1, g);
+    l.rect(R(h[0] - 5), R(h[1] - 3), 11, 1, g); l.rect(R(h[0] - 6), R(h[1] - 2), 13, 1, ARM[0]);
+    l.line(R(cx - 1), R(cy - 9), R(cx - 1), R(cy + 1), ARM[4]); l.rect(R(cx - 5), R(cy), 11, 1, ARM[1]); l.px([cx + 2, cy - 6, cx + 3, cy - 5, cx + 2, cy - 4, cx + 3, cy - 3, cx + 2, cy - 2], g);
+    l.rect(R(s[0] - 2), R(s[1] - 1), 6, 2, g);
     // Schulterstücke: vorne groß mit Dorn
-    l.ball(s[0] + 5.5, s[1] + 2, 3.2, 2.8, ARM_FAR, 1, 4);
-    l.poly([[s[0] - 6, s[1] - 1], [s[0] - 7, s[1] - 6], [s[0] - 3, s[1] - 1.5]], ARM[3]); l.ball(s[0] - 4, s[1] + 1.5, 4.4, 3.7, ARM, 1, 4); l.rect(R(s[0] - 7), R(s[1] + 4), 7, 1, ARM[1]); l.set(R(s[0] - 6), R(s[1]), WHITE);
+    l.ball(s[0] + 6.5, s[1] + 2, 4, 3.4, ARM_FAR, 1, 4);
+    l.poly([[s[0] - 8, s[1] - 1], [s[0] - 9.5, s[1] - 7], [s[0] - 4, s[1] - 2]], ARM[3]); l.set(R(s[0] - 9), R(s[1] - 6), WHITE);
+    l.ball(s[0] - 5, s[1] + 2, 5.4, 4.4, ARM, 1, 4); l.rect(R(s[0] - 9), R(s[1] + 5), 9, 1, ARM[1]); l.set(R(s[0] - 8), R(s[1]), WHITE); l.set(R(s[0] - 7), R(s[1] - 1), ARM[4]);
   },
   head: (l, x, y, b) => {
-    const hx = R(x + 1), hy = R(y - 5), g = soul(b.fr);
-    l.poly([[hx - 3, hy - 2], [hx - 9, hy - 8], [hx - 6, hy - 2], [hx - 2, hy - 4.5]], ARM[3]); l.set(hx - 8, hy - 7, WHITE); l.poly([[hx + 1, hy - 4], [hx - 2, hy - 9], [hx + 3, hy - 4]], ARM[2]);
-    l.ball(hx, hy, 4.5, 4.9, ARM, 1, 4); l.rect(hx - 3, hy + 4, 7, 1, ARM[1]);
-    if (b.mood === 'shut') { l.rect(hx, hy - 1, 4, 1, P.violet[1]); l.rect(hx + 2, hy, 1, 3, P.shadow[0]); }
-    else { l.rect(hx - 1, hy - 1, 6, 1, g); l.rect(hx + 2, hy, 1, 3, g); l.set(hx + 3, hy - 1, WHITE); l.rect(hx - 1, hy - 2, 6, 1, P.shadow[0]); }
-    l.px([hx - 3, hy - 3, hx - 2, hy - 4], ARM[4]); l.rect(hx - 1, hy + 5, 3, 1, g);
+    const hx = R(x + 1), hy = R(y - 6), g = soul(b.fr);
+    // geschwungene Hörner
+    l.poly([[hx - 3, hy - 2], [hx - 10, hy - 8], [hx - 8, hy - 2], [hx - 3, hy + 1]], ARM[3]); l.set(hx - 9, hy - 7, WHITE); l.line(hx - 8, hy - 5, hx - 5, hy - 2, ARM[4]);
+    l.poly([[hx + 1, hy - 4], [hx + 2, hy - 8.5], [hx + 5.5, hy - 3]], ARM[2]); l.set(hx + 2, hy - 8, ARM[4]);
+    l.ball(hx, hy, 5.2, 5.6, ARM, 1, 4); l.rect(hx - 3, hy + 5, 8, 1, ARM[1]); l.rect(hx - 1, hy - 5, 4, 1, ARM[4]);
+    if (b.mood === 'shut') { l.rect(hx - 2, hy - 2, 8, 3, P.shadow[0]); l.rect(hx - 1, hy - 1, 6, 1, P.violet[1]); }
+    else { l.rect(hx - 2, hy - 2, 8, 3, P.shadow[0]); l.rect(hx - 1, hy - 1, 7, 1, g); l.rect(hx + 2, hy, 2, 4, P.shadow[0]); l.rect(hx + 2, hy, 1, 3, g); l.set(hx + 3, hy - 1, WHITE); l.set(hx + 4, hy - 1, WHITE); }
+    l.px([hx - 4, hy - 3, hx - 3, hy - 4], ARM[4]); l.rect(hx - 1, hy + 6, 4, 1, g === WHITE ? P.violet[4] : g);
   },
   hand: (l, h, b, near) => {
-    if (near) { const d = ritterDir(b.fr), tip = sword(l, h, d[0], d[1], 18, [P.shadow[0], P.shadow[2], P.steel[0], P.steel[1], P.steel[2]], 1.6, P.gold[1], soul(b.fr)); l.set(R(tip[0]), R(tip[1]), P.violet[4]); l.set(R(h[0] + d[0] * 6), R(h[1] + d[1] * 6), soul(b.fr)); l.set(R(h[0] + d[0] * 10), R(h[1] + d[1] * 10), soul(b.fr)); }
-    l.ball(h[0], h[1], 2.3, 2.3, near ? ARM : ARM_FAR, 1, 4);
+    if (near) { const d = ritterDir(b.fr), sc = soul(b.fr), tip = sword(l, h, d[0], d[1], 18, [P.shadow[0], P.shadow[2], P.steel[0], P.steel[1], P.steel[2]], 1.8, P.gold[1], sc); l.set(R(tip[0]), R(tip[1]), P.violet[4]); for (const t of [5, 9, 13]) l.set(R(h[0] + d[0] * t), R(h[1] + d[1] * t), sc); }
+    box(l, R(h[0] - 2), R(h[1] - 2), 5, 5, near ? ARM : ARM_FAR, near ? 2 : 1);
   },
-  foot: (l, x, y, near) => { const r = near ? ARM : ARM_FAR; l.poly([[x - 2, y - 2.5], [x + 4.5, y - 0.5], [x + 4.5, y + 1], [x - 2, y + 1]], r[2]); l.set(R(x - 1), R(y - 2), r[3]); },
+  foot: (l, x, y, near) => { const r = near ? ARM : ARM_FAR; l.poly([[x - 3, y - 1], [x + 5, y + 1], [x + 6.5, y + 3.4], [x - 3, y + 3.4]], r[2]); l.rect(R(x - 2), R(y - 1), 4, 1, r[3]); },
   behind: (p, k, b) => {
     // zerfetzter Umhang
-    const i = b.fr.i, w = Math.sin(b.fr.ph + i * 0.8) * 1.5, tr = b.fr.a === 'move' || b.fr.a === 'attack' ? 3 : 0, s = k.sh, top = s[1] + 1, bot = k.G - 3;
+    const i = b.fr.i, w = Math.sin(b.fr.ph + i * 0.8) * 1.5, tr = b.fr.a === 'move' || b.fr.a === 'attack' ? 3 : 0, s = k.sh, top = s[1] + 1, bot = k.G - 2;
     p.layer((l) => {
-      l.poly([[s[0] - 5, top], [s[0] + 2, top], [k.hip[0] - 2, bot - 4], [k.hip[0] - 5 - tr, bot], [k.hip[0] - 7 - tr + w, bot - 3], [k.hip[0] - 9 - tr + w, bot + 1], [k.hip[0] - 11 - tr + w, bot - 4], [s[0] - 9 - tr * 0.5, top + 8]], P.violet[1]);
-      l.line(R(s[0] - 6), R(top + 3), R(k.hip[0] - 9 - tr + w), R(bot - 5), P.violet[0]); l.line(R(s[0] - 3), R(top + 4), R(k.hip[0] - 5 - tr), R(bot - 3), P.violet[0]); l.px([k.hip[0] - 8 - tr + w, bot - 1, s[0] - 7, top + 6], P.violet[2]);
+      l.poly([[s[0] - 6, top], [s[0] + 2, top], [k.hip[0] - 2, bot - 4], [k.hip[0] - 5 - tr, bot], [k.hip[0] - 7 - tr + w, bot - 3], [k.hip[0] - 10 - tr + w, bot + 1], [k.hip[0] - 12 - tr + w, bot - 4], [k.hip[0] - 14 - tr + w, bot - 1], [s[0] - 11 - tr * 0.5, top + 9]], P.violet[1]);
+      l.line(R(s[0] - 7), R(top + 3), R(k.hip[0] - 11 - tr + w), R(bot - 5), P.violet[0]); l.line(R(s[0] - 4), R(top + 4), R(k.hip[0] - 6 - tr), R(bot - 3), P.violet[0]); l.px([k.hip[0] - 9 - tr + w, bot - 1, s[0] - 8, top + 6, s[0] - 9, top + 12], P.violet[2]);
     });
   },
   over: (p, k, b) => {
-    const f = b.fr, i = f.i, h = k.handN, nx = k.neck[0] + 3, ny = k.neck[1] - 6;
-    if (!(f.a === 'death' && i > 0)) { glow(p, nx, ny, 4 + (f.a === 'windup' ? 2 + i : 0), P.violet[3], f.a === 'hit' ? 30 : 90); for (let s = 0; s < 3; s++) puff(p, nx + 1 - s * 1.5 - (f.a === 'move' ? s : 0), ny - 4 - s * 3 - ((i + s) % 3), 1.8 - s * 0.3, 1.6 - s * 0.2, P.violet[3], 130 - s * 35); }
-    if (f.a === 'attack' && i === 0) arcW(p, [h[0] - 14, h[1] - 3], [h[0] - 2, h[1] - 18], [h[0] + 13, h[1] - 12], P.violet[4]);
-    if (f.a === 'attack' && i === 1) { arcW(p, [h[0] + 2, h[1] - 19], [h[0] + 19, h[1] - 10], [h[0] + 14, h[1] + 9], WHITE); spark(p, h[0] + 13, h[1] + 10, WHITE, P.violet[4], 2); dots(p, [h[0] + 9, h[1] + 8, h[0] + 16, h[1] + 7, h[0] + 12, h[1] + 5], P.violet[4]); }
-    if (f.a === 'windup' && i === 1) spark(p, h[0] - 15, h[1] - 9, WHITE, P.violet[4]);
+    const f = b.fr, i = f.i, h = k.handN, nx = k.neck[0] + 3, ny = k.neck[1] - 7;
+    if (!(f.a === 'death' && i > 0)) { glow(p, nx, ny, 4.5 + (f.a === 'windup' ? 2 + i : 0), P.violet[3], f.a === 'hit' ? 30 : 90); for (let s = 0; s < 3; s++) puff(p, nx + 2 - s * 1.5 - (f.a === 'move' ? s : 0), ny - 2 - s * 2.5 - ((i + s) % 3), 1.8 - s * 0.3, 1.6 - s * 0.2, P.violet[3], 120 - s * 30); }
+    if (f.a === 'attack' && i === 0) arcW(p, [h[0] - 14, h[1] - 3], [h[0] - 2, h[1] - 16], [h[0] + 12, h[1] - 11], P.violet[4]);
+    if (f.a === 'attack' && i === 1) { arcW(p, [h[0] + 2, h[1] - 17], [h[0] + 17, h[1] - 9], [h[0] + 13, h[1] + 9], WHITE); spark(p, h[0] + 12, h[1] + 10, WHITE, P.violet[4], 2); dots(p, [h[0] + 9, h[1] + 8, h[0] + 14, h[1] + 7, h[0] + 11, h[1] + 5], P.violet[4]); }
+    if (f.a === 'windup' && i === 1) spark(p, h[0] - 13, h[1] - 8, WHITE, P.violet[4]);
   },
 };
 function ritterPose(fr: Fr): ReturnType<typeof bipPose> {
-  const b = bipPose(fr, 'slash', 11), i = fr.i;
+  const b = bipPose(fr, 'slash', 12), i = fr.i;
   if (fr.a === 'idle' || fr.a === 'move') b.armN = [5, 6 + (fr.a === 'idle' ? [0, 0, 1, 1][i] : [0, 1, 0, 0, 1, 0][i])];
-  if (fr.a === 'windup') { b.armN = [[2, -4], [1, -6]][i] as unknown as Pt; b.dx = [0, -1][i]; b.feet = [[2, 0], [-1, 0]]; }
-  if (fr.a === 'attack') { b.armN = [[8, -5], [9, 3], [7, 6]][i] as unknown as Pt; b.dx = [1, 3, 2][i]; }
+  if (fr.a === 'windup') { b.armN = pk([[2, -4], [1, -6]], i); b.dx = [0, -1][i]; b.feet = [[2, 0], [-1, 0]]; }
+  if (fr.a === 'attack') { b.armN = pk([[7, -3], [7, 3], [6, 6]], i); b.dx = [1, 2, 1][i]; }
   if (fr.a === 'hit') b.armN = [4, 3];
   if (fr.a === 'death') { b.armN = [6, 2]; b.dx = -1; }
-  b.armF = [b.armN[0] - 8, b.armN[1]];
+  b.armF = [b.armN[0] - 10, b.armN[1]];
   return b;
 }
 const hohlritter: MobFn = (p, fr) => {
   if (fr.a === 'death' && fr.i >= 1) {
     // das Leuchten entweicht, die Rüstung fällt scheppernd auseinander
     const b = new Px(48, 48); biped(b, RITTER, ritterPose(fr));
-    deathFx(p, b, fr.i, 'shatter', 43, 29, { cell: 5, heap: 4, cx: 21, pop: 3 });
-    for (let s = 0; s < 4 - fr.i; s++) puff(p, 20 + Math.sin(s * 2.3 + fr.i) * 5, 26 - fr.i * 6 - s * 4, 3 - fr.i * 0.5, 2.4, P.violet[3], 150 - fr.i * 30);
-    if (fr.i < 3) dots(p, [17, 22 - fr.i * 5, 25, 18 - fr.i * 5], P.violet[4]);
+    deathFx(p, b, fr.i, 'shatter', 43, 29, { cell: 5, heap: 5, cx: 23, pop: 3, spread: 0.6 });
+    for (let s = 0; s < 4 - fr.i; s++) puff(p, 22 + Math.sin(s * 2.3 + fr.i) * 5, 24 - fr.i * 6 - s * 4, 3 - fr.i * 0.5, 2.4, P.violet[3], 150 - fr.i * 30);
+    if (fr.i < 3) dots(p, [19, 20 - fr.i * 5, 27, 16 - fr.i * 5], P.violet[4]);
     return;
   }
   rimmed(p, P.violet[0], (b) => biped(b, RITTER, ritterPose(fr)));

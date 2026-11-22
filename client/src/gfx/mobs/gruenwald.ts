@@ -82,8 +82,8 @@ const moosling: MobFn = (p, fr) => {
 interface KP { bx: number; by: number; rot: number; open: number; ant: number; eye: boolean; ph: number; walk: number; splay: number }
 const KAEFER: Ramp = [P.forest[0], P.forest[1], P.forest[2], P.forest[3], P.forest[4]];
 function kaeferBody(b: Px, o: KP, thorns = true): void {
-  if (thorns) for (const [x, y, h] of [[6.5, 14.8, 2.2], [11, 13, 2.8], [15.5, 14.4, 2.2]] as const) {
-    b.poly([[x - 1.6, y + 1.5], [x - 1.4, y - h], [x + 1.8, y + 1.5]], P.green[3]); b.set(R(x - 1.4), R(y - h), P.green[4]); b.set(R(x - 1), R(y - h + 1), P.green[4]); b.set(R(x + 0.6), R(y), P.forest[2]);
+  if (thorns) for (const [x, y, h] of [[6, 15, 4], [10.5, 13, 5], [15.5, 14.4, 4]] as const) {
+    b.poly([[x - 2.2, y + 2], [x - 2.4, y - h], [x + 2.4, y + 2]], P.tan[3]); b.line(R(x - 2.4), R(y - h), R(x - 2), R(y), P.tan[4]); b.set(R(x - 2.4), R(y - h), P.red[1]); b.line(R(x + 0.4), R(y - 1), R(x + 1.4), R(y + 1), P.tan[1]);
   }
   form(b, (m) => { m.ell(11, 19.2, 8, 7, 1); m.rect(0, 24, 32, 8, 0); }, KAEFER, 1, 4, 0.26);
   // Flügeldecken-Rillen, Glanz, Moosfleck
@@ -98,21 +98,22 @@ function kaeferBody(b: Px, o: KP, thorns = true): void {
   // Fühler
   b.line(21, 19, R(19.5 + o.ant), 16, P.wood[1]); b.set(R(19 + o.ant * 1.5), 15, P.tan[3]);
   // Geweihzangen: oben hakenförmig mit Sprosse, unten kurz
-  const up = tube(b, bez([24.4, 20.8], [28.6, 21.4 - o.open * 0.4], [27.6, 16.4 - o.open], 9), 1.05, 0.6, P.tan, 2);
+  const up = tube(b, bez([24.4, 20.8], [28.6, 21.4 - o.open * 0.4], [27.4, 14.8 - o.open], 10), 1.4, 0.8, P.tan, 2);
   const t0 = up[up.length - 1]; b.set(R(t0[0] - 0.5), R(t0[1] - 0.5), P.wood[1]);
-  const m0 = up[Math.floor(up.length * 0.55)]; b.line(R(m0[0] - 1), R(m0[1] - 1), R(m0[0] - 2), R(m0[1] - 2.4), P.tan[3]);
-  tube(b, bez([24.4, 22.8], [27.4, 24 + o.open * 0.3], [28.4, 22.4 + o.open * 0.7], 6), 0.9, 0.5, P.tan, 2);
+  const m0 = up[Math.floor(up.length * 0.55)]; b.line(R(m0[0] - 1), R(m0[1] - 1), R(m0[0] - 3), R(m0[1] - 3), P.tan[3], 2);
+  tube(b, bez([24.4, 22.8], [27.4, 24 + o.open * 0.3], [28.4, 22 + o.open * 0.7], 7), 1.2, 0.7, P.tan, 2);
 }
 function kaeferLegs(l: Px, o: KP, far: boolean): void {
-  const at: Pt[] = [[7.5, 23], [12, 23], [16.5, 23]], rest = [5, 11.5, 18.5];
+  const at: Pt[] = [[7.5, 22], [12, 22], [16.5, 22]], rest = [4.5, 11.5, 19];
   at.forEach((a, i) => {
     const th = o.ph + (i % 2 ? Math.PI : 0) + (far ? Math.PI : 0);
-    const fx = rest[i] + (far ? 2.5 : 0) + o.bx * 0.6 + o.walk * 2.2 * Math.cos(th) + o.splay * (i - 1) * 1.6, fy = 27 - o.walk * 2 * Math.max(0, -Math.sin(th));
-    if (far) { l.rect(R(fx), R(fy) - 1, 1, 2, P.wood[0]); return; }
+    const fx = rest[i] + (far ? 2.5 : 0) + o.bx * 0.6 + o.walk * 2.2 * Math.cos(th) + o.splay * (i - 1) * 1.6, fy = 26 - o.walk * 2 * Math.max(0, -Math.sin(th));
+    if (far) { l.rect(R(fx), R(fy) - 2, 2, 4, P.wood[0]); return; }
     const ax = a[0] + o.bx, ay = a[1] + o.by;
-    const kx = (ax + fx) / 2 + (i - 1) * 1.4, ky = ay + 0.5 + o.splay;
-    l.line(R(ax), R(ay), R(kx), R(ky), P.wood[1], 2); l.line(R(kx), R(ky + 1), R(fx), R(fy), P.wood[1]); l.set(R(fx) + 1, R(fy), P.wood[1]);
-    l.set(R(kx), R(ky), P.wood[3]);
+    const kx = (ax + fx) / 2 + (i - 1) * 1.6, ky = ay + 0.5 + o.splay;
+    // kräftiger Schenkel, Schiene, Klauenfuß
+    l.line(R(ax), R(ay), R(kx), R(ky), P.wood[2], 2); l.line(R(kx), R(ky), R(fx), R(fy), P.wood[1], 2); l.rect(R(fx), R(fy) + 1, 3, 1, P.wood[1]);
+    l.set(R(kx), R(ky), P.wood[4]); l.set(R(ax), R(ay), P.wood[3]);
   });
 }
 function kaeferDraw(p: Px, o: KP): void {
@@ -142,7 +143,7 @@ const dornkaefer: MobFn = (p, fr) => {
     if (i === 1) { p.draw(kaeferBack(p, 1, 0).outline()); dots(p, [3, 26, 28, 25, 1, 23], P.tan[3]); }
     else if (i === 2) p.draw(kaeferBack(p, -1, 1).outline());
     else {
-      const s = shatter(kaeferBack(p, -1, 1), i === 3 ? 0.75 : 1, 27, 9, { cell: 4, heap: 2, cx: 14 });
+      const s = shatter(kaeferBack(p, -1, 1), i === 3 ? 0.75 : 1, 27, 9, { cell: 4, heap: 2, cx: 14, spread: 0.4 });
       if (i === 4) { dissolve(s, 0.62, 4); s.outline(); s.alphaMul(0.55); } else s.outline();
       p.draw(s); if (i === 3) dots(p, [6, 20, 21, 19, 13, 17], alpha(P.tan[3], 180));
     }
@@ -152,14 +153,14 @@ const dornkaefer: MobFn = (p, fr) => {
   switch (fr.a) {
     case 'idle': o.ant = [0, 1, 0, -1][i]; o.open = [0, 0, 1.2, 0.4][i]; o.by = [0, 0, 1, 1][i]; break;
     case 'move': o.ph = fr.ph; o.walk = 1; o.by = [0, 1, 0, 0, 1, 0][i]; o.ant = [1, 0, -1, 0, 1, 0][i]; o.open = 0.5; break;
-    case 'windup': o.bx = [-2, -3][i]; o.rot = [0.14, 0.24][i]; o.open = [2, 3][i]; o.ant = -1; o.ph = i ? 1 : 4; o.walk = 0.6; break;
-    case 'attack': o.bx = [1, 2, 1][i]; o.rot = [0.06, -0.16, 0][i]; o.open = [3, 0, 0.6][i]; o.ant = [-2, 1, 0][i]; o.splay = [0.6, 0.3, 0][i]; break;
-    case 'hit': o.bx = [-2, -1][i]; o.rot = [-0.22, -0.08][i]; o.eye = false; o.splay = [1, 0.4][i]; o.open = 1; o.ant = 2; break;
-    case 'death': o.bx = 0; o.by = -2; o.rot = -0.6; o.eye = false; o.open = 2; o.splay = 1; break;
+    case 'windup': o.bx = [-1, -1][i]; o.rot = [0.1, 0.17][i]; o.open = [2, 3][i]; o.ant = -1; o.ph = i ? 1 : 4; o.walk = 0.6; break;
+    case 'attack': o.bx = [1, 1, 0][i]; o.rot = [0.06, -0.12, 0][i]; o.open = [3, 0, 0.6][i]; o.ant = [-2, 1, 0][i]; o.splay = [0.6, 0.3, 0][i]; break;
+    case 'hit': o.bx = [-1, 0][i]; o.rot = [-0.14, -0.06][i]; o.eye = false; o.splay = [1, 0.4][i]; o.open = 1; o.ant = 2; break;
+    case 'death': o.bx = 1; o.by = -1; o.rot = -0.4; o.eye = false; o.open = 2; o.splay = 1; break;
   }
   kaeferDraw(p, o);
   if (fr.a === 'windup') { dots(p, i ? [2, 26, 4, 24, 1, 22] : [3, 26, 5, 25], P.tan[3]); if (i) spark(p, 26, 12, WHITE, P.gold[4]); }
-  if (fr.a === 'attack' && i === 0) dots(p, [1, 18, 2, 18, 3, 18, 0, 22, 1, 22, 2, 14, 3, 14], alpha(WHITE, 150));
+  if (fr.a === 'attack' && i === 0) dots(p, [2, 18, 3, 18, 4, 18, 1, 22, 2, 22, 2, 14, 3, 14], alpha(WHITE, 120));
   if (fr.a === 'attack' && i === 1) { spark(p, 29, 18, WHITE, P.gold[4]); dots(p, [27, 13, 30, 22], P.gold[4]); }
 };
 

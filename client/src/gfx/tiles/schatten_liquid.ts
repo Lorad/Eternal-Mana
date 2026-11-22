@@ -10,7 +10,7 @@ import { Px } from '../draw';
 import { VOIDC } from './schatten_pal';
 
 const N = 64, FR = 8, TAU = Math.PI * 2;
-const NEB1 = mix(VOIDC, P.violet[1], 0.3), NEB2 = mix(VOIDC, P.pink[1], 0.34), NEB3 = mix(VOIDC, P.pink[2], 0.36), NEBC = mix(VOIDC, P.blue[1], 0.32);
+const NEB1 = mix(VOIDC, P.violet[1], 0.22), NEB2 = mix(VOIDC, P.pink[1], 0.22), NEB3 = mix(VOIDC, P.pink[1], 0.3), NEBC = mix(VOIDC, P.blue[1], 0.22);
 const FAR = [0, mix(VOIDC, P.ice[1], 0.45), mix(VOIDC, P.ice[2], 0.7), P.ice[3]];
 const NEAR = [0, mix(VOIDC, P.ice[2], 0.55), P.ice[3], WHITE];
 const ARM = mix(VOIDC, P.ice[2], 0.6), PINKS = mix(P.pink[4], WHITE, 0.3);
@@ -24,14 +24,17 @@ export function schattenLiquid(): Px[] {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const u = (x / N) * TAU, v = (y / N) * TAU;
       // Nebelstreif: ein schräges, sanft atmendes Band; daneben ein kälterer Schleier
-      const s = Math.sin(u + v + 1.2 * Math.sin(v - 0.4 * Math.sin(u)) + 0.22 * Math.sin(u + ph)) + 0.45 * Math.sin(2 * v - u + 0.3 * Math.sin(ph + u));
-      const t = Math.sin(2 * u - v + 1.1 * Math.sin(u + 0.5) + 0.25 * Math.sin(v - ph));
+      // ein einzelner langer Schleier je Kachel: Band quer zur Diagonale, zu den Enden hin auslaufend
+      const band = Math.cos(u + v + 0.55 * Math.sin(u - v + 0.8) + 0.16 * Math.sin(u + ph));
+      const along = 0.5 + 0.5 * Math.cos(u - v + 1.9 + 0.2 * Math.sin(v - ph));
+      const s = band * 0.5 + 0.5 - (1 - along) * 0.3;
+      const t = Math.cos(u + v + 2.6 + 0.5 * Math.sin(u - v)) * 0.5 + 0.5 - (0.5 + 0.5 * Math.cos(u - v + 4.6)) * 0.6;
       let col = VOIDC;
-      if (s > 1.28) col = (x + y) & 1 || s > 1.36 ? NEB3 : NEB2;
-      else if (s > 1.02) col = NEB2;
-      else if (s > 0.78) col = s > 0.86 || ((x + y) & 1) ? NEB1 : VOIDC;
-      else if (t > 0.94 && s < 0.2) col = NEBC;
-      else if (t > 0.86 && s < 0.2 && ((x + y) & 1)) col = NEBC;
+      if (s > 0.93) col = (x + y) & 1 ? NEB3 : NEB2;
+      else if (s > 0.84) col = NEB2;
+      else if (s > 0.7) col = s > 0.76 || ((x + y) & 1) ? NEB1 : VOIDC;
+      else if (t > 0.9) col = NEBC;
+      else if (t > 0.84 && ((x + y) & 1)) col = NEBC;
       p.d[y * N + x] = col;
     }
     // ferne Sterne: ½ px je Frame nach links, sanftes Ein- und Ausblenden

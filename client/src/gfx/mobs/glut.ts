@@ -3,8 +3,8 @@ import { Px, bez, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha } from '../palette';
 import type { Ramp } from '../palette';
-import { R, debris, deathFx, dissolve, dots, form, glow, puff, shatter, spark } from './kit';
-import type { MobDef, MobFn } from './kit';
+import { R, box, debris, deathFx, dissolve, dots, form, glow, pk, puff, shatter, slab, spark } from './kit';
+import type { Fr, MobDef, MobFn } from './kit';
 import { slimeBody, slimeGeo, slimeState } from './slime';
 import type { Profile } from './slime';
 import { quad, quadPose } from './quad';
@@ -153,58 +153,79 @@ const magmaschleim: MobFn = (p, fr) => {
 // ================================================================ Schlackengolem
 const BAS: Ramp = [P.ash[0], P.ash[2], P.ash[3], P.ash[4], P.stone[2]];
 const BAS_FAR: Ramp = [P.ash[0], P.ash[1], P.ash[2], P.ash[2], P.ash[3]];
+const DIM: Ramp = [P.fire[0], P.fire[0], P.fire[0], P.fire[1], P.fire[1]];
 function golemLit(a: string, i: number): number { return a === 'windup' ? [0.7, 1][i] : a === 'attack' ? [1, 0.8, 0.4][i] : a === 'hit' ? -1 : a === 'death' ? (i === 0 ? 1.2 : -1) : [0, 0.25, 0.5, 0.25, 0, 0.25][i]; }
 const GOLEM: BLook = {
-  w: 48, h: 48, cx: -1, hip: 10, torsoH: 15, stance: 4.5, legR: [3.4, 3.2], armL: 14, armR: [3.6, 4.2], armRF: [2.4, 2.6], shN: [-6, 3], shF: [7, 4], skin: BAS, far: BAS_FAR,
+  w: 48, h: 48, cx: -1, hip: 12, torsoH: 19, stance: 5.5, legR: [3.6, 3.6], armL: 15, armR: [3.6, 4.4], armRF: [2.6, 2.8], shN: [-9, 4], shF: [9, 5], skin: BAS, far: BAS_FAR,
+  // Glieder aus Basaltquadern: der vordere Arm ist der Riesenarm
+  seg: (l, a, b, part, idx, near) => {
+    const w = part === 'leg' ? 3.6 : near ? [3.7, 4.5][idx] : 2.7;
+    slab(l, a, b, w, w + (part === 'arm' && near ? 0.4 : 0), near ? BAS : BAS_FAR, near ? 1 : 0);
+    if (near) { const mx = R((a[0] + b[0]) / 2), my = R((a[1] + b[1]) / 2); l.set(mx, my, BAS[1]); l.set(mx, my + 1, BAS[1]); l.set(mx + 1, my - 1, BAS[1]); }
+  },
   torso: (l, k, b) => {
-    const cx = (k.hip[0] + k.sh[0]) / 2, cy = (k.hip[1] + k.sh[1]) / 2, lit = golemLit(b.fr.a, b.fr.i);
-    form(l, (m) => { m.ell(cx, cy, 9.8, 9.6, 1); m.ell(k.sh[0] - 3, k.sh[1] + 3.5, 9, 6, 1); m.ell(k.sh[0] + 5, k.sh[1] + 4.5, 5.5, 4.5, 1); }, BAS, 1, 4, 0.08);
-    // Basaltsäulen-Fugen
-    for (const [dx, y0, y1] of [[-7, -3, 6], [-3, -7, 8], [2, 2, 8], [6, -4, 6]] as const) for (let y = R(cy + y0); y <= cy + y1; y++) if (l.get(R(cx + dx), y) >>> 24) l.set(R(cx + dx), y, BAS[1]);
-    l.px([cx - 5, cy - 6, cx - 4, cy - 6, cx - 1, cy - 8, cx, cy - 8, cx + 4, cy - 5], BAS[4]);
+    const cx = (k.hip[0] + k.sh[0]) / 2, cy = (k.hip[1] + k.sh[1]) / 2, lit = golemLit(b.fr.a, b.fr.i), top = k.sh[1], bot = k.hip[1] + 3;
+    box(l, R(k.sh[0] + 7), R(top + 3), 7, 6, BAS_FAR, 1);
+    // Rumpf aus fünf Basaltsäulen unterschiedlicher Höhe
+    for (const [dx, dy, w] of [[-12, 4, 5], [-7, -1, 5], [-2, -3, 5], [3, 0, 5], [8, 5, 4]] as const) {
+      const x = R(cx + dx + (k.sh[0] - cx) * 0.4), y = R(top + dy);
+      box(l, x, y, w, R(bot - Math.abs(dx + 2) * 0.3) - y, BAS, 1); l.rect(x + 1, y + 1, w - 2, 1, BAS[2]);
+    }
+    box(l, R(k.sh[0] - 14), R(top + 1), 9, 8, BAS, 1); l.px([k.sh[0] - 12, top + 3, k.sh[0] - 11, top + 4, k.sh[0] - 9, top + 6], BAS[1]);
     // Glutkern mit Rissen
-    const kx = R(cx + 2), ky = R(cy - 1), c1 = lit < 0 ? P.fire[0] : P.fire[lit > 0.6 ? 3 : 2], c2 = lit < 0 ? P.fire[1] : P.fire[lit > 0.6 ? 4 : 3];
-    for (const [ex, ey, mx, my] of [[-8, 4, -4, -1], [7, 5, 4, 4], [-5, -7, -3, -3], [5, -6, 2, -4], [0, 8, 1, 4]] as const) for (const pt of bez([kx, ky], [kx + mx, ky + my], [kx + ex, ky + ey], 8)) if (l.get(R(pt[0]), R(pt[1])) >>> 24) l.set(R(pt[0]), R(pt[1]), c1);
-    l.ell(kx + 0.5, ky + 0.5, 4, 4, P.ash[0]); l.ball(kx + 0.5, ky + 0.5, 3, 3, lit < 0 ? [P.fire[0], P.fire[0], P.fire[0], P.fire[1], P.fire[1]] : P.fire, 2, 4);
-    if (lit >= 0) { l.set(kx, ky, WHITE); l.set(kx - 1, ky, c2); if (lit > 0.6) l.rect(kx - 1, ky - 1, 3, 3, WHITE); }
+    const kx = R(cx + 1), ky = R(cy - 2), c1 = lit < 0 ? P.fire[0] : P.fire[lit > 0.6 ? 3 : 2], c2 = lit < 0 ? P.fire[1] : P.fire[lit > 0.6 ? 4 : 3];
+    for (const [ex, ey, mx, my] of [[-10, 6, -5, -1], [9, 7, 5, 5], [-6, -9, -4, -3], [6, -8, 2, -5], [0, 10, 1, 5]] as const) for (const pt of bez([kx, ky], [kx + mx, ky + my], [kx + ex, ky + ey], 12)) if (l.get(R(pt[0]), R(pt[1])) >>> 24) l.set(R(pt[0]), R(pt[1]), c1);
+    l.ell(kx + 0.5, ky + 0.5, 4.9, 4.9, P.ash[0]); l.ball(kx + 0.5, ky + 0.5, 3.8, 3.8, lit < 0 ? DIM : P.fire, 2, 4);
+    if (lit >= 0) { l.rect(kx - 1, ky - 1, 2, 2, WHITE); l.set(kx + 1, ky, c2); l.set(kx - 2, ky + 1, c2); if (lit > 0.6) l.rect(kx - 1, ky - 1, 3, 3, WHITE); }
   },
   head: (l, x, y, b) => {
-    const hx = R(x + 3), hy = R(y + 1), lit = golemLit(b.fr.a, b.fr.i);
-    l.ball(hx, hy, 4.2, 3.6, BAS, 1, 4); l.rect(hx - 2, hy - 1, 6, 1, BAS[1]); l.rect(hx - 1, hy + 2, 5, 1, P.ash[0]); l.set(hx, hy + 2, BAS[3]); l.set(hx + 2, hy + 2, BAS[3]);
-    if (b.mood === 'shut' || lit < 0) { l.rect(hx, hy, 2, 1, P.fire[0]); l.set(hx + 3, hy, P.fire[0]); } else { l.rect(hx, hy, 2, 1, P.fire[4]); l.set(hx + 3, hy, P.fire[3]); if (lit > 0.6) l.set(hx, hy + 1, P.fire[3]); }
-    l.px([hx - 3, hy - 3, hx - 2, hy - 4], BAS[3]);
+    const hx = R(x - 2), hy = R(y - 6), lit = golemLit(b.fr.a, b.fr.i);
+    box(l, hx, hy, 10, 7, BAS, 1); box(l, hx + 1, hy + 6, 9, 3, BAS, 1); box(l, hx - 1, hy + 2, 12, 2, BAS, 1);
+    l.rect(hx + 2, hy + 4, 8, 2, P.ash[0]); l.px([hx + 3, hy + 6, hx + 5, hy + 6, hx + 7, hy + 6], P.ash[0]);
+    if (b.mood === 'shut' || lit < 0) { l.rect(hx + 3, hy + 5, 2, 1, P.fire[0]); l.rect(hx + 7, hy + 5, 2, 1, P.fire[0]); }
+    else { l.rect(hx + 3, hy + 4, 2, 2, P.fire[4]); l.rect(hx + 7, hy + 4, 2, 2, P.fire[3]); l.set(hx + 3, hy + 4, WHITE); if (lit > 0.6) { l.set(hx + 7, hy + 4, WHITE); l.set(hx + 5, hy + 5, P.fire[2]); } }
+    l.px([hx + 1, hy - 1, hx + 2, hy - 1, hx + 2, hy - 2], BAS[2]);
   },
   hand: (l, h, b, near) => {
-    if (near) { l.ball(h[0], h[1] - 1, 5.2, 5, BAS, 1, 4); for (const dx of [-2, 1, 3]) l.line(R(h[0] + dx), R(h[1] - 3), R(h[0] + dx), R(h[1] + 3), BAS[1]); l.px([h[0] - 1, h[1] - 1, h[0], h[1], h[0] + 2, h[1] + 1], P.fire[golemLit(b.fr.a, b.fr.i) > 0.6 ? 4 : 2]); l.px([h[0] - 3, h[1] - 4, h[0] - 2, h[1] - 5], BAS[4]); }
-    else l.ball(h[0], h[1], 3.2, 3.2, BAS_FAR, 1, 4);
+    if (!near) { box(l, R(h[0] - 3), R(h[1] - 3), 7, 7, BAS_FAR, 0); return; }
+    const x = R(h[0] - 6), y = R(h[1] - 5), hot = golemLit(b.fr.a, b.fr.i) > 0.6;
+    box(l, x, y, 12, 11, BAS, 1); l.rect(x + 1, y + 7, 10, 1, BAS[1]);
+    for (const dx of [4, 8]) l.line(x + dx, y + 1, x + dx, y + 9, BAS[1]);
+    l.px([x + 2, y + 3, x + 3, y + 4, x + 6, y + 5, x + 9, y + 3, x + 6, y + 4], P.fire[hot ? 4 : 2]); l.px([x + 1, y + 1, x + 2, y + 1, x + 5, y + 1, x + 9, y + 1], BAS[4]);
   },
-  foot: (l, x, y, near) => { l.rrect(R(x - 3), R(y - 2), 8, 4, near ? BAS[2] : BAS_FAR[2]); l.rect(R(x - 2), R(y - 2), 5, 1, near ? BAS[3] : BAS_FAR[3]); },
+  foot: (l, x, y, near) => box(l, R(x - 4), R(y - 1), 10, 5, near ? BAS : BAS_FAR, near ? 1 : 0),
   behind: (p, k, b) => {
     if (b.fr.a === 'death' && b.fr.i > 0) return;
-    const i = b.fr.i, x = k.sh[0] - 8, y = k.sh[1] - 2;
-    p.layer((l) => { l.rect(R(x), R(y), 4, 5, BAS[2]); l.rect(R(x), R(y), 4, 1, BAS[3]); l.rect(R(x + 1), R(y), 2, 1, P.fire[1]); });
-    for (let s = 0; s < 3; s++) puff(p, x + 2 - s * 1.5 - (b.fr.a === 'move' ? s : 0), y - 3 - s * 3 - ((i + s) % 3), 2.6 - s * 0.3, 2 - s * 0.2, P.stone[1 + (s & 1)], 130 - s * 35);
+    const i = b.fr.i, x = R(k.sh[0] - 12), y = R(k.sh[1] - 4);
+    p.layer((l) => { box(l, x, y, 5, 7, BAS, 1); l.rect(x + 1, y, 3, 1, P.fire[1]); });
+    for (let s = 0; s < 3; s++) puff(p, x + 2 - s * 1.5 - (b.fr.a === 'move' ? s : 0), y - 3 - s * 3 - ((i + s) % 3), 2.6 - s * 0.3, 2 - s * 0.2, P.stone[1 + (s & 1)], 120 - s * 30);
   },
   over: (p, k, b) => {
-    const lit = golemLit(b.fr.a, b.fr.i), cx = (k.hip[0] + k.sh[0]) / 2 + 2, cy = (k.hip[1] + k.sh[1]) / 2 - 1;
-    if (lit > 0) glow(p, cx + 0.5, cy + 0.5, 5 + lit * 5, P.fire[3], 40 + lit * 50);
-    if (b.fr.a === 'windup') dots(p, [k.handN[0] - 6, k.handN[1] - 5, k.handN[0] + 6, k.handN[1] - 6, k.handN[0], k.handN[1] - 8 - b.fr.i], P.fire[4]);
-    if (b.fr.a === 'attack' && b.fr.i === 1) { debris(p, k.handN[0] + 2, k.G, 0.6, 5, 9, [P.fire[4], P.fire[3], BAS[3], WHITE], 8, 9); spark(p, k.handN[0] + 5, k.G - 2, WHITE, P.fire[4], 2); }
-    if (b.fr.a === 'attack' && b.fr.i === 2) debris(p, k.handN[0] + 2, k.G, 1, 5, 7, [P.fire[2], BAS[3]], 10, 5);
-    if (b.fr.a === 'move' && (b.fr.i === 1 || b.fr.i === 4)) dots(p, [k.cx - 10, k.G, k.cx + 9, k.G - 1], alpha(P.stone[3], 180));
+    const lit = golemLit(b.fr.a, b.fr.i), cx = (k.hip[0] + k.sh[0]) / 2 + 1.5, cy = (k.hip[1] + k.sh[1]) / 2 - 1.5;
+    if (lit > 0) glow(p, cx, cy, 6 + lit * 5, P.fire[3], 40 + lit * 50);
+    if (b.fr.a === 'windup') dots(p, [k.handN[0] - 8, k.handN[1] - 3, k.handN[0] + 8, k.handN[1] - 4, k.handN[0] + 9, k.handN[1] + 3 - b.fr.i], P.fire[4]);
+    if (b.fr.a === 'attack' && b.fr.i === 1) { debris(p, k.handN[0] + 2, k.G, 0.6, 5, 10, [P.fire[4], P.fire[3], BAS[3], WHITE], 8, 10); spark(p, k.handN[0] + 8, k.G - 2, WHITE, P.fire[4], 2); }
+    if (b.fr.a === 'attack' && b.fr.i === 2) debris(p, k.handN[0] + 2, k.G, 1, 5, 8, [P.fire[2], BAS[3]], 9, 5);
+    if (b.fr.a === 'move' && (b.fr.i === 1 || b.fr.i === 4)) dots(p, [k.cx - 12, k.G, k.cx + 11, k.G - 1], alpha(P.stone[3], 180));
   },
 };
+function golemPose(fr: Fr): ReturnType<typeof bipPose> {
+  const b = bipPose(fr, 'slam', 15);
+  b.lean += 1;
+  if (fr.a === 'windup') { b.armN = pk([[3, -6], [2, -7]], fr.i); b.armF = [4, 9]; b.dy = 0; }
+  if (fr.a === 'attack') { b.armN = pk([[10, -4], [8, 19], [7, 17]], fr.i); b.armF = [4, 8]; }
+  if (fr.a === 'hit') b.armN = [0, 12];
+  return b;
+}
 const schlackengolem: MobFn = (p, fr) => {
   if (fr.a === 'death' && fr.i >= 1) {
-    const b = new Px(48, 48); biped(b, GOLEM, bipPose({ ...fr, i: 1 }, 'slam', 14));
-    deathFx(p, b, fr.i, 'shatter', 43, 21, { cell: 6, heap: 6, cx: 23, pop: 2 });
+    const b = new Px(48, 48); biped(b, GOLEM, golemPose({ ...fr, a: 'hit', i: 1 }));
+    deathFx(p, b, fr.i, 'shatter', 43, 21, { cell: 6, heap: 7, cx: 23, pop: 2, spread: 0.6 });
     if (fr.i < 4) { glow(p, 23, 39, 5 - fr.i, P.fire[2], 80 - fr.i * 15); p.set(23, 40, P.fire[4 - fr.i]); p.set(24, 41, P.fire[3 - (fr.i >> 1)]); }
     if (fr.i <= 2) debris(p, 23, 43, fr.i * 0.4, 8, 8, [BAS[3], P.fire[3], BAS[2]], 14, 8);
     return;
   }
-  const b = bipPose(fr, 'slam', 14);
-  b.lean += 1; if (fr.a === 'windup') b.armF = [4, 9]; if (fr.a === 'attack') b.armF = [5, 8];
-  biped(p, GOLEM, b);
+  biped(p, GOLEM, golemPose(fr));
 };
 
 export const GLUT: Record<string, MobDef> = {

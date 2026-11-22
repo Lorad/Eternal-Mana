@@ -217,3 +217,19 @@ export function floatState(fr: Fr): Fl {
   }
   return z;
 }
+/** Behauener Block: Fläche mit Lichtkante oben/links und Schattenkante unten/rechts. */
+export function box(l: Px, x: number, y: number, w: number, h: number, r: Ramp, lo = 1): void {
+  l.rect(x, y, w, h, r[lo + 1]); l.rect(x, y, w, 1, r[lo + 2]); l.rect(x, y, 1, h, r[lo + 2]); l.rect(x, y + h - 1, w, 1, r[lo]); l.rect(x + w - 1, y, 1, h, r[lo]);
+  l.set(x, y, r[Math.min(r.length - 1, lo + 3)]);
+}
+/** Kantiges Glied (Quader) von a nach b mit halben Breiten w0/w1 und gefasten Kanten. */
+export function slab(l: Px, a: Pt, b: Pt, w0: number, w1: number, r: Ramp, lo = 1): void {
+  const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1, ex = dx / n, ey = dy / n, px = -ey, py = ex, k = 0.6;
+  const m = new Px(l.w, l.h);
+  m.poly([[a[0] - ex * w0 * k + px * w0, a[1] - ey * w0 * k + py * w0], [b[0] + ex * w1 * k + px * w1, b[1] + ey * w1 * k + py * w1], [b[0] + ex * w1 * k - px * w1, b[1] + ey * w1 * k - py * w1], [a[0] - ex * w0 * k - px * w0, a[1] - ey * w0 * k - py * w0]], 1);
+  for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
+    if (!m.get(x, y)) continue;
+    const dark = !m.get(x + 1, y) || !m.get(x, y + 1), light = !m.get(x - 1, y) || !m.get(x, y - 1);
+    l.set(x, y, dark ? r[lo] : light ? r[lo + 2] : r[lo + 1]);
+  }
+}

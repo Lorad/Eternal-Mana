@@ -44,7 +44,7 @@ function mkFrag(seed: number, rad: number): Stamp {
 }
 /** Kleiner Fußabdruck im Staub (eingedrückt: Schatten oben links, Lichtkante unten rechts). */
 function footprint(p: Px, x: number, y: number, small = false): void {
-  const d = DUST[2], D = DUST[1], l = DUST[6];
+  const d = DUST[1], D = DUST[0], l = DUST[6];
   p.set(x, y, d); p.set(x + 1, y, D);
   if (!small) { p.set(x, y + 1, D); p.set(x + 1, y + 1, d); p.set(x + 1, y + 2, l); p.set(x, y + 3, d); p.set(x + 1, y + 4, l); }
   else { p.set(x, y + 1, d); p.set(x + 1, y + 2, l); }
@@ -100,7 +100,7 @@ export function initSchattenStamps(): void {
     const p = new Px(30, 16), sl = [0, 0.25, -0.25, 0.12][k];
     for (let x = 0; x < 30; x++) {
       const y = 4 + sl * x + Math.sin(x * 0.2 + k) * 1.2;
-      for (const o of [0, 7]) { if ((x + o) % 5 === 4) continue; p.set(x, y + o, DUST[2]); p.set(x, y + o + 1, x % 3 ? DUST[6] : DUST[5]); }
+      for (const o of [0, 7]) { if ((x + o) % 5 === 4) continue; p.set(x, y + o, DUST[1]); p.set(x, y + o + 1, x % 3 ? DUST[6] : DUST[5]); }
     }
     SS.wheel.push(stampOf(p, 15, 8));
   }
@@ -191,7 +191,7 @@ export function initSchattenStamps(): void {
     for (let j = 0; j < n; j++) {
       const x = 3 + j * (8 / n) + r() * 2, sw = 1.4 + r() * 2, sh = 1 + r() * 1.3, y = 5.6 - sh + r();
       p.ell(x + 0.6, y + sh * 0.5 + 0.8, sw, sh * 0.8, SHD);
-      p.ball(x, y, sw, sh, j % 2 ? MARB : SLAB, 1, 6, 0.06);
+      p.ball(x, y, sw, sh, MARB, 1, j % 2 ? 5 : 4, 0.04);
     }
     SS.rubble.push(stampOf(p, 7, 6));
   }

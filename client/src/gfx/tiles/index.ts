@@ -12,6 +12,7 @@ import { kristall } from './kristall';
 import { glut } from './glut';
 import { frost } from './frost';
 import { ruinen } from './ruinen';
+import { schatten } from './schatten';
 import { buildLiquidsLegacy, paintGroundLegacy } from './legacy';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
@@ -20,6 +21,7 @@ const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   gruenwald,
   kristall,
   glut,
+  schatten,
 };
 
 const CH = 32;

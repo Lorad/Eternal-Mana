@@ -17,6 +17,8 @@ export interface BLook {
   head(l: Px, x: number, y: number, b: BPose): void;
   hand?(l: Px, h: Pt, b: BPose, near: boolean): void;
   foot?(l: Px, x: number, y: number, near: boolean): void;
+  /** Eigene Gliedsegmente (kantig, zottelig …) statt der runden Standardglieder. */
+  seg?(l: Px, a: Pt, b: Pt, part: 'arm' | 'leg', idx: number, near: boolean, pose: BPose): void;
   behind?(p: Px, k: BKey, b: BPose): void;
   over?(p: Px, k: BKey, b: BPose): void;
 }
@@ -59,14 +61,16 @@ export function biped(p: Px, L: BLook, b: BPose): BKey {
   const k: BKey = { hip, sh, neck, G, handN: hN, handF: hF, cx };
   const arm = (l: Px, s: Pt, h: Pt, near: boolean): void => {
     const r = near ? L.skin : L.far, ar = near ? L.armR : L.armRF ?? L.armR, e = ik(s, h, L.armL / 2 + 0.3, L.armL / 2 + 0.3, 1);
-    limb(l, s, e, ar[0], (ar[0] + ar[1]) / 2, r, near ? 1 : 0); limb(l, e, h, (ar[0] + ar[1]) / 2, ar[1], r, near ? 1 : 0);
+    if (L.seg) { L.seg(l, s, e, 'arm', 0, near, b); L.seg(l, e, h, 'arm', 1, near, b); }
+    else { limb(l, s, e, ar[0], (ar[0] + ar[1]) / 2, r, near ? 1 : 0); limb(l, e, h, (ar[0] + ar[1]) / 2, ar[1], r, near ? 1 : 0); }
     L.hand?.(l, h, b, near);
   };
   const leg = (l: Px, near: boolean): void => {
     if (L.legs === false) return;
     const f = b.feet[near ? 0 : 1], r = near ? L.skin : L.far, a: Pt = [hip[0] + (near ? -1 : 1.5), hip[1]];
     const ft: Pt = [cx + b.dx + (near ? -L.stance : L.stance) + f[0], G + 0.4 - Math.max(1.3, L.legR[1]) - f[1]], j = ik(a, ft, L.hip / 2 + 0.5, L.hip / 2 + 0.5, -1);
-    limb(l, a, j, L.legR[0], (L.legR[0] + L.legR[1]) / 2, r, near ? 1 : 0); limb(l, j, ft, (L.legR[0] + L.legR[1]) / 2, L.legR[1], r, near ? 1 : 0);
+    if (L.seg) { L.seg(l, a, j, 'leg', 0, near, b); L.seg(l, j, ft, 'leg', 1, near, b); }
+    else { limb(l, a, j, L.legR[0], (L.legR[0] + L.legR[1]) / 2, r, near ? 1 : 0); limb(l, j, ft, (L.legR[0] + L.legR[1]) / 2, L.legR[1], r, near ? 1 : 0); }
     if (L.foot) L.foot(l, ft[0], ft[1], near); else l.ell(ft[0] + 1, ft[1] - 0.1, L.legR[1] + 1, 1.2, r[near ? 2 : 1]);
   };
   L.behind?.(p, k, b);

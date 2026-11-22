@@ -3,8 +3,8 @@ import { Px, crystal, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha } from '../palette';
 import type { Ramp } from '../palette';
-import { R, TAU, debris, deathFx, dissolve, dots, floatState, form, glow, puff, shatter, spark } from './kit';
-import type { MobDef, MobFn } from './kit';
+import { R, TAU, debris, deathFx, dissolve, dots, floatState, form, glow, limb, pk, puff, shatter, spark } from './kit';
+import type { Fr, MobDef, MobFn } from './kit';
 import { quad, quadPose } from './quad';
 import type { QLook } from './quad';
 import { biped, bipPose } from './biped';
@@ -115,60 +115,80 @@ const FUR: Ramp = [P.snow[0], P.snow[1], P.snow[2], P.snow[3], P.snow[4]];
 const FUR_FAR: Ramp = [P.ice[0], P.snow[0], P.snow[1], P.snow[1], P.snow[2]];
 const HIDE: Ramp = [P.blue[0], P.ice[0], P.ice[1], P.ice[2], P.ice[3]];
 const BRUTE: BLook = {
-  w: 48, h: 48, cx: -1, hip: 11, torsoH: 14, stance: 4.5, legR: [3.3, 3], armL: 15, armR: [3.5, 3.3], armRF: [3, 2.8], shN: [-6, 3], shF: [7, 3], skin: FUR, far: FUR_FAR,
+  w: 48, h: 48, cx: -1, hip: 12, torsoH: 17, stance: 5, legR: [3.8, 3.4], armL: 16, armR: [4, 3.6], armRF: [3.2, 3], shN: [-8, 4], shF: [8, 4], skin: FUR, far: FUR_FAR,
+  // dicke, zottelige Glieder
+  seg: (l, a, b, part, _idx, near) => {
+    const r = near ? FUR : FUR_FAR, w = part === 'leg' ? 3.8 : near ? 4 : 3.2;
+    limb(l, a, b, w, w - 0.3, r, near ? 1 : 0);
+    for (const t of [0.25, 0.7]) {
+      const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t;
+      l.poly([[x - w, y - 1], [x - w - 1.5, y + 3.5], [x - w + 2, y + 1]], r[near ? 2 : 1]); l.poly([[x + w - 2, y + 1], [x + w, y + 4.5], [x + w + 0.6, y]], r[near ? 1 : 0]);
+    }
+  },
   torso: (l, k) => {
     const cx = (k.hip[0] + k.sh[0]) / 2, cy = (k.hip[1] + k.sh[1]) / 2;
     form(l, (m) => {
-      m.ell(cx, cy - 0.5, 10, 10.5, 1); m.ell(k.sh[0] - 1, k.sh[1] + 3.5, 10.5, 6, 1);
-      for (let s = 0; s < 7; s++) { const x = cx - 9 + s * 3, y = cy + 6.5 + (s === 0 || s === 6 ? -3 : s % 2 ? 1 : 2); m.poly([[x - 2, y - 2], [x, y + 3], [x + 2, y - 2]], 1); }
-      for (let s = 0; s < 4; s++) { const y = cy - 6 + s * 4; m.poly([[cx - 9, y - 2], [cx - 12.5, y + 1.5], [cx - 8, y + 2]], 1); m.poly([[cx + 9, y - 2], [cx + 12, y + 2], [cx + 8, y + 2]], 1); }
+      m.ell(cx, cy - 0.5, 11.5, 11.5, 1); m.ell(k.sh[0] - 1, k.sh[1] + 4.5, 12.5, 7, 1);
+      for (let s = 0; s < 8; s++) { const x = cx - 10.5 + s * 3, y = cy + 8.5 + (s === 0 || s === 7 ? -4 : s % 2 ? 1 : 2.5); m.poly([[x - 2, y - 2], [x, y + 3.5], [x + 2, y - 2]], 1); }
+      for (let s = 0; s < 5; s++) { const y = cy - 8 + s * 4; m.poly([[cx - 10.5, y - 2], [cx - 14, y + 2], [cx - 9.5, y + 2]], 1); m.poly([[cx + 10.5, y - 2], [cx + 13.5, y + 2.5], [cx + 9.5, y + 2]], 1); }
     }, FUR, 1, 4, 0.1);
     // Zotteln und Frostkrusten
-    for (const [dx, dy] of [[-5, -4], [1, -6], [5, -2], [-2, 0], [3, 3], [-6, 3], [0, 5], [7, 5]] as const) { l.set(R(cx + dx), R(cy + dy), FUR[1]); l.set(R(cx + dx) + 1, R(cy + dy) + 1, FUR[1]); l.set(R(cx + dx) - 1, R(cy + dy) + 1, FUR[2]); }
-    for (const [dx, dy, h] of [[6, 2, 3], [9, 0, 2], [-9, 4, 3]] as const) { l.line(R(cx + dx), R(cy + dy), R(cx + dx), R(cy + dy + h), P.ice[3]); l.set(R(cx + dx), R(cy + dy), WHITE); l.set(R(cx + dx) - 1, R(cy + dy), P.ice[2]); }
+    for (const [dx, dy] of [[-6, -6], [1, -8], [6, -3], [-2, -1], [4, 3], [-7, 3], [0, 6], [8, 6], [-4, 8], [-9, -1]] as const) { l.set(R(cx + dx), R(cy + dy), FUR[1]); l.set(R(cx + dx) + 1, R(cy + dy) + 1, FUR[1]); l.set(R(cx + dx) - 1, R(cy + dy) + 1, FUR[2]); l.set(R(cx + dx), R(cy + dy) + 2, FUR[2]); }
+    for (const [dx, dy, h] of [[7, 2, 4], [10, 0, 3], [-10, 5, 4], [3, 9, 3]] as const) { l.line(R(cx + dx), R(cy + dy), R(cx + dx), R(cy + dy + h), P.ice[3]); l.set(R(cx + dx), R(cy + dy), WHITE); l.set(R(cx + dx) - 1, R(cy + dy), P.ice[2]); l.set(R(cx + dx) + 1, R(cy + dy), P.ice[2]); }
   },
   head: (l, x, y, b) => {
     const hx = R(x + 3), hy = R(y - 1);
-    l.poly([[hx - 4, hy - 3], [hx - 6.5, hy - 8.5], [hx - 1, hy - 4.5]], P.bone[3]); l.set(hx - 6, hy - 8, P.bone[4]); l.set(hx - 3, hy - 4, P.bone[1]);
-    l.poly([[hx + 2, hy - 4.5], [hx + 6.5, hy - 8], [hx + 5.5, hy - 3]], P.bone[2]); l.set(hx + 6, hy - 7, P.bone[4]);
-    form(l, (m) => { m.ell(hx, hy, 6.2, 5.4, 1); for (let s = 0; s < 4; s++) m.poly([[hx - 5 + s * 3, hy + 3], [hx - 4 + s * 3, hy + 7 - (s === 3 ? 2 : 0)], [hx - 2 + s * 3, hy + 3]], 1); }, FUR, 1, 4, 0.14);
-    // ledriges Gesicht
-    l.ell(hx + 2.5, hy + 1, 3.8, 3.2, HIDE[1]); l.rect(hx, hy - 1, 6, 1, HIDE[2]); l.rect(hx - 1, hy - 2, 7, 1, FUR[1]);
-    if (b.mood === 'shut') { l.rect(hx, hy, 2, 1, HIDE[0]); l.rect(hx + 4, hy, 2, 1, HIDE[0]); } else { l.set(hx + 1, hy, WHITE); l.set(hx + 4, hy, WHITE); l.set(hx + 2, hy, INK); l.set(hx + 5, hy, INK); if (b.mood === 'angry' || b.mood === 'open') { l.set(hx, hy - 1, HIDE[0]); l.set(hx + 1, hy - 1, HIDE[0]); l.set(hx + 5, hy - 1, HIDE[0]); } }
-    if (b.mood === 'open' || b.mood === 'angry') { l.rect(hx + 1, hy + 2, 5, 2, P.red[0]); l.set(hx + 3, hy + 3, P.red[2]); } else l.rect(hx + 1, hy + 3, 5, 1, HIDE[0]);
-    l.set(hx + 1, hy + 2, WHITE); l.set(hx + 5, hy + 2, WHITE); l.set(hx + 1, hy + 1, WHITE);
+    // geschwungene Hörner
+    l.poly([[hx - 4, hy - 4], [hx - 8.5, hy - 10], [hx - 5.5, hy - 10.5], [hx - 1, hy - 5.5]], P.bone[3]); l.line(hx - 7, hy - 9, hx - 4, hy - 6, P.bone[4]); l.set(hx - 3, hy - 5, P.bone[1]);
+    l.poly([[hx + 2, hy - 5.5], [hx + 7, hy - 10], [hx + 9.5, hy - 8.5], [hx + 6, hy - 3.5]], P.bone[2]); l.set(hx + 8, hy - 9, P.bone[4]);
+    form(l, (m) => { m.ell(hx, hy, 6.9, 6, 1); for (let s = 0; s < 5; s++) m.poly([[hx - 6 + s * 3, hy + 3], [hx - 5 + s * 3, hy + 8 - (s === 4 ? 3 : s === 0 ? 1 : 0)], [hx - 3 + s * 3, hy + 3]], 1); }, FUR, 1, 4, 0.14);
+    // ledriges Gesicht mit Wulstbraue, Unterbiss und Hauern
+    l.ell(hx + 2.5, hy + 1, 4.6, 3.8, HIDE[1]); l.rect(hx - 1, hy - 1, 8, 1, HIDE[2]); l.rect(hx - 2, hy - 2, 9, 1, FUR[1]); l.rect(hx - 1, hy - 3, 7, 1, FUR[2]);
+    if (b.mood === 'shut') { l.rect(hx, hy, 2, 1, HIDE[0]); l.rect(hx + 4, hy, 2, 1, HIDE[0]); }
+    else { l.rect(hx, hy, 2, 2, WHITE); l.set(hx + 1, hy + 1, INK); l.rect(hx + 4, hy, 2, 2, WHITE); l.set(hx + 5, hy + 1, INK); if (b.mood !== 'n') { l.set(hx, hy, HIDE[0]); l.set(hx + 5, hy, HIDE[0]); l.rect(hx + 2, hy, 2, 1, HIDE[0]); } if (b.mood === 'blink') { l.rect(hx, hy, 2, 1, HIDE[1]); l.rect(hx + 4, hy, 2, 1, HIDE[1]); } }
+    l.set(hx + 3, hy + 2, HIDE[0]);
+    if (b.mood === 'open' || b.mood === 'angry') { l.rect(hx, hy + 3, 7, 2, P.red[0]); l.rect(hx + 2, hy + 4, 3, 1, P.red[2]); } else l.rect(hx, hy + 4, 7, 1, HIDE[0]);
+    l.rect(hx, hy + 2, 1, 3, WHITE); l.rect(hx + 6, hy + 2, 1, 3, WHITE);
   },
-  hand: (l, h, _b, near) => { l.ball(h[0], h[1], near ? 3.7 : 3.1, near ? 3.5 : 3, HIDE, near ? 1 : 0, near ? 4 : 2); if (near) { l.px([h[0] - 2, h[1] + 3, h[0], h[1] + 3, h[0] + 2, h[1] + 3], P.blue[0]); for (let s = 0; s < 3; s++) l.set(R(h[0] - 3 + s * 2), R(h[1] - 4), FUR[3 - (s & 1)]); } },
-  foot: (l, x, y, near) => { l.ell(x + 1.5, y - 0.6, 4.2, 2, near ? HIDE[2] : HIDE[1]); l.px([x + 3, y, x + 5, y], P.blue[0]); },
+  hand: (l, h, _b, near) => {
+    l.ball(h[0], h[1], near ? 4.3 : 3.4, near ? 4 : 3.2, HIDE, near ? 1 : 0, near ? 4 : 2);
+    if (near) { l.px([h[0] - 3, h[1] + 3, h[0] - 1, h[1] + 4, h[0] + 1, h[1] + 4, h[0] + 3, h[1] + 3], P.blue[0]); for (let s = 0; s < 4; s++) l.rect(R(h[0] - 4 + s * 2), R(h[1] - 5), 1, 2, FUR[3 - (s & 1)]); }
+  },
+  foot: (l, x, y, near) => { l.ell(x + 1.5, y + 0.9, 5, 2.4, near ? HIDE[2] : HIDE[1]); l.px([x + 3, y + 2, x + 5, y + 2, x + 1, y + 2], P.blue[0]); },
   over: (p, k, b) => {
     const a = b.fr.a, i = b.fr.i;
-    if (a === 'idle' && i >= 1) puff(p, k.neck[0] + 12 + i, k.neck[1] + 1 - i, 2 + i * 0.6, 1.6 + i * 0.3, WHITE, 150 - i * 30);
-    if (a === 'windup' && i === 1) { puff(p, k.neck[0] + 12, k.neck[1], 3.5, 2.5, WHITE, 140); dots(p, [k.neck[0] + 15, k.neck[1] - 3, k.neck[0] + 16, k.neck[1] + 2], P.ice[2]); }
+    if (a === 'idle' && i >= 1) puff(p, k.neck[0] + 13 + i, k.neck[1] + 2 - i, 2 + i * 0.6, 1.6 + i * 0.3, WHITE, 150 - i * 30);
+    if (a === 'windup' && i === 1) { puff(p, k.neck[0] + 13, k.neck[1] + 1, 3.5, 2.5, WHITE, 140); dots(p, [k.neck[0] + 16, k.neck[1] - 2, k.neck[0] + 17, k.neck[1] + 3], P.ice[2]); }
     if (a === 'attack' && i === 1) { debris(p, k.handN[0] + 3, k.G, 0.6, 3, 10, [WHITE, P.ice[2], P.ice[3]], 9, 9); puff(p, k.handN[0] + 3, k.G - 2, 6, 2.5, WHITE, 150); }
     if (a === 'attack' && i === 2) debris(p, k.handN[0] + 3, k.G, 1, 3, 8, [P.ice[2], P.ice[3]], 11, 5);
-    if (a === 'move' && (i === 1 || i === 4)) dots(p, [k.cx - 11, k.G, k.cx + 10, k.G - 1, k.cx - 9, k.G - 2], P.ice[2]);
+    if (a === 'move' && (i === 1 || i === 4)) dots(p, [k.cx - 12, k.G, k.cx + 11, k.G - 1, k.cx - 10, k.G - 2], P.ice[2]);
   },
 };
+function brutePose(fr: Fr): ReturnType<typeof bipPose> {
+  const b = bipPose(fr, 'slam', 16);
+  b.lean += 2; b.armN = [b.armN[0] + 1, Math.min(b.armN[1], 15)]; b.armF = [b.armF[0], Math.min(b.armF[1], 15)];
+  if (fr.a === 'move') { const c = Math.cos(fr.ph); b.armN = [1 - c * 4, 15 - Math.max(0, Math.sin(fr.ph)) * 3]; b.armF = [2 + c * 4, 15 - Math.max(0, -Math.sin(fr.ph)) * 3]; b.lean += 1; }
+  if (fr.a === 'windup') { b.armN = pk([[3, -9], [1, -11]], fr.i); b.armF = pk([[4, -9], [3, -10]], fr.i); b.dy = 0; }
+  if (fr.a === 'attack') { b.armN = pk([[9, -6], [8, 17], [7, 16]], fr.i); b.armF = pk([[7, -5], [6, 16], [5, 15]], fr.i); }
+  return b;
+}
 const schneebrute: MobFn = (p, fr) => {
   const i = fr.i;
   if (fr.a === 'death' && i >= 1) {
-    if (i === 1) { const b = bipPose({ ...fr, i: 1 }, 'slam', 15); b.dy = 5; b.lean = 5; b.dx = 0; b.mood = 'shut'; b.armN = [5, 9]; b.armF = [5, 9]; biped(p, BRUTE, b); return; }
+    if (i === 1) { const b = brutePose({ ...fr, a: 'hit', i: 1 }); b.dy = 7; b.lean = 6; b.dx = 0; b.mood = 'shut'; b.armN = [5, 9]; b.armF = [5, 9]; biped(p, BRUTE, b); return; }
     // sackt zu einem Schneehaufen zusammen, aus dem die Hörner ragen
-    const rx = [0, 0, 14, 12, 9][i], ry = [0, 0, 7.5, 5, 3][i];
+    const rx = [0, 0, 15, 13, 9][i], ry = [0, 0, 8.5, 5.5, 3][i];
     p.layer((l) => {
-      l.poly([[18, 43 - ry * 1.5], [15.5, 36 - ry * 1.4], [21, 42 - ry * 1.5]], P.bone[3]); l.poly([[27, 42 - ry * 1.5], [31, 36 - ry * 1.3], [30, 43 - ry * 1.4]], P.bone[2]);
-      form(l, (m) => { m.ell(23, 43 - ry + 1, rx, ry, 1); m.ell(18, 43 - ry * 0.7, rx * 0.6, ry * 0.8, 1); m.rect(0, 44, 48, 4, 0); }, FUR, 1, 4, 0.14);
-      l.px([16, 41, 22, 40, 28, 41, 25, 38, 19, 39], FUR[1]); if (i === 2) { l.ell(31, 40, 3.2, 2.6, HIDE[1]); l.set(30, 39, HIDE[3]); }
+      l.poly([[18, 43 - ry * 1.5], [14.5, 34 - ry * 1.3], [17.5, 34 - ry * 1.3], [21, 42 - ry * 1.5]], P.bone[3]); l.poly([[27, 42 - ry * 1.5], [31, 34.5 - ry * 1.2], [33, 36 - ry * 1.2], [30, 43 - ry * 1.4]], P.bone[2]);
+      form(l, (m) => { m.ell(23, 43 - ry + 1, rx, ry, 1); m.ell(17, 43 - ry * 0.7, rx * 0.6, ry * 0.8, 1); m.rect(0, 44, 48, 4, 0); }, FUR, 1, 4, 0.06);
+      l.px([15, 41, 22, 40, 28, 41, 25, 38, 19, 39, 31, 41, 12, 42], FUR[1]); if (i === 2) { l.ell(32, 39, 4, 3.2, HIDE[1]); l.set(31, 38, HIDE[3]); l.px([29, 42, 31, 42, 33, 42], P.blue[0]); }
     });
-    if (i === 2) puff(p, 23, 30, 9, 4, WHITE, 110);
-    dots(p, [[], [], [8, 36, 38, 34, 12, 30, 34, 28], [10, 38, 36, 37, 23, 33], [14, 40, 31, 39]][i], WHITE);
+    if (i === 2) puff(p, 23, 28, 10, 4, WHITE, 110);
+    dots(p, [[], [], [6, 36, 40, 34, 10, 28, 36, 26], [8, 38, 38, 37, 23, 32], [13, 40, 32, 39]][i], WHITE);
     if (i === 4) p.alphaMul(0.55);
     return;
   }
-  const b = bipPose(fr, 'slam', 15);
-  b.lean += 2; b.armN = [b.armN[0] + 1, Math.min(b.armN[1], 13)]; b.armF = [b.armF[0], Math.min(b.armF[1], 13)];
-  if (fr.a === 'move') { const c = Math.cos(fr.ph); b.armN = [1 - c * 4, 12 - Math.max(0, Math.sin(fr.ph)) * 3]; b.armF = [2 + c * 4, 12 - Math.max(0, -Math.sin(fr.ph)) * 3]; b.lean += 1; }
-  biped(p, BRUTE, b);
+  biped(p, BRUTE, brutePose(fr));
 };
 
 // ================================================================ Frostwisp

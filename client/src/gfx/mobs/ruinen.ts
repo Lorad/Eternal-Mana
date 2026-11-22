@@ -3,7 +3,7 @@ import { Px, bez } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha } from '../palette';
 import type { Ramp } from '../palette';
-import { R, TAU, debris, deathFx, dots, floatState, form, glow, spark } from './kit';
+import { R, TAU, box, debris, deathFx, dots, floatState, form, glow, pk, slab, spark } from './kit';
 import type { Fr, MobDef, MobFn } from './kit';
 import { biped, bipPose } from './biped';
 import type { BLook } from './biped';
@@ -23,54 +23,68 @@ function arc(p: Px, a: Pt, c: Pt, b: Pt, col: number, a0 = 210): void {
 }
 
 // ================================================================ Runenwächter
-const STN_FAR: Ramp = [P.stone[0], P.stone[0], P.stone[1], P.stone[1], P.stone[2]];
+const STN_FAR: Ramp = [P.stone[0], P.stone[0], P.stone[1], P.stone[2], P.stone[2]];
 function rune(fr: Fr): number { const i = fr.i; return fr.a === 'windup' ? [P.gold[4], WHITE][i] : fr.a === 'attack' ? [WHITE, P.gold[4], P.gold[3]][i] : fr.a === 'hit' ? P.gold[0] : fr.a === 'death' ? (i === 0 ? WHITE : P.stone[0]) : P.gold[[2, 3, 4, 3, 2, 3][i]]; }
-function headBob(fr: Fr): Pt { const i = fr.i; return fr.a === 'idle' ? [0, [0, -1, -2, -1][i]] : fr.a === 'move' ? [-1, [0, -1, 0, 1, 0, -1][i]] : fr.a === 'windup' ? [0, [-3, -4][i]] : fr.a === 'attack' ? [[2, 1, 0][i], [-1, 1, 0][i]] : fr.a === 'hit' ? [[-4, -2][i], [1, 0][i]] : [-3, -3]; }
+function headBob(fr: Fr): Pt { const i = fr.i; return fr.a === 'idle' ? [0, [0, -1, -2, -1][i]] : fr.a === 'move' ? [-1, [0, -1, 0, 1, 0, -1][i]] : fr.a === 'windup' ? [0, [-1, -2][i]] : fr.a === 'attack' ? [[2, 1, 0][i], [-1, 1, 0][i]] : fr.a === 'hit' ? [[-4, -2][i], [1, 0][i]] : [-3, -2]; }
 const WAECHTER: BLook = {
-  w: 48, h: 48, hip: 9, torsoH: 12, stance: 5, legR: [3, 3], armL: 12, armR: [3, 3.3], armRF: [2.6, 2.8], shN: [-7, 3], shF: [8, 3], skin: P.stone, far: STN_FAR,
+  w: 48, h: 48, hip: 11, torsoH: 15, stance: 5.5, legR: [3.4, 3.4], armL: 13, armR: [3.2, 3.4], armRF: [2.8, 3], shN: [-10, 3], shF: [9, 3], skin: P.stone, far: STN_FAR,
+  // Glieder aus behauenen Quadern mit Runenband am Gelenk
+  seg: (l, a, b, part, idx, near, bp) => {
+    const w = part === 'leg' ? 3.5 : near ? 3.4 : 2.8;
+    slab(l, a, b, w, w, near ? P.stone : STN_FAR, near ? 1 : 0);
+    if (near && idx === 1) { const c = rune(bp.fr); l.set(R(a[0]) - 1, R(a[1]), c); l.set(R(a[0]) + 1, R(a[1]), c); l.set(R(a[0]), R(a[1]) + 1, P.stone[1]); }
+  },
   torso: (l, k, b) => {
-    const s = k.sh, h = k.hip, rc = rune(b.fr);
-    form(l, (m) => { m.poly([[s[0] - 10, s[1] + 1], [s[0] + 9, s[1] + 1], [h[0] + 7, h[1] + 2], [h[0] - 7, h[1] + 2]], 1); m.rrect(R(s[0] - 11), R(s[1]), 22, 6, 1); m.rect(R(s[0] + 9), R(s[1]), 2, 2, 0); }, P.stone, 1, 4, 0.1);
-    // Blockfugen, Risse
-    for (let x = R(s[0] - 9); x < s[0] + 9; x++) if (l.get(x, R(s[1] + 6)) >>> 24) l.set(x, R(s[1] + 6), P.stone[1]);
-    l.line(R(s[0] - 4), R(s[1] + 1), R(s[0] - 4), R(s[1] + 5), P.stone[1]); l.line(R(s[0] + 5), R(s[1] + 7), R(s[0] + 5), R(h[1]), P.stone[1]); l.px([s[0] + 6, s[1] + 2, s[0] + 7, s[1] + 3, s[0] + 7, s[1] + 4], P.stone[0]);
-    // Rune auf der Brust
-    const rx = R((s[0] + h[0]) / 2), ry = R(s[1] + 4);
-    l.line(rx, ry, rx, ry + 7, rc); l.line(rx, ry + 1, rx + 3, ry + 3, rc); l.line(rx, ry + 4, rx + 3, ry + 6, rc); l.line(rx, ry + 2, rx - 3, ry, rc); l.set(rx - 3, ry + 6, rc); l.set(rx + 3, ry, rc);
+    const s = k.sh, h = k.hip, rc = rune(b.fr), y1 = R(s[1] + 9);
+    box(l, R(h[0] - 7), y1, 15, R(h[1] + 3) - y1, P.stone, 1); box(l, R(h[0] - 8), R(h[1] - 1), 17, 3, P.stone, 1);
+    box(l, R(s[0] - 12), R(s[1]), 24, 10, P.stone, 1); l.rect(R(s[0] + 10), R(s[1]), 2, 2, 0);
+    // Fugen und Risse
+    l.line(R(s[0] - 6), R(s[1] + 1), R(s[0] - 6), R(s[1] + 8), P.stone[1]); l.line(R(s[0] + 6), R(s[1] + 1), R(s[0] + 6), R(s[1] + 8), P.stone[1]); l.rect(R(s[0] - 5), R(s[1] + 1), 11, 1, P.stone[4]);
+    l.px([s[0] + 8, s[1] + 2, s[0] + 9, s[1] + 3, s[0] + 8, s[1] + 4, s[0] + 9, s[1] + 5], P.stone[0]); l.px([h[0] + 4, y1 + 2, h[0] + 5, y1 + 3], P.stone[1]);
+    // große Rune auf der Brust
+    const rx = R(s[0] - 1), ry = R(s[1] + 2);
+    l.rect(rx, ry, 2, 12, rc); l.line(rx + 2, ry + 1, rx + 4, ry + 3, rc); l.line(rx + 2, ry + 5, rx + 4, ry + 7, rc); l.line(rx - 1, ry + 3, rx - 3, ry + 1, rc); l.set(rx - 3, ry + 7, rc); l.set(rx + 4, ry, rc); l.rect(rx - 1, ry + 11, 4, 1, rc);
     // Moos und Ranke auf der Schulter
-    form(l, (m) => { m.ell(s[0] - 8, s[1] + 0.5, 4, 2, 1); m.ell(s[0] - 4.5, s[1], 2.5, 1.5, 1); }, P.green, 2, 4, 0.1);
-    l.line(R(s[0] - 9), R(s[1] + 2), R(s[0] - 10), R(s[1] + 7), P.forest[3]); l.set(R(s[0] - 9), R(s[1] + 5), P.green[4]); l.set(R(s[0] - 11), R(s[1] + 8), P.green[3]);
+    form(l, (m) => { m.ell(s[0] - 9, s[1] + 0.5, 4.5, 2.2, 1); m.ell(s[0] - 5, s[1], 2.5, 1.5, 1); }, P.green, 2, 4, 0.1);
+    l.line(R(s[0] - 11), R(s[1] + 2), R(s[0] - 12), R(s[1] + 8), P.forest[3]); l.set(R(s[0] - 11), R(s[1] + 5), P.green[4]); l.set(R(s[0] - 13), R(s[1] + 9), P.green[3]);
   },
   head: (l, x, y, b) => {
-    const o = headBob(b.fr), hx = R(x - 4 + o[0] - b.head[0]), hy = R(y - 12 + o[1] - b.head[1]), rc = rune(b.fr);
-    form(l, (m) => { m.rrect(hx, hy, 11, 9, 1); m.rect(hx + 9, hy, 2, 2, 0); }, P.stone, 2, 4, 0.2);
-    l.rect(hx + 3, hy + 4, 7, 1, INK); l.rect(hx + 2, hy + 2, 8, 1, P.stone[1]);
-    if (b.mood === 'shut') l.rect(hx + 4, hy + 4, 5, 1, P.gold[0]); else { l.rect(hx + 4, hy + 3, 2, 2, rc); l.rect(hx + 7, hy + 3, 2, 2, rc); }
-    l.px([hx + 5, hy + 1, hx + 6, hy, hx + 6, hy + 1], rc); l.line(hx + 2, hy + 6, hx + 3, hy + 8, P.stone[1]); l.rect(hx + 6, hy + 7, 3, 1, P.stone[2]);
-    l.px([hx + 1, hy - 1, hx + 2, hy - 1, hx + 3, hy - 1, hx + 2, hy - 2], P.green[3]); l.set(hx + 1, hy, P.green[4]);
+    const o = headBob(b.fr), hx = R(x - 6 + o[0] - b.head[0]), hy = R(y - 12 + o[1] - b.head[1]), rc = rune(b.fr);
+    box(l, hx, hy, 13, 10, P.stone, 1); l.rect(hx + 11, hy, 2, 2, 0); l.rect(hx + 1, hy + 1, 9, 1, P.stone[4]);
+    // Brauenwulst, Sehschlitz mit Glutaugen, gemeißelter Mund
+    l.rect(hx + 2, hy + 3, 10, 1, P.stone[1]); l.rect(hx + 3, hy + 4, 9, 2, INK);
+    if (b.mood === 'shut') l.rect(hx + 4, hy + 5, 7, 1, P.gold[0]); else { l.rect(hx + 4, hy + 4, 2, 2, rc); l.rect(hx + 8, hy + 4, 2, 2, rc); }
+    l.px([hx + 6, hy + 1, hx + 7, hy + 1, hx + 7, hy + 2, hx + 6, hy + 2], rc);
+    l.rect(hx + 5, hy + 7, 6, 1, P.stone[1]); l.px([hx + 6, hy + 8, hx + 8, hy + 8, hx + 10, hy + 8], P.stone[1]); l.line(hx + 1, hy + 5, hx + 3, hy + 8, P.stone[1]);
+    l.px([hx + 1, hy - 1, hx + 2, hy - 1, hx + 3, hy - 1], P.green[3]); l.set(hx + 1, hy, P.green[4]);
   },
-  hand: (l, h, b, near) => { const r = near ? P.stone : STN_FAR, x = R(h[0] - 3), y = R(h[1] - 3); l.rrect(x, y, 7, 7, r[2]); l.rect(x + 1, y, 5, 1, r[3]); l.rect(x + 1, y + 6, 5, 1, r[1]); l.rect(x + 6, y + 1, 1, 5, r[1]); if (near) { l.rect(x + 2, y + 2, 3, 3, rune(b.fr)); l.set(x + 3, y + 3, r[2]); } },
-  foot: (l, x, y, near) => { const r = near ? P.stone : STN_FAR; l.rrect(R(x - 3), R(y - 2), 8, 4, r[2]); l.rect(R(x - 2), R(y - 2), 6, 1, r[3]); },
+  hand: (l, h, b, near) => { const r = near ? P.stone : STN_FAR, x = R(h[0] - 4), y = R(h[1] - 4); box(l, x, y, 8, 8, r, near ? 1 : 0); l.rect(x + 1, y + 5, 6, 1, r[near ? 1 : 0]); if (near) { l.rect(x + 2, y + 1, 4, 3, rune(b.fr)); l.rect(x + 3, y + 2, 2, 1, r[2]); } },
+  foot: (l, x, y, near) => box(l, R(x - 4), R(y - 1), 10, 5, near ? P.stone : STN_FAR, near ? 1 : 0),
   over: (p, k, b) => {
-    const f = b.fr, o = headBob(f), gx = k.sh[0] + 1, gy = k.sh[1] - 2 + o[1] * 0.5, rc = rune(f);
-    if (f.a !== 'death') { glow(p, gx, gy, 4.5, P.gold[3], 90); dots(p, [gx - 2, gy, gx + 2, gy + 1, gx, gy - 1], rc); }
+    const f = b.fr, o = headBob(f), gx = k.sh[0] + 0.5, gy = k.sh[1] - 2 + o[1] * 0.5, rc = rune(f);
+    if (f.a !== 'death') { glow(p, gx, gy, 5, P.gold[3], 100); dots(p, [gx - 3, gy, gx + 3, gy + 1, gx, gy - 1, gx - 1, gy + 1], rc); }
     const mx = (k.handN[0] + k.handF[0]) / 2, my = (k.handN[1] + k.handF[1]) / 2;
     if (f.a === 'windup') { glow(p, mx, my - 2, 5 + f.i * 3, P.gold[3], 100); spark(p, mx, my - 2, WHITE, P.gold[4], 1 + f.i); for (let s = 0; s < 6; s++) p.set(R(mx + Math.cos(s * 1.05 + f.i) * (9 - f.i * 3)), R(my - 2 + Math.sin(s * 1.05 + f.i) * (7 - f.i * 2)), P.gold[4]); }
-    if (f.a === 'attack' && f.i < 2) { glow(p, mx + 4, my, 8 - f.i * 2, P.gold[4], 120 - f.i * 40); spark(p, mx + 5, my, WHITE, P.gold[4], 3 - f.i); for (let x = R(mx + 8); x < 47; x += 2) p.blend(x, R(my + Math.sin(x) * 1.5), alpha(P.gold[4], 220 - (x - mx) * 5)); }
-    if (f.a === 'move' && (f.i === 1 || f.i === 4)) dots(p, [k.cx - 11, k.G, k.cx + 10, k.G - 1], alpha(P.sand[4], 200));
+    if (f.a === 'attack' && f.i < 2) { glow(p, mx + 4, my, 8 - f.i * 2, P.gold[4], 120 - f.i * 40); spark(p, mx + 6, my, WHITE, P.gold[4], 3 - f.i); for (let x = R(mx + 9); x < 46; x += 2) p.blend(x, R(my + Math.sin(x) * 1.5), alpha(P.gold[4], 220 - (x - mx) * 5)); }
+    if (f.a === 'move' && (f.i === 1 || f.i === 4)) dots(p, [k.cx - 12, k.G, k.cx + 11, k.G - 1], alpha(P.sand[4], 200));
   },
 };
+function waechterPose(fr: Fr): ReturnType<typeof bipPose> {
+  const b = bipPose(fr, 'slam', 13);
+  if (fr.a === 'windup') { b.armN = pk([[3, -7], [1, -9]], fr.i); b.armF = pk([[3, -7], [2, -8]], fr.i); b.dy = 0; }
+  if (fr.a === 'hit') b.armN = [0, 10];
+  if (fr.a === 'attack') { b.armN = pk([[11, -2], [12, 1], [8, 7]], fr.i); b.armF = pk([[1, -2], [2, 1], [1, 7]], fr.i); b.dy = 0; }
+  return b;
+}
 const runenwaechter: MobFn = (p, fr) => {
   if (fr.a === 'death' && fr.i >= 1) {
-    const b = new Px(48, 48); biped(b, WAECHTER, bipPose({ ...fr, i: 1 }, 'slam', 12));
-    deathFx(p, b, fr.i, 'shatter', 43, 17, { cell: 6, heap: 6, cx: 24, pop: 2 });
+    const b = new Px(48, 48); biped(b, WAECHTER, waechterPose({ ...fr, a: 'hit', i: 1 }));
+    deathFx(p, b, fr.i, 'shatter', 43, 17, { cell: 6, heap: 7, cx: 24, pop: 2, spread: 0.6 });
     if (fr.i <= 2) debris(p, 24, 43, fr.i * 0.4, 6, 8, [P.stone[3], P.sand[3], P.stone[2]], 14, 8);
-    if (fr.i < 4) dots(p, [20 + fr.i, 38 - fr.i * 3, 28 - fr.i, 34 - fr.i * 4, 24, 30 - fr.i * 3], alpha(P.gold[4], 230 - fr.i * 50));
+    if (fr.i < 4) dots(p, [20 + fr.i, 36 - fr.i * 3, 28 - fr.i, 32 - fr.i * 4, 24, 28 - fr.i * 3], alpha(P.gold[4], 230 - fr.i * 50));
     return;
   }
-  const b = bipPose(fr, 'slam', 12);
-  if (fr.a === 'attack') { b.armN = [[9, -2], [10, 1], [7, 6]][fr.i] as unknown as Pt; b.armF = [[2, -2], [3, 1], [1, 6]][fr.i] as unknown as Pt; b.dy = 0; }
-  biped(p, WAECHTER, b);
+  biped(p, WAECHTER, waechterPose(fr));
 };
 
 // ================================================================ Skelettkrieger

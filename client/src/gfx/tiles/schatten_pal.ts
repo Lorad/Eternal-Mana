@@ -39,11 +39,11 @@ export const BONE = [P.bone[1], P.bone[2], P.bone[3], P.bone[4]];
 /** Schwarzer Marmor (7 Töne). */
 export const MARB = tones(7, mix(INK, SH[0], 0.5), mix(SH[1], ST[0], 0.45), mix(SH[2], ST[0], 0.55), mix(ST[1], SH[3], 0.45), mix(ST[2], VI[2], 0.3), mix(ST[3], VI[4], 0.3));
 /** Pflaumenmarmor (7 Töne). */
-export const PLM = tones(7, mix(SH[1], PK[0], 0.4), mix(SH[3], PK[0], 0.5), mix(VI[1], PK[1], 0.45), mix(VI[2], PK[2], 0.35), mix(VI[3], PK[3], 0.4), mix(VI[4], PK[4], 0.4));
+export const PLM = tones(7, mix(SH[1], PK[0], 0.3), mix(SH[2], PK[0], 0.45), mix(SH[3], PK[0], 0.5), mix(VI[1], PK[1], 0.38), mix(VI[2], PK[1], 0.4), mix(VI[3], PK[3], 0.35));
 /** Angelaufenes Gold. */
 export const GOLDT = [mix(P.gold[0], SH[2], 0.45), mix(P.gold[1], P.stone[1], 0.3), mix(P.gold[2], P.sand[2], 0.3), mix(P.gold[3], P.sand[3], 0.25), P.gold[4]];
 /** Königsläufer: tiefes Weinviolett. */
-export const CARP = tones(6, mix(VI[0], P.red[0], 0.5), mix(VI[1], P.red[0], 0.55), mix(VI[2], P.red[1], 0.5), mix(VI[3], P.red[2], 0.4));
+export const CARP = tones(6, mix(VI[0], P.red[0], 0.6), mix(P.red[0], VI[1], 0.3), mix(P.red[1], VI[1], 0.25), mix(P.red[2], VI[2], 0.25));
 export const VGL = [VI[0], VI[1], VI[2], VI[3], VI[4]];
 /** Elementfarben des Siegels: Feuer, Wasser, Erde, Wind, Licht, Dunkelheit – je [dunkel, Körper, Licht]. */
 export const ELEM = [
