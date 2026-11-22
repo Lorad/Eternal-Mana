@@ -165,7 +165,16 @@ export class GameScene extends Phaser.Scene {
     for (const k of this.groundKeys) if (this.textures.exists(k)) this.textures.remove(k);
     this.groundKeys = [];
     const W = map.w * TILE, H = map.h * TILE;
-    this.cameras.main.setBounds(0, 0, W, H).setBackgroundColor(0x07080d).setRoundPixels(true);
+    // Kamera ohne Kartengrenzen: die Spielfigur bleibt auch am Kartenrand in der Bildmitte
+    this.cameras.main.removeBounds().setBackgroundColor(0x07080d).setRoundPixels(true);
+    {
+      // weicher Übergang ins Dunkel am Kartenrand
+      const g = this.add.graphics().setDepth(8900), c = 0x07080d, F = TILE * 3;
+      g.fillGradientStyle(c, c, c, c, 1, 1, 0, 0).fillRect(0, 0, W, F);
+      g.fillGradientStyle(c, c, c, c, 0, 0, 1, 1).fillRect(0, H - F, W, F);
+      g.fillGradientStyle(c, c, c, c, 1, 0, 1, 0).fillRect(0, 0, F, H);
+      g.fillGradientStyle(c, c, c, c, 0, 1, 0, 1).fillRect(W - F, 0, F, H);
+    }
     this.liquid = this.add.tileSprite(0, 0, W, H, `liq_${map.biome}_0`).setOrigin(0).setDepth(-20);
     // Boden in Kacheln von 32x32 Feldern malen
     const pm = { w: map.w, h: map.h, tiles: map.tiles, biome: map.biome, dungeon: map.dungeon, seed: map.seed, rooms: map.rooms };
