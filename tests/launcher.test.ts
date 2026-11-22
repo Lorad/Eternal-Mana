@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // @ts-ignore – reines JavaScript ohne Typen, damit der Launcher ohne Build läuft
-import { GitHub, gitBlobSha, parseNotes, readState, safeRel, sync, toLf, untar } from '../launcher/patcher.mjs';
+import { GitHub, gitBlobSha, moveInto, parseNotes, readState, safeRel, sync, toLf, untar } from '../launcher/patcher.mjs';
 
 type Files = Record<string, string | Buffer>;
 let remote: Files = {};
@@ -169,6 +169,23 @@ describe('Launcher-Patcher', () => {
   it('meldet eine fehlende Verbindung als solche', async () => {
     const offline = new GitHub({ repo: 'a/b', branch: 'x', api: 'http://127.0.0.1:1', raw: 'http://127.0.0.1:1', web: 'http://127.0.0.1:1' });
     await expect(sync({ root: mkRoot(), gh: offline })).rejects.toMatchObject({ kind: 'offline' });
+  });
+
+  it('räumt die Installation in einen Unterordner und macht bei einem Fehler alles rückgängig', () => {
+    const files = { 'a.txt': 'a', 'client/x.ts': 'x', 'data/save.db': 's', 'fremd.txt': 'bleibt' };
+    const root = mkRoot(files);
+    const dest = path.join(root, 'Eternal Mana');
+    expect(() => moveInto(root, ['a.txt', 'client', 'gibt-es-nicht', 'data'], dest, (from: string, to: string) => {
+      if (from.endsWith('data')) throw new Error('gesperrt');
+      fs.renameSync(from, to);
+    })).toThrow('gesperrt');
+    expect(fs.existsSync(dest)).toBe(false);
+    for (const [f, v] of Object.entries(files)) expect(read(root, f)).toBe(v);
+
+    expect(moveInto(root, ['a.txt', 'client', 'gibt-es-nicht', 'data'], dest)).toEqual(['a.txt', 'client', 'data']);
+    expect(fs.readdirSync(root).sort()).toEqual(['Eternal Mana', 'fremd.txt']);
+    expect(read(dest, 'client/x.ts')).toBe('x');
+    expect(read(dest, 'data/save.db')).toBe('s');
   });
 
   it('liest die Patch Notes', () => {

@@ -18,6 +18,11 @@ Unter Windows legt der Launcher beim ersten Start die Verknüpfung „Eternal Ma
 (`launcher/ui/icon.ico`); über „Desktop-Verknüpfung“ im Launcher kommt sie zusätzlich auf den Desktop. Über die Verknüpfung
 gestartet, erscheint kein Konsolenfenster.
 
+**Aufgeräumter Ordner (Windows):** Nach dem ersten erfolgreichen Abgleich verschiebt der Launcher alles, was zum Spiel gehört
+(auch `data/` und `node_modules/`), in den Unterordner `Eternal Mana` und startet sich von dort neu. Im äußeren Ordner bleibt
+nur die Verknüpfung „Eternal Mana“; fremde Dateien werden nicht angefasst. Läuft gerade der Server oder ist eine Datei
+gesperrt, bleibt alles, wie es ist. Die Skripte (`Eternal-Mana.bat`, `start-server.bat` …) liegen danach im Unterordner.
+
 **Mit den Skripten:**
 
 **Windows:** `start-server.bat` doppelklicken. **Linux/macOS:** `./start-server.sh`.

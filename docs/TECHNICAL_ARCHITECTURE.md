@@ -115,6 +115,9 @@ Reines JavaScript ohne Abhängigkeiten, damit der Launcher auch vor dem ersten `
   werden können. `data/`, `node_modules/`, `client/dist/`, `.git/` und `config/server.json` sind tabu.
 - Danach: `npm install`, wenn sich `package-lock.json` geändert hat; Client-Build, wenn Quellen neuer sind als `client/dist`.
   Ändert ein Update den Launcher selbst, startet er sich neu und die Oberfläche verbindet sich wieder.
+- Windows: Verknüpfung mit Symbol, die den Launcher über `wscript.exe launcher/start-hidden.js` ohne Konsole startet. Die
+  Installation wird einmalig in den Unterordner `Eternal Mana` verschoben (`moveInto` mit Rückabwicklung bei Fehlern);
+  die Verknüpfung liegt dann im Ordner darüber.
 - Der Spielserver läuft als unsichtbarer Kindprozess; gestoppt wird er über `/api/stop`. Der Launcher-Prozess endet, sobald
   sein Fenster geschlossen ist und kein von ihm gestarteter Server mehr läuft.
 

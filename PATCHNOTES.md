@@ -15,6 +15,7 @@ _22.11.2026_
 ### Verbessert
 - Das Launcher-Fenster öffnet sich mittig auf dem Bildschirm im Querformat eines DIN-A4-Blatts und hat eine feste Größe.
 - Über die Verknüpfung **Eternal Mana** startet der Launcher ganz ohne Konsolenfenster.
+- Aufgeräumter Spielordner (Windows): Alle Dateien wandern in den Unterordner **Eternal Mana**, daneben bleibt nur die Verknüpfung. Spielstände ziehen mit um.
 - Die Kamera hält die Spielfigur jetzt immer in der Bildmitte – auch am Kartenrand und in allen sechs Bossräumen.
 - Lichtquellen leuchten weich und rund statt mit kantigem Rand.
 

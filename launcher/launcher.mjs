@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GitHub, PatchError, sync, readState, writeState, parseNotes, gitBlobSha } from './patcher.mjs';
+import { GitHub, PatchError, sync, readState, writeState, parseNotes, gitBlobSha, moveInto } from './patcher.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -23,6 +23,48 @@ fs.mkdirSync(path.join(root, '.patcher'), { recursive: true });
 const logFile = path.join(root, '.patcher', 'launcher.log');
 try { if (fs.statSync(logFile).size > 200_000) fs.rmSync(logFile); } catch {}
 const log = (...a) => { const l = `[${new Date().toISOString()}] ${a.join(' ')}\n`; try { fs.appendFileSync(logFile, l); } catch {} process.stdout.write(l); };
+
+// ---------------------------------------------------------------- Aufgeräumte Installation
+// Unter Windows liegt alles in einem Unterordner „Eternal Mana“; daneben bleibt nur die Verknüpfung sichtbar:
+//   <Ordner>/Eternal Mana.lnk
+//   <Ordner>/Eternal Mana/…        (Spiel, Launcher, Spielstände)
+// Verschoben wird nur, was nachweislich zum Spiel gehört (Dateiliste des Patchers, node_modules, data, .patcher).
+const TIDY_NAME = 'Eternal Mana';
+function tidyWanted() {
+  const on = process.env.EM_TIDY === '1' || (isWin && process.env.EM_TIDY !== '0' && cfg.tidy !== false);
+  if (!on || devCheckout) return false;
+  const st = readState(root);
+  return !st.tidy && st.files.length > 0 && !fs.existsSync(path.join(root, TIDY_NAME));
+}
+function renameRetry(from, to) {
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(from, to); return; }
+    catch (e) { if (i >= 4) throw e; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 400); }
+  }
+}
+/** Verschiebt die Installation in den Unterordner. Rückgabe: neuer Ort oder null (dann ist alles wie vorher). */
+function tidyInstall() {
+  const names = [...new Set([...readState(root).files.map(f => f.split('/')[0]), 'node_modules', 'data'])].filter(n => n !== '.patcher' && n !== TIDY_NAME);
+  const dest = path.join(root, TIDY_NAME);
+  log('Räume die Installation auf: alles in den Unterordner', TIDY_NAME);
+  try { moveInto(root, [...names, '.patcher'], dest, renameRetry); }
+  catch (e) {
+    try { writeState(root, { tidy: 'failed' }); } catch {}
+    log('Aufräumen nicht möglich, alles bleibt wie es ist:', e.message);
+    return null;
+  }
+  writeState(dest, { tidy: true, shortcut: 0 });
+  return dest;
+}
+function respawn(dir, args) {
+  spawn(process.execPath, [path.join(dir, 'launcher', 'launcher.mjs'), ...args], { cwd: dir, detached: true, stdio: 'ignore', windowsHide: true }).unref();
+}
+if (tidyWanted() && !(await gameInfo())) {
+  const dest = tidyInstall();
+  if (dest) { respawn(dest, process.argv.slice(2)); process.exit(0); }
+}
+/** Ort der Verknüpfung: bei aufgeräumter Installation der Ordner darüber. */
+const linkDir = () => (readState(root).tidy === true ? path.dirname(root) : root);
 
 // ---------------------------------------------------------------- Zustand → Oberfläche
 const S = {
@@ -142,6 +184,10 @@ async function pipeline({ force = false, stopServerFirst = false } = {}) {
     log('Fehler:', e.stack ?? e.message);
     set({ phase: 'error', busyBar: false, progress: 0, error: e.message, label: 'Etwas ist schiefgelaufen', detail: e.message, ready: !needInstall() && !needBuild() });
   } finally { busy = false; if (S.phase === 'ready') carried = 0; }
+  if (S.phase === 'ready' && tidyWanted() && !(await gameInfo())) {
+    const dest = tidyInstall();
+    if (dest) { S.updatedNow = S.updated; restartSelf(dest); }
+  }
 }
 const mb = n => (n / 1048576).toFixed(1).replace('.', ',');
 
@@ -159,13 +205,13 @@ function gitSync() {
   return before === after ? [] : git('diff', '--name-only', before, after).split('\n').filter(Boolean);
 }
 
-function restartSelf() {
-  log('Launcher wurde aktualisiert – Neustart');
+function restartSelf(dir = root) {
+  if (dir === root) log('Launcher wurde aktualisiert – Neustart');
   set({ phase: 'restarting', busyBar: true, label: 'Launcher wird neu gestartet …', detail: '' });
   setTimeout(() => {
     server.close();
     for (const c of clients) c.destroy();
-    spawn(process.execPath, [fileURLToPath(import.meta.url), '--resume', `--updated=${S.updatedNow ?? 0}`], { cwd: root, detached: true, stdio: 'ignore', windowsHide: true }).unref();
+    respawn(dir, ['--resume', `--updated=${S.updatedNow ?? 0}`]);
     setTimeout(() => process.exit(0), 150);
   }, 400);
 }
@@ -269,14 +315,14 @@ function gameUrl() {
 const SHORTCUT_VERSION = 2;
 function makeShortcut(where) {
   if (!isWin) return;
-  const ps = "$desk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Eternal Mana.lnk'; $here = Join-Path $env:EM_DIR 'Eternal Mana.lnk';"
+  const ps = "$desk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Eternal Mana.lnk'; $here = Join-Path $env:EM_LINKDIR 'Eternal Mana.lnk';"
     + " $list = @(); if ($env:EM_WHERE -eq 'desktop') { $list += $desk } else { $list += $here; if (Test-Path $desk) { $list += $desk } };"
     + " $w = New-Object -ComObject WScript.Shell;"
     + " foreach ($f in $list) { $s = $w.CreateShortcut($f); $s.TargetPath = (Join-Path $env:SystemRoot 'System32\\wscript.exe');"
     + " $s.Arguments = '//nologo //e:jscript \"' + (Join-Path $env:EM_DIR 'launcher\\start-hidden.js') + '\"'; $s.WorkingDirectory = $env:EM_DIR;"
     + " $s.IconLocation = (Join-Path $env:EM_DIR 'launcher\\ui\\icon.ico'); $s.WindowStyle = 1; $s.Description = 'Eternal Mana'; $s.Save() }";
   try {
-    spawn('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(ps, 'utf16le').toString('base64')], { cwd: root, windowsHide: true, stdio: 'ignore', env: { ...process.env, EM_DIR: root, EM_WHERE: where } })
+    spawn('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(ps, 'utf16le').toString('base64')], { cwd: root, windowsHide: true, stdio: 'ignore', env: { ...process.env, EM_DIR: root, EM_LINKDIR: linkDir(), EM_WHERE: where } })
       .on('error', e => log('Verknüpfung fehlgeschlagen:', e.message))
       .on('close', c => { log(`Verknüpfung (${where}) ${c === 0 ? 'angelegt' : 'fehlgeschlagen'}`); if (c === 0 && where === 'folder') writeState(root, { shortcut: SHORTCUT_VERSION }); });
   } catch (e) { log('Verknüpfung fehlgeschlagen:', e.message); }
@@ -369,7 +415,7 @@ if (!(await listen(resume ? 15 : 1))) {
 }
 log(`Launcher läuft auf http://127.0.0.1:${port}/ (${cfg.repo}@${cfg.branch})`);
 refreshMeta();
-if (isWin && (!fs.existsSync(path.join(root, 'Eternal Mana.lnk')) || readState(root).shortcut !== SHORTCUT_VERSION)) makeShortcut('folder');
+if (isWin && (!fs.existsSync(path.join(linkDir(), 'Eternal Mana.lnk')) || readState(root).shortcut !== SHORTCUT_VERSION)) makeShortcut('folder');
 if (!resume && !process.env.EM_LAUNCHER_NO_OPEN) openWindow(`http://127.0.0.1:${port}/`);
 maybeQuit();
 pollServer();

@@ -223,6 +223,27 @@ export async function sync({ root, gh, force = false, canApply = async () => tru
   return { head, changed: plan.downloads.map(e => e.path), removed: plan.deletes, upToDate: false };
 }
 
+/**
+ * Verschiebt die genannten Einträge von `root` in den neuen Unterordner `dest`. Geht dabei etwas schief
+ * (z. B. eine gesperrte Datei), wird alles zurückgeschoben und der Fehler weitergereicht.
+ */
+export function moveInto(root, names, dest, rename = fs.renameSync) {
+  const moved = [];
+  fs.mkdirSync(dest);
+  try {
+    for (const n of names) {
+      if (!fs.existsSync(path.join(root, n))) continue;
+      rename(path.join(root, n), path.join(dest, n));
+      moved.push(n);
+    }
+  } catch (e) {
+    for (const n of moved.reverse()) { try { fs.renameSync(path.join(dest, n), path.join(root, n)); } catch {} }
+    try { fs.rmdirSync(dest); } catch {}
+    throw e;
+  }
+  return moved;
+}
+
 /** PATCHNOTES.md → [{ version, title, date, items: [{ h } | { t }] }] */
 export function parseNotes(md) {
   const out = [];
