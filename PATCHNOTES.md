@@ -10,6 +10,7 @@ _22.11.2026_
 - **Launcher mit automatischen Updates:** `Eternal-Mana.bat` prüft beim Start, ob es Neues gibt, lädt nur die geänderten Dateien und bereitet das Spiel vor.
 - Spiel und Server lassen sich direkt im Launcher starten; die Adressen für Mitspielende stehen gleich daneben.
 - „Dateien prüfen“ repariert eine beschädigte Installation.
+- Eigenes Spiel-Symbol: Unter Windows legt der Launcher die Verknüpfung **Eternal Mana** im Spielordner an; auf Wunsch auch auf dem Desktop.
 
 ### Verbessert
 - Die Kamera hält die Spielfigur jetzt immer in der Bildmitte – auch am Kartenrand und in allen sechs Bossräumen.

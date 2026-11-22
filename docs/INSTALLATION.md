@@ -14,6 +14,10 @@ ein eigenes Fenster, hält die Installation aktuell (siehe Abschnitt 6) und star
 selbst öffnet sich im Standardbrowser. Schließt du das Launcher-Fenster, läuft ein von ihm gestarteter Server weiter; beenden
 lässt er sich im Launcher oder mit `stop-server.bat`.
 
+Unter Windows legt der Launcher beim ersten Start die Verknüpfung „Eternal Mana“ mit dem Spiel-Symbol im Spielordner an
+(`launcher/ui/icon.ico`); über „Desktop-Verknüpfung“ im Launcher kommt sie zusätzlich auf den Desktop. Über die Verknüpfung
+gestartet, erscheint kein Konsolenfenster.
+
 **Mit den Skripten:**
 
 **Windows:** `start-server.bat` doppelklicken. **Linux/macOS:** `./start-server.sh`.

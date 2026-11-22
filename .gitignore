@@ -5,3 +5,4 @@ client/dist/
 .DS_Store
 tests/e2e/out/
 .patcher/
+*.lnk

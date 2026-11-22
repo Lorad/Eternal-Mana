@@ -27,7 +27,7 @@ const log = (...a) => { const l = `[${new Date().toISOString()}] ${a.join(' ')}\
 // ---------------------------------------------------------------- Zustand → Oberfläche
 const S = {
   phase: 'checking', progress: 0, busyBar: false, label: 'Suche nach Aktualisierungen …', detail: '', error: null,
-  ready: false, updated: 0, pending: 0, offline: false, dev: devCheckout,
+  ready: false, updated: 0, pending: 0, offline: false, dev: devCheckout, win: isWin,
   version: '', build: '', notes: [], joinAddr: settings.joinAddr, ui: '',
   server: { running: false, starting: false, mine: false, online: 0, addresses: [], error: null },
 };
@@ -237,6 +237,23 @@ function gameUrl() {
   return t;
 }
 
+/**
+ * Windows: Verknüpfung „Eternal Mana“ mit dem Spiel-Symbol anlegen (eine .bat kann kein eigenes Symbol tragen).
+ * Sie startet den Launcher minimiert, sodass kein Konsolenfenster aufblitzt.
+ */
+function makeShortcut(where) {
+  if (!isWin) return;
+  const ps = "$d = if ($env:EM_WHERE -eq 'desktop') { [Environment]::GetFolderPath('Desktop') } else { $env:EM_DIR };"
+    + " $s = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $d 'Eternal Mana.lnk'));"
+    + " $s.TargetPath = (Join-Path $env:EM_DIR 'Eternal-Mana.bat'); $s.WorkingDirectory = $env:EM_DIR;"
+    + " $s.IconLocation = (Join-Path $env:EM_DIR 'launcher\\ui\\icon.ico'); $s.WindowStyle = 7; $s.Description = 'Eternal Mana'; $s.Save()";
+  try {
+    spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', ps], { cwd: root, windowsHide: true, stdio: 'ignore', env: { ...process.env, EM_DIR: root, EM_WHERE: where } })
+      .on('error', e => log('Verknüpfung fehlgeschlagen:', e.message))
+      .on('close', c => log(`Verknüpfung (${where}) ${c === 0 ? 'angelegt' : 'fehlgeschlagen'}`));
+  } catch (e) { log('Verknüpfung fehlgeschlagen:', e.message); }
+}
+
 // ---------------------------------------------------------------- Aktionen der Oberfläche
 const actions = {
   async play() {
@@ -247,6 +264,7 @@ const actions = {
   'server-stop': () => stopServer(),
   check: () => pipeline(),
   repair: () => pipeline({ force: true }),
+  shortcut: () => makeShortcut('desktop'),
   'update-now': () => pipeline({ stopServerFirst: true }),
   join(b) {
     const v = String(b.addr ?? '').trim().slice(0, 120);
@@ -258,7 +276,7 @@ const actions = {
 };
 
 // ---------------------------------------------------------------- lokaler Webserver für die Oberfläche
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.jpg': 'image/jpeg', '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
 let port = Number(process.env.EM_LAUNCHER_PORT) || cfg.launcherPort;
 const server = http.createServer(async (req, res) => {
   // Nur Aufrufe vom eigenen Rechner unter der eigenen Adresse zulassen
@@ -323,6 +341,7 @@ if (!(await listen(resume ? 15 : 1))) {
 }
 log(`Launcher läuft auf http://127.0.0.1:${port}/ (${cfg.repo}@${cfg.branch})`);
 refreshMeta();
+if (isWin && !fs.existsSync(path.join(root, 'Eternal Mana.lnk'))) makeShortcut('folder');
 if (!resume && !process.env.EM_LAUNCHER_NO_OPEN) openWindow(`http://127.0.0.1:${port}/`);
 maybeQuit();
 pollServer();

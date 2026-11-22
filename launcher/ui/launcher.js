@@ -50,6 +50,7 @@ function render() {
   $('ver').textContent = S.version ? `Version ${S.version}${S.build ? ' · ' + S.build : ''}` : '';
   $('btnCheck').disabled = $('btnRepair').disabled = busy;
   $('btnRepair').hidden = S.dev;
+  $('btnShortcut').hidden = !S.win;
   const a = $('btnAction');
   a.hidden = !(S.phase === 'deferred' || S.phase === 'error');
   a.className = 'link hot';
@@ -84,6 +85,7 @@ function render() {
 $('btnPlay').onclick = () => { playWait = Date.now() + 2500; act('play'); render(); setTimeout(render, 2600); };
 $('btnServer').onclick = () => act(S.server.running ? 'server-stop' : 'server-start');
 $('btnCheck').onclick = () => act('check');
+$('btnShortcut').onclick = e => { act('shortcut'); e.currentTarget.textContent = 'Verknüpfung angelegt'; };
 $('btnRepair').onclick = () => act('repair');
 $('btnAction').onclick = e => act(e.currentTarget.dataset.a);
 $('joinAddr').onchange = e => act('join', { addr: e.target.value });
