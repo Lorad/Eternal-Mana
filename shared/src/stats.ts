@@ -1,9 +1,10 @@
-import { CFG } from './config';
+import { CFG, ELEMENTS } from './config';
 import { CLASSES } from './data/classes';
-import { itemMods } from './data/items';
+import { ITEMS, itemMods } from './data/items';
+import { setCounts, setMods } from './data/sets';
 import { SKILLS } from './data/skills';
-import type { AttrKey, CharData, Derived, Mods } from './types';
-import { SLOTS } from './types';
+import type { AttrKey, CharData, Derived, Element, Mods } from './types';
+import { RES_KEY, SLOTS } from './types';
 
 export function addMods(into: Mods, m: Mods | undefined, mul = 1): void {
   if (!m) return;
@@ -21,6 +22,8 @@ export function computeStats(c: CharData, buffs?: Mods[]): Derived {
   const cls = CLASSES[c.cls];
   const m: Mods = {};
   for (const s of SLOTS) { const it = c.equip[s]; if (it) addMods(m, itemMods(it)); }
+  const sets = setCounts(c);
+  for (const b of setMods(sets)) addMods(m, b);
   for (const id in c.skills) { const sk = SKILLS[id]; if (sk?.passive) addMods(m, sk.passive, c.skills[id]); }
   if (buffs) for (const b of buffs) addMods(m, b);
   const attrs: Record<AttrKey, number> = {
@@ -34,6 +37,9 @@ export function computeStats(c: CharData, buffs?: Mods[]): Derived {
   const def = (attrs.vit * 0.5 + attrs.str * 0.25 + (m.def ?? 0)) * cls.defMul * (1 + (m.defPct ?? 0) / 100);
   const maxHp = (cls.baseHp + attrs.vit * cls.hpPerVit + c.level * 8 + (m.hp ?? 0) + shards * 4) * (1 + (m.hpPct ?? 0) / 100);
   const maxMp = (cls.baseMp + attrs.int * cls.mpPerInt + c.level * 3 + (m.mp ?? 0) + shards * 2) * (1 + (m.mpPct ?? 0) / 100);
+  const res = { phys: 0 } as Record<Element, number>;
+  for (const e of ELEMENTS) res[e] = Math.min(CFG.elements.resCap, Math.round((m[RES_KEY[e as keyof typeof RES_KEY]] ?? 0) + (m.resAll ?? 0)));
+  const weapon = c.equip.weapon;
   return {
     maxHp: Math.round(maxHp), maxMp: Math.round(maxMp),
     power: Math.round(power * 10) / 10, def: Math.round(def * 10) / 10,
@@ -45,8 +51,12 @@ export function computeStats(c: CharData, buffs?: Mods[]): Derived {
     cdr: Math.min(40, m.cdr ?? 0), lifesteal: m.lifesteal ?? 0,
     elemPct: m.elemPct ?? 0, healPct: m.healPct ?? 0, goldPct: m.goldPct ?? 0, xpPct: m.xpPct ?? 0,
     dodgeCd: CFG.player.dodgeCooldown * (1 - Math.min(50, m.dodgeCdr ?? 0) / 100),
-    attackElement: c.equip.weapon?.element ?? cls.attack.element,
+    attackElement: weapon?.element ?? cls.attack.element,
     attrs,
+    res,
+    elemLvl: weapon?.element ? Math.max(1, Math.min(3, weapon.elv ?? 1)) : 0,
+    legend: weapon ? ITEMS[weapon.base]?.legend : undefined,
+    sets,
   };
 }
 

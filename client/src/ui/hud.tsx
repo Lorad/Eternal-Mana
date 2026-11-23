@@ -14,7 +14,7 @@ import { NPCS } from '../../../shared/src/data/npcs';
 import { QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
-import { FLAG_SHIELD, STATUS_BIT, STATUS_NAME } from '../../../shared/src/types';
+import { FLAG_SHIELD, STATUS_BIT, STATUS_MASK, STATUS_NAME } from '../../../shared/src/types';
 import type { CharData, StatusId } from '../../../shared/src/types';
 import { Bar, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, useSettings, useTick } from './common';
 import { MinimapCanvas } from './mapview';
@@ -31,9 +31,9 @@ export function useHint(): (a: Action) => string {
 }
 
 // ------------------------------------------------------------------ Spielerrahmen
-const STATUS_COLOR: Record<StatusId, string> = { burn: '#ff7a3c', poison: '#8fd14a', slow: '#7fc8ff', stun: '#ffe14a', weak: '#b9a0c8', mark: '#ff5a8a' };
+const STATUS_COLOR: Record<StatusId, string> = { burn: '#ff7a3c', poison: '#8fd14a', slow: '#7fc8ff', stun: '#ffe14a', weak: '#b9a0c8', mark: '#ff5a8a', expose: '#8ef0c0', root: '#c9a85a', freeze: '#bfe9ff' };
 function StatusChips() {
-  const flags = useStore(s => s.me.flags & (63 | FLAG_SHIELD));
+  const flags = useStore(s => s.me.flags & (STATUS_MASK | FLAG_SHIELD));
   if (!flags) return null;
   return (
     <div class="status-row">
