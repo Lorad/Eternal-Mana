@@ -75,6 +75,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `boss_hohlkoenig` | 128×128 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_ignarok` | 112×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_kristallkoloss` | 112×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+| `boss_vael` | 96×96 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_ysolde` | 96×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 
 ## Atlas: obj (587 Frames, 2048×360)

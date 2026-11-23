@@ -122,6 +122,7 @@ export const BOSS_IDS = [
   'ysolde',         // Frostweberin: schwebende Eishexe mit Kristallkrone (Wasser)
   'archivar',       // schwebender arkaner Konstrukt aus Buchseiten, Ringen und einem zentralen Auge (Licht)
   'hohlkoenig',     // Der Hohle König: hagere gekrönte Gestalt in zerfließendem Schattenmantel, leere Brust mit Lichtfunken (Dunkel), 96x96
+  'vael',           // Vael, Hüter der Dunkelheit: hagerer Mensch im verblichenen Ordensmantel mit Laterne; „Tod“ = er kniet nieder (Dunkel), 96x96, Gestalt ca. 70 px
 ] as const;
 
 export const MOB_ANIMS = {

@@ -352,6 +352,13 @@
    "cols": 26,
    "rows": 1
   },
+  "boss_vael": {
+   "file": "sprites/bosses/boss_vael.png",
+   "fw": 96,
+   "fh": 96,
+   "cols": 26,
+   "rows": 1
+  },
   "boss_ysolde": {
    "file": "sprites/bosses/boss_ysolde.png",
    "fw": 96,
@@ -652,6 +659,10 @@
   "hohlkoenig": {
    "w": 128,
    "h": 128
+  },
+  "vael": {
+   "w": 96,
+   "h": 96
   }
  }
 }
