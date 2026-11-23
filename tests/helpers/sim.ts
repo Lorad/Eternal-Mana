@@ -31,6 +31,7 @@ export class Sim {
   db = new Db(this.dir);
   game = new Game(this.db, { name: 'sim', version: CFG.version, port: 0, addresses: [], tailscale: { available: false } });
   private n = 0;
+  private testers: Tester[] = [];
 
   /** Meldet ein neues Profil an, erstellt einen Charakter und betritt die Welt. */
   join(name: string, cls: ClassId, level = 1): Tester {
@@ -51,8 +52,11 @@ export class Sim {
       count: base => t.p.countItem(base),
       give: (base, n = 1) => { t.p.addItem(makeStack(base, n)); },
     };
+    this.testers.push(t);
     return t;
   }
+  /** Nimmt alle bisherigen Test-Spieler aus der Welt, damit sich Tests nicht gegenseitig stören. */
+  clear() { for (const t of this.testers) if (t.s.player) t.send({ t: 'leave' }); this.testers = []; }
   /** Verbindung trennen und Charakter sofort aus der Welt nehmen (speichert). */
   leave(t: Tester) { t.send({ t: 'leave' }); }
   /** Betritt die Welt erneut mit demselben Profil (lädt aus der Datenbank). */
