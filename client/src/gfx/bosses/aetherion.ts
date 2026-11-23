@@ -5,11 +5,11 @@
  * breitet sich die „Stille“ aus: entfärbter Stein und dunkle Adern. Im „Tod“ bricht die Albtraumschale ab – zurück bleibt
  * ruhiges Licht (eine Erlösung, kein Sterben). 128×128, frontal.
  */
-import { Px, tube } from '../draw';
+import { Px } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { pk, R, TAU, clamp, cracks, dissolve, form, glow, lay, lerp, rays, reramp, shatter, spark, spline } from './kit';
+import { pk, R, TAU, clamp, cracks, dissolve, glow, lay, lerp, rays, reramp, shatter, spark, spline } from './kit';
 import type { BFr, BossDef } from './kit';
 import { ik } from '../mobs/kit';
 import { jag, prism } from '../objects/kr_kit';
@@ -84,12 +84,12 @@ function stillPass(p: Px, c: Pt, amt: number): void {
 }
 /** Dunkle Adern der Stille von der Wunde aus; nur auf deckenden Pixeln. */
 const VEINS: Array<[Pt, number, number]> = [
-  [[CX - 27, 50], 3, 0], [[CX - 36, 80], 5, 0.25], [[CX + 20, 52], 7, 0.1], [[CX - 3, 43], 9, 0], [[CX - 7, 94], 11, 0.05], [[CX + 9, 88], 13, 0.2],
+  [[CX - 27, 50], 3, 0], [[CX - 37, 84], 5, 0.08], [[CX + 20, 52], 7, 0.1], [[CX - 3, 43], 9, 0], [[CX - 9, 100], 11, 0.03], [[CX + 10, 92], 13, 0.1],
   [[CX - 18, 70], 15, 0.15], [[CX + 17, 72], 17, 0.35], [[CX + 30, 70], 19, 0.5], [[CX - 16, 108], 21, 0.45], [[CX + 14, 106], 23, 0.6],
 ];
 function veins(p: Px, c: Pt, amt: number, off: Pt): void {
   for (const [end, seed, min] of VEINS) {
-    const k = clamp((amt - min) * 2.4); if (k <= 0) continue;
+    const k = clamp((amt - min) * 3.2); if (k <= 0) continue;
     const e: Pt = [c[0] + (end[0] + off[0] - c[0]) * k, c[1] + (end[1] + off[1] - c[1]) * k];
     const pts = jag(c, e, 2.2, seed, 4);
     for (let s = 0; s + 1 < pts.length; s++) {

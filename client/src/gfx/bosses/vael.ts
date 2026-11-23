@@ -7,7 +7,7 @@ import { Px, bez, tube } from '../draw';
 import type { Pt } from '../draw';
 import { P, INK, WHITE, alpha, mix, rnd2 } from '../palette';
 import type { Ramp } from '../palette';
-import { pk, R, TAU, clamp, form, glow, lay, lerp, rays, spark, spline } from './kit';
+import { pk, R, clamp, glow, lay, lerp, rays, spark, spline } from './kit';
 import type { BFr, BossDef } from './kit';
 import { ik } from '../mobs/kit';
 
@@ -287,7 +287,7 @@ const fn = (p: Px, f: BFr): void => {
     const tmp = new Px(p.w, p.h);
     lc = lantern(tmp, lpos[0], lpos[1], z.light, z.ground ? 0 : z.sw);
     lanternLight(p, lc, z.light, f.a === 'special' ? i * 0.16 : i * 0.3);
-    litEdge(p, lc, 20 + z.light * 12, 0.3 + Math.min(0.3, z.light * 0.2));
+    litEdge(p, lc, 15 + z.light * 9, 0.2 + Math.min(0.25, z.light * 0.18));
     p.draw(tmp);
   }
   // Hand über dem Ring
@@ -319,7 +319,6 @@ const fn = (p: Px, f: BFr): void => {
   }
   if (f.a === 'idle') for (let k = 0; k < 3; k++) { const cyc = (k * 4 + i * 2) % 12; p.blend(lc[0] - 3 + k * 3 + Math.sin(k + i) * 1, lc[1] - 8 - cyc, alpha(PALE[3], 200 - cyc * 15)); }
   if (f.a === 'death' && i >= 5) for (let k = 0; k < 3; k++) { const cyc = (k * 4 + i * 3) % 12; p.blend(lc[0] - 2 + k * 2, lc[1] - 8 - cyc, alpha(PALE[3], 190 - cyc * 14)); }
-  void TAU;
 };
 
 export const vael: BossDef = { w: 96, h: 96, fn };

@@ -2,7 +2,7 @@
  * Allgemein – Geschichte & Weltereignisse (v2): Hüterschrein, Fundstücke der Überlieferung, Riss-Stein,
  * Mana-Woge, Sternsplitter, Grabstelle, vergrabene Truhe. Alles biomneutral gehalten (steht in allen sechs Gebieten).
  */
-import { Px, tube } from '../draw';
+import { Px } from '../draw';
 import { Frames, INK, MARK, P, Ramp, TAU, WHITE, alpha, anim, boulder, clamp, glow, inkOutline, mix, one, part, planks, rnd2, shadeArea, sparkle, texFill } from './kit';
 import { CYAN, TEALC, jag, prism, twinkle } from './kr_kit';
 import { TERRA, glyph, slab, stoneFill } from './ru_kit';

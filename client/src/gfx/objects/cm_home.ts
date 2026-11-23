@@ -3,7 +3,7 @@
  * Flickenteppich, Trophäenständer. Warmes Holz, Creme und Rot – bewusst wohnlicher als die Dungeon-Möbel (`d_*`).
  */
 import { Px, bez } from '../draw';
-import { Frames, INK, MARK, P, Ramp, TAU, WHITE, alpha, anim, boulder, clamp, embers, flame, glow, hash2, inkOutline, mix, one, part, planks, rnd2, shadeArea, sparkle } from './kit';
+import { Frames, MARK, P, Ramp, TAU, WHITE, alpha, anim, boulder, embers, flame, glow, hash2, inkOutline, mix, one, part, planks, rnd2, shadeArea, sparkle } from './kit';
 import { RUNESTONE } from './cm_interact';
 import { WGOLD } from './cm_story';
 import { ARC, TERRA, slab } from './ru_kit';
