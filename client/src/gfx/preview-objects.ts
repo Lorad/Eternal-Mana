@@ -47,6 +47,9 @@ const EXPECTED: string[] = [
   'node_herb', 'node_wood', 'node_crystal', 'node_ember', 'node_frost', 'node_rune', 'node_void', 'node_empty', ...AN('shard', 6), 'drop_bag', 'drop_gold', 'drop_potion', 'drop_gear', 'drop_key', 'grave', 'seal_pedestal',
   'd_pillar', 'd_pillar_broken', ...A4('d_banner'), 'd_chains', 'd_cobweb', 'd_crate', 'd_barrel', 'd_bookshelf', 'd_table', 'd_rack', 'd_statue', 'd_sarcophagus', 'd_rubble', 'd_bones', 'd_skull', 'd_urn', 'd_rug_a', 'd_rug_b',
   ...AN('d_crack', 3), ...AN('d_moss', 3), 'd_puddle', 'd_grate', ...A4('d_candles'), 'd_roots', ...AN('d_mushroom_glow', 2),
+  // Geschichte & Weltereignisse (cm_story), Handwerk & Zuhause (cm_home)
+  ...A4('hueterschrein'), 'lore_book', 'lore_tablet', 'lore_scroll', 'lore_stone', ...A4('riss_stein'), ...A4('mana_surge'), ...A4('star_shard'), 'dig_spot', 'chest_buried',
+  'station_alchemy', ...A4('station_cook'), ...A4('station_enchant'), 'stash_chest', 'bed', 'house_table', 'house_shelf', 'rug', 'trophy_stand',
 ];
 {
   const miss = EXPECTED.filter((n) => !F.has(n)), extra = [...F.keys()].filter((n) => !EXPECTED.includes(n));

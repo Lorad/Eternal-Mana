@@ -364,7 +364,7 @@
   "obj": {
    "file": "atlases/obj.png",
    "json": "atlases/obj.json",
-   "frames": 550
+   "frames": 587
   },
   "fx": {
    "file": "atlases/fx.png",
