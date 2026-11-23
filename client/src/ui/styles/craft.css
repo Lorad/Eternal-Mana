@@ -1,0 +1,77 @@
+/* ============================================================== Handwerk & Elemente (0.4) */
+.win-craft { width: 980px; }
+.win-craft .window-head { flex-wrap: wrap; row-gap: 6px; }
+.craft-gold { margin-left: auto; }
+.win-craft .window-x { margin-left: 0; }
+
+.craft { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.craft-left { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.craft-filters { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+.craft-filters .toggle { padding: 2px 4px; }
+.craft-list { display: flex; flex-direction: column; gap: 3px; max-height: 430px; padding-right: 4px; }
+.is-short .craft-list { max-height: 270px; }
+.craft-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 3px 10px 3px 3px; text-align: left; background: rgba(9, 11, 19, .5); border: 1px solid transparent; box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }
+.craft-row:hover, .craft-row:focus-visible { background: rgba(227, 183, 92, .1); }
+.craft-row.on { background: rgba(227, 183, 92, .16); box-shadow: inset 0 0 0 1px var(--gold-dk); }
+.craft-row.blocked .craft-name b { color: var(--dim); }
+.craft-row.locked { opacity: .6; }
+.craft-name { display: flex; flex-direction: column; line-height: 1.25; }
+.craft-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.craft-state { flex: none; font-size: 12px; color: var(--bad); white-space: nowrap; }
+.craft-state.good { color: var(--good); }
+.craft-none { padding: 12px; }
+.craft-detail { display: flex; flex-direction: column; gap: 9px; padding: 12px; }
+.craft-effect { color: var(--gold-hi); font-size: 13px; line-height: 1.45; }
+.craft-cost li { padding: 2px 6px; }
+.craft-cost li .row { gap: 6px; }
+.craft-have { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.craft-cost li.bad .craft-have b { color: var(--bad); }
+.craft-affixes { padding: 6px 10px; background: rgba(0, 0, 0, .25); border-radius: 3px; }
+.craft-ench { max-height: 330px; }
+.craft-ench .shop-row.on { box-shadow: inset 0 0 0 1px var(--gold-dk); }
+.craft-ench .shop-name small { white-space: normal; }
+.craft-why { display: block; }
+.craft-chips { display: inline-flex; gap: 6px; flex: none; }
+.craft-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.craft-chip em { font-style: normal; color: var(--dim); max-width: 86px; overflow: hidden; text-overflow: ellipsis; }
+.craft-chip.bad { color: var(--bad); }
+.opt-craft .opt-mark { background: #3b4470; color: var(--gold-hi); }
+
+.el-btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.el-btn { display: flex; align-items: center; gap: 7px; padding: 5px 9px; background: rgba(9, 11, 19, .55); border: 2px solid #05060a; box-shadow: inset 0 0 0 1px var(--line); border-radius: 3px; color: var(--c); font-weight: 600; }
+.el-btn i { flex: none; width: 8px; height: 8px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 6px var(--c); }
+.el-btn small { margin-left: auto; }
+.el-btn.on { box-shadow: inset 0 0 0 1px var(--c), inset 0 0 12px color-mix(in srgb, var(--c) 35%, transparent); background: rgba(30, 36, 60, .8); }
+.el-btn:hover { filter: brightness(1.2); }
+
+/* ---------------------------------------------------------------- Tooltip-Zusätze */
+.tip-ench { color: #8ef0c0; font-size: 13px; }
+.tip-legend { color: #ffb02e; font-size: 13px; line-height: 1.4; }
+.tip-set { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12.5px; }
+.tip-set-h { font-weight: 700; color: #7be0c8; }
+.tip-set-h span { font-weight: 400; color: var(--dim); }
+.tip-set-pieces { display: flex; flex-wrap: wrap; gap: 2px 8px; color: var(--faint); }
+.tip-set-pieces .on { color: var(--text); }
+.tip-set-pieces .on::before { content: '✓ '; color: var(--good); }
+.tip-set-b { color: var(--faint); }
+.tip-set-b.on { color: #7be0c8; }
+.tip-req.good { color: var(--good); }
+.slot-set { position: absolute; left: 3px; top: 16px; width: 6px; height: 6px; border-radius: 50%; background: #7be0c8; border: 1px solid #000; pointer-events: none; }
+
+/* ---------------------------------------------------------------- HUD: Ziel und Schwächen */
+.aff { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 10px; font-size: 11.5px; color: var(--dim); text-shadow: 0 1px 0 #000; }
+.aff-group { display: inline-flex; align-items: center; gap: 4px; }
+.aff-el { display: inline-flex; align-items: center; gap: 3px; color: var(--c); font-weight: 700; }
+.aff-el i { width: 6px; height: 6px; background: var(--c); transform: rotate(45deg); }
+.target { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 220px; padding: 4px 12px 5px; background: rgba(8, 10, 18, .72); border: 1px solid #05060a; box-shadow: 0 0 0 1px var(--line); border-radius: 3px; pointer-events: none; }
+.target-name { display: flex; align-items: baseline; gap: 8px; font: 700 13px var(--serif); letter-spacing: .03em; color: var(--parch); }
+.target-name.elite { color: #ffd070; }
+.target-name small { font: 400 11px var(--sans); }
+.target .bar { width: 100%; height: 6px; }
+.buff-t.long { font-size: 10px; }
+.res-list b.zero { color: var(--faint); }
+
+.is-narrow .craft { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .el-btns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.is-narrow .craft-chip em { display: none; }
+.buff { pointer-events: auto; }

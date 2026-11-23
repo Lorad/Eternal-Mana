@@ -1,7 +1,8 @@
 /** Charakterbogen: Attribute, abgeleitete Werte, Statistik. */
 import { useStore } from '../../state/store';
-import { CFG, ELEMENT_NAME } from '../../../../shared/src/config';
+import { CFG, ELEMENTS, ELEMENT_NAME } from '../../../../shared/src/config';
 import { CLASSES } from '../../../../shared/src/data/classes';
+import { SETS } from '../../../../shared/src/data/sets';
 import { ZONE_LIST } from '../../../../shared/src/data/zones';
 import { computeStats, countShards } from '../../../../shared/src/stats';
 import { ATTR_NAME } from '../../../../shared/src/types';
@@ -17,9 +18,11 @@ const ATTR_HELP: Record<AttrKey, string> = {
 
 export function CharacterPanel() {
   const char = useStore(s => s.char);
+  const buffs = useStore(s => s.buffs);
   if (!char) return null;
   const cls = CLASSES[char.cls];
-  const d = computeStats(char);
+  // inklusive laufender Buffs (Speise, Elixier, Kriegsschrei …), wie der Server rechnet
+  const d = computeStats(char, buffs.map(b => b.mods ?? {}));
   const need = CFG.xpToNext(char.level);
   const maxed = char.level >= CFG.player.maxLevel;
   const shards = countShards(char);
@@ -87,8 +90,13 @@ export function CharacterPanel() {
             {stats.map(([name, val, help]) => (
               <li title={help}><span>{name}<small>{help}</small></span><b>{val}</b></li>
             ))}
-            <li><span>Angriffselement<small>Bestimmt durch deine Waffe.</small></span><b style={{ color: ELEMENT_CSS[d.attackElement] }}>{ELEMENT_NAME[d.attackElement]}</b></li>
+            <li><span>Angriffselement<small>Bestimmt durch deine Waffe.</small></span><b style={{ color: ELEMENT_CSS[d.attackElement] }}>{ELEMENT_NAME[d.attackElement]}{d.elemLvl > 1 ? ` · Stufe ${d.elemLvl}` : ''}</b></li>
           </ul>
+          <div class="sec-title">Resistenzen <span class="pill">höchstens {CFG.elements.resCap} %</span></div>
+          <ul class={cx('stat-list', 'compact', 'res-list')}>
+            {ELEMENTS.map(e => <li title="Verringert erlittenen Schaden dieses Elements."><span style={{ color: ELEMENT_CSS[e] }}>◆ {ELEMENT_NAME[e]}</span><b class={cx(!d.res[e] && 'zero')}>{d.res[e]} %</b></li>)}
+          </ul>
+          {Object.keys(d.sets).length > 0 && <div class="note">Sets: {Object.entries(d.sets).map(([id, n]) => `${SETS[id]?.name ?? id} ${n} / 4`).join(' · ')}{buffs.length > 0 ? ' · Werte inklusive laufender Stärkungen' : ''}</div>}
           <div class="sec-title">Chronik</div>
           <ul class={cx('stat-list', 'compact')}>
             <li><span>Spielzeit</span><b>{fmtTime(char.playtime)}</b></li>

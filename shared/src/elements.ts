@@ -3,6 +3,7 @@
  * und die Resistenzrechnung der Spieler. Zahlen: CFG.elements in config.ts.
  */
 import { CFG, ELEMENTS, elementMultiplier } from './config';
+import { BOSSES, ENEMIES } from './data/enemies';
 import type { Element, StatusId } from './types';
 
 /** Zustand, den ein Elementartreffer auslösen kann (Chance: CFG.combat.elemProc) */
@@ -43,6 +44,13 @@ export function affinities(t: Affine): { weak: Element[]; resist: Element[] } {
     if (f > 1.01) weak.push(e); else if (f < 0.99) resist.push(e);
   }
   return { weak, resist };
+}
+
+/** Schwächen und Resistenzen eines Gegners oder Bosses nach ID; `el` = aktuelles Element (Bosse können es wechseln). */
+export function mobAffinity(mob: string, boss: boolean, el?: Element): { el: Element; weak: Element[]; resist: Element[] } {
+  const def = boss ? BOSSES[mob] : ENEMIES[mob];
+  const element = el ?? def?.element ?? 'phys';
+  return { el: element, ...affinities({ element, weak: def?.weak, resist: def?.resist }) };
 }
 
 /** Faktor auf erlittenen Schaden eines Spielers mit `res` Prozent Resistenz. */

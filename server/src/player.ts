@@ -62,7 +62,7 @@ export class Player {
     if (this.buffsDirty) {
       this.buffsDirty = false;
       const now = this.zone.game.now;
-      this.send({ t: 'buffs', b: this.buffs.map(b => ({ id: b.id, name: b.name, glyph: b.glyph, dur: Math.max(0, b.until - now), icon: b.icon, desc: b.desc })) });
+      this.send({ t: 'buffs', b: this.buffs.map(b => ({ id: b.id, name: b.name, glyph: b.glyph, dur: Math.max(0, b.until - now), icon: b.icon, desc: b.desc, mods: b.mods })) });
     }
   }
   toast(s: string, kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story' = 'info', icon?: string) { this.send({ t: 'toast', s, kind, icon }); }

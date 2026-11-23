@@ -222,7 +222,7 @@ export type ServerMsg =
   | { t: 'pos'; x: number; y: number; e: number; dash?: 1 }
   | { t: 'char'; d: Partial<CharData> }
   | { t: 'cd'; id: string; cd: number }
-  | { t: 'buffs'; b: { id: string; name: string; dur: number; glyph: string; icon?: string; desc?: string }[] }
+  | { t: 'buffs'; b: { id: string; name: string; dur: number; glyph: string; icon?: string; desc?: string; mods?: Mods }[] }
   | { t: 'drop+'; d: DropInfo }
   | { t: 'drop-'; id: number; got?: 1 }
   | { t: 'toast'; s: string; kind?: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string }

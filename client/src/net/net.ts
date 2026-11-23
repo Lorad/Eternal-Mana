@@ -70,24 +70,24 @@ function handle(m: ServerMsg) {
     case 'chars': store.set({ chars: m.chars, error: null }); if (st.screen === 'game' || st.screen === 'loading') { store.set({ screen: 'chars', char: null, panel: null, dialog: null, boss: null, dead: null }); bus.emit('net:left'); } break;
     case 'entered':
       resumed = true; resumeChar = m.charId;
-      store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null });
+      store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
-      store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, sign: null, keys: 0 });
+      store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, sign: null, keys: 0 });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
     case 'char': if (st.char) store.set({ char: { ...st.char, ...m.d } }); break;
     case 'cd': store.set({ cds: { ...st.cds, [m.id]: { until: performance.now() + m.cd * 1000, total: m.cd } } }); break;
-    case 'buffs': store.set({ buffs: m.b.map(b => ({ id: b.id, name: b.name, glyph: b.glyph, until: performance.now() + b.dur * 1000 })) }); break;
+    case 'buffs': store.set({ buffs: m.b.map(b => ({ id: b.id, name: b.name, glyph: b.glyph, until: performance.now() + b.dur * 1000, icon: b.icon, desc: b.desc, mods: b.mods })) }); break;
     case 'drop+': bus.emit('net:drop+', m.d); break;
     case 'drop-': bus.emit('net:drop-', m.id, m.got); break;
     case 'toast': pushToast(m.s, m.kind ?? 'info', m.icon); break;
     case 'loot': pushToast(itemName(m.item) + ((m.item.qty ?? 1) > 1 ? ` ×${m.item.qty}` : ''), 'loot', undefined, m.item); break;
     case 'chat': pushChat(m.from, m.s, m.ch); break;
     case 'party': store.set({ party: m.members, invite: m.invite ?? (m.members.length ? null : st.invite) }); break;
-    case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null }); break;
+    case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null, craft: null }); break;
     case 'story': store.set({ story: { title: m.title ?? '', lines: m.lines } }); break;
     case 'env': store.set({ ...(m.weather !== undefined ? { weather: m.weather } : {}), ...(m.tod !== undefined ? { tod: m.tod } : {}) }); bus.emit('net:env'); break;
     case 'online': store.set({ online: m.players }); break;
