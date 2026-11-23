@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { CHAR_FOOT_Y, CHAR_FRAME_H, type GfxBundle } from '../gfx/spec';
 import { FLAG_DEAD, FLAG_ELITE, FLAG_INVULN, FLAG_ROLL, FLAG_SHIELD, STATUS_BIT } from '../../../shared/src/types';
 import type { MobInfo, ObjInfo, PlayerInfo } from '../../../shared/src/types';
+import { ENEMIES } from '../../../shared/src/data/enemies';
 import { BOSS_ANIMS, CHAR_ANIMS, MOB_ANIMS, animDone, bossFrame, charFrame, dirOf, mobFrame, type BossAnim, type CharAnim, type MobAnim } from './anim';
 import type { Fx, FxHandle } from './fxlib';
 
@@ -28,6 +29,16 @@ export function makeShadow(scene: Phaser.Scene, key: string, frame: string, orig
 export function applyShadow(s: Phaser.GameObjects.Image, x: number, y: number, c: ShadowCfg, flipX = false, scale = 1) {
   if (c.alpha <= 0.01) { s.setVisible(false); return; }
   s.setVisible(true).setPosition(x, y).setScale(flipX ? -scale : scale, -c.len * scale).setRotation(c.rot).setAlpha(c.alpha);
+}
+
+/**
+ * 0.3 – EINZIGE Stelle für den Rückfall der Story-Boss-Grafik: Solange die Sheets `boss_vael` / `boss_aetherion`
+ * der Kunst-Pipeline fehlen, wird ein vorhandenes Boss-Sheet eingefärbt verwendet. Sind sie da, greift das automatisch.
+ */
+const BOSS_FALLBACK: Record<string, { id: string; tint: number }> = { vael: { id: 'hohlkoenig', tint: 0xb8c4ff }, aetherion: { id: 'archivar', tint: 0x8cf0ff } };
+function bossSheet(scene: Phaser.Scene, id: string): { id: string; tint?: number } {
+  if (scene.textures.exists('boss_' + id)) return { id };
+  return BOSS_FALLBACK[id] ?? { id: 'hohlkoenig' };
 }
 
 const STATUS_FX: [number, string, number][] = [[STATUS_BIT.stun, 'stun', -30], [STATUS_BIT.burn, 'burn', -8], [STATUS_BIT.poison, 'poison', -8], [STATUS_BIT.slow, 'frost', -6], [STATUS_BIT.mark, 'mark', -34], [STATUS_BIT.weak, 'weak', -34]];
@@ -106,8 +117,11 @@ export class MobView {
   constructor(private ctx: ViewCtx, public info: MobInfo) {
     const sc = ctx.scene;
     this.boss = !!info.boss;
-    this.key = (this.boss ? 'boss_' : 'mob_') + info.mob;
-    const meta = (this.boss ? ctx.gfx.bossMeta : ctx.gfx.mobMeta)[info.mob] ?? { w: 32, h: 32 };
+    // Darstellung: Story-Bosse mit Rückfall-Sheet; neue Gegner (0.3) verwenden Sprite und Farbton aus ihrer Definition
+    const look = this.boss ? bossSheet(sc, info.mob) : { id: ENEMIES[info.mob]?.sprite ?? info.mob, tint: ENEMIES[info.mob]?.tint };
+    this.baseTint = look.tint;
+    this.key = (this.boss ? 'boss_' : 'mob_') + look.id;
+    const meta = (this.boss ? ctx.gfx.bossMeta : ctx.gfx.mobMeta)[look.id] ?? { w: 32, h: 32 };
     this.w = meta.w; this.h = meta.h; this.visTop = meta.top ?? 0;
     this.foot = this.boss ? 6 : 3;
     this.originY = (meta.h - this.foot) / meta.h;
@@ -120,6 +134,7 @@ export class MobView {
     if (info.elite) this.label = ctx.text(0, 0, info.name ?? '', '#ffd070').setOrigin(0.5, 1);
     this.bar = sc.add.graphics();
   }
+  private baseTint?: number;
   /** sichtbare Höhe über dem Standpunkt */
   private visTop = 0;
   get top() { return (this.visTop || (this.h - this.foot) * 0.8) * this.scale; }
@@ -142,6 +157,7 @@ export class MobView {
     else if (this.flags & STATUS_BIT.poison) this.sprite.setTint(0xb0ff90);
     else if (this.flags & STATUS_BIT.slow) this.sprite.setTint(0xa0c8ff);
     else if (this.flags & STATUS_BIT.mark) this.sprite.setTint(0xe0a0ff);
+    else if (this.baseTint !== undefined) this.sprite.setTint(this.baseTint);
     else if (this.flags & FLAG_ELITE) this.sprite.setTint(0xffecc8);
     else this.sprite.clearTint();
     this.sprite.setAlpha(this.flags & FLAG_INVULN && !this.boss ? 0.6 : 1);
@@ -163,6 +179,8 @@ export class ObjView {
   label?: Phaser.GameObjects.Text; marker?: Phaser.GameObjects.Image; glow?: Phaser.GameObjects.Image;
   /** [Radius, Farbe, Stärke] */
   light: [number, number, number] | null = null;
+  /** für diesen Charakter nicht vorhanden (Story-Bedingung) */
+  hidden = false;
   constructor(public o: ObjInfo) {}
   destroy() { for (const p of this.parts) p.destroy(); for (const s of this.shadows) s.destroy(); this.label?.destroy(); this.marker?.destroy(); this.glow?.destroy(); }
 }

@@ -3,11 +3,13 @@ import { useState } from 'preact/hooks';
 import { useStore } from '../../state/store';
 import { ITEMS } from '../../../../shared/src/data/items';
 import { NPCS } from '../../../../shared/src/data/npcs';
-import { QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../../../shared/src/data/quests';
+import { QUEST_LIST, objectiveProgress, objectiveTarget, questChapter, questComplete } from '../../../../shared/src/data/quests';
+import { chapterLabel } from '../../../../shared/src/data/story';
 import type { QuestDef } from '../../../../shared/src/data/quests';
 import { ZONES } from '../../../../shared/src/data/zones';
 import type { CharData } from '../../../../shared/src/types';
 import { Btn, Confirm, Gold, Icon, Tabs, Window, closePanel, cx, fmtNum, send, sfx } from '../common';
+import { ChronikTab, loreTotals } from '../story';
 
 export const QUEST_TYPE: Record<QuestDef['type'], string> = { main: 'Hauptquest', side: 'Nebenquest', repeat: 'Wiederholbar', group: 'Gruppe' };
 const ORDER: QuestDef['type'][] = ['main', 'side', 'repeat', 'group'];
@@ -22,6 +24,7 @@ export function Rewards({ q }: { q: QuestDef }) {
       {r.gear !== undefined && <li><Icon k="item_armor_light" size={24} />Ausrüstung für deine Klasse{r.gear >= 2 ? ' (selten oder besser)' : ''}</li>}
       {r.skillPoints ? <li><i class="rw-xp">FP</i>{r.skillPoints} Fähigkeitspunkt{r.skillPoints > 1 ? 'e' : ''}</li> : null}
       {r.attrPoints ? <li><i class="rw-xp">AP</i>{r.attrPoints} Attributspunkt{r.attrPoints > 1 ? 'e' : ''}</li> : null}
+      {q.bonus?.length ? <li class="qp-bonus">Dazu eine weitere Belohnung – je nachdem, wie du dich entscheidest.</li> : null}
     </ul>
   );
 }
@@ -38,20 +41,24 @@ export function Objectives({ q, char }: { q: QuestDef; char: CharData }) {
 
 export function QuestPanel() {
   const char = useStore(s => s.char);
-  const [tab, setTab] = useState<'active' | 'done'>('active');
+  const [tab, setTab] = useState<'active' | 'done' | 'chronik'>('active');
   const [selId, setSel] = useState<string | null>(null);
   const [abandon, setAbandon] = useState<QuestDef | null>(null);
   if (!char) return null;
   const active = QUEST_LIST.filter(q => char.quests[q.id]?.s === 'active');
   const done = QUEST_LIST.filter(q => char.quests[q.id]?.s === 'done');
-  const list = tab === 'active' ? active : done;
+  const list = tab === 'done' ? done : active;
+  const lore = loreTotals(char);
+  /** Untergruppe innerhalb einer Questart: Kapitel (Hauptquests) bzw. Questreihe */
+  const sub = (q: QuestDef) => (q.type === 'main' ? chapterLabel(questChapter(q) ?? 0) : q.line ?? '');
   const sel = list.find(q => q.id === selId) ?? list[0] ?? null;
   const ready = sel && tab === 'active' && questComplete(char, sel);
   const times = sel ? char.quests[sel.id]?.n ?? 0 : 0;
 
   return (
     <Window title="Questlog" onClose={closePanel} class="win-quests"
-      head={<Tabs tabs={[['active', 'Aktiv', active.length], ['done', 'Abgeschlossen', done.length]]} value={tab} onChange={t => { setTab(t); setSel(null); }} />}>
+      head={<Tabs tabs={[['active', 'Aktiv', active.length], ['done', 'Abgeschlossen', done.length], ['chronik', 'Chronik', `${lore.found}/${lore.total}`]]} value={tab} onChange={t => { setTab(t); setSel(null); }} />}>
+      {tab === 'chronik' ? <ChronikTab char={char} /> : (
       <div class="qp">
         <div class="qp-list scroll">
           {list.length === 0 && <div class="note qp-none">{tab === 'active' ? 'Keine aktiven Quests. Sprich mit Leuten, über deren Kopf ein goldenes „!“ schwebt.' : 'Noch keine Quest abgeschlossen.'}</div>}
@@ -61,14 +68,16 @@ export function QuestPanel() {
             return (
               <div>
                 <div class="sec-title">{QUEST_TYPE[type]}</div>
-                {qs.map(q => {
+                {qs.map((q, qi) => {
                   const r = tab === 'active' && questComplete(char, q);
-                  return (
+                  const head = sub(q), showHead = !!head && (qi === 0 || sub(qs[qi - 1]) !== head);
+                  return (<>
+                    {showHead && <div class="qp-sub">{head}</div>}
                     <button type="button" class={cx('qp-item', sel?.id === q.id && 'on', r && 'ready', q.type)} onClick={() => { sfx('ui_click'); setSel(q.id); }}>
                       <span class="grow">{q.name}</span>
                       {r ? <span class="pill gold-pill">abgeben</span> : <small>St. {q.level}</small>}
                     </button>
-                  );
+                  </>);
                 })}
               </div>
             );
@@ -77,7 +86,7 @@ export function QuestPanel() {
         <div class="qp-detail card scroll">
           {sel ? (
             <>
-              <div class="qp-type">{QUEST_TYPE[sel.type]} · Stufe {sel.level} · {ZONES[sel.zone]?.name ?? sel.zone}</div>
+              <div class="qp-type">{QUEST_TYPE[sel.type]}{sel.hidden ? ' (Geheimnis)' : ''} · Stufe {sel.level} · {ZONES[sel.zone]?.name ?? sel.zone}{sub(sel) ? ` · ${sub(sel)}` : ''}</div>
               <h3 class="qp-name">{sel.name}</h3>
               <p class="qp-sum">{sel.summary}</p>
               {tab === 'active' && (
@@ -100,6 +109,7 @@ export function QuestPanel() {
           ) : <div class="note">Wähle links eine Quest aus.</div>}
         </div>
       </div>
+      )}
       {abandon && (
         <Confirm danger yes="Quest aufgeben" onNo={() => setAbandon(null)} onYes={() => { send({ t: 'qAbandon', id: abandon.id }); setAbandon(null); setSel(null); }}
           text={<><b>{abandon.name}</b> wirklich aufgeben? Der bisherige Fortschritt geht verloren. Du kannst die Quest später erneut annehmen.</>} />

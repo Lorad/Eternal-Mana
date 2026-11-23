@@ -8,6 +8,7 @@ import { NpcDialog } from './dialog';
 import { Hud } from './hud';
 import { DeathOverlay, SignOverlay, StoryOverlay } from './overlays';
 import { PanelHost } from './panels';
+import { CineOverlay, LoreOverlay } from './story';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -35,6 +36,8 @@ function Root() {
   const hasDialog = useStore(s => !!s.dialog);
   const hasSign = useStore(s => s.sign !== null);
   const hasStory = useStore(s => !!s.story);
+  const hasCine = useStore(s => !!s.cine);
+  const hasLore = useStore(s => !!s.lore);
   const dead = useStore(s => !!s.dead);
   const s = computeScale();
 
@@ -61,6 +64,8 @@ function Root() {
       {screen === 'game' && hasSign && <SignOverlay />}
       {screen === 'game' && dead && <DeathOverlay />}
       {hasStory && screen === 'game' && <StoryOverlay />}
+      {hasLore && screen === 'game' && !dead && <LoreOverlay />}
+      {hasCine && screen === 'game' && <CineOverlay />}
       <TooltipLayer root={() => ref.current} />
     </div>
   );

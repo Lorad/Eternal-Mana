@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import type { ZoneInit } from '../../../shared/src/types';
 import { loadGfx } from '../gfx/runtime';
 import { bus } from '../state/bus';
+import './cinematic';
 import { GameScene } from './GameScene';
 import { initInput } from './input';
 import { registerTextures } from './textures';
@@ -40,6 +41,11 @@ export async function startGame(parent: HTMLElement, onProgress: (p: number) => 
   bus.on('net:drop+', d => scene()?.onDrop(d));
   bus.on('net:drop-', (id, got) => scene()?.onDropGone(id, got));
   bus.on('net:left', () => game.scene.stop('game'));
+  // Filmszenen (0.3)
+  bus.on('cine:pan', s => scene()?.cinePan(s));
+  bus.on('cine:flash', (c, ms) => scene()?.cineFlash(c, ms));
+  bus.on('cine:shake', (i, ms) => scene()?.cineShake(i, ms));
+  bus.on('cine:end', () => scene()?.cineEnd());
   (window as any).__em = { game };
   onProgress(1);
 }

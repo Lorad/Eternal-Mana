@@ -1,0 +1,57 @@
+/* ============================================================== Story (0.3): Filmszenen, Chronik, Gesprächsthemen */
+
+/* ---- Filmszene: Balken, Titelkarte, Textzeile ---- */
+.cine { position: absolute; inset: 0; z-index: 80; pointer-events: auto; }
+.cine-bar { position: absolute; left: 0; right: 0; height: 0; background: #000; transition: height .38s ease-in-out; }
+.cine-bar.top { top: 0; } .cine-bar.bottom { bottom: 0; }
+.cine.bars .cine-bar { height: 11%; min-height: 56px; }
+.cine-fade { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity .6s linear; pointer-events: none; }
+.cine-title { position: absolute; left: 0; right: 0; top: 24%; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; animation: cine-title-in .9s ease-out; }
+.em-root .cine-title h1 { font: 700 44px/1.1 var(--serif); font-variant: small-caps; letter-spacing: .14em; color: var(--gold-hi); text-shadow: 0 3px 0 #2a1b05, 0 0 30px rgba(120, 210, 255, .45), 0 0 4px #000; }
+.em-root .cine-title h2 { font: italic 400 22px/1.3 var(--serif); letter-spacing: .04em; color: var(--parch); text-shadow: 0 2px 0 #05060a, 0 0 12px #000; }
+.cine-line { position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%); width: 760px; max-width: 92%; display: flex; flex-direction: column; gap: 6px; padding: 14px 20px 12px;
+  background: linear-gradient(rgba(10, 12, 21, .92), rgba(10, 12, 21, .82)); border: 2px solid #05060a; box-shadow: inset 0 0 0 1px var(--line), 0 6px 24px rgba(0, 0, 0, .6); animation: cine-line-in .28s ease-out; }
+.cine-line p { font: 19px/1.55 var(--serif); color: var(--parch); }
+.cine-line.narr p { font-style: italic; text-align: center; color: #d8d2c0; }
+.cine-who { font: 700 14px var(--serif); font-variant: small-caps; letter-spacing: .12em; color: var(--gold); }
+.cine-next { align-self: flex-end; }
+.cine-skip { position: absolute; right: 18px; top: 14px; padding: 4px 12px; font: 12.5px var(--sans); color: var(--dim); background: rgba(10, 12, 21, .7); border: 1px solid var(--line); cursor: pointer; z-index: 2; }
+.cine-skip:hover, .cine-skip:focus-visible { color: var(--gold-hi); border-color: var(--gold-dk); }
+@keyframes cine-title-in { from { opacity: 0; transform: translateY(10px); letter-spacing: .3em; } to { opacity: 1; transform: none; } }
+@keyframes cine-line-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.is-short .cine-title { top: 16%; }
+.is-short .em-root .cine-title h1, .is-narrow .cine-title h1 { font-size: 32px; }
+
+/* ---- Chronik-Dokument ---- */
+.sign.lore { width: 600px; align-items: stretch; text-align: left; gap: 8px; }
+.lore-cat { display: flex; align-items: center; gap: 8px; font: 700 12px var(--serif); font-variant: small-caps; letter-spacing: .1em; opacity: .75; }
+.lore-cat .pill { margin-left: auto; background: rgba(120, 80, 20, .25); color: #5a3a10; }
+.em-root .lore-title { font: 700 24px/1.2 var(--serif); margin: 0 0 4px; }
+.lore-scroll { max-height: 380px; padding-right: 8px; }
+.lore-text { display: flex; flex-direction: column; gap: 4px; }
+.lore-text p { font: 16.5px/1.55 var(--serif); }
+.lore-gap { height: 8px; }
+.lore .sign-btn { align-self: center; margin-top: 6px; }
+.sign.lore-tablet, .sign.lore-stone { filter: saturate(.75); }
+.is-short .lore-scroll { max-height: 250px; }
+
+/* ---- Chronik im Questlog ---- */
+.chr-head { font: 700 15px var(--serif); font-variant: small-caps; letter-spacing: .08em; color: var(--gold-hi); padding: 2px 2px 4px; }
+.chr-mem { list-style: none; margin: 0 0 4px; padding: 0; display: grid; grid-template-columns: 1fr; gap: 2px; }
+.chr-mem li { display: flex; align-items: baseline; gap: 8px; padding: 2px 8px; color: var(--faint); font-size: 13px; }
+.chr-mem li.on { color: var(--parch); }
+.chr-mem li i { font-style: normal; color: var(--gold-dk); }
+.chr-mem li.on i { color: var(--gold-hi); text-shadow: 0 0 6px var(--gold); }
+.chr-mem li small { margin-left: auto; color: var(--faint); }
+.chr-missing { padding: 2px 10px 4px; font-size: 12px; }
+.chr-dec { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.chr-dec li { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; background: rgba(9, 11, 19, .5); border-left: 3px solid var(--gold-dk); }
+.chr-dec li b { color: var(--gold-hi); font-weight: 600; }
+.chr-dec li span { color: var(--dim); font-size: 13px; line-height: 1.45; }
+.chronik .qp-detail .lore-text p { font-size: 16px; color: var(--parch); }
+.qp-sub { margin: 4px 0 2px; padding-left: 4px; font: italic 12.5px var(--serif); color: var(--dim); letter-spacing: .02em; }
+.qp-bonus { padding: 4px 8px; font-size: 12.5px; color: var(--dim); border-left: 2px solid var(--gold-dk); }
+
+/* ---- Gesprächsthemen ---- */
+.speech.narr p, .speech.narr .speech-line { font-style: italic; }
+.dlg-topic { color: var(--gold-hi); }

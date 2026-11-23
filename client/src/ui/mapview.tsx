@@ -4,6 +4,7 @@ import { live } from '../state/live';
 import { store } from '../state/store';
 import { npcMarker } from '../../../shared/src/data/quests';
 import { NPCS } from '../../../shared/src/data/npcs';
+import { objVisible } from '../../../shared/src/data/story';
 import { ZONES } from '../../../shared/src/data/zones';
 import { getMap } from '../../../shared/src/maps/mapgen';
 import type { GameMap } from '../../../shared/src/maps/mapgen';
@@ -91,6 +92,7 @@ export function staticMarkers(map: GameMap): Marker[] {
   const c = store.state.char;
   const out: Marker[] = [];
   for (const o of map.objects) {
+    if (!objVisible(c, o) || o.props?.anchor) continue; // Story-Objekte mit Bedingung (0.3)
     if (o.type === 'npc') out.push({ x: o.x, y: o.y, type: 'npc', mark: c && o.tag ? npcMarker(c, o.tag) : null, label: o.tag ? NPCS[o.tag]?.name : undefined });
     else if (o.type === 'exit') out.push({ x: o.x, y: o.y, type: 'exit', label: o.props?.label ?? ZONES[o.props?.to]?.name });
     else if (o.type === 'stone') out.push({ x: o.x, y: o.y, type: 'stone', label: 'Quellstein' });
@@ -215,7 +217,7 @@ export function ZoneMapCanvas({ zone }: { zone: string }) {
   if (!mc) return <div class="note">Für diesen Ort gibt es keine Karte.</div>;
   const W = mc.map.w * TILE, H = mc.map.h * TILE;
   const scale = Math.max(2, Math.round(1100 / mc.cv.width));
-  const exits = mc.map.objects.filter(o => o.type === 'exit');
+  const exits = mc.map.objects.filter(o => o.type === 'exit' && objVisible(store.state.char, o));
   return (
     <div class="zonemap" style={{ aspectRatio: `${mc.map.w} / ${mc.map.h}` }}>
       <canvas ref={ref} class="px" width={mc.cv.width * scale} height={mc.cv.height * scale} />
