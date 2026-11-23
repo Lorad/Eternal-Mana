@@ -16,6 +16,7 @@ import { Rng } from '../../shared/src/util/rng';
 import { BossCtl } from './boss';
 import type { Game } from './game';
 import { Player, nextId, type StatusState } from './player';
+import { Story } from './story';
 
 export interface Obj extends ObjInfo {
   looted?: Set<number>;
@@ -161,7 +162,7 @@ export class Zone {
       case 'shard': return p.char.flags[`s:${this.id}:${o.tag}`] ? 1 : 0;
       case 'stone': return p.char.flags[`t:${this.id}`] ? 1 : 0;
       case 'node': return (o.harvested!.get(p.charId) ?? 0) > this.game.now ? 1 : 0;
-      default: return o.state;
+      default: return Story.objState(o, p) ?? o.state;
     }
   }
   objInfo(o: Obj, p: Player): ObjInfo { return { id: o.id, type: o.type, x: o.x, y: o.y, state: this.objStateFor(o, p), tag: o.tag, props: o.props }; }
@@ -235,6 +236,7 @@ export class Zone {
       else if (ELEM_STATUS[el] && this.rng.chance(CFG.combat.elemProc[el])) this.applyStatusMob(m, ELEM_STATUS[el]!, dmg);
       if (o.kb && !m.boss && o.ang !== undefined) { const k = o.kb * (el === 'wind' ? 1.6 : 1); m.kx = Math.cos(o.ang) * k; m.ky = Math.sin(o.ang) * k; }
     }
+    if (m.hp <= 0 && m.boss?.spare()) return dmg; // Story-Bosse ergeben sich, statt zu sterben
     if (m.hp <= 0) this.killMob(m);
     return dmg;
   }
@@ -280,6 +282,7 @@ export class Zone {
     this.mobs.delete(m.id);
     this.ev({ k: 'mob-', id: m.id, died: 1 });
     if (m.boss) { m.boss.onDeath(); return; }
+    Story.onMobDeath(this, m);
     if (m.spawnIdx >= 0 && !this.map.dungeon) this.respawns.push({ idx: m.spawnIdx, at: this.game.now + CFG.enemy.respawnSec });
     const rec = this.recipients(m);
     const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
@@ -579,6 +582,7 @@ export class Zone {
         break;
       }
       case 'exit': this.useExit(p, o); break;
+      default: Story.interact(this, p, o); // Chronik, Hüterschrein, Mana-Riss
     }
   }
   private checkPuzzle(p: Player) {
@@ -625,7 +629,7 @@ export class Zone {
   }
   private useExit(p: Player, o: Obj) {
     const now = this.game.now;
-    if (now < p.exitImmuneUntil) return;
+    if (now < p.exitImmuneUntil || !Story.visible(p, o)) return;
     const pr = o.props!;
     if (pr.req && p.char.quests[pr.req]?.s !== 'done') {
       if (now - p.msgAt > 3) { p.msgAt = now; p.toast(pr.reqMsg ?? 'Der Weg ist versperrt.', 'bad'); }
@@ -649,6 +653,7 @@ export class Zone {
     this.updateProjs(dt);
     this.updateFx(now);
     this.updateObjs(now);
+    Story.tick(this, dt);
     for (let i = this.respawns.length - 1; i >= 0; i--) {
       const r = this.respawns[i];
       if (now < r.at) continue;

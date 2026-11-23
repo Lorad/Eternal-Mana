@@ -57,7 +57,8 @@ export interface CharData {
   inv: ItemInstance[];
   equip: Partial<Record<Slot, ItemInstance>>;
   quests: Record<string, QuestState>;
-  /** Fortschritts-Flags: `c:<zone>:<id>` Truhe, `s:<zone>:<id>` Quellsplitter, `t:<zone>` Quellstein, `b:<boss>` Boss, `z:<zone>` besucht, `x:<zone>:<id>` Geheimnis */
+  /** Fortschritts-Flags: `c:<zone>:<id>` Truhe, `s:<zone>:<id>` Quellsplitter, `t:<zone>` Quellstein, `b:<boss>` Boss, `z:<zone>` besucht, `x:<zone>:<id>` Geheimnis.
+   *  Story (ab 0.3, siehe shared/src/data/cond.ts): `d:` Entscheidung, `l:` Chronik, `h:` Hüter-Erinnerung, `e:` Echo, `v:` Ort, `q:` Gespräch, `k:` Filmszene, `ch` Kapitel */
   flags: Record<string, number>;
   zone: string;
   x: number;
@@ -168,6 +169,10 @@ export type ClientMsg =
   | { t: 'save' }
   | { t: 'settings'; data: string }
   | { t: 'sortInv' }
+  // ---- Story (ab 0.3): Gesprächsthema öffnen, Option wählen, Filmszene beendet/übersprungen
+  | { t: 'dlgOpen'; npc: string; topic: string }
+  | { t: 'dlgPick'; npc: string; topic: string; node: string; opt: number }
+  | { t: 'cineEnd'; id: string }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -205,6 +210,10 @@ export type ServerMsg =
   | { t: 'env'; weather?: string; tod?: number }
   | { t: 'online'; players: { name: string; cls: ClassId; level: number; zone: string; id: number }[] }
   | { t: 'saved' }
+  // ---- Story (ab 0.3): aktueller Gesprächsknoten (null = beendet, err = abgelehnt), Filmszene abspielen, Chronik-Dokument zeigen
+  | { t: 'dlg'; npc: string; topic: string; node: string | null; err?: 1 }
+  | { t: 'cine'; id: string }
+  | { t: 'lore'; id: string; first?: 1 }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 
