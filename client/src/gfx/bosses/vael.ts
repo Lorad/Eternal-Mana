@@ -27,24 +27,24 @@ const PALE: Ramp = [mix(P.steel[2], P.shadow[3], 0.4), mix(P.ice[2], P.cream[2],
 const SH: Ramp = [mix(INK, P.shadow[0], 0.5), P.shadow[0], P.shadow[1], mix(P.shadow[3], P.violet[1], 0.5), P.violet[2]];
 const HOODDARK = mix(INK, MANT[0], 0.45);
 
-interface V { dy: number; lean: number; hd: Pt; bow: number; hand: Pt; free: Pt; sw: number; light: number; kn: number; ground: boolean; blink: boolean; heart: boolean; ph: number; f: BFr }
+interface V { dy: number; lean: number; hd: Pt; bow: number; hand: Pt; free: Pt; sw: number; light: number; kn: number; ground: boolean; blink: boolean; open: boolean; heart: boolean; ph: number; f: BFr }
 
 function pose(f: BFr): V {
   const i = f.i;
-  const z: V = { dy: 0, lean: 0, hd: [0, 1], bow: 0, hand: [66, 48], free: [43, 54], sw: 0, light: 0.6, kn: 0, ground: false, blink: false, heart: false, ph: f.ph, f };
+  const z: V = { dy: 0, lean: 0, hd: [0, 1], bow: 0, hand: [66, 48], free: [43, 54], sw: 0, light: 0.6, kn: 0, ground: false, blink: false, open: false, heart: false, ph: f.ph, f };
   switch (f.a) {
     case 'idle': z.dy = [0, 0, -1, -1, -1, 0][i]; z.hand = [66, 48 + z.dy]; z.free = [43, 54 + z.dy]; z.sw = [0, 1, 1, 0, -1, -1][i]; z.light = 0.6 + [0, 0.1, 0.2, 0.12, 0.02, -0.05][i]; z.blink = i === 4; break;
-    case 'windup': z.lean = [-1, -2][i]; z.dy = [0, -1][i]; z.hd = pk([[0, 0], [0, -1]], i); z.hand = pk([[65, 36], [62, 23]], i); z.free = pk([[44, 52], [45, 50]], i); z.light = [1, 1.4][i]; z.sw = [-1, 0][i]; break;
-    case 'attack': z.lean = [1, 3, 3, 1][i]; z.dy = [0, 1, 1, 0][i]; z.hd = pk([[1, 1], [2, 2], [2, 2], [1, 1]], i); z.hand = pk([[67, 32], [71, 46], [70, 48], [67, 48]], i); z.sw = [2, 3, 1, 0][i]; z.light = [1.5, 1.2, 0.9, 0.7][i]; z.free = pk([[45, 51], [46, 53], [46, 54], [44, 54]], i); break;
-    case 'special': z.dy = [-1, -2, -1, -2][i]; z.hd = [0, 0]; z.hand = pk([[63, 26], [63, 24], [63, 26], [63, 27]], i); z.free = pk([[29, 46], [28, 44], [29, 46], [30, 47]], i); z.light = [1.2, 1.5, 1.2, 1.5][i]; z.ph = i * 1.57; break;
+    case 'windup': z.open = true; z.lean = [-1, -2][i]; z.dy = [0, -1][i]; z.hd = pk([[0, 0], [0, -1]], i); z.hand = pk([[65, 36], [62, 23]], i); z.free = pk([[44, 52], [45, 50]], i); z.light = [1, 1.4][i]; z.sw = [-1, 0][i]; break;
+    case 'attack': z.open = i < 3; z.lean = [1, 3, 3, 1][i]; z.dy = [0, 1, 1, 0][i]; z.hd = pk([[1, 1], [2, 2], [2, 2], [1, 1]], i); z.hand = pk([[67, 32], [71, 46], [70, 48], [67, 48]], i); z.sw = [2, 3, 1, 0][i]; z.light = [1.5, 1.2, 0.9, 0.7][i]; z.free = pk([[45, 51], [46, 53], [46, 54], [44, 54]], i); break;
+    case 'special': z.open = true; z.dy = [-1, -2, -1, -2][i]; z.hd = [0, 0]; z.hand = pk([[63, 26], [63, 24], [63, 26], [63, 27]], i); z.free = pk([[28, 60], [27, 58], [28, 60], [29, 61]], i); z.light = [1.2, 1.5, 1.2, 1.5][i]; z.ph = i * 1.57; break;
     case 'hit': z.lean = [-3, -1][i]; z.hd = pk([[-2, 0], [-1, 1]], i); z.hand = pk([[67, 45], [66, 47]], i); z.sw = [3, 1][i]; z.light = 0.3; z.free = pk([[41, 52], [42, 54]], i); break;
     case 'death':
       // Nachgeben: Arm sinkt, er geht auf ein Knie, stellt die Laterne ab, legt die Hand aufs Herz und neigt den Kopf
       z.kn = [0, 0, 0.35, 0.75, 1, 1, 1, 1][i]; z.dy = R(z.kn * 18); z.lean = [-1, 0, 1, 1, 1, 1, 1, 1][i];
       z.bow = [0, 0.3, 0.45, 0.6, 0.8, 1, 1, 1][i]; z.hd = [R(z.bow * 2), 1 + R(z.bow * 3)];
-      z.hand = pk([[65, 51], [64, 58], [64, 66], [65, 72], [66, 74], [59, 74], [58, 74], [58, 74]], i);
-      z.free = pk([[43, 55], [43, 56], [44, 61], [45, 68], [46, 68], [47, 66], [47, 66], [47, 66]], i);
-      z.heart = i >= 4; z.ground = i >= 4; z.sw = [1, 0, 0, 0, 0, 0, 0, 0][i]; z.light = [0.35, 0.4, 0.45, 0.5, 0.55, 0.5, 0.6, 0.55][i]; z.ph = i * 0.5;
+      z.hand = pk([[65, 51], [64, 58], [64, 66], [65, 72], [66, 74], [66, 74], [66, 74], [66, 74]], i);
+      z.free = pk([[43, 55], [43, 56], [43, 61], [43, 68], [43, 72], [43, 73], [43, 73], [43, 73]], i);
+      z.ground = i >= 4; z.sw = [1, 0, 0, 0, 0, 0, 0, 0][i]; z.light = [0.35, 0.4, 0.45, 0.5, 0.55, 0.5, 0.6, 0.55][i]; z.ph = i * 0.5;
       break;
   }
   return z;
@@ -83,12 +83,12 @@ const FACE = [
   'ddddddd',
   'dtmmmtd',
   'tGGmGGt',
-  'tEpmEpm',
-  'sttmttm',
-  'smmlmmm',
-  'tsmlmst',
-  'tgwowgt',
-  'gwwwwwG',
+  'tEEmEEt',
+  'tsslsst',
+  '.smlms.',
+  '.tmlmt.',
+  '.gwowg.',
+  '.wwwww.',
   '.wgwwG.',
   '..wwG..',
   '...g...',
@@ -110,7 +110,7 @@ function head(l: Px, hx: number, hy: number, z: V): void {
     for (let i = 0; i < 7; i++) {
       let ch = row[i];
       if (ch === '.') continue;
-      if ((z.blink || z.bow > 0.4) && ch === 'p') ch = 'E';
+      if (ch === 'E' && z.open && !z.blink && z.bow < 0.4 && (i === 2 || i === 5)) ch = 'p';
       l.set(hx + 3 + i, hy + 5 + j, col[ch]);
     }
   });
@@ -134,7 +134,7 @@ function cloth(l: Px, m: Px, r: Ramp, folds: number, ph: number, y0: number, y1:
     for (let x = xl; x <= xr; x++) {
       if (!m.d[y * m.w + x]) continue;
       const u = (x - xl) / Math.max(1, xr - xl), fold = Math.sin(u * folds + v * 1.3 + ph);
-      const t = 2.55 + bias - u * 1.9 + fold * (0.35 + v * 0.75) + (u < 0.07 ? 0.7 : 0) - (u > 0.93 ? 0.7 : 0);
+      const t = 2.55 + bias - u * 1.7 + fold * (0.5 + v * 0.85) + (u < 0.07 ? 0.7 : 0) - (u > 0.93 ? 0.7 : 0);
       l.set(x, y, r[clamp(Math.floor(t), 0, r.length - 1)]);
     }
   }
@@ -157,14 +157,14 @@ const STOLE: Ramp = [mix(MANT[3], P.bone[1], 0.5), mix(MANT[4], P.bone[2], 0.55)
 const ROPE = mix(P.tan[2], P.ash[3], 0.4), ROPE_D = mix(P.tan[1], P.ash[2], 0.4);
 
 function figure(p: Px, z: V): void {
-  const S: Pt = [CX + z.lean, 38 + z.dy], kn = z.kn, hemL = 14 + kn * 6, hemR = 13 + kn * 5, hx = S[0] - 5 + z.hd[0], hy = S[1] - 19 + z.hd[1];
+  const S: Pt = [CX + z.lean, 38 + z.dy], kn = z.kn, hemL = 17 + kn * 5, hemR = 13 + kn * 5, hx = S[0] - 5 + z.hd[0], hy = S[1] - 19 + z.hd[1];
   const backArm = (): void => { lay(p, (l) => sleeve(l, [S[0] - 8, S[1] + 3], z.free, 1, 0)); };
   // hinterer Arm (hält den Mantel zusammen)
   if (!z.heart) backArm();
   // Mantel: fällt gerade, Saum abgewetzt; beim Knien breitet er sich aus
   lay(p, (l) => {
     const m = new Px(l.w, l.h);
-    m.poly([[S[0] - 9, S[1]], [S[0] - 5, S[1] - 4], [S[0] + 5, S[1] - 4], [S[0] + 9, S[1]], [S[0] + 11, S[1] + 12], [CX + lerp(12, 17, kn), lerp(66, 80, kn)], [CX + hemR, GY + 1], [CX - hemL, GY + 1], [CX - lerp(13, 19, kn), lerp(66, 80, kn)], [S[0] - 11, S[1] + 12]], 1);
+    m.poly([[S[0] - 9, S[1]], [S[0] - 5, S[1] - 4], [S[0] + 5, S[1] - 4], [S[0] + 9, S[1]], [S[0] + 11, S[1] + 12], [CX + lerp(12, 17, kn), lerp(66, 80, kn)], [CX + hemR, GY + 1], [CX - hemL, GY + 1], [CX - hemL + 1, GY - 3], [CX - lerp(14, 19, kn), lerp(70, 80, kn)], [S[0] - 11, S[1] + 12]], 1);
     if (kn > 0.3) { m.ell(CX - 16, GY - 3, 11 * kn, 3.6, 1); m.ell(CX + 10, GY - 9 * kn, 8 * kn, 8 * kn, 1); m.rect(CX + 2, GY - R(9 * kn), R(16 * kn), R(9 * kn) + 1, 1); }
     for (let x = 0; x < m.w; x++) { const h = rnd2(x >> 1, 3, 17); if (h < 0.34) m.set(x, GY, 0); if (h < 0.1) m.set(x, GY - 1, 0); }
     for (let y = GY + 1; y < m.h; y++) for (let x = 0; x < m.w; x++) m.set(x, y, 0);
@@ -191,7 +191,7 @@ function figure(p: Px, z: V): void {
   lay(p, (l) => {
     const m = new Px(l.w, l.h);
     m.poly([[S[0] - 12, S[1] + 6], [S[0] - 10, S[1] - 1], [S[0] - 6, S[1] - 5], [S[0] + 6, S[1] - 5], [S[0] + 10, S[1] - 1], [S[0] + 12, S[1] + 6], [S[0] + 7, S[1] + 9], [S[0], S[1] + 10], [S[0] - 7, S[1] + 9]], 1);
-    cloth(l, m, MANT, 9, 1.2, S[1] - 5, S[1] + 22, 0.7);
+    cloth(l, m, MANT, 9, 1.2, S[1] - 5, S[1] + 22, 1);
     for (let x = -11; x <= 11; x++) { const y = R(S[1] + 8.6 - ((x * x) / 121) * 3); if (m.get(S[0] + x, y)) l.set(S[0] + x, y, (x + 12) % 4 === 0 ? OG[3] : (x + 12) % 4 === 2 ? OG[1] : OG[2]); }
     // Schließe: Scheibe mit hellem Stein
     l.rect(S[0], S[1] + 1, 3, 3, OG[2]); l.px([S[0] + 1, S[1], S[0] + 1, S[1] + 4, S[0] - 1, S[1] + 2, S[0] + 3, S[1] + 2], OG[2]); l.set(S[0] + 1, S[1] + 2, PALE[3]); l.set(S[0], S[1] + 1, OG[4]); l.set(S[0] + 2, S[1] + 3, OG[1]);
@@ -292,7 +292,7 @@ const fn = (p: Px, f: BFr): void => {
   }
   // Hand über dem Ring
   if (!z.ground) lay(p, (l) => { const hx = R(z.hand[0]), hy = R(z.hand[1]); l.rect(hx - 1, hy, 3, 2, SK[3]); l.set(hx - 1, hy, SK[4]); l.set(hx + 1, hy + 1, SK[1]); });
-  if (z.ground && i === 4) lay(p, (l) => { const hx = R(z.hand[0]), hy = R(z.hand[1]); l.rect(hx - 1, hy - 1, 3, 2, SK[3]); l.set(hx - 1, hy - 1, SK[4]); });
+  if (z.ground) lay(p, (l) => { const hx = R(z.hand[0]), hy = R(z.hand[1]); l.rect(hx - 1, hy - 1, 3, 2, SK[3]); l.set(hx - 1, hy - 1, SK[4]); l.set(hx + 1, hy, SK[1]); });
   // --- vor der Gestalt
   if (f.a === 'windup') { spark(p, lc[0], lc[1], WHITE, PALE[3], 1 + i); for (let k = 0; k < 6; k++) { const a = k * 1.05 + i * 0.5, d = 13 - i * 4; p.blend(lc[0] + Math.cos(a) * d, lc[1] + Math.sin(a) * d, alpha(k % 2 ? WHITE : PALE[3], 220)); } }
   if (f.a === 'attack') {

@@ -42,8 +42,8 @@ function pose(f: BFr): A {
   const z: A = { dy: 0, lean: 0, hd: [0, 0], Rh: null, Lh: null, bend: 1, fl: f.n > 1 ? i / f.n : 0, heart: 0.35, still: 0.34, eyes: 0, f };
   switch (f.a) {
     case 'idle': z.dy = [0, 0, -1, -1, -1, 0][i]; z.hd = [0, [0, 0, 0, 1, 1, 0][i]]; z.heart = 0.3 + [0, 0.1, 0.2, 0.3, 0.2, 0.1][i]; break;
-    case 'windup': z.lean = [-2, -3][i]; z.dy = [0, -1][i]; z.hd = pk([[-1, 0], [-1, -1]], i); z.Rh = pk([[113, 78], [110, 26]], i); z.heart = [0.5, 0.8][i]; z.eyes = [0.5, 1][i]; break;
-    case 'attack': z.lean = [2, 4, 3, 1][i]; z.dy = [0, 2, 2, 1][i]; z.hd = pk([[1, 1], [2, 2], [1, 2], [0, 1]], i); z.Rh = i < 3 ? pk([[114, 62], [106, 104], [104, 109]], i) : null; z.heart = [0.8, 0.6, 0.45, 0.4][i]; z.eyes = [1, 1, 0.5, 0][i]; break;
+    case 'windup': z.lean = [-2, -3][i]; z.dy = [0, -1][i]; z.hd = pk([[-1, 0], [-1, -1]], i); z.Rh = pk([[108, 80], [108, 28]], i); z.heart = [0.5, 0.8][i]; z.eyes = [0.5, 1][i]; break;
+    case 'attack': z.lean = [2, 4, 3, 1][i]; z.dy = [0, 2, 2, 1][i]; z.hd = pk([[1, 1], [2, 2], [1, 2], [0, 1]], i); z.Rh = i < 3 ? pk([[110, 62], [102, 104], [101, 109]], i) : null; z.heart = [0.8, 0.6, 0.45, 0.4][i]; z.eyes = [1, 1, 0.5, 0][i]; break;
     case 'special': z.dy = [-1, -2, -1, -2][i]; z.hd = [0, -1]; z.Lh = pk([[21, 84], [20, 82], [21, 84], [22, 85]], i); z.Rh = pk([[107, 84], [108, 82], [107, 84], [106, 85]], i); z.heart = [1.1, 1.5, 1.1, 1.5][i]; z.eyes = 1; z.still = [0.34, 0.4, 0.34, 0.4][i]; z.bend = -1; break;
     case 'hit': z.lean = [-3, -1][i]; z.hd = pk([[-2, -1], [-1, 0]], i); z.heart = 0.15; break;
     case 'death': { const k = Math.min(i, 3); z.dy = [1, 2, 3, 4][k]; z.hd = pk([[0, 1], [0, 2], [-1, 3], [-1, 4]], k); z.still = [0.55, 0.72, 0.9, 1.2][k]; z.heart = [0.5, 0.35, 0.2, 0.1][k]; z.fl = k / 8; break; }
@@ -117,13 +117,13 @@ function shard(p: Px, x: number, y: number, k: number, s: number, lit: number): 
 }
 interface Sh { x: number; y: number; front: boolean; s: number; lit: number }
 function shardAt(f: BFr, k: number, dy: number): Sh {
-  let a = (k / 6) * TAU, rx = 54, ry = 10, cy = 38, lit = 0.5;
+  let a = (k / 6) * TAU, rx = 54, ry = 10, cy = 40, lit = 0.5;
   const bob = Math.sin(f.ph + k * 1.7) * 1.5;
   switch (f.a) {
     case 'idle': a += Math.sin(f.ph) * 0.16; break;
     case 'windup': a += 0.14 + f.i * 0.1; rx = 54 - f.i * 3; lit = 0.8; break;
     case 'attack': a += [0.32, 0.44, 0.36, 0.2][f.i]; rx = [51, 56, 55, 54][f.i]; break;
-    case 'special': a += Math.sin(f.ph) * 0.1 + 0.26; ry = 7; cy = 27; rx = 47; lit = [1, 1.3, 1, 1.3][f.i]; break;
+    case 'special': a += Math.sin(f.ph) * 0.1 + 0.26; ry = 7; cy = 31; rx = 48; lit = [1, 1.3, 1, 1.3][f.i]; break;
     case 'hit': rx = [57, 56][f.i]; a -= [0.12, 0.06][f.i]; break;
     case 'death': a += 0.05 * f.i; rx = 54 - Math.min(f.i, 3) * 2; lit = 0.5 + Math.min(f.i, 3) * 0.1; break;
   }
@@ -131,11 +131,11 @@ function shardAt(f: BFr, k: number, dy: number): Sh {
   return { x: CX + Math.cos(a) * rx, y: cy + dy * 0.5 + sa * ry + bob, front: sa > 0, s: sa > 0 ? 1.05 : 0.88, lit };
 }
 /** Ruheplatz der Kristalle nach der Erlösung: ein stiller Bogen über dem Haupt. */
-function shardRest(k: number): Pt { const a = ((203 + k * 26.8) / 360) * TAU; return [CX + Math.cos(a) * 40, 50 + Math.sin(a) * 40]; }
+function shardRest(k: number): Pt { const a = ((200 + k * 28) / 360) * TAU; return [CX + Math.cos(a) * 38, 55 + Math.sin(a) * 37]; }
 
 /** Die Maske: ruhig, Augen geschlossen (eyes 0) oder Lichtschlitze (1); crack = Riss der Stille über dem linken Auge. */
 function mask(l: Px, mx: number, my: number, eyes: number, crack: number, calm = false): void {
-  const hw = (j: number): number => (j < 3 ? [5, 7, 8][j] : j <= 12 ? (j >= 6 ? 10 : 9) : j <= 22 ? lerp(10, 6.4, (j - 12) / 10) : lerp(6.4, 0.6, (j - 22) / 7));
+  const hw = (j: number): number => (j < 3 ? [3.6, 6.4, 8][j] : j <= 12 ? (j >= 6 ? 10 : 9) : j <= 22 ? lerp(10, 6.4, (j - 12) / 10) : lerp(6.4, 0.6, (j - 22) / 7));
   for (let j = 0; j < 30; j++) {
     const w = hw(j);
     for (let x = Math.ceil(-w); x < w; x++) {
@@ -222,15 +222,13 @@ function poolFront(p: Px, fl: number, pts: ReadonlyArray<number>): void {
 /** Arm aus Wasserlicht; hand = null → ruht mit der Hand im Quellwasser. */
 function arm(p: Px, z: A, sg: number, hand: Pt | null): void {
   const sh: Pt = [CX + z.lean + sg * 28, 55 + z.dy];
-  const el: Pt = hand ? ik(sh, hand, 22, 30, sg * z.bend * (hand[1] < sh[1] ? 1 : -1)) : [CX + sg * 40 + z.lean * 0.5, 83 + z.dy * 0.5];
+  const el: Pt = hand ? ik(sh, hand, 22, 30, sg * z.bend * (hand[1] < sh[1] ? 1 : -1)) : [CX + sg * 38 + z.lean * 0.5, 84 + z.dy * 0.5];
   lay(p, (l) => {
     const m = new Px(l.w, l.h);
-    if (!hand) blob(m, spline([sh, el, [CX + sg * 33, 100], [CX + sg * 30, 116]], 8), 7, 4.8);
-    else { blob(m, spline([sh, el], 8), 7, 6); blob(m, spline([el, hand], 8), 6, 5); m.ell(hand[0], hand[1], 6.6, 6.6, 1); }
+    if (!hand) blob(m, spline([sh, el, [CX + sg * 34, 101], [CX + sg * 32, 116]], 8), 7.6, 6);
+    else { blob(m, spline([sh, el], 8), 7.6, 6.4); blob(m, spline([el, hand], 8), 6.4, 5.2); m.ell(hand[0], hand[1], 6.6, 6.6, 1); }
     water(l, m, z.fl);
   });
-  // Kristallsporn am Ellbogen
-  lay(p, (l) => prism(l, el[0] + sg * 3, el[1] + 2, el[0] + sg * 12, el[1] - 6, 2.4, sg < 0 && z.still > 0.6 ? STILL : CR, { seed: 14 + sg, clipY: 999 }));
   if (hand) {
     // Kristallklauen und Armschiene
     const ang = Math.atan2(hand[1] - el[1], hand[0] - el[0]);
@@ -244,10 +242,10 @@ function arm(p: Px, z: A, sg: number, hand: Pt | null): void {
 
 /** Leib, Mähne, Krone, Schultern; liefert die Mitte der Wunde. */
 function figure(p: Px, z: A, sh: Sh[]): Pt {
-  const sx = CX + z.lean, by = z.dy, mx = sx + z.hd[0], my = 16 + by + z.hd[1], H: Pt = [sx, 63 + by];
+  const sx = CX + z.lean, by = z.dy, mx = sx + z.hd[0], my = 18 + by + z.hd[1], H: Pt = [sx, 64 + by];
   // Krone aus Kristall hinter dem Haupt
   lay(p, (l) => {
-    for (const [bx, b2, tx, ty, hw, sd] of [[-11, 14, -21, 5, 2.2, 3], [11, 14, 21, 5, 2.2, 4], [-9, 9, -16, -4, 2.6, 5], [9, 9, 16, -4, 2.6, 6], [-5, 6, -8, -9, 2.8, 7], [5, 6, 8, -9, 2.8, 8], [0, 5, 0, -13, 3.4, 9]] as const)
+    for (const [bx, b2, tx, ty, hw, sd] of [[-11, 14, -21, 5, 2.2, 3], [11, 14, 21, 5, 2.2, 4], [-9, 9, -16, -4, 2.6, 5], [9, 9, 16, -4, 2.6, 6], [-5, 6, -8, -9, 2.8, 7], [5, 6, 8, -9, 2.8, 8], [0, 5, 0, -12, 3.4, 9]] as const)
       prism(l, mx + bx, my + b2, mx + tx, my + ty, hw, CR, { seed: sd, clipY: 999 });
   });
   for (let k = 0; k < 6; k++) if (!sh[k].front) shard(p, sh[k].x, sh[k].y, k, sh[k].s, sh[k].lit);
@@ -262,7 +260,7 @@ function figure(p: Px, z: A, sh: Sh[]): Pt {
   lay(p, (l) => {
     const m = new Px(l.w, l.h), wx = CX + z.lean * 0.5;
     m.poly([[sx - 31, 53 + by], [sx - 23, 46 + by], [sx - 8, 44 + by], [sx + 8, 44 + by], [sx + 23, 46 + by], [sx + 31, 53 + by], [sx + 29, 63 + by], [sx + 21, 77 + by], [wx + 13, 90], [wx - 13, 90], [sx - 21, 77 + by], [sx - 29, 63 + by]], 1);
-    m.rect(sx - 5, 38 + by, 10, 8, 1);
+    m.rect(sx - 5, 40 + by, 10, 6, 1);
     for (let y = 88; y < 117; y++) { const v = (y - 88) / 28, hw = 13 + v * v * 14 + Math.sin(y * 0.6) * 0.6; m.rect(R(wx - hw), y, R(hw * 2), 1, 1); }
     water(l, m, z.fl);
   });
@@ -296,7 +294,7 @@ function figure(p: Px, z: A, sh: Sh[]): Pt {
 
 /** Was bleibt: ruhiges Licht – ein schmaler Schleier unter der unversehrten Maske. t = Erscheinen 0..1 */
 function calmLight(p: Px, t: number, fl: number): void {
-  const my = 20;
+  const my = 22;
   glow(p, CX, 62, 46, WL[3], 12 * t); glow(p, CX, 56, 28, WL[4], 22 * t);
   for (let y = 46; y < 116; y++) {
     const v = (y - 46) / 70, hw = 5 + v * v * 21 + Math.sin(y * 0.22 + fl * TAU) * 1.3 * v;
@@ -328,7 +326,8 @@ const fn = (p: Px, f: BFr): void => {
     if (i < 7) {
       const snap = new Px(p.w, p.h);
       figure(snap, z3, [0, 1, 2, 3, 4, 5].map((k) => ({ ...shardAt({ ...f, i: 3 }, k, z3.dy), front: true, x: -99 })));
-      const s = shatter(snap, t, GY, 23, { cell: 7, spread: 1.5, heap: 6, pop: 6, cx: CX });
+      const s = shatter(snap, t, GY, 23, { cell: 7, spread: 0.7, heap: 6, pop: 6, cx: CX });
+      for (let y = 0; y < s.h; y++) for (const x of [0, 1, 2, s.w - 3, s.w - 2, s.w - 1]) s.d[y * s.w + x] = 0;
       if (i >= 5) dissolve(s, i === 5 ? 0.35 : 0.72, 5);
       if (i === 6) s.alphaMul(0.7);
       p.draw(s);
@@ -364,13 +363,13 @@ const fn = (p: Px, f: BFr): void => {
   }
   if (f.a === 'attack' && z.Rh) {
     const h = z.Rh;
-    if (i === 0) { for (let a = -1.45; a < 0.1; a += 0.02) for (let r = 36; r < 50; r += 1) { const t = (a + 1.45) / 1.55, x = 94 + Math.cos(a) * r * 0.62, y = 62 + Math.sin(a) * r; if (x < 126 && y > 2) p.blend(x, y, alpha(r > 46 ? WHITE : r > 41 ? WL[5] : WL[4], R(190 * t * t))); } spark(p, h[0], h[1], WHITE, WL[5], 3); }
+    if (i === 0) { for (let a = -1.45; a < 0.1; a += 0.02) for (let r = 36; r < 50; r += 1) { const t = (a + 1.45) / 1.55, x = 94 + Math.cos(a) * r * 0.62, y = 62 + Math.sin(a) * r; if (x < 124 && y > 2) p.blend(x, y, alpha(r > 46 ? WHITE : r > 41 ? WL[5] : WL[4], R(120 * t * t))); } spark(p, h[0], h[1], WHITE, WL[5], 3); }
     if (i >= 1) {
       // Aufschlag: Fontäne aus Wasserlicht, Kristallsplitter, Stoßwelle
-      const k = i === 1 ? 1 : 0.75, cx = 105;
-      for (let j = 0; j < 46; j++) { const a = -Math.PI * rnd2(j, 1, 8), d = (8 + rnd2(j, 2, 8) * 26) * (i === 1 ? 0.7 : 1), x = cx + Math.cos(a) * d * 0.8, y = 113 + Math.sin(a) * d * (0.9 + rnd2(j, 3, 8) * 0.6); if (x > 2 && x < 126 && y > 2) { p.set(x, y, j % 4 === 0 ? WHITE : WL[j % 3 ? 5 : 4]); if (j % 3 === 0) p.set(x, y + 1, WL[4]); } }
+      const k = i === 1 ? 1 : 0.75, cx = 101;
+      for (let j = 0; j < 46; j++) { const a = -Math.PI * rnd2(j, 1, 8), d = (8 + rnd2(j, 2, 8) * 26) * (i === 1 ? 0.7 : 1), x = cx + Math.cos(a) * d * 0.8, y = 113 + Math.sin(a) * d * (0.9 + rnd2(j, 3, 8) * 0.6); if (x > 2 && x < 124 && y > 2) { p.set(x, y, j % 4 === 0 ? WHITE : WL[j % 3 ? 5 : 4]); if (j % 3 === 0) p.set(x, y + 1, WL[4]); } }
       lay(p, (l) => { for (const [dx, hh, ln] of [[-13, 20, -4], [-4, 30, -1], [6, 34, 3], [15, 22, 6]] as const) prism(l, cx + dx, 116, cx + dx + ln * k, 116 - hh * k, 2.8, CR, { seed: 40 + dx, clipY: 999 }); });
-      for (let x = cx - 30; x < Math.min(126, cx + 21); x++) { const u = (x - cx) / 30, y = 119 - R((1 - u * u) * (i === 1 ? 4 : 2)); if (Math.abs(u) < 0.95 && (x + i) % 5 !== 0) { p.blend(x, y, alpha(WHITE, R(255 * (1 - u * u * 0.7)))); p.blend(x, y + 1, alpha(WL[4], R(200 * (1 - u * u)))); } }
+      for (let x = cx - 30; x < Math.min(124, cx + 23); x++) { const u = (x - cx) / 30, y = 119 - R((1 - u * u) * (i === 1 ? 4 : 2)); if (Math.abs(u) < 0.95 && (x + i) % 5 !== 0) { p.blend(x, y, alpha(WHITE, R(255 * (1 - u * u * 0.7)))); p.blend(x, y + 1, alpha(WL[4], R(200 * (1 - u * u)))); } }
       glow(p, cx, 108, 18, WL[4], i === 1 ? 70 : 36);
     }
   }
