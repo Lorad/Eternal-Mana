@@ -39,11 +39,11 @@ type Snap = Extract<ServerMsg, { t: 's' }>;
 
 const FONT = '"Trebuchet MS", Verdana, sans-serif';
 /** flach auf dem Boden liegende Deko (unter Figuren, ohne Schatten) */
-const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy)/;
+const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy|rug$|dig_spot)/;
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
-const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags)/;
+const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags|mana_surge|star_shard|lore_)/;
 /** Flammen flackern schnell, alles andere wiegt sich langsam */
-const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue)/;
+const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook)/;
 /** [Radius, Farbe, Stärke, Flackern] */
 const LIGHTS: Record<string, [number, number, number, number]> = {
   campfire: [100, 0xffb060, 1, 0.07], brazier: [92, 0xffac58, 1, 0.07], lamp: [84, 0xffd89a, 0.9, 0.03], torch: [84, 0xffb870, 0.95, 0.07], wall_torch: [84, 0xffb870, 0.95, 0.07],
