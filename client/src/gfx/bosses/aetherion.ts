@@ -131,7 +131,8 @@ function shardAt(f: BFr, k: number, dy: number): Sh {
   return { x: CX + Math.cos(a) * rx, y: cy + dy * 0.5 + sa * ry + bob, front: sa > 0, s: sa > 0 ? 1.05 : 0.88, lit };
 }
 /** Ruheplatz der Kristalle nach der Erlösung: ein stiller Bogen über dem Haupt. */
-function shardRest(k: number): Pt { const a = ((200 + k * 28) / 360) * TAU; return [CX + Math.cos(a) * 38, 55 + Math.sin(a) * 37]; }
+const REST_SLOT = [5, 3, 1, 0, 2, 4];
+function shardRest(k: number): Pt { const a = ((200 + REST_SLOT[k] * 28) / 360) * TAU; return [CX + Math.cos(a) * 38, 55 + Math.sin(a) * 37]; }
 
 /** Die Maske: ruhig, Augen geschlossen (eyes 0) oder Lichtschlitze (1); crack = Riss der Stille über dem linken Auge. */
 function mask(l: Px, mx: number, my: number, eyes: number, crack: number, calm = false): void {
@@ -241,7 +242,7 @@ function arm(p: Px, z: A, sg: number, hand: Pt | null): void {
 }
 
 /** Leib, Mähne, Krone, Schultern; liefert die Mitte der Wunde. */
-function figure(p: Px, z: A, sh: Sh[]): Pt {
+function figure(p: Px, z: A, sh: Sh[], noMask = false): Pt {
   const sx = CX + z.lean, by = z.dy, mx = sx + z.hd[0], my = 18 + by + z.hd[1], H: Pt = [sx, 64 + by];
   // Krone aus Kristall hinter dem Haupt
   lay(p, (l) => {
@@ -287,14 +288,13 @@ function figure(p: Px, z: A, sh: Sh[]): Pt {
   });
   // Halsring und Maske
   lay(p, (l) => { l.rect(sx - 6, 43 + by, 12, 2, OG[1]); l.rect(sx - 6, 43 + by, 6, 1, OG[2]); l.px([sx - 3, 43 + by, sx + 2, 44 + by], OG[3]); });
-  lay(p, (l) => mask(l, mx, my, z.eyes, z.f.a === 'death' ? clamp(0.5 + z.f.i * 0.2) : 0.5));
+  if (!noMask) lay(p, (l) => mask(l, mx, my, z.eyes, z.f.a === 'death' ? clamp(0.5 + z.f.i * 0.2) : 0.5));
   if (z.eyes > 0.5) for (const sg of [-1, 1]) glow(p, mx + sg * 5, my + 12.5, 4, WL[5], 60);
   return H;
 }
 
 /** Was bleibt: ruhiges Licht – ein schmaler Schleier unter der unversehrten Maske. t = Erscheinen 0..1 */
-function calmLight(p: Px, t: number, fl: number): void {
-  const my = 22;
+function calmLight(p: Px, t: number, fl: number, my = 22): void {
   glow(p, CX, 62, 46, WL[3], 12 * t); glow(p, CX, 56, 28, WL[4], 22 * t);
   for (let y = 46; y < 116; y++) {
     const v = (y - 46) / 70, hw = 5 + v * v * 21 + Math.sin(y * 0.22 + fl * TAU) * 1.3 * v;
@@ -322,10 +322,10 @@ const fn = (p: Px, f: BFr): void => {
     // die Albtraumschale bricht ab; das Licht darunter ist ruhig
     const t = [0.3, 0.62, 0.9, 1][i - 4], z3 = pose({ ...f, i: 3 });
     pool(p, i / 8, 1);
-    calmLight(p, [0.55, 0.85, 1, 1][i - 4], i / 8);
+    calmLight(p, [0.55, 0.85, 1, 1][i - 4], i / 8, [25, 23, 22, 22][i - 4]);
     if (i < 7) {
       const snap = new Px(p.w, p.h);
-      figure(snap, z3, [0, 1, 2, 3, 4, 5].map((k) => ({ ...shardAt({ ...f, i: 3 }, k, z3.dy), front: true, x: -99 })));
+      figure(snap, z3, [0, 1, 2, 3, 4, 5].map((k) => ({ ...shardAt({ ...f, i: 3 }, k, z3.dy), front: true, x: -99 })), true);
       const s = shatter(snap, t, GY, 23, { cell: 7, spread: 0.7, heap: 6, pop: 6, cx: CX });
       for (let y = 0; y < s.h; y++) for (const x of [0, 1, 2, s.w - 3, s.w - 2, s.w - 1]) s.d[y * s.w + x] = 0;
       if (i >= 5) dissolve(s, i === 5 ? 0.35 : 0.72, 5);
