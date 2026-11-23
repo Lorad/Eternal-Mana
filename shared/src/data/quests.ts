@@ -1,6 +1,9 @@
 import type { CharData } from '../types';
 import { countShards } from '../stats';
-import type { Cond } from './npcs';
+import { condOk, countLore, countMemories, type Cond } from './cond';
+import { TOPICS } from './dialoge';
+import { QUESTS_AKT2 } from './quests_akt2';
+import { ZONE_CHAPTER } from './story';
 
 export type Objective =
   | { t: 'kill'; mob: string; n: number; label: string }
@@ -9,7 +12,18 @@ export type Objective =
   | { t: 'bossparty'; n: number; label: string }
   | { t: 'collect'; item: string; n: number; label: string }
   | { t: 'talk'; npc: string; label: string }
-  | { t: 'shards'; n: number; label: string };
+  | { t: 'shards'; n: number; label: string }
+  // ---- ab 0.3 (alle aus Flags abgeleitet): Chronik-Dokument finden, Ort besuchen, Entscheidung treffen, Echo bestehen, Gesprächs-Flag, Hüter-Erinnerungen
+  | { t: 'lore'; doc: string; label: string }
+  | { t: 'lorecount'; n: number; label: string }
+  | { t: 'visit'; place: string; label: string }
+  | { t: 'decide'; id: string; label: string }
+  | { t: 'echo'; id: string; label: string }
+  | { t: 'flag'; flag: string; label: string }
+  | { t: 'memories'; n: number; label: string };
+/** Ziele, deren Fortschritt aus dem Charakterstand abgeleitet wird (nicht aus `QuestState.p`). */
+export const DERIVED_OBJECTIVES = new Set<Objective['t']>(['collect', 'shards', 'lore', 'lorecount', 'visit', 'decide', 'echo', 'flag', 'memories']);
+export interface QuestRewards { xp: number; gold: number; items?: [string, number][]; gear?: number; skillPoints?: number; attrPoints?: number }
 
 export interface QuestDef {
   id: string;
@@ -22,12 +36,31 @@ export interface QuestDef {
   requires?: string[];
   summary: string;
   objectives: Objective[];
-  rewards: { xp: number; gold: number; items?: [string, number][]; gear?: number; skillPoints?: number; attrPoints?: number };
+  rewards: QuestRewards;
   offer: string[];
   progress: string;
   done: string[];
   /** Story-Einblendung nach Abschluss */
   story?: string;
+  // ---- ab 0.3
+  /** Hauptquest: Kapitel (7–10, 11 = Epilog); für Akt I ergibt es sich aus der Zone */
+  chapter?: number;
+  /** Questreihe für das Questlog, z. B. „Hüterschrein“ oder „Borin“ */
+  line?: string;
+  /** Geheimquest: wird nie angeboten, sondern ausgelöst (Dialog, Fundstück, Ort) und erscheint erst dann im Log */
+  hidden?: boolean;
+  /** zusätzliche Voraussetzung (Entscheidungen, Flags, Queststände) */
+  when?: Cond;
+  /** Auslöser verborgener Quests: eines der Dokumente gelesen / Ort betreten */
+  trigger?: { lore?: string[]; visit?: string };
+  /** Filmszene nach Abschluss – fest oder je nach Bedingung (erste passende) */
+  cine?: string | { if: Cond; id: string }[];
+  /** abweichende Texte je nach Bedingung (erste passende Variante gewinnt, fehlende Teile fallen auf den Standard zurück) */
+  alt?: { if: Cond; offer?: string[]; progress?: string; done?: string[] }[];
+  /** zusätzliche Belohnung je nach Bedingung (z. B. getroffene Entscheidung) */
+  bonus?: ({ if: Cond; note: string } & Partial<QuestRewards>)[];
+  /** Flags, die der Abschluss setzt */
+  flags?: string[];
 }
 
 const Q = (q: QuestDef) => q;
@@ -320,21 +353,34 @@ export const QUEST_LIST: QuestDef[] = [
     offer: ['Große Beute jagt man nicht allein. Such dir jemanden, dem du den Rücken zudrehen kannst, und legt zusammen etwas Großes.', '(Gruppe bilden: Im Menü „Gruppe“ einen Mitspieler einladen.)'],
     progress: 'Allein zählt nicht. Bring Verstärkung.',
     done: ['Zu zweit, und beide noch am Stück. So macht man das.'] }),
+  // ================================================================================== AKT II (0.3) – siehe quests_akt2.ts
+  ...QUESTS_AKT2,
 ];
 
 export const QUESTS: Record<string, QuestDef> = Object.fromEntries(QUEST_LIST.map(q => [q.id, q]));
 
-export function questAvailable(c: CharData, q: QuestDef): boolean {
+/** Darf die Quest (jetzt) begonnen werden? Gilt auch für verborgene Quests – die werden aber nie angeboten. */
+export function questStartable(c: CharData, q: QuestDef): boolean {
   const st = c.quests[q.id];
   if (st?.s === 'active') return false;
   if (st?.s === 'done' && q.type !== 'repeat' && q.type !== 'group') return false;
   for (const r of q.requires ?? []) if (c.quests[r]?.s !== 'done') return false;
-  return true;
+  return condOk(c, q.when);
 }
+export function questAvailable(c: CharData, q: QuestDef): boolean { return !q.hidden && questStartable(c, q); }
 export function objectiveProgress(c: CharData, q: QuestDef, i: number): number {
   const o = q.objectives[i];
-  if (o.t === 'shards') return Math.min(o.n, countShards(c));
-  if (o.t === 'collect') { let n = 0; for (const it of c.inv) if (it.base === o.item) n += it.qty ?? 1; return Math.min(o.n, n); }
+  switch (o.t) {
+    case 'shards': return Math.min(o.n, countShards(c));
+    case 'collect': { let n = 0; for (const it of c.inv) if (it.base === o.item) n += it.qty ?? 1; return Math.min(o.n, n); }
+    case 'lore': return c.flags[`l:${o.doc}`] ? 1 : 0;
+    case 'lorecount': return Math.min(o.n, countLore(c));
+    case 'visit': return c.flags[`v:${o.place}`] ? 1 : 0;
+    case 'decide': return c.flags[`d:${o.id}`] ? 1 : 0;
+    case 'echo': return c.flags[`e:${o.id}`] ? 1 : 0;
+    case 'flag': return c.flags[o.flag] ? 1 : 0;
+    case 'memories': return Math.min(o.n, countMemories(c));
+  }
   return c.quests[q.id]?.p[i] ?? 0;
 }
 export function objectiveTarget(o: Objective): number { return 'n' in o ? o.n : 1; }
@@ -342,12 +388,21 @@ export function questComplete(c: CharData, q: QuestDef): boolean {
   if (c.quests[q.id]?.s !== 'active') return false;
   return q.objectives.every((o, i) => objectiveProgress(c, q, i) >= objectiveTarget(o));
 }
-export function condOk(c: CharData, cond: Cond): boolean {
-  if (cond.done && c.quests[cond.done]?.s !== 'done') return false;
-  if (cond.active && c.quests[cond.active]?.s !== 'active') return false;
-  if (cond.notDone && c.quests[cond.notDone]?.s === 'done') return false;
-  if (cond.flag && !c.flags[cond.flag]) return false;
-  return true;
+export { condOk };
+/** Texte einer Quest unter Berücksichtigung der Varianten (`alt`). */
+export function questText(c: CharData, q: QuestDef): { offer: string[]; progress: string; done: string[] } {
+  const a = q.alt?.find(x => condOk(c, x.if));
+  return { offer: a?.offer ?? q.offer, progress: a?.progress ?? q.progress, done: a?.done ?? q.done };
+}
+/** Kapitel einer Hauptquest (undefined für alles andere). */
+export function questChapter(q: QuestDef): number | undefined {
+  return q.type === 'main' ? q.chapter ?? ZONE_CHAPTER[q.zone] : undefined;
+}
+/** Aktuelles Kapitel des Charakters: das höchste, in dem eine Hauptquest läuft oder abgeschlossen ist. */
+export function chapterOf(c: CharData): number {
+  let n = 1;
+  for (const q of QUEST_LIST) if (c.quests[q.id]) { const ch = questChapter(q); if (ch && ch > n) n = ch; }
+  return n;
 }
 /** Welche Questmarkierung trägt ein NPC für diesen Charakter? */
 export function npcMarker(c: CharData, npcId: string): 'turnin' | 'offer' | 'progress' | null {
@@ -360,6 +415,8 @@ export function npcMarker(c: CharData, npcId: string): 'turnin' | 'offer' | 'pro
       q.objectives.forEach((o, i) => { if (o.t === 'talk' && o.npc === npcId && (st.p[i] ?? 0) < 1) offer = true; });
     } else if (q.giver === npcId && questAvailable(c, q) && c.level >= q.level - 3) offer = true;
   }
+  // wichtige Gesprächsthemen (Dialogbäume) zählen wie ein Angebot
+  if (!offer) for (const t of TOPICS) if (t.npc === npcId && t.hot && condOk(c, t.hot) && condOk(c, t.if)) { offer = true; break; }
   return offer ? 'offer' : progress ? 'progress' : null;
 }
 

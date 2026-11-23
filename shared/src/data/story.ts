@@ -78,6 +78,8 @@ export interface DlgFx {
   quest?: string;
   /** Gegenstände geben: [itemId, Anzahl] – Questgegenstände nur, wenn noch nicht im Besitz */
   give?: [string, number][];
+  /** Gegenstände nehmen (abgegebene Questgegenstände) */
+  take?: [string, number][];
   cine?: string;
   /** Hüter-Erinnerung gewähren */
   mem?: MemoryKey;
@@ -88,9 +90,9 @@ export interface DlgOpt { s: string; if?: Cond; to?: string; fx?: DlgFx }
 export interface DlgNode { who?: string; lines: string[]; opts?: DlgOpt[]; fx?: DlgFx }
 export interface DlgTopic {
   id: string; npc: string; label: string;
-  /** Markierung in der Themenliste: '!' wichtig (Quest), '…' Gespräch */
-  mark?: '!' | '…';
   if?: Cond;
+  /** solange diese Bedingung gilt, ist das Thema „wichtig“: '!' in der Themenliste und Questmarker über dem NPC */
+  hot?: Cond;
   /** Knoten; Einstieg ist immer `start` */
   nodes: Record<string, DlgNode>;
 }

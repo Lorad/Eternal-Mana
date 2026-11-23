@@ -8,7 +8,7 @@ export interface Poi {
   to?: string;
   /** exit: Kartenrand, zu dem ein Weg hinausführt */
   edge?: 'n' | 's' | 'e' | 'w';
-  look?: 'edge' | 'cave' | 'portal' | 'stairs_down';
+  look?: 'edge' | 'cave' | 'portal' | 'stairs_down' | 'stairs_up';
   /** exit: Quest, die abgeschlossen sein muss, sonst reqMsg */
   req?: string; reqMsg?: string;
   /** NPCs: [npcId, dx, dy] in Kacheln relativ zum POI */
@@ -263,6 +263,46 @@ export const ZONE_LIST: ZoneDef[] = [
     mobs: [['hohlritter', 2.5], ['schattenwandler', 4], ['leerenbrut', 3], ['nachtmahr', 2]],
     mapPos: [92, 28],
   }),
+  // =================================================================== AKT II (0.3): VAELS WACHT · QUELLGRUND · HERZ DER QUELLE
+  Z({
+    id: 'wacht', name: 'Vaels Wacht', subtitle: 'Tausend Jahre vor einer Tür', biome: 'schatten', kind: 'dungeon', w: 0, h: 0, seed: 7201,
+    level: [34, 36], music: 'dungeon', ambience: 'dungeon', weathers: [['void', 1]], dark: 0.5, indoor: true,
+    parent: 'schatten', gx: 3, gy: 3, maxRooms: 8, puzzle: 'torches', boss: 'vael',
+    mobs: [['erinnerter', 4], ['wachschatten', 3], ['klagegeist', 3], ['albtraumross', 1.5]],
+    mapPos: [95, 52],
+  }),
+  Z({
+    id: 'quellgrund', name: 'Quellgrund', subtitle: 'Wo das Wasser Atem holt', biome: 'kristall', kind: 'overworld', w: 84, h: 84, seed: 8101,
+    level: [35, 38], music: 'kristall', ambience: 'cave', weathers: [['motes', 1]], dark: 0.5, indoor: true, cave: true,
+    noise: { ground2: 0.58, liquid: 0.68, wall: 0.52, hazard: 0.95 },
+    start: 'auf',
+    pois: [
+      { id: 'auf', x: 42, y: 8, r: 4, kind: 'exit', to: 'gruenwald', look: 'stairs_up', label: 'Quellhain' },
+      { id: 'lager', x: 42, y: 21, r: 7, kind: 'camp', label: 'Lager am Grund', npcs: [['pim', 4, -2]] },
+      { id: 'herz', x: 42, y: 75, r: 5, kind: 'exit', to: 'herz', look: 'stairs_down', label: 'Herz der Quelle',
+        req: 'm_tor', reqMsg: 'Das Tor ist mit Erinnerung zugewachsen: Asche, Stimmen, ein Geruch nach nassem Eisen. Vael weiß, wie man es öffnet.' },
+      { id: 'mitte', x: 43, y: 46, r: 6, kind: 'spot', label: 'Kreis der Sieben' },
+      { id: 'becken', x: 17, y: 40, r: 6, kind: 'spot', label: 'Die Atembecken' },
+      { id: 'grotte', x: 68, y: 38, r: 5, kind: 'spot', label: 'Grotte der Eimer' },
+      { id: 'tiefe1', x: 10, y: 68, r: 4, kind: 'secret', from: 'becken' },
+      { id: 'tiefe2', x: 74, y: 66, r: 4, kind: 'secret', from: 'grotte' },
+    ],
+    links: [['auf', 'lager'], ['lager', 'mitte'], ['mitte', 'becken'], ['mitte', 'grotte'], ['mitte', 'herz'], ['becken', 'herz'], ['grotte', 'herz']],
+    groups: 20, chests: 6, nodes: [['crystal', 10]],
+    decor: [['stalagmite', 16, true], ['stalagmite_l', 8, true], ['stalagmite_cluster', 4, true], ['crystal_blue', 10, true], ['crystal_teal', 12, true], ['crystal_big', 4, true],
+      ['crystal_shards', 8, false], ['glowshroom', 10, false], ['glowshroom_big', 4, true], ['cave_moss', 12, false], ['rock_cave_s', 6, true], ['rock_cave_m', 4, true],
+      ['puddle_cave', 8, false], ['drip_stone', 6, true], ['floating_shard', 4, false]],
+    decorDensity: 0.11,
+    mobs: [['wogenling', 4], ['tiefenlicht', 3], ['grundkrebs', 3], ['stillefalter', 3], ['traumwaechter', 1.5]],
+    mapPos: [40, 78],
+  }),
+  Z({
+    id: 'herz', name: 'Herz der Quelle', subtitle: 'Der Träumer am Grund', biome: 'kristall', kind: 'dungeon', w: 0, h: 0, seed: 8201,
+    level: [38, 40], music: 'dungeon', ambience: 'dungeon', weathers: [['motes', 1]], dark: 0.55, indoor: true,
+    parent: 'quellgrund', gx: 4, gy: 4, maxRooms: 12, puzzle: 'levers', boss: 'aetherion',
+    mobs: [['erinnerter', 4], ['tiefenlicht', 3], ['klagegeist', 3], ['albtraumross', 2], ['traumwaechter', 2]],
+    mapPos: [32, 90],
+  }),
 ];
 
 export const ZONES: Record<string, ZoneDef> = Object.fromEntries(ZONE_LIST.map(z => [z.id, z]));
@@ -271,6 +311,7 @@ export const OVERWORLD_IDS = ZONE_LIST.filter(z => z.kind === 'overworld').map(z
 export const WORLD_LINKS: [string, string][] = [
   ['gruenwald', 'wurzelgruft'], ['gruenwald', 'kristall'], ['kristall', 'geode'], ['kristall', 'glut'], ['glut', 'aschenschmiede'],
   ['gruenwald', 'frost'], ['frost', 'gletscherdom'], ['frost', 'ruinen'], ['ruinen', 'archiv'], ['ruinen', 'schatten'], ['schatten', 'thron'],
+  ['schatten', 'wacht'], ['gruenwald', 'quellgrund'], ['quellgrund', 'herz'],
 ];
 /** Ressourcenknoten: Typ → [Item, Objekt-Frame] */
 export const NODE_TYPES: Record<string, { item: string; name: string }> = {

@@ -1,8 +1,10 @@
 import type { ClassId, ItemInstance } from '../types';
 import { Rng, strHash } from '../util/rng';
+import type { Cond } from './cond';
 import { generateGear, makeStack } from './items';
+import { NPCS_AKT2, TALK_AKT2 } from './npcs_akt2';
 
-export interface Cond { done?: string; active?: string; notDone?: string; flag?: string }
+export type { Cond };
 export interface NpcDef {
   id: string;
   name: string;
@@ -14,6 +16,8 @@ export interface NpcDef {
   talk?: { if: Cond; text: string }[];
   shop?: { items: string[]; gearLevel?: number };
   services?: ('upgrade' | 'respec')[];
+  /** Einfärbung / Durchsichtigkeit des wiederverwendeten Looks (ab 0.3) */
+  tint?: number; alpha?: number;
 }
 
 const N = (n: NpcDef) => n;
@@ -66,6 +70,9 @@ export const NPC_LIST: NpcDef[] = [
     greet: ['Du bist warm. Das ist schön. Hier ist sonst nichts warm.', 'Ich bin nicht ganz hier. Aber ich bin gern bei dir nicht ganz hier.', 'Vater sagt, ich soll nicht mit Fremden sprechen. Vater sagt seit langer Zeit gar nichts mehr.'],
     talk: [{ if: { done: 'm_koenig' }, text: 'Es fließt wieder. Ich spüre, wie ich leichter werde. Das ist nicht traurig. Sag ihm – nein. Er weiß es jetzt.' }] }),
 ];
+// Akt II (0.3): neue Figuren; zusätzliche Kontextzeilen stehen vor den bisherigen (erste passende gewinnt)
+NPC_LIST.push(...NPCS_AKT2);
+for (const n of NPC_LIST) if (TALK_AKT2[n.id]) n.talk = [...TALK_AKT2[n.id], ...(n.talk ?? [])];
 export const NPCS: Record<string, NpcDef> = Object.fromEntries(NPC_LIST.map(n => [n.id, n]));
 
 export interface ShopEntry { item: ItemInstance; price: number }

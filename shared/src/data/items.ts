@@ -80,6 +80,11 @@ add({ id: 'q_fluegel', name: 'Fledermausflügel', kind: 'quest', icon: 'mat_void
 add({ id: 'q_kern', name: 'Glühender Kern', kind: 'quest', icon: 'mat_ember', stack: true, price: 0, desc: 'Das Herz eines Schlackengolems.' });
 add({ id: 'q_pelz', name: 'Frostwolfpelz', kind: 'quest', icon: 'armor_light', stack: true, price: 0, desc: 'Dicht, weiß und eiskalt.' });
 add({ id: 'q_tafel', name: 'Runentafel', kind: 'quest', icon: 'scroll', stack: true, price: 0, desc: 'Bruchstück einer Inschrift der Quellhüter.' });
+// Questgegenstände Akt II (0.3)
+add({ id: 'q_traumscherbe', name: 'Traumscherbe', kind: 'quest', icon: 'mat_crystal', stack: true, price: 0, desc: 'Ein Stück Albtraum, kalt und scharf. Darin: Asche, die nie zu Boden fällt.' });
+add({ id: 'q_hammer', name: 'Keldas erster Hammer', kind: 'quest', icon: 'hammer', price: 0, desc: 'Am Kopf zwei Kerben und ein Punkt: Borins Marke.' });
+add({ id: 'q_wachzeichen', name: 'Zeichen der Wacht', kind: 'quest', icon: 'seal_dark', price: 0, desc: 'Ein Strich von Vaels Wand, in Stein. Er sagt, er habe genug davon.' });
+add({ id: 'q_herzton', name: 'Der fünfte Ton', kind: 'quest', icon: 'seal_water', price: 0, desc: 'Ein Ton, den es vorher nicht gab. Jemand hat ihn an ein Wiegenlied angehängt.' });
 
 export const ARMOR_DEF_MUL = { heavy: 1.3, light: 1, robe: 0.75 };
 
