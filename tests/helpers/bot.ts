@@ -15,6 +15,10 @@ export class Bot {
   events: GameEvent[] = [];
   msgs: ServerMsg[] = [];
   toasts: string[] = [];
+  /** Story (0.3): letzter Gesprächsknoten, empfangene Filmszenen und Chronik-Dokumente */
+  dlg: Extract<ServerMsg, { t: 'dlg' }> | null = null;
+  cines: string[] = [];
+  lores: string[] = [];
   private waiters: { pred: (m: ServerMsg) => boolean; res: (m: ServerMsg) => void }[] = [];
   token: string;
 
@@ -44,6 +48,9 @@ export class Bot {
       case 'char': Object.assign(this.char, m.d); break;
       case 'dead': this.dead = true; break;
       case 'toast': this.toasts.push(m.s); break;
+      case 'dlg': this.dlg = m; break;
+      case 'cine': this.cines.push(m.id); this.send({ t: 'cineEnd', id: m.id }); break; // Bots schauen nicht zu
+      case 'lore': this.lores.push(m.id); break;
       case 'drop+': this.drops.set(m.d.id, m.d); break;
       case 'drop-': this.drops.delete(m.id); break;
       case 's':
@@ -102,6 +109,33 @@ export class Bot {
     this.chat(`/goto ${o.x} ${o.y + 18}`);
     await w;
   }
+  // ------------------------------------------------------------ Story-Helfer (0.3)
+  /** Dev-Befehl senden und kurz warten, bis der Server ihn verarbeitet hat. */
+  async dev(cmd: string, ms = 120) { this.chat(cmd); await this.sleep(ms); }
+  obj(type: string, tag?: string): ObjInfo | undefined { return [...this.objs.values()].find(o => o.type === type && (tag === undefined || o.tag === tag)); }
+  /** Dev-Teleport an eine Weltposition. */
+  async warp(x: number, y: number) { const w = this.waitFor('pos'); this.chat(`/goto ${Math.round(x)} ${Math.round(y)}`); await w; }
+  /** Dev-Teleport vor ein Objekt (Standard: eine Zelle darunter). */
+  async gotoObj(type: string, tag?: string, dy = 18): Promise<ObjInfo> {
+    const o = this.obj(type, tag);
+    if (!o) throw new Error(`Objekt nicht in dieser Zone: ${type}:${tag}`);
+    await this.warp(o.x, o.y + dy);
+    return o;
+  }
+  /** Dev-Zonenwechsel. */
+  async tp(zone: string) { if (this.zone === zone) return; const z = this.waitFor('zone'); this.chat('/tp ' + zone); await z; }
+  async interact(o: ObjInfo, ms = 200) { this.send({ t: 'interact', id: o.id }); await this.sleep(ms); }
+  /** Gesprächsthema öffnen; liefert die Antwort des Servers (node null + err = abgelehnt). */
+  async dlgOpen(npc: string, topic: string) { const w = this.waitFor('dlg'); this.send({ t: 'dlgOpen', npc, topic }); return w; }
+  /** Option im aktuellen (oder einem behaupteten) Knoten wählen. */
+  async dlgPick(opt: number, over: Partial<{ npc: string; topic: string; node: string }> = {}) {
+    const w = this.waitFor('dlg');
+    this.send({ t: 'dlgPick', npc: over.npc ?? this.dlg?.npc ?? '', topic: over.topic ?? this.dlg?.topic ?? '', node: over.node ?? this.dlg?.node ?? '', opt });
+    return w;
+  }
+  async accept(id: string, npc: string) { await this.gotoNpc(npc); this.send({ t: 'qAccept', id, npc }); await this.sleep(150); }
+  async turnIn(id: string, npc: string) { await this.gotoNpc(npc); this.send({ t: 'qTurnIn', id, npc }); await this.sleep(200); }
+
   nearestMob(max = 9999): MobInfo | null {
     let best: MobInfo | null = null, bd = max;
     for (const m of this.mobs.values()) { const d = Math.hypot(m.x - this.x, m.y - this.y); if (d < bd) { bd = d; best = m; } }
