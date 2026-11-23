@@ -58,8 +58,7 @@ function stationAlchemy(p: Px): void {
   part(p, (l) => {
     flask(l, 17, 8, 3.6, 0, TEALC, 0.7, false);
     l.px([15, 7, 18, 8], WHITE); l.set(17, 6, TL[4]);
-    // Helm und Rohr
-    l.rect(16, 3, 3, 2, P.ice[3]); l.set(16, 3, WHITE); l.line(19, 3, 24, 7, P.ice[3]); l.line(19, 4, 24, 8, P.ice[1]); l.px([24, 9, 24, 10], P.ice[2]);
+    l.rect(16, 2, 2, 3, P.ice[2]); l.rect(16, 2, 1, 3, P.ice[4]); l.rect(15, 2, 4, 1, P.ice[3]);
   });
   part(p, (l) => { l.rect(23, 11, 4, 5, P.ice[2]); l.rect(23, 13, 4, 3, P.green[3]); l.rect(23, 13, 4, 1, P.green[4]); l.rect(26, 13, 1, 3, P.green[2]); l.rect(23, 11, 1, 2, P.ice[4]); l.rect(22, 10, 6, 1, P.ice[3]); });
   // rechts: hohe violette Flasche, Reagenzgläschen
@@ -71,7 +70,7 @@ function stationAlchemy(p: Px): void {
   part(p, (l) => { l.poly([[9, 15], [15, 15], [14, 19], [10, 19]], S[2]); l.rect(9, 15, 6, 1, S[4]); l.rect(10, 16, 1, 3, S[3]); l.rect(13, 16, 1, 3, S[1]); l.line(13, 14, 16, 10, W[3]); l.set(16, 10, W[4]); l.px([11, 15, 12, 15], P.green[3]); });
   p.px([3, 18, 4, 17, 5, 18, 6, 17], P.green[3]); p.px([4, 18, 6, 18, 7, 17], P.green[2]); p.px([2, 18, 5, 17], P.green[4]); p.px([7, 18, 8, 18], P.tan[2]);
   inkOutline(p);
-  glow(p, 17, 8, 6, TL[3], 40); glow(p, 16.5, 14, 3, P.blue[3], 70, true); p.set(17, 1, alpha(TL[4], 200)); p.set(15, 0, alpha(TL[4], 120));
+  glow(p, 17, 8, 6, TL[3], 40); glow(p, 16.5, 14, 3, P.blue[3], 70, true); p.set(17, 0, alpha(TL[4], 220)); p.set(15, 0, alpha(TL[4], 120)); p.set(19, 1, alpha(WHITE, 160));
 }
 
 // ---------------------------------------------------------------- Kochstelle
@@ -168,7 +167,7 @@ function stashChest(p: Px): void {
   part(p, (l) => {
     l.rect(13, 8, 6, 5, IRON[3]); l.rect(13, 8, 6, 1, IRON[4]); l.rect(18, 9, 1, 4, IRON[1]); l.set(15, 10, WHITE);
     l.rect(12, 13, 8, 7, IRON[2]); l.rect(12, 13, 8, 1, IRON[4]); l.rect(12, 13, 1, 7, IRON[3]); l.rect(19, 14, 1, 6, IRON[0]); l.rect(12, 19, 8, 1, IRON[1]);
-    l.rect(15, 15, 2, 2, DARK); l.rect(15, 17, 1, 2, DARK); l.px([13, 14, 18, 14, 13, 18, 18, 18], WHITE);
+    l.rect(15, 15, 2, 2, DARK); l.rect(15, 17, 1, 2, DARK); l.px([13, 14, 18, 18], IRON[4]);
   });
   // Ringgriffe
   for (const x of [10, 21]) { p.set(x, 15, IRON[4]); p.px([x - 1, 16, x + 1, 16, x - 1, 17, x + 1, 17, x, 18], IRON[3]); p.set(x + 1, 17, IRON[1]); }

@@ -142,9 +142,9 @@ function loreStone(p: Px): void {
   stoneFill(p, R, 5, MARK);
   for (let x = 4; x < 15; x++) if (p.get(x, 18) >>> 24) p.set(x, 18, R[x > 11 ? 0 : 1]);
   // gemeißelte Zeilen, in denen noch Quelllicht steht
-  glyph(p, 5, 6, 2, TL[3], TL[4]); glyph(p, 10, 6, 5, TL[3], TL[4]);
-  for (const [y, a, b] of [[13, 5, 13], [15, 6, 12]] as const) for (let x = a; x < b; x++) if ((x * 3 + y) % 4) p.set(x, y, (x + y) % 5 === 0 ? TL[3] : R[0]);
-  p.px([9, 8, 9, 9], Y[3]); p.set(9, 7, WGOLD);
+  glyph(p, 5, 5, 2, TL[3], TL[4]); glyph(p, 11, 5, 5, TL[3], TL[4]);
+  for (const [y, a, b] of [[12, 5, 13], [14, 6, 12], [16, 5, 11]] as const) for (let x = a; x < b; x++) if (x % 3 !== 2) { p.set(x, y, R[0]); if (p.get(x, y + 1) !== R[0]) p.set(x, y + 1, R[3]); }
+  p.px([9, 6, 9, 8], Y[3]); p.set(9, 7, WGOLD);
   p.line(12, 3, 13, 6, R[0]); p.px([6, 17, 12, 12], R[1]);
   part(p, (l) => { boulder(l, 3, 20, 4, 3, { ramp: R, seed: 3, facets: 2, cracks: 0 }); boulder(l, 15, 20, 4, 3, { ramp: R, seed: 5, facets: 2, cracks: 0 }); });
   inkOutline(p);
@@ -288,9 +288,10 @@ function soil(p: Px, cx: number, cy: number, rx: number, ry: number, seed: numbe
 }
 function digSpot(p: Px): void {
   soil(p, 11, 7, 10.6, 6.4, 3);
-  // Kiesel-X: zwei gekreuzte Reihen heller Steinchen
-  for (const [x, y] of [[5, 2], [7, 4], [10, 6], [13, 8], [15, 10], [15, 2], [13, 4], [7, 8], [5, 10]] as const) {
-    p.rect(x, y, 2, 2, S[3]); p.set(x, y, WHITE); p.set(x + 1, y, S[4]); p.set(x + 1, y + 1, S[2]); p.rect(x, y + 2, 2, 1, EARTH[0]); p.set(x + 2, y + 1, EARTH[0]);
+  // Kiesel-X: zwei gekreuzte Reihen heller Steinchen, an den Enden und in der Mitte größere
+  for (const [x, y, big] of [[5, 2, 1], [7, 4, 0], [9, 5, 0], [10, 6, 1], [13, 8, 0], [14, 9, 0], [16, 10, 1], [16, 2, 1], [14, 4, 0], [13, 5, 0], [8, 8, 0], [7, 9, 0], [5, 10, 1]] as const) {
+    if (big) { p.rect(x, y, 2, 2, S[3]); p.set(x, y, WHITE); p.set(x + 1, y, S[4]); p.set(x + 1, y + 1, S[2]); p.rect(x, y + 2, 2, 1, EARTH[0]); }
+    else { p.set(x, y, S[4]); p.set(x, y + 1, EARTH[0]); }
   }
 }
 function chestBuried(p: Px): void {
