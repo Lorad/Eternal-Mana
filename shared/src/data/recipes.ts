@@ -23,8 +23,18 @@ export const STATION_NPCS: Record<string, StationId[]> = {
 };
 /** Stations-Kennung für Lagerfeuer in der Welt (statt einer NPC-ID) */
 export const FIRE = 'fire';
-/** Deko-Objekte, an denen gekocht werden kann */
-export const COOK_FIRES = ['campfire', 'nomad_brazier'];
+/**
+ * Kochstellen in der Welt: Zone → [POI-ID, dx, dy in Kacheln, Aussehen]. Der Server stellt dort beim Erzeugen der Zone
+ * ein Lagerfeuer (Objekttyp `cookfire`) auf die nächste freie Kachel – die Karten selbst bleiben unverändert.
+ * Im Schattenreich brennt kein Feuer.
+ */
+export const COOK_SPOTS: Record<string, [string, number, number, string][]> = {
+  gruenwald: [['dorf', 2, -5, 'campfire'], ['lager', 0, 1, 'campfire']],
+  kristall: [['lager', 0, 1, 'campfire']],
+  glut: [['lager', 0, 1, 'nomad_brazier']],
+  frost: [['lager', 0, 1, 'campfire']],
+  ruinen: [['lager', 0, 1, 'campfire']],
+};
 
 export type GearKind = 'weapon' | 'helm' | 'armor' | 'ring' | 'amulet' | 'charm';
 export type RecipeOut =

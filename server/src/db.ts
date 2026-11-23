@@ -10,6 +10,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { ITEMS } from '../../shared/src/data/items';
+import { ENCHANTS, RECIPES } from '../../shared/src/data/recipes';
+import { SETS } from '../../shared/src/data/sets';
 import { ZONES } from '../../shared/src/data/zones';
 import { computeStats, newCharacter } from '../../shared/src/stats';
 import type { CharData, CharSummary, ClassId } from '../../shared/src/types';
@@ -35,6 +37,18 @@ export function sanitizeChar(raw: any): CharData | null {
   for (const it of c.inv) { it.affixes = Array.isArray(it.affixes) ? it.affixes : []; it.up = num(it.up, 0, 0, CFG.upgrade.max); it.rarity = num(it.rarity, 0, 0, 4); it.ilvl = num(it.ilvl, 1, 1, 99); }
   if (!c.equip || typeof c.equip !== 'object') c.equip = {};
   for (const s of Object.keys(c.equip) as (keyof CharData['equip'])[]) if (!c.equip[s] || !ITEMS[c.equip[s]!.base]) delete c.equip[s];
+  // 0.4: optionale Felder – alte Stände haben sie nicht, unbekannte Werte werden entfernt
+  for (const it of [...c.inv, ...(Object.values(c.equip) as typeof c.inv)]) {
+    if (it.elv !== undefined) { if (it.element) it.elv = Math.floor(num(it.elv, 1, 1, 3)); else delete it.elv; }
+    if (it.ench !== undefined && !ENCHANTS[it.ench]) delete it.ench;
+    if (it.set !== undefined && !SETS[it.set]) delete it.set;
+  }
+  if (c.recipes !== undefined) c.recipes = Array.isArray(c.recipes) ? [...new Set(c.recipes.filter(r => typeof r === 'string' && RECIPES[r]))] : [];
+  if (c.timed !== undefined) {
+    const t: Record<string, [string, number]> = {};
+    if (c.timed && typeof c.timed === 'object') for (const k of ['food', 'elixir']) { const v = (c.timed as any)[k]; if (Array.isArray(v) && ITEMS[v[0]]?.use?.buff?.slot === k) t[k] = [v[0], num(v[1], 0, 0, 7200)]; }
+    c.timed = t;
+  }
   if (!c.quests || typeof c.quests !== 'object') c.quests = {};
   if (!c.flags || typeof c.flags !== 'object') c.flags = {};
   if (!ZONES[c.zone]) { c.zone = 'gruenwald'; c.x = 0; c.y = 0; }
