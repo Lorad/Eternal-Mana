@@ -16,8 +16,9 @@ import { ysolde } from './bosses/ysolde';
 import { archivar } from './bosses/archivar';
 import { hohlkoenig } from './bosses/hohlkoenig';
 import { vael } from './bosses/vael';
+import { aetherion } from './bosses/aetherion';
 
-const DEFS: Record<(typeof BOSS_IDS)[number], BossDef> = { dornenmutter, kristallkoloss, ignarok, ysolde, archivar, hohlkoenig, vael };
+const DEFS: Record<(typeof BOSS_IDS)[number], BossDef> = { dornenmutter, kristallkoloss, ignarok, ysolde, archivar, hohlkoenig, vael, aetherion };
 
 export function buildBosses(): { bosses: Record<string, Sheet>; bossMeta: Record<string, SpriteMeta> } {
   const bosses: Record<string, Sheet> = {}, bossMeta: Record<string, SpriteMeta> = {};

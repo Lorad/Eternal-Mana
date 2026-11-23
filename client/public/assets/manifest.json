@@ -317,6 +317,13 @@
    "cols": 22,
    "rows": 1
   },
+  "boss_aetherion": {
+   "file": "sprites/bosses/boss_aetherion.png",
+   "fw": 128,
+   "fh": 128,
+   "cols": 26,
+   "rows": 1
+  },
   "boss_archivar": {
    "file": "sprites/bosses/boss_archivar.png",
    "fw": 112,
@@ -663,6 +670,10 @@
   "vael": {
    "w": 96,
    "h": 96
+  },
+  "aetherion": {
+   "w": 128,
+   "h": 128
   }
  }
 }
