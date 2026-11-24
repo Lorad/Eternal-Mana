@@ -44,7 +44,7 @@ export function CraftWindow() {
   const [tab, setTab] = useState<'make' | 'reforge' | 'infuse' | 'attune' | 'upgrade'>('make');
   if (!craft || !char) return null;
   const station = craft.station as StationId, at = craft.at;
-  const who = at === FIRE ? 'Lagerfeuer' : at === HOME_AT ? 'Auf dem Hof' : NPCS[at]?.name ?? '';
+  const who = at === FIRE ? 'Lagerfeuer' : at === HOME_AT ? 'Hof' : NPCS[at]?.name ?? '';
   return (
     <Window title={`${STATION_NAME[station]} · ${who}`} onClose={() => store.set({ craft: null })} class="win-craft"
       head={<>

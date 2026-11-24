@@ -103,7 +103,11 @@ export function genHome(def: ZoneDef): GameMap {
     const i = I(x, y), t = tiles[i];
     if (inYard(x, y) || solid[i]) continue;
     const r = hash2(x, y, seed + 77);
-    if (t === T.WALL) { if (r < 0.34) decor.push({ f: ['tree_oak', 'tree_pine', 'tree_oak2', 'tree_birch'][Math.floor(r * 1000) % 4], x: x * TILE + 8 + (Math.floor(r * 97) % 7) - 3, y: y * TILE + 14 }); continue; }
+    if (t === T.WALL) {
+      const gateView = y > Y.y1 && y < h - 3 && Math.abs(x - 21.5) < 6; // vor dem Tor bleibt der Blick frei
+      if (r < 0.34 && !gateView) decor.push({ f: ['tree_oak', 'tree_pine', 'tree_oak2', 'tree_birch'][Math.floor(r * 1000) % 4], x: x * TILE + 8 + (Math.floor(r * 97) % 7) - 3, y: y * TILE + 14 });
+      continue;
+    }
     if (t === T.GROUND2) { decor.push({ f: 'wheat', x: x * TILE + 4, y: y * TILE + 7 }, { f: 'wheat', x: x * TILE + 12, y: y * TILE + 9 }, { f: 'wheat', x: x * TILE + 7, y: y * TILE + 15 }); continue; }
     if (t === T.GROUND && r < 0.16) decor.push({ f: r < 0.07 ? 'tallgrass' : r < 0.11 ? 'fern' : r < 0.14 ? 'flowers_f' : 'mushrooms', x: x * TILE + 8, y: y * TILE + 12 });
   }

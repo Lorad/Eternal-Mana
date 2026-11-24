@@ -7,19 +7,19 @@
 .hof-weg { display: flex; flex-direction: column; gap: 8px; }
 
 /* Lagertruhe: Rucksack · Truhe · Details */
-.win-hof-lager { width: 1110px; }
+.win-hof-lager { width: 1200px; }
 .hof-lager { display: grid; grid-template-columns: auto auto minmax(230px, 1fr); gap: 14px; align-items: start; }
 .hof-col { display: flex; flex-direction: column; min-width: 0; }
-.hof-lager .inv-grid.sm { grid-template-columns: repeat(8, 42px); align-content: start; }
+.hof-lager .inv-grid.sm { grid-template-columns: repeat(9, 42px); align-content: start; }
 .hof-stash { max-height: 288px; overflow-y: auto; }
 .hof-col .sec-title .btn { margin-left: 4px; }
 .hof-col .sec-title::after { order: 1; }
 .hof-col .sec-title .btn { order: 2; }
 .hof-gold { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.hof-gold-in { width: 84px; min-height: 26px; padding: 2px 8px; font-size: 12px; }
+.hof-gold-in { width: 72px; min-height: 26px; padding: 2px 8px; font-size: 12px; }
 .hof-detail { min-height: 290px; display: flex; flex-direction: column; gap: 10px; }
 .hof-detail .tip-item { width: auto; }
-.hof-qty { gap: 6px; }
+.hof-qty { gap: 6px; flex-wrap: wrap; }
 .hof-qty b { min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
 
 /* Ausbau */

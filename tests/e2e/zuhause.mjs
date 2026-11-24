@@ -131,7 +131,7 @@ await step('Bett: Ausgeruht', async () => {
 });
 await step('Stationen auf dem Hof', async () => {
   await stand(28, 18, 'Schmieden');
-  await use(); await has('Auf dem Hof'); await has('Verbessern');
+  await use(); await has('Schmiede · Hof'); await has('Verbessern');
   await shot('11-schmiede');
   await esc();
   await stand(27, 24, 'Kochen');
@@ -159,7 +159,7 @@ await step('Begleiter läuft mit; das Tor führt zurück nach Quellhain', async 
   await stand(22, 28);
   await page.keyboard.down('d'); await wait(500); await page.keyboard.up('d'); await wait(300);
   await shot('19-begleiter-im-spiel');
-  await stand(23, 31, 'Zurück nach Quellhain');
+  await stand(23, 30, 'Zurück nach Quellhain');
   await use(); await wait(1800);
   await has('Zum Hof am Waldrand');
   await shot('20-quellhain');
