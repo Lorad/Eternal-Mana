@@ -5,7 +5,8 @@
  * Aktion selbst (server/src/home); hier wird nur angezeigt, was geht und warum etwas nicht geht.
  */
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
+import { ensureCharTexture } from '../game/textures';
 import { store, togglePanel, useStore } from '../state/store';
 import { CFG, ELEMENT_NAME } from '../../../shared/src/config';
 import { loreProgress } from '../../../shared/src/data/chronik';
@@ -14,7 +15,7 @@ import { BESTIARY, COLL_CATS, FINDS, MILESTONES, beastKills, collCount, collTota
 import { FACTIONS, RANK_NAMES } from '../../../shared/src/data/factions';
 import { HOME_ID, HOME_LEVELS, HOME_MAX, HOME_NPC, HOME_TROPHIES, HOME_TROPHY, TROPHY_CATS, buyBlock, emptyHome, homeStands, ownsTrophy, stashBlock, trophyPerks, upgradeBlock } from '../../../shared/src/data/home';
 import { ITEMS } from '../../../shared/src/data/items';
-import { LOOKS, LOOK_LIST, outfitSheet } from '../../../shared/src/data/looks';
+import { LOOKS, LOOK_LIST, OUTFIT_IDS, outfitSheet } from '../../../shared/src/data/looks';
 import { PETS, PET_LIST } from '../../../shared/src/data/pets';
 import { LEARNABLE } from '../../../shared/src/data/recipes';
 import { TITLES, ownedTitles } from '../../../shared/src/data/rifts';
@@ -58,6 +59,17 @@ function Figure({ cls, g, scale = 3 }: { cls: string; g?: string; scale?: number
   return <Sprite k={o.key} f="0" scale={scale} tint={o.tint} class="hof-figure" />;
 }
 const PetSprite = ({ id, scale = 3 }: { id: string; scale?: number }) => <Sprite k="obj" f={`pet_${id}_0`} scale={scale} />;
+/** Lädt die Gewand-Sheets dieser Klasse nach (sie werden nicht beim Start geladen) und zeichnet neu, sobald eines da ist. */
+function useOutfits(cls: string) {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    const tm = textures();
+    if (!tm) return;
+    let live = true;
+    for (const id of OUTFIT_IDS) ensureCharTexture(tm, `char_${cls}_${id}`, () => { if (live) bump(n => n + 1); });
+    return () => { live = false; };
+  }, [cls]);
+}
 
 export function openSammlung(tab = 'uebersicht') { store.set({ sammlungTab: tab, panel: 'sammlung', dialog: null, craft: null, endgame: null, wshop: null, hof: null, prompt: null }); }
 
@@ -259,6 +271,7 @@ function Trophies({ home, slot }: { home: HomeData; slot: number }) {
 function Wardrobe({ char, home }: { char: CharData; home: HomeData }) {
   const g = char.look?.g ?? '', w = char.look?.w ?? '';
   const cls = CLASSES[char.cls];
+  useOutfits(char.cls);
   const opt = (kind: 'g' | 'w', id: string, name: string, sub: string, own: boolean, on: boolean, swatch: ComponentChildren, tip?: string) => (
     <button type="button" class={cx('craft-row hof-look', on && 'on', !own && 'locked')} disabled={!own} onClick={() => { sfx('ui_click'); send({ t: 'home', a: 'look', [kind]: id }); }}
       {...(tip ? tipProps(() => <div class="tip-text"><b>{name}</b>{tip}</div>) : {})}>
@@ -509,6 +522,7 @@ function Pets({ char, home }: { char: CharData; home: HomeData }) {
 }
 
 function Looks({ char, home }: { char: CharData; home: HomeData }) {
+  useOutfits(char.cls);
   const row = (id: string) => {
     const l = LOOKS[id], own = home.looks.includes(id), on = char.look?.g === id || char.look?.w === id;
     return (

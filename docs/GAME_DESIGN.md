@@ -179,6 +179,36 @@ Elemente zurückfließen.
   Quellsteine beginnen neu. Die gesehenen Enden und die Entscheidungen jedes Kreises bleiben vermerkt. Quests geben ab
   dem zweiten Kreis Echo-Fragmente statt Punkten. **Gruppen spielen in der Welt des Mitglieds mit dem niedrigsten Kreis.**
 
+## Zuhause (ab 0.7)
+
+Ein Ort, an dem zusammenläuft, was die anderen Systeme abwerfen. Alles hier gehört dem Profil, nicht dem einzelnen Charakter.
+
+- **Hof am Waldrand:** Mirelda verkauft ihn für 400 Gold, sobald die Wurzelgruft erledigt ist. Jeder Hof ist ein eigener
+  Ort – zu erreichen über den Wegweiser am Dorfrand von Quellhain und von jedem Quellstein aus. Gruppenmitglieder dürfen zu
+  Besuch kommen: Stationen, Bett und Kleiderschrank stehen ihnen offen, die Truhe nicht.
+- **Lagertruhe:** 24 Plätze für alle Charaktere des Profils, dazu Gold. So tauschen die eigenen Charaktere Dinge aus.
+- **Ausbau** am Tisch auf dem Hof, mit Gold und Rohstoffen aus mehreren Regionen: *Vorratskammer* (48 Plätze, 3 Ständer) ·
+  *Werkhof* (Schmiede, Alchemie, Kochstelle, Verzauberung auf dem Hof; 72 Plätze; braucht Rang „Geachtet“ in Quellhain) ·
+  *Herdfeuer* (ein Bett: „Ausgeruht“ gibt 10 % mehr Erfahrung für 30 Minuten Spielzeit; 96 Plätze, 8 Ständer; braucht einen
+  abgeschlossenen Mana-Riss der Stufe 5). Die Legendäre Waffe schmieden weiterhin nur Borin und Rakhan.
+- **Trophäen:** 30 Stück – von den zwölf seltenen Monstern und drei Weltbossen (0.6), von den acht Bossen und sieben
+  Wegzeichen (Riss-Stufen 10/20/30, Prüfung der Sieben, jedes der drei Enden). Auf Ständern ausgestellt sehen sie auch
+  Besucher. Je ausgestellter ART gibt es einen kleinen Bonus für alle Charaktere des Profils – genau einmal, egal wie viele
+  Ständer sie füllt: Jagd +3 % Goldfund · Weltboss +5 % Ruf · Boss +2 % Erfahrung · Wegzeichen: „Ausgeruht“ hält 50 % länger.
+- **Begleiter:** Acht, jeder aus einem anderen Winkel des Spiels, jeder mit einer kleinen Eigenheit; sie kämpfen nicht.
+  Moosling (Tobis Quest; sammelt Beute weiträumig ein) · Pilzling (an der Kochstelle gezogen; Lebensregeneration) ·
+  Glutfuchs (Ruf bei den Aschennomaden; Feuerresistenz) · Schneeeule (Schatz im Frostgebirge; mehr Schatzkarten) ·
+  Schattenkatze (seltenes Monster im Schattenreich; Goldfund) · Irrwisch (Weltboss; Manaregeneration) · Runenkäfer
+  (Sammlung; Ruf) · Quelldrachling (verborgenes Ende oder Prüfung der Sieben; Erfahrung). Einer läuft mit, gewechselt
+  wird jederzeit im Fenster „Sammlung“.
+- **Sammlung:** Bestiarium (Schwächen zeigen sich nach acht Siegen, bei Bossen und benannten Gegnern nach dem ersten; Beute,
+  sobald man sie einmal besessen hat), Fundstücke (Legendäre Waffen, Setteile, Boss-Unikate), Rezepte, Trophäen, Begleiter,
+  Erscheinungen. Elf Meilensteine bringen fünf Titel, dreimal zwölf Lagerplätze, einen Begleiter, einen Waffenglanz und
+  das Goldene Gewand. Alte Spielstände werden beim ersten Betreten nachgetragen.
+- **Erscheinungen:** *Gewand* (fünf Varianten des Klassen-Sprites: Wald, Frost, Glut, Schatten, Gold) und *Waffenglanz*
+  (neun Farben für Hieb und Geschoss) – freigeschaltet über Ruf, Riss-Stufen, Enden und die Sammlung, angelegt am
+  Kleiderschrank eines Hofs, für andere Spieler sichtbar. Rein kosmetisch.
+
 ## Balancing
 
 Alle Stellschrauben liegen zentral in `shared/src/config.ts` (Levelkurve, Gegnerformeln, Schadensminderung,

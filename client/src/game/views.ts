@@ -8,6 +8,7 @@ import { BOSS_ANIMS, CHAR_ANIMS, MOB_ANIMS, animDone, bossFrame, charFrame, dirO
 import type { Fx, FxHandle } from './fxlib';
 import { outfitSheet } from '../../../shared/src/data/looks';
 import type { PetView } from './pets';
+import { ensureCharTexture } from './textures';
 
 export interface Buf { t: number; x: number; y: number }
 /** Schattenwurf: Drehung (rad), Längenfaktor, Deckkraft */
@@ -67,13 +68,15 @@ export class PlayerView {
   pet: PetView | null = null;
   private outfit = ''; private sheet: string; private baseTint: number | undefined;
   /**
-   * Gewand (0.7). Welches Sheet gilt – und der Rückfall auf das eingefärbte Grund-Sheet, solange die Kunst-Pipeline
-   * `char_<klasse>_<variante>` noch nicht geliefert hat –, entscheidet allein `outfitSheet` (shared/src/data/looks.ts).
+   * Gewand (0.7). Welches Sheet gilt – und der Rückfall auf das eingefärbte Grund-Sheet, solange `char_<klasse>_<variante>`
+   * fehlt oder noch lädt –, entscheidet allein `outfitSheet` (shared/src/data/looks.ts). Die Gewand-Sheets werden bei
+   * Bedarf nachgeladen (`ensureCharTexture`); sobald eines da ist, wird beim nächsten Bild neu entschieden.
    */
   setLook(g: string | undefined) {
     if ((g ?? '') === this.outfit) return;
     this.outfit = g ?? '';
-    const o = outfitSheet(k => this.ctx.scene.textures.exists(k), this.info.cls, g);
+    const tm = this.ctx.scene.textures;
+    const o = outfitSheet(k => ensureCharTexture(tm, k, () => { if (this.alive) this.outfit = '\u0000'; }), this.info.cls, g);
     this.baseTint = o.tint;
     if (o.key !== this.sheet) { this.sheet = o.key; this.sprite.setTexture(o.key, '0'); this.shadow.setTexture(o.key, '0'); }
   }
