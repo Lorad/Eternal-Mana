@@ -106,6 +106,8 @@ export const Rift = {
       stufe = Math.floor(stufe);
       if (stufe < 1 || stufe > st.stufe) return reject(p, `Stufe ${stufe} ist noch nicht freigeschaltet. Schließe zuerst Stufe ${st.stufe} ab.`);
     }
+    // ein verlassener eigener Riss wird aufgegeben, sobald ein neuer geöffnet wird
+    for (const [key, z] of game.zones) if (z.rift && !z.players.size && z.rift.members.has(p.charId)) game.zones.delete(key);
     const group = p.party ? [...p.party.members].filter(q => q === p || (q.zone === p.zone && !q.dead && !q.linkdead && dist(q, stone) <= R.joinRadius && riftUnlocked(q.char))) : [p];
     const { mods, el } = trial ? { mods: [] as RiftModId[], el: undefined } : riftMods(st.seed, dungeon, stufe);
     const run: RiftRun = {
@@ -136,12 +138,13 @@ export const Rift = {
   },
   /** Die Instanz eines noch laufenden Risses, in den dieser Spieler gehört: der seiner Gruppe (solange jemand darin ist) oder einer, den er selbst betreten hatte. */
   runOf(game: Game, p: Player): Zone | undefined {
+    let best: Zone | undefined;
     for (const z of game.zones.values()) {
       const r = z.rift;
       if (!r || r.done || r.failed) continue;
-      if ((p.party && r.party === p.party && z.players.size) || r.members.has(p.charId)) return z;
+      if (((p.party && r.party === p.party && z.players.size) || r.members.has(p.charId)) && (!best || r.id > best.rift!.id)) best = z; // der jüngste zählt
     }
-    return undefined;
+    return best;
   },
   enter(game: Game, p: Player, zone: Zone) {
     const run = zone.rift!;

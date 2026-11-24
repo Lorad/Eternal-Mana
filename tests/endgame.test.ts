@@ -278,6 +278,18 @@ describe('Instanzen', () => {
     expect(Math.hypot(t.p.x - riftHome().x, t.p.y - riftHome().y)).toBeLessThan(2);
     sim.clear();
   });
+  it('ein neuer Riss gibt den verlassenen auf; Umkehren führt immer in den jüngsten', () => {
+    const t = hero(), z1 = plain(t, 'wurzelgruft'), key = z1.key;
+    t.send({ t: 'rift', a: 'leave' });
+    expect(sim.game.zones.has(key)).toBe(true);
+    const z2 = plain(t, 'geode');
+    expect(z2).not.toBe(z1);
+    expect(sim.game.zones.has(key)).toBe(false);
+    t.send({ t: 'rift', a: 'leave' });
+    t.send({ t: 'rift', a: 'join' });
+    expect(t.p.zone).toBe(z2);
+    sim.clear();
+  });
   it('Gruppe: nur der Anführer öffnet, Mitglieder am Stein kommen mit, Nachzügler können folgen', () => {
     const a = hero(), b = hero('magier'), c = hero('paladin'), d = hero('waldlaeufer');
     sim.party(a, b, c, d);
