@@ -73,8 +73,8 @@ export const CRAFT_ITEMS: ItemBase[] = [
   mat('core_hohlkoenig', 'Hohler Kern', 'seal_dark', 900, 'Was vom Hohlen König blieb. Er ist leichter, als er sein dürfte.'),
   mat('mat_aether', 'Ätherstaub', 'gem', 400, 'Staub aus reinem Mana, wie er nur bei den mächtigsten Geschöpfen zurückbleibt. Borin fasst ihn nur mit der Zange an.'),
   // ---- Tränke
-  use('potion_hp4', 'Quellheiltrank', 'potion_hp', 320, 'Stellt 1100 Leben wieder her.', { hp: 1100 }),
-  use('potion_mp4', 'Quellmanatrank', 'potion_mp', 290, 'Stellt 480 Mana wieder her.', { mp: 480 }),
+  use('potion_hp4', 'Quellheiltrank', 'potion_hp', 240, 'Stellt 1100 Leben wieder her.', { hp: 1100 }),
+  use('potion_mp4', 'Quellmanatrank', 'potion_mp', 220, 'Stellt 480 Mana wieder her.', { mp: 480 }),
   use('potion_cleanse', 'Läuterungstrank', 'potion_elixir', 60, 'Beendet Brennen, Gift, Verlangsamung und alle anderen schädlichen Zustände.', { cleanse: true }),
   // ---- Elixiere (eines gleichzeitig, 5 Minuten)
   elixir('elx_guard', 'Elixier der Eisenrinde', 70, 'Elixier (5 Minuten): härtet die Haut. Es kann immer nur ein Elixier wirken.', { defPct: 15 }),

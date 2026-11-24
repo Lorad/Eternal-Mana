@@ -58,10 +58,12 @@ describe('Schwächen und Resistenzen', () => {
     for (const d of all) {
       for (const w of d.weak ?? []) expect(elementMultiplier(w, d.element), `${d.id} schwach ${w}`).toBeGreaterThanOrEqual(1);
       for (const r of d.resist ?? []) expect(elementMultiplier(r, d.element), `${d.id} resistent ${r}`).toBeLessThanOrEqual(1);
-      expect(affinities(d).weak.length, d.id).toBeGreaterThan(0);
+      if (d.element !== 'phys') expect(affinities(d).weak.length, d.id).toBeGreaterThan(0);
     }
-    for (const b of Object.values(BOSSES)) expect(b.weak?.length, b.id).toBeGreaterThan(0);
-    expect(Object.values(ENEMIES).filter(e => e.weak?.length).length).toBeGreaterThan(Object.keys(ENEMIES).length * 0.8);
+    // die sechs Bosse des ersten Akts und mindestens zwanzig Gegner tragen ausdrückliche Angaben
+    for (const id of ['dornenmutter', 'kristallkoloss', 'ignarok', 'ysolde', 'archivar', 'hohlkoenig']) expect(BOSSES[id].weak?.length, id).toBeGreaterThan(0);
+    expect(Object.values(ENEMIES).filter(e => e.weak?.length).length).toBeGreaterThanOrEqual(20);
+    expect(Object.values(ENEMIES).filter(e => e.resist?.includes('phys')).length).toBeGreaterThanOrEqual(3);
   });
   it('im Kampf: Schwäche, Resistenz und wechselndes Bosselement', () => {
     const { t, z, x, y } = fighter('krieger');

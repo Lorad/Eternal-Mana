@@ -944,7 +944,7 @@ export class GameScene extends Phaser.Scene {
     const me = this.me, st = store.state, c = st.char!;
     const stats = this.getStats();
     const dead = !!(me.flags & FLAG_DEAD) || !!st.dead;
-    const stunned = !!(me.flags & STATUS_BIT.stun);
+    const stunned = !!(me.flags & (STATUS_BIT.stun | STATUS_BIT.freeze));
     const blocked = uiBlocksGame();
     const cls = CLASSES[c.cls];
     let moving = false, slowGait = false;
@@ -965,7 +965,7 @@ export class GameScene extends Phaser.Scene {
         this.fx.play(this.fx.pick('dodge_trail'), me.x, me.y - 9, { rot: this.rollDir, tint: 0xffffff, alpha: 0.6, fps: 16, follow: () => (performance.now() < until ? { x: this.me.x - Math.cos(this.rollDir) * 10, y: this.me.y - 9 } : null) }, this.animClock);
       }
       let vx = 0, vy = 0;
-      let speed = stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
+      let speed = me.flags & STATUS_BIT.root ? 0 : stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
       if (now < this.rollUntil) { speed *= CFG.player.dodgeSpeedMul; vx = Math.cos(this.rollDir) * speed; vy = Math.sin(this.rollDir) * speed; }
       else if (ml > 0.1 && now >= this.moveLockUntil) { vx = mv.x * speed; vy = mv.y * speed; slowGait = ml < 0.6 || !!(me.flags & STATUS_BIT.slow); }
       if (vx || vy) {

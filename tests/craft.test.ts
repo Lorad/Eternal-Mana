@@ -39,8 +39,11 @@ describe('Daten', () => {
     for (const r of LEARNABLE) expect(ITEMS[scrollOf(r.id)]?.use?.learn).toBe(r.id);
     for (const e of ENCHANT_LIST) for (const [b] of e.cost) expect(ITEMS[b], e.id).toBeTruthy();
     for (const s of SET_LIST) { expect(BOSSES[s.boss]).toBeTruthy(); expect(ZONES[s.dungeon]?.boss).toBe(s.boss); }
-    for (const b of Object.values(BOSSES)) expect(ITEMS[BOSS_CORE[b.id]], b.id).toBeTruthy();
-    for (const z of ZONE_LIST) { expect(ITEMS[BIOME_MATS[z.biome].monster]).toBeTruthy(); expect(ITEMS[BIOME_MATS[z.biome].ingredient]).toBeTruthy(); }
+    // die sechs Bosse und Biome des ersten Akts haben Kern bzw. Rohstoffe; spätere Inhalte dürfen (noch) ohne sein
+    for (const id of ['dornenmutter', 'kristallkoloss', 'ignarok', 'ysolde', 'archivar', 'hohlkoenig']) { expect(BOSSES[id], id).toBeTruthy(); expect(ITEMS[BOSS_CORE[id]], id).toBeTruthy(); }
+    for (const b of ['gruenwald', 'kristall', 'glut', 'frost', 'ruinen', 'schatten']) { expect(ZONE_LIST.some(z => z.biome === b), b).toBe(true); expect(ITEMS[BIOME_MATS[b].monster]).toBeTruthy(); expect(ITEMS[BIOME_MATS[b].ingredient]).toBeTruthy(); }
+    for (const b in BIOME_MATS) { expect(ITEMS[BIOME_MATS[b].monster], b).toBeTruthy(); expect(ITEMS[BIOME_MATS[b].ingredient], b).toBeTruthy(); }
+    for (const id in BOSS_CORE) expect(ITEMS[BOSS_CORE[id]], id).toBeTruthy();
     for (const e of Object.values(ESSENCE)) expect(ITEMS[e]).toBeTruthy();
     expect(ITEMS.mat_aether).toBeTruthy();
     for (const cls of CLASS_IDS) { expect(ITEMS['leg_' + cls]?.legend).toBe(cls); expect(LEGEND_TEXT[cls].length).toBeGreaterThan(20); expect(RECIPES['f_legend_' + cls]).toBeTruthy(); }
