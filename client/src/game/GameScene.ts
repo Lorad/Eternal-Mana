@@ -1206,9 +1206,10 @@ export class GameScene extends Phaser.Scene {
   private handleActions(now: number, stats: Derived, cls: (typeof CLASSES)[keyof typeof CLASSES]) {
     const me = this.me, st = store.state, c = st.char!;
     const click = input.pressed('attack');
-    if (click) { const v = this.clickedPlayer(); if (v) { this.openPlayerMenu(v); this.menuHold = true; } }
-    if (this.menuHold && !input.held('attack')) this.menuHold = false;
-    const wantAtk = (click || input.held('attack')) && !this.menuHold;
+    const v = click ? this.clickedPlayer() : null;
+    if (v) { this.openPlayerMenu(v); this.menuHold = true; }                      // dieser Klick ist kein Angriff – auch wenn die Taste schon wieder oben ist
+    else if (this.menuHold && !input.held('attack')) this.menuHold = false;
+    const wantAtk = !v && !this.menuHold && (click || input.held('attack'));
     if (wantAtk && st.playerMenu) store.set({ playerMenu: null }); // wer zuschlägt, will kein Menü mehr
     if (wantAtk && now >= this.atkReady && now >= this.rollUntil) {
       const atk = cls.attack;

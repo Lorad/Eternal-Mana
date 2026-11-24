@@ -3,6 +3,7 @@
 // Voraussetzung: Playwright und ein Server MIT Entwickler-Befehlen, am besten mit eigenem Datenordner:
 //   EM_DEV=1 EM_PORT=7793 EM_DATA=/tmp/em-coop npm start        (anderes Fenster)
 //   EM_URL=http://localhost:7793 node tests/e2e/coop.mjs
+//   EM_ONLY='Klick|Handel' …            nur einzelne Schritte
 // Bilder landen in tests/e2e/out/coop-*.png (a = Anführerin, b = Mitspieler).
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -66,7 +67,10 @@ const a = await player('a', 'Anna' + tag, 'Waldläufer');   // beide kämpfen au
 const b = await player('b', 'Bert' + tag, 'Magier');
 const both = fn => Promise.all([fn(a), fn(b)]);
 const shots = n => both(p => p.shot(n));
+/** EM_ONLY=<Muster> spielt nur die passenden Schritte (das Betreten der Welt immer) – zum gezielten Nachprüfen */
+const only = process.env.EM_ONLY ? new RegExp(process.env.EM_ONLY, 'i') : null;
 const step = async (name, fn) => {
+  if (only && !only.test(name) && !/betreten die Welt/.test(name)) { console.log('  – ' + name + ' (übersprungen)'); return; }
   try { await fn(); console.log('  ✓ ' + name); }
   catch (e) { failed++; console.log('  ✗ ' + name + ': ' + e.message.split('\n')[0]); await shots('fehler-' + failed).catch(() => {}); for (const p of [a, b]) await p.release().catch(() => {}); }
 };
@@ -128,10 +132,11 @@ await step('Interagieren neben einem Mitspieler öffnet sein Menü; Ansehen zeig
   await a.esc();
 });
 await step('ein Klick auf die Figur des Mitspielers öffnet dasselbe Menü', async () => {
+  await b.cmd(`/zu ${a.name} 22 0`); await a.wait(900);
   // B steht 22 Weltpixel rechts von A; bei zweifacher Vergrößerung sind das 44 Bildschirmpixel neben der Bildmitte
   for (const [dx, dy] of [[44, -2], [44, -14], [44, 8], [38, -8], [50, -8]]) {
     await a.page.mouse.click(640 + dx, 360 + dy);
-    try { await a.page.locator('.pmenu').waitFor({ timeout: 700 }); break; } catch { /* nächster Versuch */ }
+    try { await a.page.locator('.pmenu').waitFor({ timeout: 5000 }); break; } catch { /* nächster Versuch (ohne Grafikkarte kommt das Bild nur alle paar hundert Millisekunden) */ }
   }
   await a.page.locator('.pmenu', { hasText: b.name }).waitFor({ timeout: 1500 });
   await a.esc();
