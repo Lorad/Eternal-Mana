@@ -20,6 +20,7 @@ import { CHAPTERS, CINES, DECISIONS, ECHOES, LIED_COND, PLACES, SHRINES, STORY_O
 import { ZONES, ZONE_LIST } from '../shared/src/data/zones';
 import { getMap, validateMap } from '../shared/src/maps/mapgen';
 import { newCharacter } from '../shared/src/stats';
+import { FLAG_INVULN } from '../shared/src/types';
 import type { CharData, ObjInfo } from '../shared/src/types';
 import { Bot } from './helpers/bot';
 
@@ -517,6 +518,35 @@ describe('Story-Engine (Server)', () => {
     expect(b.char.quests.x_karl?.s).toBe('active');
     expect((await b.dlgOpen('hedda', 'hedda_karl')).err).toBe(1);
     b.close();
+  });
+
+  it('Mehrspieler: Echo zählt für alle Beteiligten; Filmszene schützt, bis sie endet – die Welt läuft weiter', async () => {
+    const a = await fresh('Erste', 'krieger', '/akt2', '/god', '/qa m_ueberlauf');
+    const b = await fresh('Zweite', 'magier', '/akt2', '/god', '/qa m_ueberlauf');
+    const rift = await a.gotoObj('rift', 'woge1');
+    await b.gotoObj('rift', 'woge1', 30);
+    await a.interact(rift, 350);
+    // die Welle ist für beide sichtbar und läuft weiter, auch wenn B gerade eine Filmszene sieht
+    expect([...b.mobs.values()].some(m => m.mob === 'wogenling')).toBe(true);
+    b.autoCine = false;
+    await b.dev('/god');           // B ist jetzt verwundbar …
+    await b.dev('/cine name', 400); // … aber als Zuschauer geschützt
+    expect(b.cines).toContain('name');
+    expect(b.flags & FLAG_INVULN).toBeTruthy();
+    const hp = b.hp;
+    await b.sleep(2500);
+    expect(b.flags & FLAG_INVULN).toBeTruthy();
+    expect(b.hp).toBeGreaterThanOrEqual(hp);
+    expect([...b.mobs.values()].some(m => m.mob === 'wogenling'), 'die Welt pausiert nicht').toBe(true);
+    b.send({ t: 'cineEnd', id: 'name' });
+    await b.dev('/god');
+    await b.sleep(1600);
+    expect(b.flags & FLAG_INVULN).toBeFalsy();
+    for (let i = 0; i < 12 && !a.char.flags['e:woge1']; i++) await a.dev('/kill', 200);
+    await b.sleep(200);
+    expect(a.char.flags['e:woge1']).toBe(1);
+    expect(b.char.flags['e:woge1'], 'Mitspieler in der Nähe').toBe(1);
+    a.close(); b.close();
   });
 
   it('Durchlauf: Hauptgeschichte von Kapitel 7 bis zum Epilog ohne Sackgasse', async () => {

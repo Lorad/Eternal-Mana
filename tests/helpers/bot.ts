@@ -18,6 +18,10 @@ export class Bot {
   /** Story (0.3): letzter Gesprächsknoten, empfangene Filmszenen und Chronik-Dokumente */
   dlg: Extract<ServerMsg, { t: 'dlg' }> | null = null;
   cines: string[] = [];
+  /** Filmszenen sofort als beendet melden (Bots schauen nicht zu); false = Schutz der Filmszene bleibt bestehen */
+  autoCine = true;
+  /** eigene Zustands-Flags aus dem letzten Snapshot (z. B. FLAG_INVULN) */
+  flags = 0;
   lores: string[] = [];
   private waiters: { pred: (m: ServerMsg) => boolean; res: (m: ServerMsg) => void }[] = [];
   token: string;
@@ -49,12 +53,12 @@ export class Bot {
       case 'dead': this.dead = true; break;
       case 'toast': this.toasts.push(m.s); break;
       case 'dlg': this.dlg = m; break;
-      case 'cine': this.cines.push(m.id); this.send({ t: 'cineEnd', id: m.id }); break; // Bots schauen nicht zu
+      case 'cine': this.cines.push(m.id); if (this.autoCine) this.send({ t: 'cineEnd', id: m.id }); break;
       case 'lore': this.lores.push(m.id); break;
       case 'drop+': this.drops.set(m.d.id, m.d); break;
       case 'drop-': this.drops.delete(m.id); break;
       case 's':
-        if (m.me) { this.hp = m.me[0]; this.maxHp = m.me[1]; this.mp = m.me[2]; if (this.hp > 0) this.dead = false; }
+        if (m.me) { this.hp = m.me[0]; this.maxHp = m.me[1]; this.mp = m.me[2]; this.flags = m.me[4]; if (this.hp > 0) this.dead = false; }
         for (const s of m.m) { const mob = this.mobs.get(s[0]); if (mob) { mob.x = s[1]; mob.y = s[2]; mob.hp = s[5]; } }
         for (const s of m.p) this.players.set(s[0], { x: s[1], y: s[2], hp: s[5] });
         for (const e of m.ev ?? []) {
