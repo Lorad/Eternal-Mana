@@ -1,0 +1,93 @@
+/* ============================================================== Endspiel (0.5): Mana-Risse, Quellstufen, Neuer Kreis */
+.win-endgame { width: 940px; }
+.win-endgame .window-head { flex-wrap: wrap; row-gap: 6px; }
+.win-endgame .window-body { max-height: 560px; overflow-y: auto; }
+.is-short .win-endgame .window-body { max-height: 400px; }
+
+.eg { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; align-items: start; }
+.eg-list { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.eg-list .craft-row { padding: 5px 10px; }
+.eg-list .card { display: flex; flex-direction: column; gap: 6px; }
+.eg-hint { margin-top: 6px; }
+.eg-detail { display: flex; flex-direction: column; gap: 9px; padding: 12px 14px; min-width: 0; }
+.eg-locked { display: flex; flex-direction: column; gap: 10px; padding: 16px; max-width: 620px; margin: 0 auto; }
+.eg-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.eg-stufe { display: flex; align-items: center; gap: 6px; }
+.eg-stufe-n { min-width: 78px; text-align: center; font: 700 14px var(--serif); color: var(--parch); }
+.eg-stufe-n b { color: var(--gold-hi); font-size: 18px; }
+.eg-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.eg-facts div { padding: 5px 8px; background: rgba(0, 0, 0, .25); border-radius: 3px; text-align: center; }
+.eg-facts dt { font-size: 11px; color: var(--dim); }
+.eg-facts dd { margin: 0; font: 700 16px var(--serif); color: var(--gold-hi); font-variant-numeric: tabular-nums; }
+.eg-modlist { display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.eg-modlist li { display: flex; flex-direction: column; gap: 1px; padding: 5px 9px; background: rgba(0, 0, 0, .25); border-left: 3px solid var(--c); border-radius: 2px; font-size: 12.5px; line-height: 1.4; color: var(--dim); }
+.eg-modlist b { display: flex; align-items: center; gap: 6px; color: var(--c); font-size: 13px; }
+.eg-modlist i, .eg-mod i { flex: none; width: 7px; height: 7px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 5px var(--c); }
+.eg-echo { font-size: 12.5px; line-height: 1.45; color: var(--dim); }
+.eg-echo b { color: #8fdcff; }
+.eg-actions { display: flex; gap: 8px; margin-top: 2px; }
+.eg-trial { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 14px; margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--dim); }
+.eg-trial b { color: #8fdcff; margin-right: 6px; }
+
+/* ---------------------------------------------------------------- Quellstufen */
+.eg-quell { display: flex; flex-direction: column; gap: 12px; }
+.eg-quell-head { display: flex; align-items: center; gap: 16px; }
+.eg-quell-head .bar { height: 16px; }
+.eg-quell-head .note { margin-top: 5px; }
+.eg-quell-lvl { display: flex; flex-direction: column; align-items: center; min-width: 96px; font-size: 11px; color: var(--dim); }
+.eg-quell-lvl b { font: 700 30px var(--serif); line-height: 1; color: #8fdcff; text-shadow: 0 0 12px rgba(143, 220, 255, .5); }
+.eg-tracks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.eg-track { display: flex; flex-direction: column; gap: 7px; }
+.eg-track-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.eg-track-head b { font: 700 14px var(--serif); color: var(--gold-hi); }
+.eg-track-val { font-size: 12.5px; color: var(--good); white-space: nowrap; }
+.eg-pips { display: flex; gap: 3px; }
+.eg-pips i { flex: 1; height: 7px; background: rgba(0, 0, 0, .45); box-shadow: inset 0 0 0 1px #2c3352; border-radius: 1px; }
+.eg-pips i.on { background: linear-gradient(#bff0ff, #4aa9d8); box-shadow: 0 0 5px rgba(143, 220, 255, .6); }
+.eg-track-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* ---------------------------------------------------------------- Neuer Kreis */
+.eg-kreis-now { font-size: 13px; color: var(--dim); }
+.eg-kreis-now b { font: 700 15px var(--serif); color: var(--gold-hi); }
+.eg-endings, .eg-past, .eg-keep, .eg-reset { display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+.eg-endings li { display: flex; gap: 8px; color: var(--faint); }
+.eg-endings li.on { color: var(--text); }
+.eg-endings i { flex: none; width: 18px; height: 18px; line-height: 18px; text-align: center; font-style: normal; font-weight: 700; background: rgba(0, 0, 0, .35); border-radius: 50%; }
+.eg-endings li.on i { color: var(--good); }
+.eg-endings span, .eg-past li { display: flex; flex-direction: column; gap: 1px; line-height: 1.4; }
+.eg-endings small { color: var(--dim); }
+.eg-past { padding-left: 2px; }
+.eg-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.eg-keep li::before { content: '✓ '; color: var(--good); }
+.eg-reset li::before { content: '↻ '; color: var(--bad); }
+.eg-titles { display: flex; flex-wrap: wrap; gap: 6px; }
+.eg-titles .btn.on { box-shadow: inset 0 0 0 1px var(--gold-hi); color: var(--gold-hi); }
+
+/* ---------------------------------------------------------------- HUD */
+.eg-mod { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 6px; font: 700 11px var(--sans); color: var(--c); background: rgba(8, 10, 18, .82); border: 1px solid var(--c); border-radius: 10px; pointer-events: auto; white-space: nowrap; }
+.rift-hud { display: flex; flex-direction: column; gap: 5px; width: 240px; padding: 6px 9px 7px; background: linear-gradient(90deg, rgba(10, 12, 20, .35), rgba(10, 12, 20, .84)); border-right: 3px solid #8fdcff; border-radius: 2px; text-shadow: 0 1px 0 #000; }
+.rift-hud.done { border-right-color: var(--good); }
+.rift-hud.failed { border-right-color: var(--bad); }
+.rift-hud-top { display: flex; align-items: baseline; gap: 8px; }
+.rift-hud-top b { font: 700 13px var(--serif); color: #bfe9ff; letter-spacing: .03em; }
+.rift-step { font-size: 12px; color: var(--gold-hi); }
+.rift-clock { margin-left: auto; font: 700 15px var(--sans); color: var(--parch); font-variant-numeric: tabular-nums; }
+.rift-clock small { font-weight: 400; font-size: 11px; color: var(--dim); }
+.rift-clock .late { color: var(--dim); }
+.rift-mods { display: flex; flex-wrap: wrap; gap: 4px; }
+.rift-hud-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; font-weight: 700; }
+.rift-sparks { display: inline-flex; align-items: center; gap: 4px; }
+.rift-sparks i { width: 9px; height: 9px; background: radial-gradient(circle at 40% 35%, #fff, #8fdcff 55%, #2c7fb0); border-radius: 50%; box-shadow: 0 0 6px #8fdcff; }
+.rift-sparks em { font-style: normal; font-weight: 400; color: var(--bad); }
+.points-pill.eg-pill { display: inline-flex; align-items: center; gap: 7px; background: linear-gradient(#2a3a5c, #18223a); color: #bfe9ff; animation: none; pointer-events: auto; }
+.points-pill.eg-pill.has { background: linear-gradient(#bff0ff, #4aa9d8); color: #06202e; animation: pill-pulse 1.4s ease-in-out infinite; }
+.eg-pill-k { font-weight: 400; opacity: .85; }
+.xpbar-quell .bar-fill { background: linear-gradient(#bff0ff, #4aa9d8); }
+
+.is-narrow .eg, .is-narrow .eg-cols { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .eg-tracks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.is-narrow .eg-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.is-narrow .eg-trial { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .rift-hud { width: 170px; }
+.is-narrow .rift-hud-foot span:last-child { display: none; }
+.is-short .rift-mods .eg-mod:nth-child(n+3) { display: none; }

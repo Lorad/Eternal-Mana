@@ -608,7 +608,7 @@ describe('Modifikatoren', () => {
       t.p.x = s.x; t.p.y = s.y;
       const m = zz.spawnMob('kristallkrabbler', 42, s.mx, s.my);
       m.target = t.p; m.state = 'chase';
-      for (let i = 0; i < 100 && m.state !== 'recover'; i++) sim.step(0.05);
+      for (let i = 0; i < 100 && (m.state as string) !== 'recover'; i++) sim.step(0.05);
       expect(m.state).toBe('recover');
       return m.cdUntil - sim.game.now;
     };

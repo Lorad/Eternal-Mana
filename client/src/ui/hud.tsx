@@ -18,6 +18,8 @@ import { FLAG_SHIELD, STATUS_BIT, STATUS_MASK, STATUS_NAME } from '../../../shar
 import type { CharData, StatusId } from '../../../shared/src/types';
 import { Bar, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, useSettings, useTick } from './common';
 import { Affinity, TargetInfo } from './elements';
+import { EndgamePill, RiftHud } from './endgame';
+import { QUELL_MAX, titleName } from '../../../shared/src/data/rifts';
 import { MinimapCanvas } from './mapview';
 
 // ------------------------------------------------------------------ Tastenhinweise (Tastatur oder Gamepad)
@@ -72,6 +74,7 @@ function PlayerFrame() {
   const hp = useStore(s => Math.ceil(s.me.hp)), maxHp = useStore(s => s.me.maxHp);
   const mp = useStore(s => Math.floor(s.me.mp)), maxMp = useStore(s => s.me.maxMp);
   const ap = useStore(s => s.char?.attrPoints ?? 0), sp = useStore(s => s.char?.skillPoints ?? 0);
+  const title = useStore(s => (s.char ? titleName(s.char) : undefined));
   if (!cls) return null;
   const low = maxHp > 0 && hp / maxHp < 0.25;
   return (
@@ -82,7 +85,7 @@ function PlayerFrame() {
           <span class="pframe-lvl">{level}</span>
         </button>
         <div class="pframe-main">
-          <div class="pframe-name"><b>{name}</b><span>{CLASSES[cls].name}</span></div>
+          <div class="pframe-name"><b>{name}</b><span>{title ?? CLASSES[cls].name}</span></div>
           <Bar kind="hp" v={hp} max={maxHp} />
           <Bar kind="mp" v={mp} max={maxMp} class="mpbar" />
         </div>
@@ -93,6 +96,7 @@ function PlayerFrame() {
           {sp > 0 && <button type="button" class="points-pill" onClick={() => togglePanel('skills')}>＋{sp} Fähigkeitspunkt{sp > 1 ? 'e' : ''}</button>}
         </div>
       )}
+      <EndgamePill />
       <StatusChips />
       <Buffs />
       <PartyFrames />
@@ -189,6 +193,14 @@ function XpBar() {
   const xp = useStore(s => s.char?.xp ?? 0), level = useStore(s => s.char?.level ?? 1);
   const max = level >= CFG.player.maxLevel;
   const need = CFG.xpToNext(level);
+  // 0.5: auf der Höchststufe füllt Erfahrung die Quellstufen
+  const qLvl = useStore(s => s.char?.quell?.lvl ?? 0), qXp = useStore(s => s.char?.quell?.xp ?? 0);
+  if (max && qLvl < QUELL_MAX) return (
+    <div class="xpbar xpbar-quell" title="Quell-Erfahrung">
+      <Bar kind="xp" v={qXp} max={CFG.quell.xpToNext(qLvl)} label={false} class="thin" />
+      <span class="xp-text">Quellstufe {qLvl} · {Math.floor(qXp)} / {CFG.quell.xpToNext(qLvl)} EP</span>
+    </div>
+  );
   return (
     <div class="xpbar" title="Erfahrung">
       <Bar kind="xp" v={max ? 1 : xp} max={max ? 1 : need} label={false} class="thin" />
@@ -463,7 +475,7 @@ export function Hud() {
   return (
     <div class="hud">
       <PlayerFrame />
-      <div class="hud-tr"><MinimapBox /><QuestTracker /></div>
+      <div class="hud-tr"><MinimapBox /><RiftHud /><QuestTracker /></div>
       <div class="hud-tc"><BossBar /><TargetInfo /><InvitePopup /></div>
       <ZoneBanner />
       <StoryToasts />

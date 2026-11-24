@@ -68,7 +68,7 @@ export function riftStones(map: GameMap): Obj[] {
     if (Math.max(Math.abs(ox), Math.abs(oy)) !== r) continue;
     const tx = poi.x + RIFT_STONE.dx + ox, ty = poi.y + RIFT_STONE.dy + oy;
     if (!roomy(tx, ty) || taken(tx, ty)) continue;
-    return [{ id: nextId(), type: 'riftstone', x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, state: 0, props: { sid: 'riftstone' } }];
+    return [{ id: nextId(), type: 'riftstone', x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, state: 0, props: { sid: 'riftstone', label: 'Riss-Stein' } }];
   }
   return [];
 }

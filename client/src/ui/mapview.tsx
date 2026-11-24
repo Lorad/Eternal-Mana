@@ -130,6 +130,7 @@ export function drawMarker(ctx: CanvasRenderingContext2D, m: Marker, x: number, 
     case 'chest': if (!m.state) { ctx.beginPath(); ctx.rect(x - u * 1.5, y - u * 1.1, u * 3, u * 2.2); outlined(ctx, '#e3b75c'); } break;
     case 'shard': if (!m.state) { diamond(ctx, x, y, u * 1.4); outlined(ctx, '#d6c4ff'); } break;
     case 'board': { ctx.beginPath(); ctx.rect(x - u * 1.3, y - u * 1.3, u * 2.6, u * 2.6); outlined(ctx, '#c58f4a'); break; }
+    case 'riftstone': diamond(ctx, x, y, u * 2.1); outlined(ctx, '#b89cff'); break; // Riss-Stein (0.5)
     default: break;
   }
 }

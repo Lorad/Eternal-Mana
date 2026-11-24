@@ -17,7 +17,9 @@ import { ELEMENT_INFO, reactionsWith } from '../../../shared/src/elements';
 import { SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance } from '../../../shared/src/types';
 import { Btn, ELEMENT_CSS, Gold, INV_SIZE, Icon, ItemSlot, Tabs, Toggle, Window, cx, fmtMod, modEntries, send, sfx } from './common';
+import { Attune } from './endgame';
 import { modsLine } from './itemextra';
+import { riftUnlocked } from '../../../shared/src/data/rifts';
 
 export function openCraft(at: string, station: StationId) { store.set({ dialog: null, panel: null, prompt: null, craft: { at, station } }); }
 
@@ -38,26 +40,27 @@ export function StationOptions({ npc }: { npc: string }) {
 export function CraftWindow() {
   const craft = useStore(s => s.craft);
   const char = useStore(s => s.char);
-  const [tab, setTab] = useState<'make' | 'reforge' | 'infuse'>('make');
+  const [tab, setTab] = useState<'make' | 'reforge' | 'infuse' | 'attune'>('make');
   if (!craft || !char) return null;
   const station = craft.station as StationId, at = craft.at;
   const who = at === FIRE ? 'Lagerfeuer' : NPCS[at]?.name ?? '';
   return (
     <Window title={`${STATION_NAME[station]} · ${who}`} onClose={() => store.set({ craft: null })} class="win-craft"
       head={<>
-        {station === 'forge' && <Tabs tabs={[['make', 'Herstellen'], ['reforge', 'Umschmieden'], ['infuse', 'Element einschmieden']]} value={tab} onChange={setTab} />}
+        {station === 'forge' && <Tabs tabs={[['make', 'Herstellen'], ['reforge', 'Umschmieden'], ['infuse', 'Element einschmieden'], ...(riftUnlocked(char) ? [['attune', 'Angleichen'] as ['attune', string]] : [])]} value={tab} onChange={setTab} />}
         <span class="dlg-gold craft-gold">Gold <Gold n={char.gold} /></span>
       </>}>
       {station === 'enchant' ? <Enchant char={char} at={at} />
         : station === 'forge' && tab === 'reforge' ? <Reforge char={char} at={at} />
         : station === 'forge' && tab === 'infuse' ? <Infuse char={char} at={at} />
+        : station === 'forge' && tab === 'attune' ? <Attune char={char} at={at} />
         : <Recipes char={char} station={station} at={at} />}
     </Window>
   );
 }
 
 // ------------------------------------------------------------------ gemeinsame Bausteine
-function CostList({ cost, char }: { cost: Cost; char: CharData }) {
+export function CostList({ cost, char }: { cost: Cost; char: CharData }) {
   return (
     <ul class="upg-cost craft-cost">
       {cost.mats.map(([b, n]) => {
@@ -77,7 +80,7 @@ function gearOf(char: CharData, filter: (it: ItemInstance) => boolean): { equipp
   const ok = (it: ItemInstance | undefined): it is ItemInstance => !!it && !!ITEMS[it.base] && isGear(ITEMS[it.base]) && filter(it);
   return { equipped: SLOTS.map(s => char.equip[s]).filter(ok), bag: char.inv.filter(ok) };
 }
-function GearPicker({ char, sel, onSel, filter, empty }: { char: CharData; sel: string | null; onSel: (uid: string) => void; filter: (it: ItemInstance) => boolean; empty: string }) {
+export function GearPicker({ char, sel, onSel, filter, empty }: { char: CharData; sel: string | null; onSel: (uid: string) => void; filter: (it: ItemInstance) => boolean; empty: string }) {
   const { equipped, bag } = gearOf(char, filter);
   return (
     <div class="upg-pick">
@@ -88,12 +91,12 @@ function GearPicker({ char, sel, onSel, filter, empty }: { char: CharData; sel: 
     </div>
   );
 }
-function useGear(char: CharData, filter: (it: ItemInstance) => boolean): [ItemInstance | null, string | null, (uid: string) => void] {
+export function useGear(char: CharData, filter: (it: ItemInstance) => boolean): [ItemInstance | null, string | null, (uid: string) => void] {
   const { equipped, bag } = gearOf(char, filter);
   const [sel, setSel] = useState<string | null>(equipped[0]?.uid ?? bag[0]?.uid ?? null);
   return [[...equipped, ...bag].find(i => i.uid === sel) ?? null, sel, setSel];
 }
-function ItemTitle({ it, sub }: { it: ItemInstance; sub: ComponentChildren }) {
+export function ItemTitle({ it, sub }: { it: ItemInstance; sub: ComponentChildren }) {
   return (
     <div class="upg-title">
       <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={'item_' + ITEMS[it.base].icon} /></span>

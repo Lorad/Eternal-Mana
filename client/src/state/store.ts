@@ -1,6 +1,6 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, ItemInstance, Mods, PartyMember, ServerInfo } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, ItemInstance, Mods, PartyMember, RiftInfo, ServerInfo } from '../../../shared/src/types';
 import { bus } from './bus';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help';
@@ -51,6 +51,13 @@ export interface UiState {
   cine: CineView | null;
   /** geöffnetes Chronik-Dokument */
   lore: { id: string; first: boolean } | null;
+  // ---- Endspiel (0.5)
+  /** laufender Mana-Riss und der Zeitpunkt (performance.now), zu dem `rift.t` galt – daraus läuft die Uhr im HUD */
+  rift: RiftInfo | null; riftAt: number;
+  /** Kreis der Welt, in der man gerade steht */
+  kreis: number;
+  /** offenes Endspiel-Fenster: Reiter; `stone` = am Riss-Stein geöffnet, `npc` = im Gespräch (Neuer Kreis bei Mirelda) */
+  endgame: { tab: 'risse' | 'quell' | 'kreis'; stone?: boolean; npc?: string } | null;
   dead: { by: string } | null;
   /** Interaktionshinweis über dem HUD, z. B. "Truhe öffnen" */
   prompt: string | null;
@@ -67,6 +74,7 @@ const state: UiState = {
   me: { hp: 1, maxHp: 1, mp: 0, maxMp: 1, flags: 0 }, zone: '', keys: 0,
   cds: {}, buffs: [], party: [], invite: null, boss: null, target: null, craft: null, toasts: [], chat: [], chatOpen: false,
   panel: null, dialog: null, sign: null, story: null, dlgNode: null, cine: null, lore: null, dead: null, prompt: null, nearStone: false,
+  rift: null, riftAt: 0, kreis: 0, endgame: null,
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0,
 };
 
@@ -113,7 +121,7 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {
   if (state.screen !== 'game' || state.cine) return;
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null });
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
@@ -122,6 +130,7 @@ export function closeTop(): boolean {
   if (state.story) { store.set({ story: null }); return true; }
   if (state.sign) { store.set({ sign: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
+  if (state.endgame) { store.set({ endgame: null }); return true; }
   if (state.dialog) { store.set({ dialog: null, dlgNode: null }); return true; }
   if (state.panel) { store.set({ panel: null }); return true; }
   if (state.chatOpen) { store.set({ chatOpen: false }); return true; }
@@ -129,5 +138,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore);
+  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore);
 }

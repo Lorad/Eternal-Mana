@@ -66,7 +66,7 @@ export class PlayerView {
     this.blob = sc.add.image(0, 0, 'fx', 'shadow').setDepth(4).setAlpha(0.45);
     this.shadow = makeShadow(sc, key, '0', CHAR_ORIGIN_Y);
     this.sprite = sc.add.sprite(0, 0, key, '0').setOrigin(0.5, CHAR_ORIGIN_Y);
-    if (!self) { this.label = ctx.text(0, 0, info.name, '#e8f4ff').setOrigin(0.5, 1); this.bar = sc.add.graphics(); }
+    if (!self) { this.label = ctx.text(0, 0, info.title ? `${info.name} · ${info.title}` : info.name, '#e8f4ff').setOrigin(0.5, 1); this.bar = sc.add.graphics(); }
   }
   /** Setzt eine Animation; `lock` (ms) schützt sie vor Überschreiben durch Snapshot-Zustände. */
   play(a: CharAnim, lock = 0, restart = false) {
@@ -119,7 +119,7 @@ export class MobView {
     this.boss = !!info.boss;
     // Darstellung: Story-Bosse mit Rückfall-Sheet; neue Gegner (0.3) verwenden Sprite und Farbton aus ihrer Definition
     const look = this.boss ? bossSheet(sc, info.mob) : { id: ENEMIES[info.mob]?.sprite ?? info.mob, tint: ENEMIES[info.mob]?.tint };
-    this.baseTint = look.tint;
+    this.baseTint = info.tint ?? look.tint; // Boss-Echos (0.5) schickt der Server eingefärbt
     this.fallback = look.id !== info.mob;
     this.key = (this.boss ? 'boss_' : 'mob_') + look.id;
     const meta = (this.boss ? ctx.gfx.bossMeta : ctx.gfx.mobMeta)[look.id] ?? { w: 32, h: 32 };
