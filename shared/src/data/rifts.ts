@@ -86,7 +86,7 @@ export function fmtTime(sec: number): string { const s = Math.max(0, Math.floor(
 // ------------------------------------------------------------------ Boss-Echos
 export interface EchoBossDef { name: string; mech: string; desc: string; intro: string }
 /** Farbton aller Echos (blasses Quelllicht) */
-export const ECHO_TINT = 0x8fdcff;
+export const ECHO_TINT = 0x78c8ff;
 export const ECHO_BOSS: Record<string, EchoBossDef> = {
   dornenmutter: { name: 'Echo der Dornenmutter', mech: 'Dornensaat', desc: 'Sät Dornenfelder in den Raum, die als Giftlachen liegen bleiben.',
     intro: 'Die Ranken sind aus Licht. Sie erinnern sich an dich – und an jeden Schnitt.' },
