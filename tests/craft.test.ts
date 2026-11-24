@@ -477,7 +477,7 @@ describe('Speisen und Elixiere', () => {
     // die Anzeige bekommt Icon und Beschreibung
     t.p.flush();
     const shown = (t.msgs.filter(m => m.t === 'buffs').at(-1) as any).b as { id: string; icon?: string; desc?: string; dur: number }[];
-    expect(shown.find(b => b.id === 'food')!.icon).toBe('item_food');
+    expect(shown.find(b => b.id === 'food')!.icon).toBe('item_food_beeren');
     expect(shown.find(b => b.id === 'elixir')!.desc).toMatch(/Verteidigung/);
     // Elixier läuft nach 5 Minuten ab, die Speise hält 15
     sim.step(CFG.craft.elixirSec + 1);

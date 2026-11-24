@@ -76,7 +76,7 @@ add({ id: 'gem', name: 'Geschliffener Edelstein', kind: 'material', icon: 'gem',
 for (const b of CRAFT_ITEMS) add(b);
 for (const r of LEARNABLE) {
   const what = r.name || (r.out.k === 'item' ? ITEMS[r.out.item]?.name : '') || r.id;
-  add({ id: scrollOf(r.id), name: 'Rezept: ' + what, kind: 'consumable', icon: 'scroll', stack: true, price: 60 + r.level * 12, desc: 'Benutzen, um das Rezept dauerhaft zu lernen.', use: { learn: r.id } });
+  add({ id: scrollOf(r.id), name: 'Rezept: ' + what, kind: 'consumable', icon: 'recipe', stack: true, price: 60 + r.level * 12, desc: 'Benutzen, um das Rezept dauerhaft zu lernen.', use: { learn: r.id } });
 }
 
 add({ id: 'seal_earth', name: 'Siegel der Erde', kind: 'quest', icon: 'seal_earth', price: 0, desc: 'Warm und schwer wie frischer Waldboden.' });

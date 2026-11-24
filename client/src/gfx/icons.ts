@@ -2,6 +2,7 @@
 import { Px, crystal } from './draw';
 import { P, Ramp, INK, WHITE, mix } from './palette';
 import type { ElementKey } from './spec';
+import { CRAFT_FLAT, CRAFT_GLOW, CRAFT_ICONS, iconTile } from './icons_craft';
 
 type Fn = (p: Px) => void;
 const blade = (p: Px, x0: number, y0: number, x1: number, y1: number, r: Ramp = P.steel) => { p.line(x0, y0, x1, y1, r[3], 3); p.line(x0, y0, x1, y1, r[4], 2); p.line(x0 + 2, y0 + 1, x1 + 2, y1 + 1, r[2]); };
@@ -108,10 +109,7 @@ export function iconPx(key: string, element: ElementKey = 'phys'): Px {
   const p = new Px(24, 24);
   if (key.startsWith('skill_')) {
     const r = ELEMENT[element] ?? ELEMENT.phys, g = GLYPHS[key.slice(6)];
-    p.rrect(0, 0, 24, 24, r[0]); p.rect(1, 1, 22, 22, r[2]);
-    for (let y = 1; y < 23; y++) for (let x = 1; x < 23; x++) { const d = x + y; p.set(x, y, d < 16 ? r[3] : d > 34 ? r[1] : d > 24 && ((x + y) & 1) && d < 28 ? r[1] : d < 20 && ((x + y) & 1) ? r[3] : r[2]); }
-    p.rect(1, 1, 22, 1, r[4]); p.rect(1, 1, 1, 22, r[4]); p.rect(1, 22, 22, 1, r[0]); p.rect(22, 1, 1, 22, r[0]); p.rect(2, 21, 20, 1, r[1]); p.rect(21, 2, 1, 20, r[1]);
-    p.px([1, 1, 22, 1, 1, 22, 22, 22], r[0]);
+    iconTile(p, r);
     const q = new Px(24, 24);
     if (g) g(q); else { q.rect(9, 9, 6, 6, WHITE); }
     // Glyphe leicht einrücken, Schlagschatten + dunkle Kontur
@@ -122,8 +120,8 @@ export function iconPx(key: string, element: ElementKey = 'phys'): Px {
     for (let i = 0; i < q.d.length; i++) if (q.d[i]) q.d[i] = mix(WHITE, r[4], ((i / 24) | 0) > 13 ? 0.45 : 0.1);
     ins(q, 0, 0);
   } else {
-    const fn = ITEMS[key.startsWith('item_') ? key.slice(5) : key];
-    if (fn) { fn(p); p.outline(INK); } else { p.rrect(3, 3, 18, 18, P.stone[2]); p.rect(11, 6, 2, 8, WHITE); p.rect(11, 16, 2, 2, WHITE); p.outline(INK); }
+    const k = key.startsWith('item_') ? key.slice(5) : key, fn = ITEMS[k] ?? CRAFT_ICONS[k];
+    if (fn) { fn(p); if (!CRAFT_FLAT.has(k)) p.outline(INK); CRAFT_GLOW[k]?.(p); } else { p.rrect(3, 3, 18, 18, P.stone[2]); p.rect(11, 6, 2, 8, WHITE); p.rect(11, 16, 2, 2, WHITE); p.outline(INK); }
   }
   return p;
 }

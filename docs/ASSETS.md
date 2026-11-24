@@ -478,7 +478,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `void_mote` | 5×5 | 3 (`_0…_2`) | Wetter/Umgebung |
 | `weak` | 16×16 | 2 (`_0…_1`) | Effekt |
 
-## Atlas: icons (318 Frames, 501×401)
+## Atlas: icons (371 Frames, 501×476)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -488,9 +488,28 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_axe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_bosskey` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_bow` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_buff_einklang` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_buff_morgenwacht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_charm` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_dagger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_crit` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_guard` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_power` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_res_dark` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_res_earth` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_res_fire` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_res_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_res_water` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_res_wind` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_speed` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_beeren` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_eintopf` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_feigen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_fest` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_pilz` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_spiess` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_tee` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_gem` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_gold` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_hammer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -498,16 +517,50 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_helm_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_hood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_key` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_leg_krieger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_leg_magier` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_leg_paladin` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_leg_schattenjaeger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_leg_waldlaeufer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_aether` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ashclaw` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_berry` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_bone` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_cavecap` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_chitin` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_core_archivar` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_core_dornenmutter` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_core_hohlkoenig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_core_ignarok` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_core_kristallkoloss` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_core_ysolde` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_crystal` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_ember` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ess_dark` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ess_earth` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ess_fire` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ess_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ess_water` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ess_wind` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_fang` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_fig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_frost` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_ghostbloom` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_glimmer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_herb` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_lichen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_pepper` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_rune` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_void` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_weave` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_wood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_potion_cleanse` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_elixir` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_hp` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_potion_hp4` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_mp` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_potion_mp4` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_recipe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_ring` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_robe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_scroll` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |

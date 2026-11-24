@@ -237,6 +237,17 @@ export const ITEM_ICONS = [
   'mat_wood', 'mat_herb', 'mat_crystal', 'mat_ember', 'mat_frost', 'mat_rune', 'mat_void',
   'key', 'bosskey', 'shard', 'gold', 'gem',
   'seal_fire', 'seal_water', 'seal_earth', 'seal_wind', 'seal_light', 'seal_dark',
+  // Handwerk & Elemente (icons_craft.ts). Rohstoff-Icons beginnen mit `mat_`, Tränke mit `potion_`.
+  'mat_chitin', 'mat_glimmer', 'mat_ashclaw', 'mat_fang', 'mat_bone', 'mat_weave',
+  'mat_berry', 'mat_cavecap', 'mat_pepper', 'mat_lichen', 'mat_fig', 'mat_ghostbloom',
+  'mat_ess_fire', 'mat_ess_water', 'mat_ess_earth', 'mat_ess_wind', 'mat_ess_light', 'mat_ess_dark',
+  'mat_core_dornenmutter', 'mat_core_kristallkoloss', 'mat_core_ignarok', 'mat_core_ysolde', 'mat_core_archivar', 'mat_core_hohlkoenig',
+  'mat_aether', 'potion_hp4', 'potion_mp4', 'potion_cleanse',
+  'elx_guard', 'elx_speed', 'elx_crit', 'elx_power',
+  'elx_res_fire', 'elx_res_water', 'elx_res_earth', 'elx_res_wind', 'elx_res_light', 'elx_res_dark',
+  'food_beeren', 'food_pilz', 'food_spiess', 'food_eintopf', 'food_feigen', 'food_tee', 'food_fest',
+  'leg_krieger', 'leg_magier', 'leg_waldlaeufer', 'leg_paladin', 'leg_schattenjaeger',
+  'recipe', 'buff_einklang', 'buff_morgenwacht',
 ] as const;
 
 /** Skill-Glyphen 24x24. Icon = Glyphe (hell) auf elementfarbenem Hintergrund mit Rahmen. */

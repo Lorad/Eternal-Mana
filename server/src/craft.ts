@@ -149,7 +149,7 @@ export function useSpecial(g: Game, p: Player, it: ItemInstance): boolean {
     (p.char.recipes ??= []).push(r.id);
     p.removeItems(it.base, 1);
     p.sync('recipes', 'inv');
-    p.toast(`Rezept gelernt: ${recipeLabel(r, p.char.cls)}`, 'good', 'item_scroll');
+    p.toast(`Rezept gelernt: ${recipeLabel(r, p.char.cls)}`, 'good', 'item_recipe');
     p.pev.push({ k: 'sfx', n: 'quest_progress' });
     return true;
   }

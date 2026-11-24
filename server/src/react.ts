@@ -61,7 +61,7 @@ function react(z: Zone, m: Mob, src: Player, other: Player | undefined, r: React
     legendShield(z, src, q, amount);
   }
   if (duo) for (const q of [src, other!]) {
-    q.addBuff({ id: 'einklang', name: 'Einklang', glyph: 'p_element', until: now + E.duoBuff.dur, mods: { powerPct: E.duoBuff.powerPct }, shield: 0, desc: `+${E.duoBuff.powerPct} % Angriff – ihr habt gemeinsam „${r.name}“ ausgelöst.` });
+    q.addBuff({ id: 'einklang', name: 'Einklang', glyph: 'p_element', icon: 'item_buff_einklang', until: now + E.duoBuff.dur, mods: { powerPct: E.duoBuff.powerPct }, shield: 0, desc: `+${E.duoBuff.powerPct} % Angriff – ihr habt gemeinsam „${r.name}“ ausgelöst.` });
     z.ev({ k: 'fx', n: 'buff', x: Math.round(q.x), y: Math.round(q.y), el });
   }
 }
@@ -112,5 +112,5 @@ export function legendShield(z: Zone, src: Player, q: Player, healed: number) {
   const C = CFG.legend.paladin;
   const cur = q.buffs.find(b => b.id === 'morgenwacht');
   const shield = Math.min(Math.round(q.stats.maxHp * C.cap), Math.round((cur?.shield ?? 0) + healed * C.shield));
-  q.addBuff({ id: 'morgenwacht', name: 'Morgenwacht', glyph: 'shield', until: z.game.now + C.dur, mods: {}, shield, desc: 'Ein Schild aus Licht fängt Schaden ab.' });
+  q.addBuff({ id: 'morgenwacht', name: 'Morgenwacht', glyph: 'shield', icon: 'item_buff_morgenwacht', until: z.game.now + C.dur, mods: {}, shield, desc: 'Ein Schild aus Licht fängt Schaden ab.' });
 }

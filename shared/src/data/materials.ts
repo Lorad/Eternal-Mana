@@ -42,40 +42,40 @@ export const AETHER = 'mat_aether';
 
 const mat = (id: string, name: string, icon: string, price: number, desc: string): ItemBase => ({ id, name, kind: 'material', icon, stack: true, price, desc });
 const use = (id: string, name: string, icon: string, price: number, desc: string, u: NonNullable<ItemBase['use']>): ItemBase => ({ id, name, kind: 'consumable', icon, stack: true, price, desc, use: u });
-const food = (id: string, name: string, price: number, desc: string, mods: Mods, dur = CFG.craft.foodSec, party?: number) => use(id, name, 'food', price, desc, { buff: { slot: 'food', dur, mods, party } });
-const elixir = (id: string, name: string, price: number, desc: string, mods: Mods) => use(id, name, 'potion_elixir', price, desc, { buff: { slot: 'elixir', dur: CFG.craft.elixirSec, mods } });
-const legend = (cls: ClassId, wtype: ItemBase['wtype'], name: string, desc: string): ItemBase => ({ id: 'leg_' + cls, name, kind: 'weapon', icon: wtype === 'dagger' ? 'dagger' : wtype!, tier: 6, wtype, price: 0, desc, legend: cls });
+const food = (id: string, name: string, price: number, desc: string, mods: Mods, dur = CFG.craft.foodSec, party?: number) => use(id, name, id, price, desc, { buff: { slot: 'food', dur, mods, party } });
+const elixir = (id: string, name: string, price: number, desc: string, mods: Mods) => use(id, name, id, price, desc, { buff: { slot: 'elixir', dur: CFG.craft.elixirSec, mods } });
+const legend = (cls: ClassId, wtype: ItemBase['wtype'], name: string, desc: string): ItemBase => ({ id: 'leg_' + cls, name, kind: 'weapon', icon: 'leg_' + cls, tier: 6, wtype, price: 0, desc, legend: cls });
 
-/** Alle neuen Gegenstände der Version 0.4 (Icons vorerst aus dem vorhandenen Bestand). */
+/** Alle neuen Gegenstände der Version 0.4 (eigene Icons: client/src/gfx/icons_craft.ts; Rohstoff-Icons heißen `mat_…`). */
 export const CRAFT_ITEMS: ItemBase[] = [
   // ---- Monster-Rohstoffe
-  mat('mm_chitin', 'Dornchitin', 'mat_wood', 8, 'Panzerplatten und Dornen der Geschöpfe des Grünwalds. Borin nennt es „Rüstung, die noch nicht weiß, dass sie eine ist“.'),
-  mat('mm_glimmer', 'Glimmerstaub', 'mat_crystal', 14, 'Feiner, leuchtender Staub von den Bewohnern der Kristallhöhlen. Niest man hinein, sieht man es noch tagelang.'),
-  mat('mm_ashclaw', 'Aschenkralle', 'mat_ember', 22, 'Krallen und Schlacke der Glutlande. Riecht nach Lagerfeuer und schlechten Entscheidungen.'),
-  mat('mm_fang', 'Frostfang', 'mat_frost', 32, 'Zähne und Eisdornen aus dem Frostgebirge. Bleiben kalt, egal wie lange man sie in der Tasche trägt.'),
-  mat('mm_bone', 'Ahnenknochen', 'mat_rune', 44, 'Gebein und Runensplitter der Wächter der Ruinen. Liora bittet darum, sie „mit Respekt“ zu verarbeiten.'),
-  mat('mm_weave', 'Schattengespinst', 'mat_void', 62, 'Fäden aus dem, woraus die Geschöpfe des Schattenreichs gemacht sind. Wiegt weniger als nichts.'),
+  mat('mm_chitin', 'Dornchitin', 'mat_chitin', 8, 'Panzerplatten und Dornen der Geschöpfe des Grünwalds. Borin nennt es „Rüstung, die noch nicht weiß, dass sie eine ist“.'),
+  mat('mm_glimmer', 'Glimmerstaub', 'mat_glimmer', 14, 'Feiner, leuchtender Staub von den Bewohnern der Kristallhöhlen. Niest man hinein, sieht man es noch tagelang.'),
+  mat('mm_ashclaw', 'Aschenkralle', 'mat_ashclaw', 22, 'Krallen und Schlacke der Glutlande. Riecht nach Lagerfeuer und schlechten Entscheidungen.'),
+  mat('mm_fang', 'Frostfang', 'mat_fang', 32, 'Zähne und Eisdornen aus dem Frostgebirge. Bleiben kalt, egal wie lange man sie in der Tasche trägt.'),
+  mat('mm_bone', 'Ahnenknochen', 'mat_bone', 44, 'Gebein und Runensplitter der Wächter der Ruinen. Liora bittet darum, sie „mit Respekt“ zu verarbeiten.'),
+  mat('mm_weave', 'Schattengespinst', 'mat_weave', 62, 'Fäden aus dem, woraus die Geschöpfe des Schattenreichs gemacht sind. Wiegt weniger als nichts.'),
   // ---- Zutaten
-  mat('ing_berry', 'Waldbeeren', 'mat_herb', 4, 'Süß, ein wenig sauer. Tobi behauptet, er habe „nur drei“ gegessen.'),
-  mat('ing_cavecap', 'Leuchtpilz', 'food', 9, 'Schmeckt besser, als er aussieht. Leuchtet auch noch im Magen, sagt Hedda.'),
-  mat('ing_pepper', 'Feuerschote', 'food', 15, 'Wächst nur dort, wo der Boden glüht. Die Nomaden essen sie roh. Die Nomaden sind seltsam.'),
-  mat('ing_lichen', 'Gletscherflechte', 'mat_herb', 22, 'Jorund kocht daraus Tee. Der Tee schmeckt nach Flechte.'),
-  mat('ing_fig', 'Sonnenfeige', 'food', 30, 'Aus den verwilderten Gärten der Hüter. Vierhundert Jahre ohne Gärtner und immer noch süß.'),
-  mat('ing_ghostbloom', 'Geisterblüte', 'mat_herb', 42, 'Blüht nur im Schattenreich. Duftet nach etwas, an das man sich fast erinnert.'),
+  mat('ing_berry', 'Waldbeeren', 'mat_berry', 4, 'Süß, ein wenig sauer. Tobi behauptet, er habe „nur drei“ gegessen.'),
+  mat('ing_cavecap', 'Leuchtpilz', 'mat_cavecap', 9, 'Schmeckt besser, als er aussieht. Leuchtet auch noch im Magen, sagt Hedda.'),
+  mat('ing_pepper', 'Feuerschote', 'mat_pepper', 15, 'Wächst nur dort, wo der Boden glüht. Die Nomaden essen sie roh. Die Nomaden sind seltsam.'),
+  mat('ing_lichen', 'Gletscherflechte', 'mat_lichen', 22, 'Jorund kocht daraus Tee. Der Tee schmeckt nach Flechte.'),
+  mat('ing_fig', 'Sonnenfeige', 'mat_fig', 30, 'Aus den verwilderten Gärten der Hüter. Vierhundert Jahre ohne Gärtner und immer noch süß.'),
+  mat('ing_ghostbloom', 'Geisterblüte', 'mat_ghostbloom', 42, 'Blüht nur im Schattenreich. Duftet nach etwas, an das man sich fast erinnert.'),
   // ---- Essenzen
-  ...EL.map((e, i) => mat('ess_' + e, 'Essenz ' + EL_GEN[e], 'shard', 16 + i * 2, 'Gebundenes Mana ' + EL_GEN[e] + '. Zum Einschmieden, Verzaubern und Brauen.')),
+  ...EL.map((e, i) => mat('ess_' + e, 'Essenz ' + EL_GEN[e], 'mat_ess_' + e, 16 + i * 2, 'Gebundenes Mana ' + EL_GEN[e] + '. Zum Einschmieden, Verzaubern und Brauen.')),
   // ---- Bosskerne
-  mat('core_dornenmutter', 'Dornenkern', 'seal_earth', 120, 'Das verholzte Herz der Dornenmutter. Es treibt noch aus.'),
-  mat('core_kristallkoloss', 'Prismenkern', 'seal_light', 220, 'Ein Splitter aus der Brust des Kristallkolosses. Bricht das Licht in zu viele Farben.'),
-  mat('core_ignarok', 'Schlackenkern', 'seal_fire', 340, 'Ein Stück von Ignaroks Glut. Nicht in die Hosentasche stecken.'),
-  mat('core_ysolde', 'Frostkern', 'seal_water', 480, 'Der Knoten, an dem Ysoldes Muster hing. Vollkommen regelmäßig.'),
-  mat('core_archivar', 'Stiller Kern', 'seal_wind', 640, 'Der letzte Eintrag des Archivars. Man hört darin, wie jemand Luft holt und nichts sagt.'),
-  mat('core_hohlkoenig', 'Hohler Kern', 'seal_dark', 900, 'Was vom Hohlen König blieb. Er ist leichter, als er sein dürfte.'),
-  mat('mat_aether', 'Ätherstaub', 'gem', 400, 'Staub aus reinem Mana, wie er nur bei den mächtigsten Geschöpfen zurückbleibt. Borin fasst ihn nur mit der Zange an.'),
+  mat('core_dornenmutter', 'Dornenkern', 'mat_core_dornenmutter', 120, 'Das verholzte Herz der Dornenmutter. Es treibt noch aus.'),
+  mat('core_kristallkoloss', 'Prismenkern', 'mat_core_kristallkoloss', 220, 'Ein Splitter aus der Brust des Kristallkolosses. Bricht das Licht in zu viele Farben.'),
+  mat('core_ignarok', 'Schlackenkern', 'mat_core_ignarok', 340, 'Ein Stück von Ignaroks Glut. Nicht in die Hosentasche stecken.'),
+  mat('core_ysolde', 'Frostkern', 'mat_core_ysolde', 480, 'Der Knoten, an dem Ysoldes Muster hing. Vollkommen regelmäßig.'),
+  mat('core_archivar', 'Stiller Kern', 'mat_core_archivar', 640, 'Der letzte Eintrag des Archivars. Man hört darin, wie jemand Luft holt und nichts sagt.'),
+  mat('core_hohlkoenig', 'Hohler Kern', 'mat_core_hohlkoenig', 900, 'Was vom Hohlen König blieb. Er ist leichter, als er sein dürfte.'),
+  mat('mat_aether', 'Ätherstaub', 'mat_aether', 400, 'Staub aus reinem Mana, wie er nur bei den mächtigsten Geschöpfen zurückbleibt. Borin fasst ihn nur mit der Zange an.'),
   // ---- Tränke
-  use('potion_hp4', 'Quellheiltrank', 'potion_hp', 240, 'Stellt 1100 Leben wieder her.', { hp: 1100 }),
-  use('potion_mp4', 'Quellmanatrank', 'potion_mp', 220, 'Stellt 480 Mana wieder her.', { mp: 480 }),
-  use('potion_cleanse', 'Läuterungstrank', 'potion_elixir', 60, 'Beendet Brennen, Gift, Verlangsamung und alle anderen schädlichen Zustände.', { cleanse: true }),
+  use('potion_hp4', 'Quellheiltrank', 'potion_hp4', 240, 'Stellt 1100 Leben wieder her.', { hp: 1100 }),
+  use('potion_mp4', 'Quellmanatrank', 'potion_mp4', 220, 'Stellt 480 Mana wieder her.', { mp: 480 }),
+  use('potion_cleanse', 'Läuterungstrank', 'potion_cleanse', 60, 'Beendet Brennen, Gift, Verlangsamung und alle anderen schädlichen Zustände.', { cleanse: true }),
   // ---- Elixiere (eines gleichzeitig, 5 Minuten)
   elixir('elx_guard', 'Elixier der Eisenrinde', 70, 'Elixier (5 Minuten): härtet die Haut. Es kann immer nur ein Elixier wirken.', { defPct: 15 }),
   elixir('elx_speed', 'Elixier des Rückenwinds', 80, 'Elixier (5 Minuten): macht leichtfüßig. Es kann immer nur ein Elixier wirken.', { speedPct: 10, dodgeCdr: 10 }),
