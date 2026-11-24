@@ -28,6 +28,19 @@ export interface PaintableMap {
 // ---------------------------------------------------------------- Charaktere
 /** Spielbare Klassen → Sheet-Key `char_<id>` */
 export const CLASS_IDS = ['krieger', 'magier', 'waldlaeufer', 'paladin', 'schattenjaeger'] as const;
+/**
+ * Gewand-Varianten der Garderobe → Sheet-Key `char_<klasse>_<variante>` (z. B. `char_krieger_frost`), gleiches Layout wie
+ * die Klassen-Sheets. Die Varianten sind Umfärbungen von Kleidung und Rüstung (chars/outfits.ts); Haut, Haar und Waffe bleiben.
+ * Sie stehen im Manifest unter `outfits` und werden vom Client erst bei Bedarf geladen (runtime.ts → loadCharSheet).
+ */
+export const OUTFIT_IDS = [
+  'wald',      // Waldgrün und Rindenbraun, Blätterkragen
+  'glut',      // Glutrot und Kohlschwarz, glimmende Schnalle
+  'frost',     // Eisblau und Schneeweiß, Pelzkragen
+  'schatten',  // Violett und Schwarz, bleiche Schärpe
+  'gold',      // Weiß und Gold – das Prunkgewand
+] as const;
+export type OutfitId = (typeof OUTFIT_IDS)[number];
 /** NPC-Looks → Sheet-Key `npc_<id>` (gleiches Layout wie Klassen, Angriffs-Frames dürfen Idle wiederholen) */
 export const NPC_LOOKS = [
   'aelteste',      // Mirelda: alte Frau, grüne Robe, weißer Dutt, Stab
@@ -45,6 +58,7 @@ export const NPC_LOOKS = [
   'geist',         // Sen: halbtransparenter, bläulicher Wächtergeist
   'echo',          // Maelis: leuchtende, weiß-goldene Gestalt
   'kraemer',       // Pim: riesiger Rucksack, Schlapphut
+  'vael',          // Vael (und der Fremde am Brunnen): hager, Kapuze, indigoblauer Ordensmantel mit Goldborte, Laterne – wie boss_vael
 ] as const;
 
 /**
@@ -248,7 +262,29 @@ export const ITEM_ICONS = [
   'food_beeren', 'food_pilz', 'food_spiess', 'food_eintopf', 'food_feigen', 'food_tee', 'food_fest',
   'leg_krieger', 'leg_magier', 'leg_waldlaeufer', 'leg_paladin', 'leg_schattenjaeger',
   'recipe', 'buff_einklang', 'buff_morgenwacht',
+  // Endspiel & Lebendige Welt (icons_world.ts). Trophäen beginnen mit `tro_`, Schatzkarten mit `tmap_`,
+  // benannte Schmuckstücke (Unikate ohne eigenen ItemBase, siehe UNIQUE_ICONS) mit `uq_`.
+  'mat_echo', 'mat_star',
+  'tro_borkenkoenig', 'tro_fliegenhut', 'tro_tante_echo', 'tro_guenther', 'tro_meister_russ', 'tro_glucke',
+  'tro_altvater_reif', 'tro_nordlicht', 'tro_quill', 'tro_sockel', 'tro_stunde', 'tro_hohlprinz',
+  'tro_moosgrimm', 'tro_aschenmaul', 'tro_niemand',
+  'tmap_gruenwald', 'tmap_kristall', 'tmap_glut', 'tmap_frost', 'tmap_ruinen', 'tmap_schatten',
+  'elx_stern', 'elx_gelehrt', 'elx_laterne', 'elx_grube', 'elx_sieben',
+  'food_stern', 'food_kresse', 'food_fladen', 'food_wette',
+  'uq_brunnenmuenze', 'uq_schichtmarke', 'uq_feuerstein', 'uq_wettschein', 'uq_fundnummer', 'uq_docht',
+  'uq_kompass', 'uq_pfennig',
 ] as const;
+
+/**
+ * Icon-Key (ohne `item_`) für benannte Schmuckstücke, die nur als Gegenstandsinstanz mit Eigennamen existieren
+ * (Fraktions-Unikate in shared/src/data/factions.ts, Unikate der fahrenden Händlerin in shared/src/data/events.ts).
+ * Schlüssel = `ItemInstance.name`. Fehlt ein Eintrag, gilt das Icon des Basisgegenstands.
+ */
+export const UNIQUE_ICONS: Record<string, string> = {
+  'Brunnenmünze': 'uq_brunnenmuenze', 'Schichtmarke': 'uq_schichtmarke', 'Feuerstein der Sippe': 'uq_feuerstein',
+  'Ingas Wettschein': 'uq_wettschein', 'Fundnummer 4 471': 'uq_fundnummer', 'Docht vom Letzten Licht': 'uq_docht',
+  'Kompass der Umwege': 'uq_kompass', 'Vesnas Glückspfennig': 'uq_pfennig',
+};
 
 /** Skill-Glyphen 24x24. Icon = Glyphe (hell) auf elementfarbenem Hintergrund mit Rahmen. */
 export const SKILL_GLYPHS = [

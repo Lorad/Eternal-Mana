@@ -12,20 +12,20 @@ import type { BFr, BossDef } from './kit';
 import { ik } from '../mobs/kit';
 
 const GY = 89, CX = 45;
-/** Ordensmantel: Indigo, ins Violette verblichen */
-const MANT: Ramp = [mix(P.violet[0], P.blue[0], 0.5), mix(P.violet[1], P.blue[0], 0.45), mix(P.violet[1], P.blue[1], 0.5), mix(P.violet[2], P.blue[1], 0.45), mix(P.violet[3], P.steel[2], 0.45)];
+/** Ordensmantel: Indigo, ins Violette verblichen (die Rampen nutzt auch Vaels NPC-Erscheinung in chars/npcs.ts) */
+export const MANT: Ramp = [mix(P.violet[0], P.blue[0], 0.5), mix(P.violet[1], P.blue[0], 0.45), mix(P.violet[1], P.blue[1], 0.5), mix(P.violet[2], P.blue[1], 0.45), mix(P.violet[3], P.steel[2], 0.45)];
 /** Untergewand: graues Violett */
-const UNDER: Ramp = [P.shadow[0], P.shadow[1], mix(P.shadow[2], P.ash[2], 0.5), mix(P.shadow[3], P.ash[3], 0.5), mix(P.shadow[4], P.ash[4], 0.5)];
+export const UNDER: Ramp = [P.shadow[0], P.shadow[1], mix(P.shadow[2], P.ash[2], 0.5), mix(P.shadow[3], P.ash[3], 0.5), mix(P.shadow[4], P.ash[4], 0.5)];
 /** verblichenes Gold des Ordens */
-const OG: Ramp = [mix(P.gold[0], P.ash[1], 0.45), mix(P.gold[1], P.ash[3], 0.4), mix(P.gold[2], P.ash[4], 0.3), mix(P.gold[3], P.cream[2], 0.25), P.gold[4]];
-const SK: Ramp = [mix(P.skin[0], P.shadow[3], 0.5), mix(P.skin[1], P.bone[1], 0.5), mix(P.skin[2], P.bone[2], 0.5), mix(P.skin[3], P.bone[3], 0.45), mix(P.skin[4], P.bone[4], 0.5)];
-const HAIR: Ramp = [P.bone[0], P.bone[1], P.bone[2], P.bone[3], P.bone[4]];
-const LIRON: Ramp = [P.ash[0], P.steel[0], P.steel[1], P.steel[2], P.steel[3]];
+export const OG: Ramp = [mix(P.gold[0], P.ash[1], 0.45), mix(P.gold[1], P.ash[3], 0.4), mix(P.gold[2], P.ash[4], 0.3), mix(P.gold[3], P.cream[2], 0.25), P.gold[4]];
+export const SK: Ramp = [mix(P.skin[0], P.shadow[3], 0.5), mix(P.skin[1], P.bone[1], 0.5), mix(P.skin[2], P.bone[2], 0.5), mix(P.skin[3], P.bone[3], 0.45), mix(P.skin[4], P.bone[4], 0.5)];
+export const HAIR: Ramp = [P.bone[0], P.bone[1], P.bone[2], P.bone[3], P.bone[4]];
+export const LIRON: Ramp = [P.ash[0], P.steel[0], P.steel[1], P.steel[2], P.steel[3]];
 /** das fahle Licht: kühles Weiß mit einem Rest Wärme */
-const PALE: Ramp = [mix(P.steel[2], P.shadow[3], 0.4), mix(P.ice[2], P.cream[2], 0.5), mix(P.ice[3], P.cream[3], 0.5), mix(P.ice[4], P.cream[4], 0.5), WHITE];
+export const PALE: Ramp = [mix(P.steel[2], P.shadow[3], 0.4), mix(P.ice[2], P.cream[2], 0.5), mix(P.ice[3], P.cream[3], 0.5), mix(P.ice[4], P.cream[4], 0.5), WHITE];
 /** geworfener Schatten */
 const SH: Ramp = [mix(INK, P.shadow[0], 0.5), P.shadow[0], P.shadow[1], mix(P.shadow[3], P.violet[1], 0.5), P.violet[2]];
-const HOODDARK = mix(INK, MANT[0], 0.45);
+export const HOODDARK = mix(INK, MANT[0], 0.45);
 
 interface V { dy: number; lean: number; hd: Pt; bow: number; hand: Pt; free: Pt; sw: number; light: number; kn: number; ground: boolean; blink: boolean; open: boolean; heart: boolean; ph: number; f: BFr }
 
@@ -153,7 +153,7 @@ function sleeve(l: Px, sh: Pt, hand: Pt, dir: number, lit: number): void {
 }
 
 /** verblichene Stola (3) */
-const STOLE: Ramp = [mix(MANT[3], P.bone[1], 0.5), mix(MANT[4], P.bone[2], 0.55), mix(MANT[4], P.bone[3], 0.6)];
+export const STOLE: Ramp = [mix(MANT[3], P.bone[1], 0.5), mix(MANT[4], P.bone[2], 0.55), mix(MANT[4], P.bone[3], 0.6)];
 const ROPE = mix(P.tan[2], P.ash[3], 0.4), ROPE_D = mix(P.tan[1], P.ash[2], 0.4);
 
 function figure(p: Px, z: V): void {

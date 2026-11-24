@@ -23,6 +23,10 @@ _24.11.2026_
 - **Jahreszeiten:** Frühling, Sommer, Herbst und Winter (je 20 Minuten) verändern Wetter, Licht, Abbaustellen und was sich draußen zeigt.
 - **Sternsplitter:** Neuer Rohstoff für drei Runen und neue Rezepte.
 
+### Grafik
+- Eigene Symbole für Echo-Fragmente, Sternsplitter, alle 15 Trophäen, die sechs Schatzkarten, neue Speisen und Elixiere sowie die Schmuckstücke der Fraktionen.
+- Vael sieht im Gespräch jetzt aus wie im Kampf: Kapuze, Mantel, Laterne.
+
 ### Behoben
 - Einen abgelegten Titel zeigt das Spiel jetzt sofort nicht mehr an.
 

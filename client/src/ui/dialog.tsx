@@ -11,7 +11,7 @@ import type { QuestDef } from '../../../shared/src/data/quests';
 import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
-import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, modEntries, send, sfx } from './common';
+import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, itemIconKey, modEntries, send, sfx } from './common';
 import { StationOptions } from './craft';
 import { KreisOption } from './endgame';
 import { HomeOption } from './home';
@@ -283,7 +283,7 @@ export function Upgrade({ npc, char, back }: { npc: string; char: CharData; back
         {it ? (
           <>
             <div class="upg-title">
-              <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={'item_' + ITEMS[it.base].icon} /></span>
+              <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={itemIconKey(it)} /></span>
               <div>
                 <b style={{ color: RARITY_COLOR[it.rarity] }}>{itemName(it)}</b>
                 <div class="upg-arrow">{maxed ? 'Höchste Verbesserungsstufe erreicht' : <>+{it.up} <i>➜</i> <b>+{it.up + 1}</b></>}</div>

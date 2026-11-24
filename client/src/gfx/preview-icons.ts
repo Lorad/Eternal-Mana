@@ -9,7 +9,7 @@ import { ITEM_ICONS, SKILL_GLYPHS } from './spec';
 const q = new URLSearchParams(location.search);
 const only = q.get('only'), bg = '#' + (q.get('bg') ?? '1b2036'), skills = q.get('skills') === '1';
 const root = document.getElementById('root')!, nav = document.getElementById('nav')!;
-for (const [t, h] of [['alle', '?'], ['Handwerk', '?only=mat_,potion_,elx_,food_,leg_,recipe,buff_'], ['Essenzen & Kerne', '?only=mat_ess,mat_core'], ['heller Grund', '?bg=d8d2c2'], ['mit Fähigkeiten', '?skills=1']]) { const a = document.createElement('a'); a.href = h; a.textContent = t; nav.append(a); }
+for (const [t, h] of [['alle', '?'], ['Welt (0.5/0.6)', '?only=mat_echo,mat_star,tro_,tmap_,elx_stern,elx_gelehrt,elx_laterne,elx_grube,elx_sieben,food_stern,food_kresse,food_fladen,food_wette,uq_'], ['Handwerk', '?only=mat_,potion_,elx_,food_,leg_,recipe,buff_'], ['Essenzen & Kerne', '?only=mat_ess,mat_core'], ['heller Grund', '?bg=d8d2c2'], ['mit Fähigkeiten', '?skills=1']]) { const a = document.createElement('a'); a.href = h; a.textContent = t; nav.append(a); }
 
 const keys: string[] = ITEM_ICONS.map((n) => 'item_' + n);
 if (skills) for (const g of SKILL_GLYPHS) keys.push('skill_' + g);

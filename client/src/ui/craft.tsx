@@ -17,7 +17,7 @@ import { SETS } from '../../../shared/src/data/sets';
 import { ELEMENT_INFO, reactionsWith } from '../../../shared/src/elements';
 import { SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance } from '../../../shared/src/types';
-import { Btn, ELEMENT_CSS, Gold, INV_SIZE, Icon, ItemSlot, Tabs, Toggle, Window, cx, fmtMod, modEntries, send, sfx } from './common';
+import { Btn, ELEMENT_CSS, Gold, INV_SIZE, Icon, ItemSlot, Tabs, Toggle, Window, cx, fmtMod, itemIconKey, modEntries, send, sfx } from './common';
 import { Attune } from './endgame';
 import { modsLine } from './itemextra';
 import { riftUnlocked } from '../../../shared/src/data/rifts';
@@ -101,7 +101,7 @@ export function useGear(char: CharData, filter: (it: ItemInstance) => boolean): 
 export function ItemTitle({ it, sub }: { it: ItemInstance; sub: ComponentChildren }) {
   return (
     <div class="upg-title">
-      <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={'item_' + ITEMS[it.base].icon} /></span>
+      <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={itemIconKey(it)} /></span>
       <div><b style={{ color: RARITY_COLOR[it.rarity] }}>{itemName(it)}</b><div class="upg-arrow">{sub}</div></div>
     </div>
   );

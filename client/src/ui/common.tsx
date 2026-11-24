@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio';
 import type { SfxName } from '../audio';
 import { iconUrl, portraitUrl } from '../gfx/runtime';
+import { UNIQUE_ICONS } from '../gfx/spec';
 import { net } from '../net/net';
 import { onSettingsChange, settings } from '../state/settings';
 import { store } from '../state/store';
@@ -14,6 +15,11 @@ import type { ItemBase } from '../../../shared/src/data/items';
 import { MOD_LABEL } from '../../../shared/src/types';
 import type { CharData, ClientMsg, Element, ItemInstance, ModKey, Mods, Slot } from '../../../shared/src/types';
 import { ItemExtras } from './itemextra';
+
+/** Symbol eines Gegenstands; benannte Unikate (Fraktionen, Fahrende Händlerin) tragen ein eigenes. */
+export function itemIconKey(it: { base: string; name?: string }): string {
+  return 'item_' + ((it.name && UNIQUE_ICONS[it.name]) || ITEMS[it.base]?.icon || 'scroll');
+}
 
 // ------------------------------------------------------------------ Hilfsfunktionen
 export function sfx(n: SfxName) { try { audio.playSfx(n); } catch { /* Audio noch gesperrt */ } }
@@ -233,7 +239,7 @@ export function ItemSlot(p: SlotProps) {
       onContextMenu={e => { e.preventDefault(); if (it) p.onAlt?.(); }}
       onMouseEnter={show} onFocus={show}
       onMouseLeave={() => ref.current && hideTip(ref.current)} onBlur={() => ref.current && hideTip(ref.current)}>
-      {it && b ? <Icon k={'item_' + b.icon} size={p.size === 'sm' ? 36 : 48} /> : p.placeholder ? <Icon k={p.placeholder} class="ghost-icon" size={p.size === 'sm' ? 36 : 48} /> : null}
+      {it && b ? <Icon k={itemIconKey(it)} size={p.size === 'sm' ? 36 : 48} /> : p.placeholder ? <Icon k={p.placeholder} class="ghost-icon" size={p.size === 'sm' ? 36 : 48} /> : null}
       {it && (it.qty ?? 1) > 1 && <span class="slot-qty">{it.qty}</span>}
       {it && it.up > 0 && <span class="slot-up">+{it.up}</span>}
       {it?.element && <span class="slot-el" style={{ background: ELEMENT_CSS[it.element] }} />}
@@ -262,7 +268,7 @@ export function ItemDetails({ item: it, char, equipped, price, compare = true }:
   return (
     <div class="tip-item">
       <div class="tip-head">
-        <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={'item_' + b.icon} size={48} /></span>
+        <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={itemIconKey(it)} size={48} /></span>
         <div>
           <b class="tip-name" style={{ color: RARITY_COLOR[it.rarity] }}>{itemName(it)}{(it.qty ?? 1) > 1 ? ` ×${it.qty}` : ''}</b>
           <div class="tip-sub">{gear ? RARITY_NAME[it.rarity] + ' · ' : ''}{itemTypeName(b)}</div>
