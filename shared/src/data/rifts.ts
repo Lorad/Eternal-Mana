@@ -104,10 +104,10 @@ export const ECHO_BOSS: Record<string, EchoBossDef> = {
     intro: '„Verzeiht. Das bin nicht ich – das ist nur, was die Tür von mir behalten hat. Es ist gründlicher als ich.“' },
 };
 /** Das Echo eines Bosses auf der Gegnerstufe `lvl`: einheitliche Stärke, stirbt wie ein gewöhnlicher Boss, optional mit dem Element der Woche. */
-export function echoBossDef(bossId: string, lvl: number, o: { el?: Element; hpMul?: number } = {}): BossDef {
+export function echoBossDef(bossId: string, lvl: number, o: { el?: Element; hpMul?: number; dmgMul?: number } = {}): BossDef {
   const b = BOSSES[bossId], e = ECHO_BOSS[bossId], E = CFG.rift.echo;
   const level = lvl + E.levelPlus;
-  return { ...b, name: e?.name ?? 'Echo: ' + b.name, level, hpMul: E.hpMul * (o.hpMul ?? 1), dmgMul: E.dmgMul, defMul: E.defMul,
+  return { ...b, name: e?.name ?? 'Echo: ' + b.name, level, hpMul: E.hpMul * (o.hpMul ?? 1), dmgMul: E.dmgMul * (o.dmgMul ?? 1), defMul: E.defMul,
     element: o.el ?? b.element, resist: o.el ? [o.el] : b.resist, weak: o.el ? [counterOf(o.el)!] : b.weak,
     xp: Math.round(CFG.enemy.xp(level) * E.xpMul), gold: Math.round(CFG.enemy.gold(level) * E.goldMul),
     intro: e?.intro ?? b.intro, spared: undefined, fightName: undefined, outro: undefined, awaken: undefined, calm: undefined };

@@ -313,11 +313,13 @@ describe('Skalierung und Belohnung', () => {
       expect(m.lvl).toBe(CFG.rift.mobLevel(stufe));
       expect(m.lvl).toBeGreaterThan(CFG.player.maxLevel);
       for (const o of z.mobs.values()) if (!o.boss) expect(o.lvl).toBe(CFG.rift.mobLevel(stufe));
-      expect(m.maxHp).toBe(Math.round(CFG.enemy.hp(m.lvl) * m.def.hpMul));
+      expect(m.maxHp).toBe(Math.round(Math.round(CFG.enemy.hp(m.lvl) * m.def.hpMul) * CFG.rift.hpMul(stufe)));
+      expect(m.baseDmg).toBeCloseTo(CFG.enemy.dmg(m.lvl) * m.def.dmgMul * CFG.rift.dmgMul(stufe), 5);
       const b = z.boss!;
       expect(b.def.name).toBe(ECHO_BOSS.dornenmutter.name);
       expect(b.mob.lvl).toBe(CFG.rift.mobLevel(stufe) + CFG.rift.echo.levelPlus);
-      expect(b.mob.maxHp).toBe(Math.round(CFG.enemy.hp(b.mob.lvl) * CFG.rift.echo.hpMul));
+      expect(b.mob.maxHp).toBe(Math.round(CFG.enemy.hp(b.mob.lvl) * CFG.rift.echo.hpMul * CFG.rift.hpMul(stufe)));
+      expect(b.mob.baseDmg).toBeCloseTo(CFG.enemy.dmg(b.mob.lvl) * CFG.rift.echo.dmgMul * CFG.rift.dmgMul(stufe), 5);
       expect(b.mob.info().tint).toBe(ECHO_TINT);
       expect(b.mob.info().name).toBe(ECHO_BOSS.dornenmutter.name);
       expect(m.lvl).toBeGreaterThan(prev.lvl); expect(m.maxHp).toBeGreaterThan(prev.hp); expect(m.baseDmg).toBeGreaterThan(prev.dmg); expect(b.mob.maxHp).toBeGreaterThan(prev.boss);
@@ -986,7 +988,7 @@ describe('Prüfung der Sieben', () => {
       const b = z.boss!;
       expect(b.def.id).toBe(TRIAL_BOSSES[i]);
       expect(b.def.name).toBe(ECHO_BOSS[TRIAL_BOSSES[i]].name);
-      expect(b.mob.maxHp).toBe(Math.round(CFG.enemy.hp(b.def.level) * CFG.rift.echo.hpMul * T7.hpMul));
+      expect(b.mob.maxHp).toBe(Math.round(CFG.enemy.hp(b.def.level) * CFG.rift.echo.hpMul * CFG.rift.hpMul(T7.stufe) * T7.hpMul));
       expect(b.mob.info().tint).toBe(ECHO_TINT);
       fight(t, z);
       if (b.def.id === 'vael') expect(summoned(z, 'wachschatten')).toBe(2);

@@ -180,6 +180,9 @@ export const CFG = {
     /** Gegnerstufe und Gegenstandsstufe der Beute je Riss-Stufe (oberhalb der Höchststufe 40) */
     mobLevel: (stufe: number) => 40 + 2 * stufe,
     ilvl: (stufe: number) => 40 + stufe,
+    /** zusätzlich zur Gegnerstufe: Faktor auf Leben und Schaden aller Gegner und des Echos (Stufe 1 = unverändert) */
+    hpMul: (stufe: number) => 1 + 0.03 * (stufe - 1),
+    dmgMul: (stufe: number) => 1 + 0.025 * (stufe - 1),
     /** Anzahl der Modifikatoren */
     modCount: (stufe: number) => (stufe >= 20 ? 3 : stufe >= 10 ? 2 : 1),
     /** Richtzeit: Grundzeit + Zeit je Raum des Dungeons + Zuschlag je Stufe (s) */

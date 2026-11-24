@@ -179,7 +179,8 @@ export const Rift = {
 
   // ================================================================== Aufbau der Instanz
   bossDef(run: RiftRun): BossDef {
-    const d = echoBossDef(run.bosses[run.bossIdx], run.lvl, { el: run.el, hpMul: run.trial ? CFG.rift.trial.hpMul : 1 });
+    const R = CFG.rift;
+    const d = echoBossDef(run.bosses[run.bossIdx], run.lvl, { el: run.el, hpMul: R.hpMul(run.stufe) * (run.trial ? R.trial.hpMul : 1), dmgMul: R.dmgMul(run.stufe) });
     return run.mods.has('hast') ? { ...d, speed: d.speed * CFG.rift.hast.speed } : d;
   },
   /** Wird am Ende des Zone-Konstruktors aufgerufen: Gegner nach Stufe und Modifikatoren, Regeln der Instanz. */
@@ -211,10 +212,12 @@ export const Rift = {
       }
     });
   },
-  /** Wendet die Modifikatoren des Risses auf einen Gegner an (auch auf später beschworene). */
+  /** Wendet Stufe und Modifikatoren des Risses auf einen Gegner an (auch auf später beschworene). */
   tune(zone: Zone, m: Mob) {
     const run = zone.rift!, R = CFG.rift, mods = run.mods;
-    if (mods.has('horde')) { m.maxHp = Math.max(1, Math.round(m.maxHp * R.horde.hp)); m.hp = m.maxHp; m.baseDmg *= R.horde.dmg; m.dmg = m.baseDmg; }
+    const horde = mods.has('horde');
+    m.maxHp = Math.max(1, Math.round(m.maxHp * R.hpMul(run.stufe) * (horde ? R.horde.hp : 1))); m.hp = m.maxHp;
+    m.baseDmg *= R.dmgMul(run.stufe) * (horde ? R.horde.dmg : 1); m.dmg = m.baseDmg;
     if (mods.has('hast')) { m.speed *= R.hast.speed; m.cdMul = R.hast.cd; }
     if (run.el) { m.element = run.el; m.resistO = [run.el]; const c = counterOf(run.el); m.weakO = c ? [c] : []; }
   },
