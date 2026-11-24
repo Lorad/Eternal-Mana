@@ -192,6 +192,8 @@ export const Rift = {
     if (mods.has('duerre')) { zone.mod.mpRegen = R.duerre.regen; zone.mod.mpGain = R.duerre.gain; }
     if (mods.has('finsternis')) zone.mod.aggro = R.finsternis.aggro;
     if (zone.boss) zone.boss.mob.tint = ECHO_TINT;
+    // jeder Ausgang der Instanz führt zurück zum Riss-Stein
+    for (const o of zone.objs.values()) if (o.type === 'exit') o.props = { ...o.props, to: run.home.zone, label: 'Quellhain', req: undefined, reqMsg: undefined };
     if (run.trial) return; // Prüfung der Sieben: nur die Echos, kein Weg dorthin
     const eliteCh = mods.has('erwacht') ? R.erwacht.eliteChance : R.eliteChance;
     const put = (s: MobSpawn, idx: number, x: number, y: number, elite: boolean) => {
@@ -317,7 +319,8 @@ export const Rift = {
     }
     zone.addDynamicObj('chest', boss.cx, boss.cy - 3 * TILE, { tier: 'gold', rift: 1 });
     if (bonus) zone.addDynamicObj('chest', boss.cx + 3 * TILE, boss.cy - 3 * TILE, { tier: 'gold', rift: 2, bonus: true });
-    zone.addDynamicObj('exit', boss.cx, boss.cy + 3 * TILE, { to: run.home.zone, look: 'portal', label: 'Quellhain', r: 13 });
+    // das Portal zurück wird bewusst betreten (nicht versehentlich, bevor die Truhe geöffnet ist)
+    zone.addDynamicObj('exit', boss.cx, boss.cy + 3 * TILE, { to: run.home.zone, look: 'portal', label: 'Quellhain', manual: true, verb: 'Riss verlassen', r: 0 });
     this.broadcast(zone);
     game.saveZonePlayers(zone);
   },

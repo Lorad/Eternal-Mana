@@ -235,8 +235,8 @@ function KreisTab({ char, npc }: { char: CharData; npc?: string }) {
       <div class="eg-detail card">
         <h3>Neuer Kreis</h3>
         <p class="note">Die Geschichte beginnt von vorn – mit allem, was du kannst. So lassen sich alle drei Enden erleben. {k >= CFG.kreis.max
-          ? <>Härter als im {KREIS_NAME[CFG.kreis.max]} wird die Welt nicht mehr.</>
-          : <>Im <b>{KREIS_NAME[next]}</b> ist kein Gegner schwächer als Stufe <b>{kreisLevel(1, next)}</b>, Bosse und Beute steigen mit.</>}</p>
+          ? <>Härter, als sie jetzt ist, wird die Welt nicht mehr.</>
+          : <><b>{KREIS_NAME[next]}:</b> Kein Gegner ist schwächer als Stufe <b>{kreisLevel(1, next)}</b>, Bosse und Beute steigen mit.</>}</p>
         <div class="eg-cols">
           <div><div class="sec-title">Das bleibt</div><ul class="eg-keep">{KEPT.map(s => <li>{s}</li>)}</ul></div>
           <div><div class="sec-title">Das beginnt neu</div><ul class="eg-reset">{RESET.map(s => <li>{s}</li>)}</ul></div>

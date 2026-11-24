@@ -51,7 +51,7 @@ function spendQuell(p: Player, track: string) {
   if (n >= CFG.quell.trackCap) return reject(p, `${t.name} ist bereits voll ausgebaut.`);
   q.pts[t.id] = n + 1;
   p.recalc(); p.sync('quell');
-  p.toast(`${t.name}: +${quellBonus(t, n + 1)} ${MOD_LABEL[t.mod]} (${n + 1}/${CFG.quell.trackCap})`, 'good');
+  p.toast(`${t.name}: +${String(quellBonus(t, n + 1)).replace('.', ',')} ${MOD_LABEL[t.mod]} (${n + 1}/${CFG.quell.trackCap})`, 'good');
   p.pev.push({ k: 'sfx', n: 'buff' });
 }
 

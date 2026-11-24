@@ -1277,7 +1277,7 @@ export class GameScene extends Phaser.Scene {
         case 'lore': text = o.state ? 'Erneut lesen' : 'Lesen'; break;
         case 'shrine': text = o.state === 2 ? 'Erinnerung erneut ansehen' : 'Hüterschrein berühren'; break;
         case 'rift': text = `${ECHOES[o.tag!]?.name ?? 'Riss'} berühren`; break;
-        case 'exit': if (o.props?.manual) text = `Hinabsteigen: ${o.props.label ?? ''}`; break;
+        case 'exit': if (o.props?.manual) text = `${o.props.verb ?? 'Hinabsteigen'}: ${o.props.label ?? ''}`; break;
         case 'cookfire': text = 'Am Feuer kochen'; break;
         case 'riftstone': text = 'Riss-Stein berühren'; break;
       }

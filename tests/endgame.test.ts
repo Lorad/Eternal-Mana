@@ -370,8 +370,11 @@ describe('Skalierung und Belohnung', () => {
       if (w) { t.send({ t: 'equip', uid: w.uid }); expect(Object.values(t.p.char.equip).some(e => e?.uid === w.uid)).toBe(true); }
       const exit = [...z.objs.values()].find(o => o.type === 'exit' && o.dynamic)!;
       expect(exit.props!.label).toBe('Quellhain');
+      // das Portal nimmt niemanden versehentlich mit: erst beim Berühren geht es zurück
       t.p.exitImmuneUntil = 0; t.p.x = exit.x; t.p.y = exit.y;
-      sim.step(0.1);
+      sim.step(0.3);
+      expect(t.p.zone).toBe(z);
+      t.send({ t: 'interact', id: exit.id });
       expect(t.p.zone.id).toBe('gruenwald');
       expect(t.p.zone.rift).toBeNull();
     }
