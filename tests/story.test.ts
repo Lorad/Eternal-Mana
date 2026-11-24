@@ -517,6 +517,15 @@ describe('Story-Engine (Server)', () => {
     await b.sleep(120);
     expect(b.char.quests.x_karl?.s).toBe('active');
     expect((await b.dlgOpen('hedda', 'hedda_karl')).err).toBe(1);
+    // Ortsziel zählt auch, wenn die Quest erst beginnt, während man schon dort steht
+    await b.tp('gruenwald');
+    const w = placePos('weiher_bau');
+    await b.warp(w.x, w.y + 12);
+    await b.sleep(700);
+    expect(b.char.flags['v:weiher_bau']).toBeUndefined();
+    await b.dev('/qa c_ayla_2');
+    for (let i = 0; i < 8 && !b.char.flags['v:weiher_bau']; i++) await b.sleep(200);
+    expect(b.char.flags['v:weiher_bau']).toBe(1);
     b.close();
   });
 
