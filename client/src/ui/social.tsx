@@ -27,12 +27,12 @@ function useClock(on = true) {
 const secLeft = (until: number) => Math.max(0, Math.ceil((until - performance.now()) / 1000));
 const kreisName = (k: number) => KREIS_NAME[k] ?? `Kreis ${k + 1}`;
 
-/** Wo steckt dieses Gruppenmitglied? Gebiet, Mana-Riss mit Stufe, Welt eines anderen Kreises. */
-export function whereIs(m: PartyMember): string {
+/** Wo steckt dieses Gruppenmitglied? Gebiet, Mana-Riss mit Stufe, Welt eines anderen Kreises. `short`: für den schmalen Rahmen im HUD. */
+export function whereIs(m: PartyMember, short = false): string {
   if (m.away) return 'Platz wird freigehalten';
   if (!m.online) return 'Verbindung getrennt';
   const zone = ZONES[m.zone]?.name ?? m.zone;
-  if (m.rift) return `Mana-Riss ${zone} · Stufe ${m.rift}`;
+  if (m.rift) return short ? `Mana-Riss · Stufe ${m.rift}` : `Mana-Riss ${zone} · Stufe ${m.rift}`;
   const k = /#k(\d+)$/.exec(m.inst ?? '');
   return k ? `${zone} · ${kreisName(+k[1])}` : zone;
 }
@@ -54,13 +54,13 @@ export function PartyFrames() {
       {others.map(m => {
         const apart = !!me && m.online && m.inst !== me.inst;
         return (
-          <button type="button" key={m.charId} class={cx('party-frame', !m.online && 'offline', m.dead && 'down')} title="Gruppenmitglied – klicken für Aktionen"
+          <button type="button" key={m.charId} class={cx('party-frame', !m.online && 'offline', m.dead && 'down')} title={`${m.name} · ${whereIs(m)} – klicken für Aktionen`}
             onClick={() => (m.id ? openPlayerMenu(m) : togglePanel('party'))}>
             <Face k={'char_' + m.cls} size={32} />
             <div class="grow">
               <div class="party-name"><b>{m.lead && <i class="pf-lead" title="führt die Gruppe an">★</i>}{m.name}</b><span>St. {m.level}</span></div>
               <Bar kind="hp" v={m.online ? m.hp : 0} max={m.maxHp} label={false} class="thin" />
-              <div class={cx('party-zone', apart && 'apart')}>{m.dead ? (apart ? 'Gefallen · ' + whereIs(m) : 'Gefallen – hilf auf!') : (apart ? '↗ ' : '') + whereIs(m)}</div>
+              <div class={cx('party-zone', apart && 'apart')}>{m.dead ? (apart ? 'Gefallen · ' + whereIs(m, true) : 'Gefallen – hilf auf!') : (apart ? '↗ ' : '') + whereIs(m, true)}</div>
             </div>
           </button>
         );

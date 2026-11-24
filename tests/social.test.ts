@@ -1076,9 +1076,12 @@ describe('Wiederverbindung', () => {
     // ein Fenster löst das andere ab (gleiches Profil): der Charakter bleibt, die Gruppe auch
     party = group(a, b);
     const pa: Player = a.p;
+    openTrade(a, b);                                                       // … ein offener Handel endet dabei (das neue Fenster weiß nichts davon)
     sim.reconnect(a);
     expect(a.p).toBe(pa); expect(a.p.party).toBe(party); expect(a.p.linkdead).toBe(false);
     expect(partyOf(a).length).toBe(2);
+    expect(last(b, 'trade')).toMatchObject({ tr: null });
+    expect(Social.state(sim.game).trades.size).toBe(0);
     expect(Rift.runOf(sim.game, a.p)).toBeUndefined();
     noGhosts();
     sim.clear();

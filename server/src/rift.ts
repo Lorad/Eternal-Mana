@@ -326,7 +326,7 @@ export const Rift = {
         const unlocked = next > st.stufe;
         if (unlocked) st.stufe = next;
         st.seed++; // neue Modifikatoren für die nächsten Risse dieses Charakters
-        p.toast(`Riss geschlossen in ${fmtTime(sec)}${bonus ? ' – unter der Richtzeit, eine Bonustruhe erscheint!' : ` (Richtzeit ${fmtTime(run.par)})`}.${unlocked ? ` Stufe ${next} ist freigeschaltet.` : ''}`, 'good');
+        p.toast(`Riss geschlossen in ${fmtTime(sec)}${bonus ? ' – unter der Richtzeit, eine Bonustruhe erscheint' : ` (Richtzeit ${fmtTime(run.par)})`}.${unlocked ? ` Stufe ${next} ist freigeschaltet.` : ''}`, 'good');
       }
       p.sync('rift');
     }

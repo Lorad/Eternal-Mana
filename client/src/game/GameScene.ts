@@ -1400,8 +1400,8 @@ export class GameScene extends Phaser.Scene {
       const d = Math.hypot(p.x - me.x, p.y - me.y);
       if (d < bd + 6) { bd = d; best = p; prompt = `${p.info.name} wiederbeleben`; }
     }
-    // 0.7: steht sonst nichts näher, gilt Interagieren dem nächsten Mitspieler (Gruppe, Handel, Ansehen)
-    if (!best) for (const p of this.players.values()) {
+    // 0.7: steht sonst nichts näher, gilt Interagieren dem nächsten Mitspieler (Gruppe, Handel, Ansehen) – nicht mitten im Kampf
+    if (!best && ![...this.mobs.values()].some(m => m.seen && Math.hypot(m.x - me.x, m.y - me.y) < 200)) for (const p of this.players.values()) {
       const d = Math.hypot(p.x - me.x, p.y - me.y);
       if (d < bd) { bd = d; best = p; prompt = `${p.info.name}: Gruppe · Handel · Ansehen`; }
     }

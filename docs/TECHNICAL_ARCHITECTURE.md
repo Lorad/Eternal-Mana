@@ -131,6 +131,33 @@ Snapshots.
 - **Werkzeuge:** `scripts/world-income.ts` (Einkommen je Stunde vorher/nachher), `tests/e2e/welt.mjs` (Browser-Durchlauf),
   Dev-Befehle `/event`, `/wboss`, `/rare`, `/season`, `/rep`, `/enc`, `/tmap`, `/welt aus|an`.
 
+## Gemeinsam (0.7)
+
+- **Regeln und Zahlen:** `shared/src/social.ts` (was handelbar ist, Platzrechnung eines Tauschs, welche Quests sich teilen lassen,
+  die Gruppenregeln als Text für das Gruppenfenster), `CFG.social`. Server und Oberfläche benutzen dieselben Funktionen.
+- **Server:** `server/src/social/` – `index.ts` ist der einzige Einstieg für `Game`, `Zone`, `BossCtl` und `Rift` (Nachrichten,
+  Takt, Verbindung verloren/zurück, Welt betreten/verlassen, Zonenwechsel, Gruppentruhe); daneben `party.ts` (Gruppe: Anführer
+  `Party.lead`, Einladungen mit Frist, Nachfolge, freigehaltene Plätze `Party.seats`, Riss- und Kreis-Regeln, aufgeschobener
+  Weltwechsel im Bosskampf), `trade.ts` (Handel), `share.ts` (Quest teilen), `reward.ts` (Gruppentruhe, Ansehen). Der Zustand
+  hängt per WeakMap am `Game` (`state.ts`) und wird nie gespeichert.
+- **Handel:** Angebote sind `uid → Menge` je Seite; angeboten wird nur aus dem Inventar. Jede Änderung löscht Sperren und
+  Bestätigungen und startet eine kurze Sperrfrist. Viermal je Sekunde und beim Abschluss prüft der Server Abstand, Instanz, Tod,
+  Verbindung und ob das Angebotene noch da ist. Der Abschluss prüft erst alles (Besitz, Menge, Gold, Platz beider Seiten), führt
+  dann aus und speichert beide Charaktere in EINER Transaktion (`Db.saveChars`); scheitert das Speichern, werden beide Inventare
+  zurückgesetzt. Geteilte Stapel bekommen eine neue `uid`.
+- **Wertung:** `Zone.recipients` (Beteiligte plus deren Gruppenmitglieder im Umkreis `CFG.combat.partyXpRadius`) gilt für
+  Erfahrung, Kill-Zähler, Questziele, Ereignisse, seltene Monster und Weltbosse; Echos der Geschichte nutzen denselben Umkreis.
+  Bosssiege und Riss-Abschlüsse zählen für alle in der Instanz.
+- **Protokoll (nur Zusätze):** `party` kennt zusätzlich `promote`, `kick`, `disband`, `travel`; `PartyMember` trägt optional
+  `lead`, `dead`, `kreis`, `inst`, `rift`, `away`; `party.invite` ist `PartyInvite | null` (null = erloschen). Neu: `trade`
+  (Client: request/accept/decline/add/remove/gold/lock/unlock/confirm/cancel; Server: `tr` = Stand oder null, `req` = Anfrage),
+  `qShare` / `qShareAns` / `qOffer`, `inspect`. Gruppentruhen sind dynamische Truhen mit `props.group`.
+- **Oberfläche:** `client/src/ui/social.tsx` (Gruppenrahmen, Anfragen, Spieler-Menü, Handelsfenster, Ansehen),
+  `panels/party.tsx` (Gruppenfenster), `styles/social.css`. Die Spielszene öffnet das Spieler-Menü über *Interagieren* neben
+  einem Mitspieler oder per Klick auf die Figur (nicht im Kampf).
+- **Werkzeuge:** `tests/e2e/coop.mjs` (zwei echte Browser), `scripts/load-check.ts` (Lastprobe mit Bots: Taktdauer, Snapshot-Größe),
+  Dev-Befehl `/zu <Name> [dx] [dy]`.
+
 ## Client
 
 - **GameScene** (`client/src/game/`): malt den Boden einmalig in 512-px-Kacheln auf Canvas-Texturen, legt die animierte
@@ -255,5 +282,7 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
   (`tests/helpers/sim.ts`: Nachrichten über `Game.onMessage`, Zeit von Hand, Zufall setzbar).
 - `tests/world.test.ts` – Lebendige Welt: Ruf und Freischaltungen, jedes Ereignis von Ansage bis Aufräumen, Weltboss,
   seltene Monster, Schatzkarten, Begegnungen, Tagesabläufe, Jahreszeiten, leere Zonen; ein Durchlauf gegen einen echten Server.
+- `tests/social.test.ts` – Gemeinsam: Regeln der Gruppe (Anführer, Fristen, Nachfolge, Riss, Kreis), Handel (Ablauf, jede Ablehnung,
+  Exploits, Atomarität, Abbruchwege), Quest teilen, Gruppentruhe, Wertung, Wiederverbindung und freigehaltene Plätze.
 - `scripts/balance-sim.ts` – Kampfsimulation für Vorher/Nachher-Vergleiche (`--ausbau` rechnet den Handwerks-Ausbau mit).
 - `tests/e2e/smoke.mjs` – Browser-Durchlauf mit Playwright: Menü → Charakter erstellen → Welt → bewegen → angreifen.

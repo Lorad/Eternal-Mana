@@ -385,7 +385,8 @@ export class Game {
     else if (devCraft(this, p, cmd, a)) { /* Handwerks-Befehle: server/src/craft.ts */ }
     else if (devEndgame(this, p, cmd, a)) { /* Endspiel-Befehle: server/src/endgame.ts */ }
     else if (World.dev(this, p, cmd, a)) { /* Lebendige Welt: server/src/world/index.ts */ }
-    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /rissmod id [dungeon] [stufe], /quell n, /echo n, /kreis [n], /pruefung · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an');
+    else if (Social.dev(this, p, cmd, a)) { /* Gemeinsam: server/src/social/index.ts */ }
+    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /rissmod id [dungeon] [stufe], /quell n, /echo n, /kreis [n], /pruefung · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an · Gemeinsam: /zu name [dx] [dy]');
   }
 
   // ------------------------------------------------------------------ Charakteraktionen

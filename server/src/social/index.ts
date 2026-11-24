@@ -40,7 +40,12 @@ export const Social = {
   onZoneChange(g: Game, p: Player) { const st = ss(g); if (st.trades.has(p) || st.tradeReq.size) dropTrades(g, p, 'Ihr seid nicht mehr am selben Ort.'); },
   /** Verbindung verloren (der Charakter bleibt noch in der Welt) */
   onDisconnect(g: Game, p: Player) { dropTrades(g, p, `${p.name} hat die Verbindung verloren.`); dropShares(g, p); partyDisconnect(g, p); },
-  onReconnect(g: Game, p: Player) { p.send({ t: 'trade', tr: null, req: null }); partyReconnect(g, p); },
+  /** Dieselbe Figur hängt an einer neuen Verbindung (auch: zweites Fenster löst das erste ab) – das neue Fenster beginnt ohne offene Anfragen */
+  onReconnect(g: Game, p: Player) {
+    dropTrades(g, p, `${p.name} hat sich neu verbunden.`); dropShares(g, p);
+    p.send({ t: 'trade', tr: null, req: null });
+    partyReconnect(g, p);
+  },
   /** Der Charakter betritt die Welt (frisch geladen) */
   onEnter(g: Game, p: Player) { partyEnter(g, p); },
   /** Der Charakter verlässt die Welt */
@@ -55,4 +60,14 @@ export const Social = {
   mayOpenChest(z: Zone, p: Player, o: Obj) { return mayOpenGroupChest(z, p, o); },
   chestLoot(z: Zone, p: Player) { groupChestLoot(z, p); },
   state: ss,
+  /** Entwickler-Befehl (nur EM_DEV=1): /zu <Name> [dx] [dy] – springt neben einen anderen Spieler (auch in dessen Instanz) */
+  dev(g: Game, p: Player, cmd: string, a: string[]): boolean {
+    if (cmd !== 'zu') return false;
+    const t = [...g.players.values()].find(q => q !== p && q.name.toLowerCase() === (a[0] ?? '').toLowerCase());
+    if (!t) { p.toast('Dev: /zu <Name> [dx] [dy] – springt neben einen anderen Spieler'); return true; }
+    const pos = { x: t.x + (+a[1] || 0), y: t.y + (+a[2] || 0) };
+    if (t.zone !== p.zone) g.moveTo(p, t.zone, pos);
+    else { p.x = pos.x; p.y = pos.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
+    return true;
+  },
 };
