@@ -25,10 +25,13 @@ function states(z: Zone): Map<string, RareState> {
   const zs = zw(z);
   if (!zs.rares) {
     zs.rares = new Map();
-    for (const def of RARE_LIST) if (def.zone === z.id) zs.rares.set(def.id, { def, mob: null, nextAt: z.game.now + rnd(z, R.firstDelay), spawnedAt: 0, st: {}, hinted: new Set() });
+    const G = gw(z.game);
+    for (const def of RARE_LIST) if (def.zone === z.id) zs.rares.set(def.id, { def, mob: null, nextAt: G.rareNext.get(`${z.key}:${def.id}`) ?? z.game.now + rnd(z, R.firstDelay), spawnedAt: 0, st: {}, hinted: new Set() });
   }
   return zs.rares;
 }
+/** Merkt die Wartezeit auch über die Lebensdauer der Welt-Instanz hinaus (Welten höherer Kreise werden leer verworfen). */
+function wait(z: Zone, s: RareState, at: number) { s.nextAt = at; gw(z.game).rareNext.set(`${z.key}:${s.def.id}`, at); }
 /** Sind die Bedingungen des Monsters gerade erfüllt (Nacht, Wetter, Jahreszeit)? */
 export function rareAllowed(def: RareDef, tod: number, weather: string, season: number): boolean {
   if (def.night && !isNight(tod)) return false;
@@ -118,7 +121,7 @@ export function tickRares(z: Zone, now: number, slow: boolean) {
       // Hinweis, wenn jemand in die Nähe kommt (keine Ansage)
       for (const p of z.players.values()) if (!s.hinted.has(p.charId) && Math.hypot(p.x - m.x, p.y - m.y) < R.hintDist) { s.hinted.add(p.charId); p.toast(s.def.hint, 'info'); p.pev.push({ k: 'sfx', n: 'secret' }); }
       // unbehelligt zieht es irgendwann weiter
-      if (now - s.spawnedAt > R.despawnSec && m.state === 'idle' && !m.hitters.size) { removeMob(z, m); s.mob = null; s.nextAt = now + rnd(z, R.respawn) * 0.5; }
+      if (now - s.spawnedAt > R.despawnSec && m.state === 'idle' && !m.hitters.size) { removeMob(z, m); s.mob = null; wait(z, s, now + rnd(z, R.respawn) * 0.5); }
     } else if (slow && auto && now >= s.nextAt && !spawnRare(z, s.def.id)) s.nextAt = now + 30;
   }
 }
@@ -141,7 +144,7 @@ export function rareDeath(z: Zone, m: Mob, rec: Player[]): boolean {
   if (!def) return false;
   const s = states(z).get(def.id);
   if (s && s.mob === m) {
-    s.mob = null; s.nextAt = z.game.now + rnd(z, R.respawn);
+    s.mob = null; wait(z, s, z.game.now + rnd(z, R.respawn));
     if (def.trait === 'split') adds(z, s, m, def.adds![1], undefined, rec[0] ?? null);
   }
   for (const p of rec) loot(z, p, def, m);

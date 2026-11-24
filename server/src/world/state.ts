@@ -60,6 +60,8 @@ export interface GameWorld {
   bossNext: Record<string, number>;
   /** laufende Auftritte je Weltboss */
   bossWin: Map<string, BossWindow>;
+  /** nächstes Erscheinen seltener Monster je Welt-Instanz (`Zone.key:id`) – überdauert das Verwerfen leerer Welten höherer Kreise */
+  rareNext: Map<string, number>;
   events: Set<ActiveEvent>;
   nextId: number;
   syncT: number; dirty: boolean; loaded: boolean;
@@ -82,7 +84,7 @@ export const META_KEY = 'welt';
 export function gw(g: Game): GameWorld {
   let s = games.get(g);
   if (!s) {
-    games.set(g, (s = { base: 0, season: 0, bossNext: {}, bossWin: new Map(), events: new Set(), nextId: 1, syncT: 0, dirty: false, loaded: true, auto: true }));
+    games.set(g, (s = { base: 0, season: 0, bossNext: {}, bossWin: new Map(), rareNext: new Map(), events: new Set(), nextId: 1, syncT: 0, dirty: false, loaded: true, auto: true }));
     // Weltzeit und Weltboss-Termine überdauern Neustarts (Tabelle `meta`); unlesbar oder leer: die Welt beginnt im Frühling
     try {
       const raw = JSON.parse(g.db.getMeta(META_KEY) ?? 'null');

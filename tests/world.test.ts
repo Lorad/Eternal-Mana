@@ -1076,6 +1076,9 @@ describe('Neuer Kreis und Mana-Risse (0.5)', () => {
     sim.travel(b, 'gruenwald');
     expect(b.p.zone).not.toBe(z1);
     expect(zs(b.p.zone).event).toBeNull();
+    sim.step(1.2);
+    // … aber wer ein seltenes Monster erlegt hat, verkürzt die Wartezeit nicht durch Hinausgehen
+    expect(zs(b.p.zone).rares!.get('borkenkoenig')!.nextAt).toBeGreaterThan(sim.game.now + CFG.living.rare.respawn[0] - CFG.world.dungeonResetSec - 60);
     sim.clear();
   });
   it('im Mana-Riss gibt es nichts davon: keine Ereignisse, Monster, Wege, Schatzkarten', () => {
