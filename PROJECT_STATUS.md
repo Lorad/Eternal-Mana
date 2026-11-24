@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.6.0 (Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.7.0 (Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -13,7 +13,7 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 | 0.4 | Geschichte: Akt II (4 Kapitel + Epilog, 3 Enden), 47 Quests, Gesprächsbäume, 6 Entscheidungen, 25 Filmszenen, 49 Chronik-Dokumente, 3 Zonen, Bosse Vael und Aetherion | **fertig** |
 | 0.5 | Endspiel: Mana-Risse (30 Stufen, 12 Modifikatoren, 7 Boss-Echos), Prüfung der Sieben, Quellstufen, Neuer Kreis | **fertig** |
 | 0.6 | Lebendige Welt: Ruf (6 Fraktionen), 6 Ereignisarten, 3 Weltbosse, 12 seltene Monster, Schatzkarten, 4 Begegnungen, Tagesabläufe, Jahreszeiten | **fertig** |
-| 0.7 | Gemeinsam & Zuhause | in Arbeit |
+| 0.7 | Zuhause: Hof mit Lagertruhe und drei Ausbaustufen, 30 Trophäen, 8 Begleiter, Sammlung, Erscheinungen – **fertig**. Gemeinsam (Gruppe, Handel, Quests teilen): in Arbeit | teilweise |
 | 0.8 | Feinschliff | geplant |
 
 ### Offene Punkte aus 0.3
@@ -47,6 +47,16 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 - NPCs laufen ohne Kollision auf einem Rasterweg; seltene Monster können unter Baumkronen stehen.
 - Die Anzeige oben rechts kann auf kleinen Bildschirmen voll werden (Karte, Riss, Quests, Ereignisse).
 - Die Jahreszeiten-Uhr läuft nur, während der Server läuft.
+
+### Offene Punkte aus 0.7 (Zuhause)
+
+- Nicht mit zwei echten Browsern geprüft: Besuch auf dem Hof, fremde Begleiter und Gewänder.
+- Von den 25 Gewand-Sheets wurden nur wenige im Spiel angesehen. Preise, Schwellen und Boni sind berechnet, nicht gespielt.
+- Eigene Grafik fehlt noch für: Begleiter-Gegenstand Pilzling, die 15 neuen Trophäen (Bosse, Wegzeichen), die Stärkung
+  „Ausgeruht“, Wegweiser zum Hof, Bauplätze, gesperrte Ständer, Begleiterplatz; ausgestellte Trophäen zeigen nur Ständer und Namen.
+- Begleiter ignorieren Hindernisse. Waffenglanz färbt Hieb, Geschoss und Schweif, nicht die Trefferfunken am Ziel.
+- Siege über gewöhnliche Gegner zählen fürs Bestiarium erst ab 0.7.
+- Springt nach beschädigter Prüfsumme ein Truhen-Snapshot ein (bis 5 Minuten alt), können Truhe und Charakter auseinanderliegen.
 
 ## Starten und Testen
 
