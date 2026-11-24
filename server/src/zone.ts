@@ -417,7 +417,7 @@ export class Zone {
     const id = nextId();
     const p: Proj = { ...pr, id, hit: new Set() };
     this.projs.set(id, p);
-    const info: ProjInfo = { id, spr, x: Math.round(p.x), y: Math.round(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), el: p.el, life: p.life, r: p.r, hostile: p.hostile };
+    const info: ProjInfo = { id, spr, x: Math.round(p.x), y: Math.round(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), el: p.el, life: p.life, r: p.r, hostile: p.hostile, o: p.owner?.char.look?.w ? p.owner.id : undefined };
     this.ev({ k: 'proj+', p: info });
     return p;
   }

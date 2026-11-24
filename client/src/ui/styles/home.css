@@ -1,0 +1,130 @@
+/* Zuhause (0.7): Hof-Fenster (Lagertruhe, Ausbau, Trophäen, Kleiderschrank) und das Fenster „Sammlung“ */
+
+/* ------------------------------------------------------------------ Hof-Fenster */
+.win-hof .window-body { max-height: 590px; overflow-y: auto; }
+.is-short .win-hof .window-body { max-height: 420px; }
+.win-hof-weg { width: 440px; }
+.hof-weg { display: flex; flex-direction: column; gap: 8px; }
+
+/* Lagertruhe: Rucksack · Truhe · Details */
+.win-hof-lager { width: 1110px; }
+.hof-lager { display: grid; grid-template-columns: auto auto minmax(230px, 1fr); gap: 14px; align-items: start; }
+.hof-col { display: flex; flex-direction: column; min-width: 0; }
+.hof-lager .inv-grid.sm { grid-template-columns: repeat(8, 42px); align-content: start; }
+.hof-stash { max-height: 288px; overflow-y: auto; }
+.hof-col .sec-title .btn { margin-left: 4px; }
+.hof-col .sec-title::after { order: 1; }
+.hof-col .sec-title .btn { order: 2; }
+.hof-gold { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.hof-gold-in { width: 84px; min-height: 26px; padding: 2px 8px; font-size: 12px; }
+.hof-detail { min-height: 290px; display: flex; flex-direction: column; gap: 10px; }
+.hof-detail .tip-item { width: auto; }
+.hof-qty { gap: 6px; }
+.hof-qty b { min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* Ausbau */
+.win-hof-ausbau { width: 920px; }
+.hof-ausbau { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.hof-levels { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.hof-levels > li { display: flex; flex-direction: column; gap: 4px; opacity: .62; }
+.hof-levels > li.done { opacity: .9; }
+.hof-levels > li.next { opacity: 1; box-shadow: inset 0 0 0 1px var(--gold-dk); }
+.hof-level-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hof-level-head b { font: 700 14px var(--serif); color: var(--gold-hi); }
+.hof-adds { display: flex; flex-direction: column; gap: 1px; }
+.hof-adds li { position: relative; padding-left: 13px; font-size: 12.5px; line-height: 1.45; color: var(--dim); }
+.hof-adds li::before { content: ''; position: absolute; left: 2px; top: 7px; width: 5px; height: 5px; background: var(--gold-dk); transform: rotate(45deg); }
+.hof-next { display: flex; flex-direction: column; gap: 8px; }
+.hof-buy { display: flex; flex-direction: column; gap: 8px; }
+.hof-buy > b { font: 700 17px var(--serif); }
+
+/* Trophäen */
+.win-hof-trophaeen { width: 900px; }
+.hof-tro { display: flex; flex-direction: column; gap: 10px; }
+.hof-stands { display: flex; gap: 6px; flex-wrap: wrap; }
+.hof-stand { position: relative; width: 62px; height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; padding: 4px 2px;
+  background: rgba(9, 11, 19, .5); border: 1px solid transparent; box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }
+.hof-stand:hover:not(:disabled) { background: rgba(227, 183, 92, .1); }
+.hof-stand.on { background: rgba(227, 183, 92, .16); box-shadow: inset 0 0 0 1px var(--gold); }
+.hof-stand.locked { opacity: .4; }
+.hof-stand > span { font: 700 11px var(--sans); color: var(--dim); }
+.hof-stand-icon { position: absolute; top: 6px; left: 50%; margin-left: -12px; filter: drop-shadow(0 1px 0 #000); }
+.hof-perks { display: flex; gap: 6px; flex-wrap: wrap; }
+.hof-perks .pill i { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid #05060a; }
+.hof-tro-list { max-height: 300px; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+.is-short .hof-tro-list { max-height: 170px; }
+.hof-tro-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.hof-tro-grid .craft-row { padding: 3px 8px 3px 5px; }
+
+/* Kleiderschrank */
+.win-hof-schrank { width: 960px; }
+.hof-schrank { display: grid; grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.hof-mirror { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.hof-mirror .char-stage { width: 140px; height: 168px; margin: 0; }
+.hof-mirror b { font: 700 15px var(--serif); color: var(--gold-hi); }
+.hof-glow { display: inline-flex; align-items: center; gap: 6px; }
+.hof-glow i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 1px #05060a; }
+.hof-looks { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hof-look { padding: 4px 10px 4px 5px; min-height: 48px; }
+.hof-look .craft-name small { white-space: normal; line-height: 1.3; }
+.hof-thumb { width: 32px; height: 40px; flex: none; display: block; }
+.hof-swatch { width: 22px; height: 22px; margin: 0 5px; border-radius: 50%; flex: none; border: 2px solid #05060a; box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35), 0 0 0 1px var(--line); }
+.hof-swatch-el { background: conic-gradient(#ff7a3c, #fff2a0, #8ef0c0, #5fb4ff, #b070ff, #ff7a3c); }
+
+/* ------------------------------------------------------------------ Sammlung */
+.win-sammlung { width: 1020px; }
+.win-sammlung .window-head { flex-wrap: wrap; row-gap: 6px; }
+.win-sammlung .window-body { height: 560px; overflow-y: auto; }
+.is-short .win-sammlung .window-body { height: 400px; }
+.sam-over { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.sam-cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.sam-cat { display: flex; flex-direction: column; gap: 5px; text-align: left; width: 100%; }
+.sam-cat:hover { background: rgba(227, 183, 92, .1); }
+.sam-cat b { font: 700 14px var(--serif); color: var(--gold-hi); }
+.sam-cat .bar { height: 10px; }
+.sam-side { display: flex; flex-direction: column; gap: 8px; }
+.sam-perks li { font-size: 13px; color: var(--good); padding: 1px 0; }
+.sam-titles { display: flex; flex-wrap: wrap; gap: 5px; }
+.sam-titles .btn.on { box-shadow: inset 0 0 0 1px var(--gold-hi); color: var(--gold-hi); }
+.sam-ms { grid-column: 1 / -1; }
+.sam-ms ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.sam-ms li { display: flex; flex-direction: column; gap: 2px; padding: 7px 10px; }
+.sam-ms li.done { box-shadow: inset 0 0 0 1px var(--gold-dk); }
+.sam-ms li b { color: var(--parch); }
+
+.sam-two { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; align-items: start; height: 100%; }
+.sam-list { display: flex; flex-direction: column; gap: 3px; max-height: 100%; padding-right: 4px; }
+.sam-list .craft-row { padding: 4px 10px; flex: none; }
+.sam-el { width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid #05060a; flex: none; margin: 0 3px; }
+.sam-detail { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; }
+.sam-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sam-drops { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sam-unknown { display: inline-flex; align-items: center; justify-content: center; font: 700 18px var(--serif); color: var(--faint); }
+
+.sam-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.sam-wide { grid-column: 1 / -1; }
+.sam-finds { display: flex; flex-direction: column; }
+.sam-finds li { display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 13px; min-width: 0; }
+.sam-finds li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sam-finds li.locked { opacity: .45; }
+.sam-finds li.locked img { filter: grayscale(1); }
+.sam-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+.sam-check { margin-left: auto; color: var(--good); font-style: normal; font-weight: 700; }
+.sam-looks li > span { display: flex; flex-direction: column; line-height: 1.25; white-space: normal; }
+.sam-looks li { padding: 3px 0; }
+
+.sam-pets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.sam-pet { display: flex; align-items: center; gap: 10px; }
+.sam-pet.on { box-shadow: inset 0 0 0 1px var(--gold); }
+.sam-pet b { font: 700 15px var(--serif); color: var(--gold-hi); }
+.sam-pet-pic { width: 68px; height: 68px; flex: none; display: flex; align-items: center; justify-content: center; background: rgba(6, 7, 13, .55); box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }
+.sam-pet.locked .sam-pet-pic img { filter: brightness(0) invert(.28); }
+.sam-pet.locked b { color: var(--dim); }
+.sam-pet-perk { font-size: 13px; color: var(--good); margin-top: 3px; }
+
+/* ------------------------------------------------------------------ kleine Fenster */
+.is-narrow .hof-lager, .is-narrow .hof-ausbau, .is-narrow .hof-schrank, .is-narrow .sam-over, .is-narrow .sam-two { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .hof-lager .inv-grid.sm { grid-template-columns: repeat(auto-fill, 42px); }
+.is-narrow .sam-grid, .is-narrow .sam-pets, .is-narrow .sam-ms ul, .is-narrow .hof-tro-grid { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .sam-list { max-height: 200px; }
+.is-narrow .hof-mirror { flex-direction: row; flex-wrap: wrap; justify-content: center; }

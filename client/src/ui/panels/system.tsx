@@ -32,7 +32,7 @@ export function PausePanel() {
 
 const HELP_GROUPS: [string, Action[]][] = [
   ['Kampf', ['up', 'down', 'left', 'right', 'attack', 'dodge', 'interact', 'skill1', 'skill2', 'skill3', 'skill4', 'potionHp', 'potionMp']],
-  ['Fenster', ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'ruf', 'chat', 'menu']],
+  ['Fenster', ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'ruf', 'sammlung', 'chat', 'menu']],
 ];
 const CYCLE: Element[] = ['fire', 'wind', 'earth', 'water'];
 const El = ({ e }: { e: Element }) => <b style={{ color: ELEMENT_CSS[e] }}>{ELEMENT_NAME[e]}</b>;

@@ -9,6 +9,7 @@ import { SettingsPanel } from './settings';
 import { SkillsPanel } from './skills';
 import { HelpPanel, PausePanel } from './system';
 import { RepPanel } from '../world';
+import { SammlungPanel } from '../home';
 
 export function PanelHost({ panel }: { panel: Panel }) {
   switch (panel) {
@@ -22,6 +23,7 @@ export function PanelHost({ panel }: { panel: Panel }) {
     case 'menu': return <PausePanel />;
     case 'help': return <HelpPanel />;
     case 'ruf': return <RepPanel />;
+    case 'sammlung': return <SammlungPanel />;
   }
   return null;
 }

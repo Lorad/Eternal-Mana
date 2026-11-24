@@ -12,7 +12,7 @@ let padHeld = new Set<Action>();
 let navCooldown = 0;
 export const pointer = { x: 0, y: 0, onCanvas: false };
 
-const PANEL_ACTIONS: Partial<Record<Action, Panel>> = { inventory: 'inventory', character: 'character', skills: 'skills', quests: 'quests', map: 'map', party: 'party', ruf: 'ruf' };
+const PANEL_ACTIONS: Partial<Record<Action, Panel>> = { inventory: 'inventory', character: 'character', skills: 'skills', quests: 'quests', map: 'map', party: 'party', ruf: 'ruf', sammlung: 'sammlung' };
 
 function typing(): boolean {
   const el = document.activeElement as HTMLElement | null;

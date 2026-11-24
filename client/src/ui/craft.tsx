@@ -11,7 +11,8 @@ import { countItem, craftBlock, enchantBlock, enchantCost, enchantFits, infuseBl
 import { ITEMS, isGear, itemName, tierOf } from '../../../shared/src/data/items';
 import { LEGEND_TEXT } from '../../../shared/src/data/materials';
 import { NPCS } from '../../../shared/src/data/npcs';
-import { CAT_NAME, ENCHANT_LIST, FIRE, RECIPE_LIST, STATION_CATS, STATION_NAME, STATION_NPCS, STATION_OPTION, type InfuseElement, type RecipeDef, type StationId } from '../../../shared/src/data/recipes';
+import { Upgrade } from './dialog';
+import { CAT_NAME, ENCHANT_LIST, FIRE, HOME_AT, RECIPE_LIST, STATION_CATS, STATION_NAME, STATION_NPCS, STATION_OPTION, type InfuseElement, type RecipeDef, type StationId } from '../../../shared/src/data/recipes';
 import { SETS } from '../../../shared/src/data/sets';
 import { ELEMENT_INFO, reactionsWith } from '../../../shared/src/elements';
 import { SLOTS } from '../../../shared/src/types';
@@ -40,20 +41,21 @@ export function StationOptions({ npc }: { npc: string }) {
 export function CraftWindow() {
   const craft = useStore(s => s.craft);
   const char = useStore(s => s.char);
-  const [tab, setTab] = useState<'make' | 'reforge' | 'infuse' | 'attune'>('make');
+  const [tab, setTab] = useState<'make' | 'reforge' | 'infuse' | 'attune' | 'upgrade'>('make');
   if (!craft || !char) return null;
   const station = craft.station as StationId, at = craft.at;
-  const who = at === FIRE ? 'Lagerfeuer' : NPCS[at]?.name ?? '';
+  const who = at === FIRE ? 'Lagerfeuer' : at === HOME_AT ? 'Auf dem Hof' : NPCS[at]?.name ?? '';
   return (
     <Window title={`${STATION_NAME[station]} · ${who}`} onClose={() => store.set({ craft: null })} class="win-craft"
       head={<>
-        {station === 'forge' && <Tabs tabs={[['make', 'Herstellen'], ['reforge', 'Umschmieden'], ['infuse', 'Element einschmieden'], ...(riftUnlocked(char) ? [['attune', 'Angleichen'] as ['attune', string]] : [])]} value={tab} onChange={setTab} />}
+        {station === 'forge' && <Tabs tabs={[['make', 'Herstellen'], ['reforge', 'Umschmieden'], ['infuse', 'Element einschmieden'], ...(riftUnlocked(char) ? [['attune', 'Angleichen'] as ['attune', string]] : []), ...(at === HOME_AT ? [['upgrade', 'Verbessern'] as ['upgrade', string]] : [])]} value={tab} onChange={setTab} />}
         <span class="dlg-gold craft-gold">Gold <Gold n={char.gold} /></span>
       </>}>
       {station === 'enchant' ? <Enchant char={char} at={at} />
         : station === 'forge' && tab === 'reforge' ? <Reforge char={char} at={at} />
         : station === 'forge' && tab === 'infuse' ? <Infuse char={char} at={at} />
         : station === 'forge' && tab === 'attune' ? <Attune char={char} at={at} />
+        : station === 'forge' && tab === 'upgrade' ? <Upgrade npc={at} char={char} back={() => setTab('make')} />
         : <Recipes char={char} station={station} at={at} />}
     </Window>
   );

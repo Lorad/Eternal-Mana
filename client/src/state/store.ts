@@ -1,9 +1,9 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, EncDialog, ItemInstance, Mods, PartyMember, RiftInfo, ServerInfo, WorldInfo } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, ItemInstance, Mods, PartyMember, RiftInfo, ServerInfo, WorldInfo, ZoneInit } from '../../../shared/src/types';
 import { bus } from './bus';
 
-export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf';
+export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf' | 'sammlung';
 export interface Toast { id: number; s: string; kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string; item?: ItemInstance }
 export interface ChatLine { id: number; from: string; s: string; ch: 'all' | 'party' | 'sys' }
 /** Sichtbarer Zustand einer laufenden Filmszene (gesteuert von game/cinematic.ts) */
@@ -73,6 +73,15 @@ export interface UiState {
   enc: EncDialog | null;
   /** offenes Fenster: Vorräte / Spenden einer Fraktion oder Ware der Fahrenden Händlerin */
   wshop: { kind: 'faction' | 'donate' | 'trader'; npc: string } | null;
+  // ---- Zuhause (0.7)
+  /** Stand des Profils: Hof, Lagertruhe, Begleiter, Erscheinungen, Sammlung (der Server schickt geänderte Teile) */
+  home: HomeData | null;
+  /** man steht auf einem Hof: wem er gehört */
+  heim: ZoneInit['heim'] | null;
+  /** offenes Hof-Fenster: Reiter (lager, ausbau, trophaeen, schrank) oder 'weg' = Auswahl am Wegweiser; `slot` = angewählter Trophäenständer */
+  hof: { tab: string; slot?: number } | null;
+  /** Reiter, mit dem das Fenster „Sammlung“ aufgeht */
+  sammlungTab: string;
   saved: number;                   // Zeitstempel der letzten Speicherbestätigung
 }
 
@@ -84,6 +93,7 @@ const state: UiState = {
   panel: null, dialog: null, sign: null, story: null, dlgNode: null, cine: null, lore: null, dead: null, prompt: null, nearStone: false,
   rift: null, riftAt: 0, kreis: 0, endgame: null,
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0, world: null, worldAt: 0, enc: null, wshop: null,
+  home: null, heim: null, hof: null, sammlungTab: 'uebersicht',
 };
 
 const listeners = new Set<() => void>();
@@ -129,7 +139,7 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {
   if (state.screen !== 'game' || state.cine) return;
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null });
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
@@ -139,6 +149,7 @@ export function closeTop(): boolean {
   if (state.sign) { store.set({ sign: null }); return true; }
   if (state.enc) { store.set({ enc: null }); return true; }
   if (state.wshop) { store.set({ wshop: null }); return true; }
+  if (state.hof) { store.set({ hof: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
   if (state.endgame) { store.set({ endgame: null }); return true; }
   if (state.dialog) { store.set({ dialog: null, dlgNode: null }); return true; }
@@ -148,5 +159,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop);
+  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.hof);
 }

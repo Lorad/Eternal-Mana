@@ -12,6 +12,8 @@ import { DeathOverlay, SignOverlay, StoryOverlay } from './overlays';
 import { PanelHost } from './panels';
 import { CineOverlay, LoreOverlay } from './story';
 import { EncounterDialog, WorldShop } from './world';
+import { HofWindow } from './home';
+import './styles/home.css';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -48,6 +50,7 @@ function Root() {
   const hasLore = useStore(s => !!s.lore);
   const hasEnc = useStore(s => !!s.enc);
   const hasWshop = useStore(s => !!s.wshop);
+  const hasHof = useStore(s => !!s.hof);
   const dead = useStore(s => !!s.dead);
   const s = computeScale();
 
@@ -74,6 +77,7 @@ function Root() {
       {screen === 'game' && hasCraft && !dead && <CraftWindow />}
       {screen === 'game' && hasEndgame && !dead && <EndgameWindow />}
       {screen === 'game' && hasWshop && !dead && <WorldShop />}
+      {screen === 'game' && hasHof && !dead && <HofWindow />}
       {screen === 'game' && hasEnc && !dead && <EncounterDialog />}
       {screen === 'game' && hasSign && <SignOverlay />}
       {screen === 'game' && dead && <DeathOverlay />}

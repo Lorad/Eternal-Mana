@@ -1,5 +1,6 @@
 /** WebSocket-Verbindung zum Spielserver inkl. automatischer Wiederverbindung. */
 import { CFG } from '../../../shared/src/config';
+import { emptyHome } from '../../../shared/src/data/home';
 import { itemName } from '../../../shared/src/data/items';
 import type { ClassId, ClientMsg, ServerMsg } from '../../../shared/src/types';
 import { bus } from '../state/bus';
@@ -71,12 +72,12 @@ function handle(m: ServerMsg) {
     case 'entered':
       resumed = true; resumeChar = m.charId;
       store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null,
-        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null });
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, heim: m.init.heim ?? null, hof: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
       store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0,
-        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null });
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null, heim: m.init.heim ?? null, hof: null });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
@@ -99,6 +100,8 @@ function handle(m: ServerMsg) {
     // ---- Lebendige Welt (0.6)
     case 'world': store.set({ world: m.w, worldAt: performance.now(), ...(st.wshop?.kind === 'trader' && !m.w.trader ? { wshop: null } : {}) }); break;
     case 'encdlg': store.set(m.d ? { enc: m.d, dialog: null, panel: null, prompt: null } : { enc: null }); break;
+    // ---- Zuhause (0.7): geänderte Teile des Profil-Stands; Hinweise der Sammlung erscheinen wie Toasts
+    case 'home': store.set({ home: { ...(st.home ?? emptyHome()), ...m.h } }); for (const x of m.note ?? []) pushToast(x.s, x.kind, x.icon); break;
     case 'env': store.set({ ...(m.weather !== undefined ? { weather: m.weather } : {}), ...(m.tod !== undefined ? { tod: m.tod } : {}) }); bus.emit('net:env'); break;
     case 'online': store.set({ online: m.players }); break;
     case 'saved': store.set({ saved: Date.now() }); pushToast('Spielstand gespeichert.', 'good'); break;

@@ -40,6 +40,10 @@ import { CHAR_ANIMS, animDuration, charFrame, dirOf } from './anim';
 import { Fx } from './fxlib';
 import { input, pointer, pollInput } from './input';
 import { Lighting, daylight, lerpC, mulC, skyColor, type LightSrc } from './lighting';
+import { HOME_TROPHY } from '../../../shared/src/data/home';
+import { glowColor } from '../../../shared/src/data/looks';
+import { HOME_AT } from '../../../shared/src/data/recipes';
+import { PetView } from './pets';
 import { MobView, ObjView, PlayerView, applyShadow, makeShadow, type ShadowCfg, type ViewCtx } from './views';
 
 type Snap = Extract<ServerMsg, { t: 's' }>;
@@ -429,7 +433,7 @@ export class GameScene extends Phaser.Scene {
         break;
       }
       // ---- Lebendige Welt (0.6): Objekte der Ereignisse und Begegnungen – Frame aus dem Objekt-Atlas, optional Beschriftung und Licht
-      case 'wobj': {
+      case 'wobj': case 'hobj': { // 0.7: Hof-Objekte (Truhe, Stationen, Trophäenständer …) – gleiche Darstellung, Aussehen vom Server
         const fr: string | undefined = pr.frame, f = fr ? this.resolveFrame(fr) : null;
         if (f) img(o.x, o.y + 8, f.frame, FLAT.test(fr!) ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_'));
         if (pr.label) v.label = this.text(o.x, o.y - (f ? 30 : 36), pr.label, '#bfe9ff', 7).setOrigin(0.5, 1);
@@ -626,6 +630,36 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
   private playerView(id: number): PlayerView | undefined { return id === this.me.info.id ? this.me : this.players.get(id); }
+  // ---- Zuhause (0.7): Waffenglanz und Begleiter eines Spielers (eigene Werte aus dem Charakter, fremde aus der Spieler-Info)
+  private glowOf(id: number): number | undefined { return glowColor(id === this.me.info.id ? store.state.char?.look?.w : this.players.get(id)?.info.w); }
+  private syncPet(v: PlayerView, id: string | undefined, dt: number, now: number) {
+    if (v.pet && v.pet.id !== id) { v.pet.destroy(); v.pet = null; }
+    if (id && !v.pet && PetView.exists(this, id)) v.pet = new PetView(this, id);
+    v.pet?.update(v.x, v.y, v.facing, dt, now, v.x > -900);
+  }
+  /** Hof-Objekte öffnen Fenster; was, sagt der Server über `props.ui` / `props.station` (server/src/home/index.ts). */
+  private hofInteract(o: ObjInfo) {
+    const pr = o.props ?? {}, st = store.state, own = !!st.heim?.own;
+    const close = { panel: null, dialog: null, prompt: null, craft: null } as const;
+    if (pr.station) { store.set({ ...close, craft: { at: HOME_AT, station: pr.station } }); return; }
+    switch (pr.ui) {
+      case 'tor': net.send({ t: 'home', a: 'leave' }); break;
+      case 'bett': net.send({ t: 'home', a: 'sleep' }); break;
+      case 'weg': if (st.party.some(m => m.id !== st.myId)) store.set({ ...close, hof: { tab: 'weg' } }); else net.send({ t: 'home', a: 'go' }); break;
+      case 'begleiter': store.set({ ...close, hof: null, panel: 'sammlung', sammlungTab: 'begl' }); break;
+      case 'schrank': store.set({ ...close, hof: { tab: 'schrank' } }); break;
+      case 'trophaeen': {
+        const t = HOME_TROPHY[pr.tro];
+        if (own) store.set({ ...close, hof: { tab: 'trophaeen', slot: pr.idx } });
+        else store.set({ sign: t ? `${t.name}\n\n${t.desc}` : 'Ein leerer Trophäenständer. Er wartet, wie alle leeren Ständer, auf eine gute Geschichte.', prompt: null });
+        break;
+      }
+      case 'lager': case 'ausbau':
+        if (own) store.set({ ...close, hof: { tab: pr.ui } });
+        else store.set({ sign: pr.ui === 'lager' ? 'Eine fremde Truhe. Man öffnet sie nicht – Mirelda hätte dazu eine Meinung, und zwar eine laute.' : `Der Hof von ${st.heim?.owner ?? 'jemand anderem'}. Ausbauen darf nur, wem er gehört.`, prompt: null });
+        break;
+    }
+  }
   sfxAt(n: string, x?: number, y?: number, vol = 1) {
     if (x === undefined || y === undefined) { audio.playSfx(n as SfxName, { volume: vol }); return; }
     const d = Math.hypot(x - this.me.x, y - this.me.y);
@@ -654,8 +688,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Waffenspur eines Angriffs – jede Klasse hat ihre eigene Handschrift. */
-  private attackFx(x: number, y: number, ang: number, kind: string, el: Element, combo: number, range: number, own: boolean) {
-    const c = this.animClock, tint = elTint(el), fin = combo === 2;
+  private attackFx(x: number, y: number, ang: number, kind: string, el0: Element, combo: number, range: number, own: boolean, glow?: number) {
+    // 0.7 Waffenglanz: eine gewählte Farbe ersetzt die des Elements (und die klassentypischen Farbtöne physischer Hiebe)
+    const el: Element = glow !== undefined ? 'light' : el0;
+    const c = this.animClock, tint = glow ?? elTint(el), fin = combo === 2;
     const dx = Math.cos(ang), dy = Math.sin(ang), hy = y - 9;
     // Drehpunkte laut Effekt-Katalog: Schwertbögen links-mittig, Dolchschnitte kreuzen vor der Figur
     const arc = (name: string | null, scale: number, t = tint) => {
@@ -725,7 +761,7 @@ export class GameScene extends Phaser.Scene {
         if (pv && !own) { pv.facing = e.ang; const heavy = e.combo === 2 || e.kind === 'skill'; pv.play(heavy ? 'heavy' : 'attack', animDuration(CHAR_ANIMS[heavy ? 'heavy' : 'attack']), true); }
         if (own && e.kind !== 'skill') break;
         const p = this.entityPos(e.id);
-        if (p) this.attackFx(p.x, p.y, e.ang, e.kind, e.el, e.combo ?? 0, e.range ?? 26, own);
+        if (p) this.attackFx(p.x, p.y, e.ang, e.kind, e.el, e.combo ?? 0, e.range ?? 26, own, pv ? this.glowOf(e.id) : undefined);
         break;
       }
       case 'cast': {
@@ -769,7 +805,12 @@ export class GameScene extends Phaser.Scene {
       }
       case 'zone+': this.addZoneFx(e.z); break;
       case 'zone-': { const v = this.zfx.get(e.id); if (v) { v.g.destroy(); v.rune?.destroy(); this.zfx.delete(e.id); } break; }
-      case 'obj': { const v = this.objs.get(e.id); if (v) { v.o.state = e.state; if (e.props) v.o.props = { ...v.o.props, ...e.props }; this.applyObjState(v); } break; }
+      case 'obj': {
+        const v = this.objs.get(e.id);
+        if (v?.o.type === 'hobj' && e.props) { this.addObj({ ...v.o, state: e.state, props: { ...v.o.props, ...e.props } }); break; } // 0.7: Hof umgebaut – neu aufstellen
+        if (v) { v.o.state = e.state; if (e.props) v.o.props = { ...v.o.props, ...e.props }; this.applyObjState(v); }
+        break;
+      }
       case 'obj+':
         this.addObj(e.o);
         if (e.o.type === 'chest' || e.o.type === 'exit') {
@@ -824,10 +865,12 @@ export class GameScene extends Phaser.Scene {
     const n = anim ? this.fx.frames(anim) : 0;
     if (anim) frame = n ? `${anim}_0` : anim;
     if (!tex.has(frame)) frame = tex.has(p.spr) ? p.spr : 'bolt_arcane_0';
-    const tint = hostilePhys ? 0xff7060 : elTint(p.el);
+    const glow = p.o !== undefined ? this.glowOf(p.o) : undefined; // 0.7 Waffenglanz: Schweif (und ungefärbte Geschosse) in der gewählten Farbe
+    const tint = glow ?? (hostilePhys ? 0xff7060 : elTint(p.el));
     const emissive = p.spr !== 'arrow' && p.spr !== 'dagger' && p.spr !== 'rock';
     const s = this.add.image(p.x, p.y, 'fx', frame).setDepth(emissive ? 9100 : p.y + 40).setRotation(Math.atan2(p.vy, p.vx));
     if (!coloured) s.setTint(tint).setBlendMode(Phaser.BlendModes.ADD);
+    else if (glow !== undefined && emissive) s.setTint(glow);
     if (p.r > 6) s.setScale(Math.min(2, p.r / 5));
     this.projs.set(p.id, { p, s, x: p.x, y: p.y, born: nowP, trail: 0, anim, n, tint });
   }
@@ -1033,7 +1076,8 @@ export class GameScene extends Phaser.Scene {
     this.updateSun();
     this.updateSelf(now, dt);
     const rt = now + (this.timeOffset ?? 0) - CFG.net.interpDelayMs;
-    for (const v of this.players.values()) { this.interp(v, rt); v.draw(now); }
+    for (const v of this.players.values()) { this.interp(v, rt); v.setLook(v.info.g); v.draw(now); this.syncPet(v, v.info.pet, dt, now); }
+    this.me.setLook(st.char?.look?.g); this.syncPet(this.me, st.char?.pet, dt, now); // 0.7: Gewand und Begleiter
     for (const v of this.mobs.values()) { this.interp(v, rt); v.draw(now); }
     for (let k = this.dying.length - 1; k >= 0; k--) {
       const v = this.dying[k];
@@ -1199,7 +1243,7 @@ export class GameScene extends Phaser.Scene {
       me.play(anim, dur, true);
       this.moveLockUntil = now + Math.min(dur, atk.cooldown * 1000) - 110;
       net.send({ t: 'atk', ang: a.ang });
-      this.attackFx(me.x, me.y, a.ang, cls.weapon, stats.attackElement, fin ? 2 : this.combo, atk.range * (fin ? 1.3 : 1), true);
+      this.attackFx(me.x, me.y, a.ang, cls.weapon, stats.attackElement, fin ? 2 : this.combo, atk.range * (fin ? 1.3 : 1), true, this.glowOf(me.info.id));
     }
     for (let i = 0; i < 4; i++) {
       if (!input.pressed(('skill' + (i + 1)) as any)) continue;
@@ -1283,7 +1327,7 @@ export class GameScene extends Phaser.Scene {
         case 'rift': if (this.countFrames('void_rift') > 1) v.parts[0].setFrame(anim('void_rift', 120, 4)); v.parts[0].y = o.y + 8 + Math.sin(now / 260) * 2; break;
         case 'lore': if (!o.state && v.glow) v.glow.setAlpha(0.35 + 0.15 * Math.sin(now / 300 + o.id)); break;
         case 'riftstone': if (this.countFrames('riss_stein') > 1) v.parts[0].setFrame(anim('riss_stein', 170, 4)); if (v.glow) v.glow.setAlpha(0.3 + 0.15 * Math.sin(now / 340)); break;
-        case 'wobj': {
+        case 'wobj': case 'hobj': {
           const fr: string | undefined = o.props?.frame, s0 = v.parts[0];
           if (!fr || !s0) break;
           const n = o.props!.frames ?? this.countFrames(fr);
@@ -1349,6 +1393,7 @@ export class GameScene extends Phaser.Scene {
         case 'npc': text = `Mit ${NPCS[o.tag!]?.name ?? '???'} sprechen`; break;
         // ---- Lebendige Welt (0.6)
         case 'wobj': if (o.props?.prompt && !(o.props.hide1 && o.state)) text = o.props.prompt; break;
+        case 'hobj': if (o.props?.prompt) text = o.props.prompt; break;
         case 'dig': text = 'Hier graben'; break;
         case 'chest': if (!o.state) text = 'Truhe öffnen'; break;
         case 'door': if (!o.state) text = o.props?.locked && !o.props?.unlocked ? 'Tür aufschließen' : 'Tür öffnen'; break;
@@ -1396,6 +1441,7 @@ export class GameScene extends Phaser.Scene {
     if (o.type === 'sign') { store.set({ sign: o.props?.text ?? '', prompt: null }); return; }
     if (o.type === 'cookfire') { store.set({ craft: { at: 'fire', station: 'cooking' }, panel: null, dialog: null, prompt: null }); return; }
     if (o.type === 'riftstone') { store.set({ endgame: { tab: 'risse', stone: true }, panel: null, dialog: null, prompt: null }); return; }
+    if (o.type === 'hobj') { this.hofInteract(o); return; }                                           // 0.7: Hof
     net.send({ t: 'interact', id: o.id });
     if (o.type === 'stone') this.time.delayedCall(250, () => store.set({ panel: 'map', nearStone: true }));
   }

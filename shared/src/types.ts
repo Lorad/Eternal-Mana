@@ -169,7 +169,7 @@ export interface PlayerInfo { id: number; name: string; cls: ClassId; level: num
 export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string; /** Einfärbung (Boss-Echos, 0.5) */ tint?: number }
 export interface ObjInfo { id: number; type: string; x: number; y: number; state: number; tag?: string; props?: Record<string, any> }
 export interface DropInfo { id: number; x: number; y: number; kind: 'gold' | 'item'; icon: string; rarity: number; name: string }
-export interface ProjInfo { id: number; spr: string; x: number; y: number; vx: number; vy: number; el: Element; life: number; r: number; hostile: boolean }
+export interface ProjInfo { id: number; spr: string; x: number; y: number; vx: number; vy: number; el: Element; life: number; r: number; hostile: boolean; /** 0.7: Spieler-ID des Schützen (für seinen Waffenglanz) */ o?: number }
 export interface ZoneFx { id: number; kind: 'zone' | 'tele'; x: number; y: number; r: number; el: Element; dur: number; hostile: boolean; shape?: 'circle' | 'line'; x2?: number; y2?: number; w?: number }
 
 export type GameEvent =
