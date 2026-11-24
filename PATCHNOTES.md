@@ -3,6 +3,30 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.4.0 – Akt II: Das falsche Lied
+_24.11.2026_
+
+### Geschichte
+- **Akt II:** Die Geschichte geht nach dem Hohlen König weiter – vier neue Kapitel und ein Epilog rund um den Brunnen von Quellhain, einen Fremden und ein Lied, das jemand falsch überliefert hat.
+- **Drei Enden**, eines davon gut versteckt. Die Entscheidung am Schluss bleibt gespeichert und verändert Epilog und Gespräche.
+- **Sechs Hüterschreine** erzählen denselben alten Krieg aus sechs Blickwinkeln, jeder mit eigener Erinnerung.
+- **Zwei neue Bosskämpfe:** Vael, der prüft statt zu töten, und Aetherion, der durch alle sechs Elemente wandert. Keiner von beiden stirbt.
+
+### Figuren
+- **Gespräche mit Auswahl:** Viele Bewohner haben jetzt eigene Themen, Rückfragen und Antworten, die etwas verändern.
+- **Persönliche Questreihen** für zehn bekannte Gesichter (Mirelda, Borin, Fenwick, Hedda, Rakhan, Jorund, Liora, Sen, Tobi, Ayla), dazu fünf Geheimquests, die niemand ankündigt.
+- **Fünf Entscheidungen mit Folgen** – für Borin, Hedda, Rakhan, Liora und Sen – mit unterschiedlichen Belohnungen und eigenen Zeilen im Epilog.
+
+### Welt
+- **Chronik:** 49 Bücher, Tafeln, Schriftrollen und Steine in allen Gebieten – gesammelt im Questlog, sortiert nach Themen.
+- **Filmszenen** mit Kapitelkarten; jederzeit überspringbar. Im Koop läuft die Welt weiter, wer zuschaut, ist geschützt.
+- **Neue Gebiete:** Vaels Wacht, der Quellgrund und das Herz der Quelle, mit zwölf neuen Gegnern (Stufe 34–40).
+- Das Questlog ordnet Hauptquests nach Kapiteln.
+
+### Sonstiges
+- Alte Spielstände laufen weiter; wer den Hohlen König schon besiegt hat, startet direkt in Kapitel 7.
+- Die neuen Gegner haben Schwächen und lassen Essenzen und Rohstoffe fallen wie alle anderen.
+
 ## 0.3.0 – Handwerk und Elemente
 _24.11.2026_
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 – Akt II: Das falsche Lied
+
+- Story-Engine: Gesprächsbäume mit serverseitig geprüfter Auswahl, Entscheidungen in `flags` (`d:`), Bedingungen
+  (`shared/src/data/cond.ts`), neue Zieltypen, Geheimquests, Kapitel (`server/src/story.ts`, `shared/src/data/story.ts`).
+- Inhalte: 47 neue Quests (14 Haupt-, 6 Schrein-, 22 Charakter-, 5 Geheimquests), 33 Gesprächsthemen, 6 Entscheidungen,
+  25 Filmszenen, 49 Chronik-Dokumente (`quests_akt2.ts`, `dialoge.ts`, `chronik.ts`, `npcs_akt2.ts`).
+- Filmszenen-Sequenzer im Client (`client/src/game/cinematic.ts`) mit Schutz des Zuschauers auf dem Server.
+- Drei neue Zonen (`wacht`, `quellgrund`, `herz`), 12 Gegner mit wiederverwendeten Sprites (Sprite-/Farbüberschreibung),
+  Story-Bosse `vael` (wird verschont) und `aetherion`; Story-Objekte über `shared/src/maps/storygen.ts`.
+- Tests: `tests/story.test.ts` (Datenkonsistenz, Auswahlprüfung, Durchlauf Kapitel 7 bis Epilog, alter Spielstand).
+
 ## 0.3.0 – Handwerk und Elemente
 
 - Handwerk an vier Stationen (Schmiede, Alchemie, Kochen, Verzauberung), 86 Rezepte, 13 davon über Rezeptrollen; alles

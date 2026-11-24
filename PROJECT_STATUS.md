@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.3.0 (Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.4.0 (Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -10,7 +10,7 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 | Version | Inhalt | Stand |
 |---|---|---|
 | 0.3 | Handwerk & Elemente: Rohstoffe, vier Stationen, 86 Rezepte, 6 Sets, 5 Legendäre Waffen, Runen, Resistenzen, 8 Reaktionen | **fertig** |
-| 0.4 | Geschichte: Akt II, Dialoge mit Entscheidungen, Filmszenen, Chronik, Story-Bosse | in Arbeit (Grafik für Vael und Aetherion liegt vor) |
+| 0.4 | Geschichte: Akt II (4 Kapitel + Epilog, 3 Enden), 47 Quests, Gesprächsbäume, 6 Entscheidungen, 25 Filmszenen, 49 Chronik-Dokumente, 3 Zonen, Bosse Vael und Aetherion | **fertig** |
 | 0.5 | Endspiel | geplant |
 | 0.6 | Lebendige Welt | geplant |
 | 0.7 | Gemeinsam & Zuhause | geplant |
@@ -22,6 +22,14 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
   setzt deshalb der Server als Objekte.
 - Nicht im Spiel zu zweit erprobt: Reaktionen und Handwerk über echte Verbindungen (nur in Tests ohne Netzwerk).
 - Legendäre Waffen von Magier, Schattenjäger und Paladin wirken im Einzelkampf schwach; Feinschliff in 0.8.
+
+### Offene Punkte aus 0.4
+
+- Kein Mensch hat Akt II bisher gespielt: Tempo, Erfahrungskurve und Schwierigkeit der Kapitel 7–10 sind berechnet, nicht
+  erprobt. Ob die Muster von Vael und Aetherion ohne Unverwundbarkeit fair ausweichbar sind, ist ungeprüft.
+- Vael als NPC ist ein eingefärbter Einsiedler und sieht anders aus als sein Boss-Sprite.
+- Aetherion wechselt oft das Element (häufiges Aufblitzen). Ton und Animationen der Filmszenen nur in Standbildern geprüft.
+- Koop nur mit zwei Test-Bots geprüft, nicht mit zwei echten Browsern.
 
 ## Starten und Testen
 
