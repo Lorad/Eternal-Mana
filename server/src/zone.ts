@@ -48,8 +48,8 @@ export class Mob {
   chargeHit = new Set<number>();
   boss: BossCtl | null = null;
   vuln = 1; invuln = false; hidden = false;
-  /** 0.6: lässt sich nicht festsetzen (seltene Monster, Weltbosse) */
-  tough = false;
+  /** 0.6: `tough` = lässt sich nicht festsetzen (seltene Monster, Weltbosse) · `ownScale` = Leben skaliert das Weltereignis selbst */
+  tough = false; ownScale = false;
   name: string;
   summoned = false;
   constructor(public def: EnemyDef, public lvl: number, x: number, y: number, public elite: boolean, public group: number, public spawnIdx: number) {
@@ -864,7 +864,7 @@ export class Zone {
           if (m.summoned) { const n = this.nearestPlayer(m.x, m.y, 600); if (n) { m.target = n; m.state = 'chase'; } }
           break;
         }
-        if (!m.scaled) {
+        if (!m.scaled && !m.ownScale) {
           m.scaled = true;
           const n = [...this.players.values()].filter(p => Math.hypot(p.x - m.x, p.y - m.y) < 520).length;
           if (n > 1) { const f = 1 + CFG.enemy.hpPerExtraPlayer * (n - 1); m.maxHp = Math.round(m.maxHp * f); m.hp = Math.round(m.hp * f); this.ev({ k: 'mob-', id: m.id }); this.ev({ k: 'mob+', m: m.info() }); }

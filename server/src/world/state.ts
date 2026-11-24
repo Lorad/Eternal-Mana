@@ -12,7 +12,7 @@ import type { RareDef, Season, WorldBossDef } from '../../../shared/src/data/rar
 import type { RoutineDef } from '../../../shared/src/data/routines';
 import { TILE } from '../../../shared/src/maps/tiles';
 import type { ItemInstance } from '../../../shared/src/types';
-import { freeNear, inSafe } from '../../../shared/src/world';
+import { freeNear, inSafe, reachable } from '../../../shared/src/world';
 import type { Game } from '../game';
 import type { Player } from '../player';
 import { Mob, type Obj, type Zone } from '../zone';
@@ -125,10 +125,11 @@ export function removeMob(z: Zone, m: Mob) {
 }
 /** Freier Punkt im Ring um (x, y) – für Gegner, die um einen Ort herum erscheinen */
 export function ringSpot(z: Zone, x: number, y: number, rMin: number, rMax: number, flying = false): { x: number; y: number } {
-  const solid = flying ? z.solidFly : z.solidWalk;
-  for (let k = 0; k < 16; k++) {
+  const solid = flying ? z.solidFly : z.solidWalk, reach = reachable(z.map), w = z.map.w;
+  for (let k = 0; k < 20; k++) {
     const a = z.rng.range(0, Math.PI * 2), r = z.rng.range(rMin, rMax), nx = x + Math.cos(a) * r, ny = y + Math.sin(a) * r;
-    if (circleFree(solid, nx, ny, 7)) return { x: nx, y: ny };
+    // nur Stellen, die man vom Startpunkt aus auch erreicht (kein abgeschlossener Winkel hinter einer Felswand)
+    if (circleFree(solid, nx, ny, 7) && (flying || reach[Math.floor(ny / TILE) * w + Math.floor(nx / TILE)])) return { x: nx, y: ny };
   }
   return { x, y };
 }

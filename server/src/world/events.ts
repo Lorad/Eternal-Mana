@@ -470,7 +470,7 @@ export function startBoss(g: Game, def: WorldBossDef, zoneId?: string, at?: { x:
   const ev = newEvent(z, evDef, Math.round(site.x), Math.round(site.y), now);
   ev.boss = def; ev.engaged = true; ev.until = now + B.despawnSec;
   const m = spawnMob(z, def.mob, z.def.level[1] + 2, ev.x, ev.y, { summoned: false });
-  m.tough = true; m.scaled = true; m.awake = false;
+  m.tough = true; m.ownScale = true; m.awake = false;
   ev.bossMob = m;
   ev.st = { base: m.maxHp, n: 1, step: 0, nextAt: 0, acc: 0 };
   zs.boss = ev;

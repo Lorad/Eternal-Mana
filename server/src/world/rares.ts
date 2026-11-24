@@ -54,10 +54,14 @@ export function spawnRare(z: Zone, id: string, force = false): Mob | null {
   }
   return null;
 }
+/** Helfer seltener Monster: Ist ihr Herr fort, verschwinden sie nach kurzer Zeit von selbst (sonst sammeln sie sich über Stunden an). */
+const strays = new WeakMap<Zone, { m: Mob; owner: RareState; until: number }[]>();
 function adds(z: Zone, s: RareState, m: Mob, n: number, name?: string, target: Player | null = m.target): Mob[] {
   const [id] = s.def.adds ?? ['', 0], out: Mob[] = [];
   if (!id) return out;
-  for (let i = 0; i < n; i++) { const c = ringSpot(z, m.x, m.y, 24, 54); out.push(spawnMob(z, id, m.lvl - 1, c.x, c.y, { target, name })); }
+  let list = strays.get(z);
+  if (!list) strays.set(z, (list = []));
+  for (let i = 0; i < n; i++) { const c = ringSpot(z, m.x, m.y, 24, 54), k = spawnMob(z, id, m.lvl - 1, c.x, c.y, { target, name }); out.push(k); list.push({ m: k, owner: s, until: 0 }); }
   return out;
 }
 /** Besonderheit des Monsters – läuft viermal je Sekunde, solange es lebt */
@@ -97,6 +101,13 @@ function trait(z: Zone, s: RareState, m: Mob, now: number) {
 }
 export function tickRares(z: Zone, now: number, slow: boolean) {
   const auto = gw(z.game).auto;
+  const list = slow ? strays.get(z) : undefined;
+  if (list?.length) for (let i = list.length - 1; i >= 0; i--) {
+    const k = list[i];
+    if (k.m.dead) { list.splice(i, 1); continue; }
+    if (!k.until && k.owner.mob === null) k.until = now + (k.owner.def.trait === 'split' ? 120 : 20);
+    if (k.until && now > k.until) { removeMob(z, k.m); list.splice(i, 1); }
+  }
   for (const s of states(z).values()) {
     const m = s.mob;
     if (m) {

@@ -606,6 +606,8 @@ describe('Seltene Monster', () => {
     const before = z.mobs.size;
     kill(z, t, [g]);
     expect(z.mobs.size).toBe(before - 1 + 3);
+    sim.step(123);                                                            // herrenlose Helfer verlaufen sich nach zwei Minuten
+    expect([...z.mobs.values()].filter(m => m.summoned).length).toBe(0);
     sim.clear();
   });
 });
