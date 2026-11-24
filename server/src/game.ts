@@ -142,7 +142,8 @@ export class Game {
     }
     if (!p) return;
     const z = p.zone;
-    if (p.story.cineUntil > this.now && (m.t === 'atk' || m.t === 'skill')) Story.cineEnd(p); // wer kämpft, schaut nicht zu
+    // Wer kämpft oder läuft, schaut nicht zu: Der Schutz der Filmszene endet (kurze Karenz für Eingaben, die noch unterwegs waren)
+    if (p.story.cineUntil > this.now && this.now - p.story.cineAt > 1.5 && (m.t === 'atk' || m.t === 'skill' || m.t === 'dodge' || (m.t === 'm' && m.mv))) Story.cineEnd(p);
     switch (m.t) {
       case 'leave': this.removePlayer(p); s.player = null; this.send(s, { t: 'chars', chars: this.db.listChars(s.account.id) }); return;
       case 'm': return this.move(p, m);

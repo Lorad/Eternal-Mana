@@ -9,7 +9,7 @@ import { CFG } from '../../shared/src/config';
 import { DOCS } from '../../shared/src/data/chronik';
 import { MEMORY_KEYS, condOk, countMemories, type MemoryKey } from '../../shared/src/data/cond';
 import { TOPIC } from '../../shared/src/data/dialoge';
-import { ENEMIES } from '../../shared/src/data/enemies';
+import { BOSSES, ENEMIES } from '../../shared/src/data/enemies';
 import { ITEMS, generateGear, makeStack } from '../../shared/src/data/items';
 import { NPCS } from '../../shared/src/data/npcs';
 import { QUESTS, QUEST_LIST, questChapter, questStartable, type QuestDef } from '../../shared/src/data/quests';
@@ -277,7 +277,8 @@ export const Story = {
     if (!def || (once && p.char.flags[`k:${id}`])) return;
     if (!p.char.flags[`k:${id}`]) setFlag(p, `k:${id}`);
     const now = p.zone.game.now;
-    p.story.cineUntil = Math.max(now, p.story.cineUntil) + cineSeconds(def);
+    if (p.story.cineUntil <= now) p.story.cineAt = now;
+    p.story.cineUntil = Math.min(now + 300, Math.max(now, p.story.cineUntil) + cineSeconds(def));
     p.iframesUntil = Math.max(p.iframesUntil, p.story.cineUntil);
     p.send({ t: 'cine', id });
   },
@@ -290,6 +291,11 @@ export const Story = {
 
   // ================================================================== Quests: Kapitel, Zusatzbelohnungen, Filmszenen
   onAccept(p: Player, q: QuestDef) {
+    // Wer die Prüfung eines verschonten Story-Bosses schon bestanden hat (etwa als Helfer in einer Gruppe), muss sie nicht wiederholen
+    const st = p.char.quests[q.id];
+    q.objectives.forEach((o, i) => {
+      if (o.t === 'boss' && st && BOSSES[o.boss]?.spared !== undefined && p.char.flags[`b:${o.boss}`] && !st.p[i]) { st.p[i] = 1; p.sync('quests'); }
+    });
     const ch = questChapter(q);
     if (!ch) return;
     let seen = p.char.flags.ch ?? 0;

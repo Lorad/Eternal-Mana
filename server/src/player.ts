@@ -33,7 +33,7 @@ export class Player {
   buffsDirty = false;
   enteredAt = 0;
   /** Story (0.3): laufendes Gespräch, Schutzfrist während einer Filmszene, zuletzt betretene Orte */
-  story = { dlg: null as { npc: string; topic: string; node: string } | null, cineUntil: 0, zone: '', places: new Set<string>() };
+  story = { dlg: null as { npc: string; topic: string; node: string } | null, cineUntil: 0, cineAt: 0, zone: '', places: new Set<string>() };
 
   constructor(public accountId: number, public charId: number, public char: CharData, public send: (m: ServerMsg) => void) {
     this.stats = computeStats(char);

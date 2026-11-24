@@ -181,7 +181,7 @@ export const TOPICS: DlgTopic[] = [
       ...decision('ende', 2, 'Befreien: Aetherion wird ganz. Mana wird wild und reich, der Orden endet. Vael darf gehen.', 'So soll es sein. [Befreien]', ['„… ♪♪♪ …“']),
       ...decision('ende', 3, 'Das Lied vollenden: Du stellst die Frage, die nie gestellt wurde, und überlässt Aetherion die Antwort. Vael sieht nach tausend Jahren die Sonne.', 'Ich frage dich. [Das Lied vollenden]', ['„… gefragt. Du hast … gefragt.“']),
     } }),
-  T({ id: 'aeth_albtraum', npc: 'aetherion', label: 'Den Albtraum noch einmal durchleben', if: { flag: 'b:aetherion', decided: 'ende' },
+  T({ id: 'aeth_albtraum', npc: 'aetherion', label: 'Den Albtraum noch einmal durchleben', if: { flag: 'b:aetherion', done: 'm_albtraum' },
     nodes: { start: { lines: ['… ♪ … wieder? Die Nacht aus Asche?', 'Für dich ist es ein Kampf. Für mich ist es … Üben. Jedes Mal wird sie kleiner.'], opts: [{ s: 'Zeig sie mir. [Kampf beginnen]', fx: { boss: 1 } }, { s: 'Nicht heute.' }] } } }),
   T({ id: 'aeth_morgen', npc: 'aetherion', label: 'Guten Morgen.', if: { dec: ['ende', 3] },
     nodes: { start: { lines: ['♪ … Guten Morgen. Das Wort ist … neu. Ich übe.', 'Das Kind mit dem Holzschwert sagt es jeden Tag. Es wartet auf Antwort. Ich mache dann das Wasser warm. Ist das … richtig so?'] } } }),

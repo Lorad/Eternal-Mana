@@ -618,4 +618,118 @@ describe('Story-Engine (Server)', () => {
     expect((await b.dlgOpen('vael', 'vael_wetter')).err).toBe(1);
     b.close();
   }, 180000);
+
+  it('Durchlauf: alle Hüterschreine, Charakterquests und Geheimquests sind abschließbar', async () => {
+    const b = await fresh('Nebenwege', 'paladin', '/akt2', '/god', '/quest m_ueberlauf', '/quest m_fremder', '/quest m_brunnenhueterin', '/quest m_name', '/qa m_sitze',
+      '/quest s_tobi', '/quest s_woelfe', '/quest s_wisp', '/quest s_splitter3');
+    const done = (id: string) => expect(b.char.quests[id]?.s, id).toBe('done');
+    const run = async (id: string, giver: string, work: () => Promise<void>, turnIn = giver) => {
+      await b.accept(id, giver);
+      expect(b.char.quests[id]?.s, id + ' angenommen').toBe('active');
+      await work();
+      await b.turnIn(id, turnIn);
+      done(id);
+    };
+    /** Thema öffnen und der Reihe nach Optionen wählen */
+    const talk = async (npc: string, topic: string, ...picks: number[]) => {
+      await b.gotoNpc(npc);
+      expect((await b.dlgOpen(npc, topic)).node, `${npc}/${topic}`).toBe('start');
+      for (const o of picks) expect((await b.dlgPick(o)).err, `${topic} Option ${o}`).toBeUndefined();
+      await b.sleep(120);
+    };
+    const inZone = async (zone: string, back: string, work: () => Promise<void>) => { await b.tp(zone); await work(); await b.tp(back); };
+
+    // ---------------- Grünwald
+    await run('c_mirelda_1', 'mirelda', () => b.dev('/item mat_herb 5'));
+    await run('c_mirelda_2', 'mirelda', () => talk('borin', 'borin_brief', 0));
+    await b.dev('/lore kinderreim'); await b.dev('/lore oda_kerben'); await b.dev('/lore holzfaeller'); await b.dev('/lore kaspian_linse');
+    await b.dev('/lore spiegelsee'); await b.dev('/lore grubenlied'); await b.dev('/lore guenther'); await b.dev('/lore geode_messung');
+    await run('c_fenwick_1', 'fenwick', async () => {});
+    await b.accept('c_fenwick_2', 'fenwick');
+    await run('c_tobi_1', 'tobi', async () => { await b.gotoNpc('wache'); b.send({ t: 'talk', npc: 'wache' }); await b.dev('/item mat_wood 2'); });
+    await run('c_tobi_2', 'tobi', () => talk('borin', 'borin_schwert'));
+    await run('c_ayla_1', 'ayla', async () => echo(b, await b.gotoObj('rift', 'graue'), 'graue'));
+    await run('c_ayla_2', 'ayla', () => visit(b, 'weiher_bau'));
+    await readLore(b, 'holzarm');
+    await talk('borin', 'borin_arm');
+    await b.turnIn('x_arm', 'tobi'); done('x_arm');
+    await shrine(b, 'earth', 'h_erde', 'mirelda');
+    await b.accept('c_borin_1', 'borin');
+
+    // ---------------- Kristallhöhlen
+    await b.tp('kristall');
+    await shrine(b, 'light', 'h_licht', 'hedda');
+    await run('c_hedda_1', 'hedda', async () => { await visit(b, 'stollen7'); await readLore(b, 'henrik_lampe'); });
+    await run('c_hedda_2', 'hedda', async () => { await talk('pim', 'pim_stollen', 0); await talk('hedda', 'hedda_stollen', 0, 0); expect(b.char.flags['d:hedda']).toBe(1); });
+    await talk('hedda', 'hedda_karl', 0);
+    await visit(b, 'karl');
+    for (let i = 0; i < 10 && (b.char.quests.x_karl?.p[1] ?? 0) < 3; i++) {
+      const m = [...b.mobs.values()].filter(x => x.mob === 'glimmerwisp').sort((p, q) => Math.hypot(p.x - b.x, p.y - b.y) - Math.hypot(q.x - b.x, q.y - b.y))[0];
+      if (!m) break;
+      await b.warp(m.x + 14, m.y); await b.dev('/kill', 250);
+    }
+    await b.turnIn('x_karl', 'hedda'); done('x_karl');
+    await visit(b, 'klang_halle');
+
+    // ---------------- Glutlande
+    await b.tp('glut');
+    await shrine(b, 'fire', 'h_feuer', 'rakhan');
+    await run('c_rakhan_1', 'rakhan', async () => { await visit(b, 'feld'); await inZone('aschenschmiede', 'glut', () => readLore(b, 'kharrad')); });
+    await run('c_rakhan_2', 'rakhan', async () => { await talk('rakhan', 'rakhan_rat', 1, 0); expect(b.char.flags['d:rakhan']).toBe(2); });
+    await visit(b, 'krater'); await b.sleep(600);
+    expect(b.char.quests.x_guss?.s).toBe('active');
+    await echo(b, await b.gotoObj('rift', 'guss'), 'guss');
+    await b.turnIn('x_guss', 'rakhan'); done('x_guss');
+    await talk('kelda', 'kelda_borin', 0);
+    expect(b.char.inv.some(i => i.base === 'q_hammer')).toBe(true);
+
+    // ---------------- Borin und Kelda (Grünwald ↔ Glutlande)
+    await b.tp('gruenwald');
+    await b.turnIn('c_borin_1', 'borin'); done('c_borin_1');
+    await run('c_borin_2', 'borin', async () => { await talk('borin', 'borin_kelda', 0, 0); expect(b.char.flags['d:borin']).toBe(1); expect(b.char.inv.some(i => i.base === 'q_hammer')).toBe(false); });
+    await run('c_borin_3', 'borin', () => inZone('glut', 'gruenwald', () => talk('kelda', 'kelda_antwort', 0)));
+
+    // ---------------- Frostgebirge
+    await b.tp('frost');
+    await shrine(b, 'water', 'h_wasser', 'jorund');
+    await run('c_jorund_1', 'jorund', () => inZone('gletscherdom', 'frost', () => readLore(b, 'ysolde_faden')));
+    await run('c_jorund_2', 'jorund', async () => { await talk('inga', 'inga_wette', 0); await visit(b, 'see_tau'); });
+    await visit(b, 'klang_see');
+    await readLore(b, 'ton1');
+    expect(b.char.quests.x_wiegenlied?.s).toBe('active');
+    await readLore(b, 'zeile2');
+    expect(b.char.quests.x_seite?.s).toBe('active');
+
+    // ---------------- Verlorene Ruinen
+    await b.tp('ruinen');
+    await shrine(b, 'wind', 'h_wind', 'liora');
+    await run('c_liora_1', 'liora', async () => {});
+    await run('c_liora_2', 'liora', async () => { await talk('liora', 'liora_manuskript', 0, 0); expect(b.char.flags['d:liora']).toBe(1); });
+    await run('c_sen_1', 'sen', () => readLore(b, 'dienstplan'));
+    await run('c_sen_2', 'sen', async () => { await talk('sen', 'sen_antwort', 0, 0); expect(b.char.flags['d:sen']).toBe(1); });
+    await readLore(b, 'ton2'); await readLore(b, 'zeile1');
+    await inZone('archiv', 'ruinen', () => readLore(b, 'protokoll'));
+    await b.turnIn('x_seite', 'liora'); done('x_seite');
+
+    // ---------------- Schattenreich und Quellgrund
+    await b.tp('schatten');
+    await shrine(b, 'heart', 'h_herz', 'maelis');
+    await readLore(b, 'ton3');
+    await visit(b, 'klang_traum');
+    await inZone('quellgrund', 'schatten', () => readLore(b, 'ton4'));
+    await b.turnIn('x_wiegenlied', 'maelis'); done('x_wiegenlied');
+
+    // ---------------- Fenwicks Lied
+    await b.tp('gruenwald');
+    await b.turnIn('c_fenwick_2', 'fenwick'); done('c_fenwick_2');
+    await run('c_fenwick_3', 'fenwick', () => visit(b, 'brunnen_lied'));
+
+    // Alles, was eine Questreihe trägt, ist abgeschlossen; mit Vaels Erinnerung wäre das verborgene Ende offen
+    for (const q of QUEST_LIST) if (q.line) done(q.id);
+    expect(MEMORY_KEYS.filter(k => b.char.flags['h:' + k]).length).toBe(6);
+    expect(condOk(b.char, LIED_COND)).toBe(false);
+    b.char.flags['h:dark'] = 1;
+    expect(condOk(b.char, LIED_COND)).toBe(true);
+    b.close();
+  }, 240000);
 });
