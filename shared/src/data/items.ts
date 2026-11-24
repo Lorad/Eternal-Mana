@@ -2,6 +2,8 @@ import { CFG } from '../config';
 import type { ClassId, Element, ItemInstance, ModKey, Mods, Slot } from '../types';
 import { Rng } from '../util/rng';
 import { CLASSES } from './classes';
+import { CRAFT_ITEMS } from './materials';
+import { ENCHANTS, LEARNABLE, scrollOf } from './recipes';
 
 export type ItemKind = 'weapon' | 'helm' | 'armor' | 'accessory' | 'consumable' | 'material' | 'quest';
 
@@ -17,8 +19,11 @@ export interface ItemBase {
   acc?: 'ring' | 'amulet' | 'charm';
   stack?: boolean;
   price: number;
-  /** Verbrauchsgüter */
-  use?: { hp?: number; mp?: number; hpPct?: number; mpPct?: number };
+  /** Verbrauchsgüter. Seit 0.4 auch: Zustände beenden, Rezept lernen, Speise/Elixier (ein Platz je Art, `party` = Radius für Gruppenmitglieder) */
+  use?: { hp?: number; mp?: number; hpPct?: number; mpPct?: number; cleanse?: boolean; learn?: string;
+    buff?: { slot: 'food' | 'elixir'; dur: number; mods: Mods; party?: number } };
+  /** Legendäre Waffe dieser Klasse (Sonderwirkung: LEGEND_TEXT in materials.ts) */
+  legend?: ClassId;
 }
 
 export const TIER_NAMES = ['Eisenholz', 'Kristall', 'Glutstahl', 'Frostsilber', 'Runen', 'Schatten'];
@@ -66,6 +71,13 @@ add({ id: 'mat_frost', name: 'Frosterz', kind: 'material', icon: 'mat_frost', st
 add({ id: 'mat_rune', name: 'Runenstaub', kind: 'material', icon: 'mat_rune', stack: true, price: 42, desc: 'Zerfallene Zauberschrift der Alten.' });
 add({ id: 'mat_void', name: 'Leerenessenz', kind: 'material', icon: 'mat_void', stack: true, price: 60, desc: 'Fühlt sich an wie eine Erinnerung, die fehlt.' });
 add({ id: 'gem', name: 'Geschliffener Edelstein', kind: 'material', icon: 'gem', stack: true, price: 90, desc: 'Händler zahlen gut dafür.' });
+
+// Handwerk (0.4): Rohstoffe, Tränke, Elixiere, Speisen, Legendäre Waffen und je lernbarem Rezept eine Rezeptrolle
+for (const b of CRAFT_ITEMS) add(b);
+for (const r of LEARNABLE) {
+  const what = r.name || (r.out.k === 'item' ? ITEMS[r.out.item]?.name : '') || r.id;
+  add({ id: scrollOf(r.id), name: 'Rezept: ' + what, kind: 'consumable', icon: 'scroll', stack: true, price: 60 + r.level * 12, desc: 'Benutzen, um das Rezept dauerhaft zu lernen.', use: { learn: r.id } });
+}
 
 add({ id: 'seal_earth', name: 'Siegel der Erde', kind: 'quest', icon: 'seal_earth', price: 0, desc: 'Warm und schwer wie frischer Waldboden.' });
 add({ id: 'seal_light', name: 'Siegel des Lichts', kind: 'quest', icon: 'seal_light', price: 0, desc: 'Bricht das Licht in tausend Farben.' });
@@ -141,6 +153,8 @@ export function baseMods(it: ItemInstance): Mods {
 export function itemMods(it: ItemInstance): Mods {
   const m: Mods = { ...baseMods(it) };
   for (const [k, v] of it.affixes) m[k] = (m[k] ?? 0) + v;
+  const en = it.ench ? ENCHANTS[it.ench] : undefined;
+  if (en) for (const k in en.mods) m[k as ModKey] = (m[k as ModKey] ?? 0) + en.mods[k as ModKey]!;
   return m;
 }
 
@@ -162,7 +176,7 @@ export function sellPrice(it: ItemInstance): number {
   return Math.max(1, Math.floor(itemPrice(it) * CFG.loot.sellFactor));
 }
 
-interface AffixDef { k: ModKey; w: number; v: (L: number) => number; round?: number }
+interface AffixDef { k: ModKey; w: number; v: (L: number) => number; round?: number; armorOnly?: boolean }
 const AFFIXES: AffixDef[] = [
   { k: 'str', w: 6, v: L => 1 + L * 0.35 }, { k: 'dex', w: 6, v: L => 1 + L * 0.35 },
   { k: 'int', w: 6, v: L => 1 + L * 0.35 }, { k: 'vit', w: 8, v: L => 1 + L * 0.35 },
@@ -173,6 +187,8 @@ const AFFIXES: AffixDef[] = [
   { k: 'lifesteal', w: 2, v: () => 2 }, { k: 'hpRegen', w: 3, v: L => 0.6 + L * 0.08, round: 10 },
   { k: 'mpRegen', w: 3, v: L => 0.4 + L * 0.04, round: 10 }, { k: 'elemPct', w: 4, v: () => 7 },
   { k: 'goldPct', w: 2, v: () => 10 }, { k: 'xpPct', w: 2, v: () => 5 },
+  // Elementarresistenzen (0.4): nur auf Rüstung und Schmuck, damit Waffen wie bisher würfeln
+  ...(['resFire', 'resWater', 'resEarth', 'resWind', 'resLight', 'resDark'] as ModKey[]).map((k): AffixDef => ({ k, w: 1, v: L => 5 + L * 0.08, armorOnly: true })),
 ];
 const CLASS_ATTR_BIAS: Record<ClassId, ModKey[]> = {
   krieger: ['str', 'vit'], magier: ['int', 'mp'], waldlaeufer: ['dex', 'crit'], paladin: ['str', 'int', 'vit'], schattenjaeger: ['dex', 'critDmg'],
@@ -185,20 +201,12 @@ export function rollRarity(rng: Rng, weights: number[]): number {
   return rng.weighted(weights.map((w, i) => [i, w] as const));
 }
 
-/** Erzeugt ein zufälliges, zur Klasse passendes Ausrüstungsteil. */
-export function generateGear(rng: Rng, ilvl: number, rarity: number, cls: ClassId, kind?: 'weapon' | 'helm' | 'armor' | 'accessory'): ItemInstance {
-  const c = CLASSES[cls];
-  const t = tierOf(ilvl);
-  const k = kind ?? rng.weighted([['weapon', 3], ['helm', 2.5], ['armor', 2.5], ['accessory', 2]] as const);
-  let base: string;
-  if (k === 'weapon') base = `w_${c.weapon}_${t}`;
-  else if (k === 'helm') base = `h_${c.armor}_${t}`;
-  else if (k === 'armor') base = `a_${c.armor}_${t}`;
-  else base = `c_${rng.pick(['ring', 'amulet', 'charm'])}_${t}`;
-  const it: ItemInstance = { uid: newUid(), base, rarity, ilvl, up: 0, affixes: [] };
+/** Würfelt die Affixe eines Ausrüstungsteils (auch beim Umschmieden). */
+export function rollAffixes(rng: Rng, ilvl: number, rarity: number, cls: ClassId, weapon: boolean): [ModKey, number][] {
+  const out: [ModKey, number][] = [];
   const n = CFG.loot.affixCount[rarity];
   const used = new Set<ModKey>();
-  const pool = AFFIXES.filter(a => !OFF_CLASS[cls].includes(a.k)).map(a => [a, a.w * (CLASS_ATTR_BIAS[cls].includes(a.k) ? 2.5 : 1)] as const);
+  const pool = AFFIXES.filter(a => !OFF_CLASS[cls].includes(a.k) && !(weapon && a.armorOnly)).map(a => [a, a.w * (CLASS_ATTR_BIAS[cls].includes(a.k) ? 2.5 : 1)] as const);
   for (let i = 0; i < n; i++) {
     let a: AffixDef;
     let guard = 0;
@@ -206,8 +214,22 @@ export function generateGear(rng: Rng, ilvl: number, rarity: number, cls: ClassI
     used.add(a.k);
     const r = a.round ?? 1;
     const val = Math.max(1 / r, Math.round(a.v(ilvl) * rng.range(0.75, 1.3) * (1 + rarity * 0.08) * r) / r);
-    it.affixes.push([a.k, val]);
+    out.push([a.k, val]);
   }
+  return out;
+}
+
+/** Erzeugt ein zufälliges, zur Klasse passendes Ausrüstungsteil. `acc` legt die Art des Schmuckstücks fest. */
+export function generateGear(rng: Rng, ilvl: number, rarity: number, cls: ClassId, kind?: 'weapon' | 'helm' | 'armor' | 'accessory', acc?: 'ring' | 'amulet' | 'charm'): ItemInstance {
+  const c = CLASSES[cls];
+  const t = tierOf(ilvl);
+  const k = kind ?? rng.weighted([['weapon', 3], ['helm', 2.5], ['armor', 2.5], ['accessory', 2]] as const);
+  let base: string;
+  if (k === 'weapon') base = `w_${c.weapon}_${t}`;
+  else if (k === 'helm') base = `h_${c.armor}_${t}`;
+  else if (k === 'armor') base = `a_${c.armor}_${t}`;
+  else base = `c_${acc ?? rng.pick(['ring', 'amulet', 'charm'])}_${t}`;
+  const it: ItemInstance = { uid: newUid(), base, rarity, ilvl, up: 0, affixes: rollAffixes(rng, ilvl, rarity, cls, k === 'weapon') };
   if (k === 'weapon' && rng.chance(CFG.loot.elementChance[rarity]))
     it.element = rng.pick(['fire', 'water', 'earth', 'wind', 'light', 'dark'] as Element[]);
   return it;

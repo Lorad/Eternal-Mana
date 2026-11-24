@@ -317,6 +317,13 @@
    "cols": 22,
    "rows": 1
   },
+  "boss_aetherion": {
+   "file": "sprites/bosses/boss_aetherion.png",
+   "fw": 128,
+   "fh": 128,
+   "cols": 26,
+   "rows": 1
+  },
   "boss_archivar": {
    "file": "sprites/bosses/boss_archivar.png",
    "fw": 112,
@@ -352,6 +359,13 @@
    "cols": 26,
    "rows": 1
   },
+  "boss_vael": {
+   "file": "sprites/bosses/boss_vael.png",
+   "fw": 96,
+   "fh": 96,
+   "cols": 26,
+   "rows": 1
+  },
   "boss_ysolde": {
    "file": "sprites/bosses/boss_ysolde.png",
    "fw": 96,
@@ -364,7 +378,7 @@
   "obj": {
    "file": "atlases/obj.png",
    "json": "atlases/obj.json",
-   "frames": 550
+   "frames": 587
   },
   "fx": {
    "file": "atlases/fx.png",
@@ -650,6 +664,14 @@
    "h": 112
   },
   "hohlkoenig": {
+   "w": 128,
+   "h": 128
+  },
+  "vael": {
+   "w": 96,
+   "h": 96
+  },
+  "aetherion": {
    "w": 128,
    "h": 128
   }

@@ -15,6 +15,7 @@ import { npcMarker } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ECHOES, objVisible, type CineStep } from '../../../shared/src/data/story';
 import { ZONES } from '../../../shared/src/data/zones';
+import { mobAffinity } from '../../../shared/src/elements';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
 import { T, TILE } from '../../../shared/src/maps/tiles';
 import { computeStats } from '../../../shared/src/stats';
@@ -40,11 +41,11 @@ type Snap = Extract<ServerMsg, { t: 's' }>;
 
 const FONT = '"Trebuchet MS", Verdana, sans-serif';
 /** flach auf dem Boden liegende Deko (unter Figuren, ohne Schatten) */
-const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy)/;
+const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy|rug$|dig_spot)/;
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
-const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags)/;
+const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags|mana_surge|star_shard|lore_)/;
 /** Flammen flackern schnell, alles andere wiegt sich langsam */
-const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue)/;
+const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook)/;
 /** [Radius, Farbe, Stärke, Flackern] */
 const LIGHTS: Record<string, [number, number, number, number]> = {
   campfire: [100, 0xffb060, 1, 0.07], brazier: [92, 0xffac58, 1, 0.07], lamp: [84, 0xffd89a, 0.9, 0.03], torch: [84, 0xffb870, 0.95, 0.07], wall_torch: [84, 0xffb870, 0.95, 0.07],
@@ -54,6 +55,8 @@ const LIGHTS: Record<string, [number, number, number, number]> = {
   lantern_post: [84, 0xffd08a, 0.95, 0.04], nomad_brazier: [96, 0xffa850, 1, 0.07], fire_geyser: [60, 0xff8030, 0.8, 0.08], magma_crack: [30, 0xff6a20, 0.5, 0.03], forge_ruin: [50, 0xff8040, 0.5, 0.04],
   ice_crystal: [40, 0xa0e8ff, 0.5, 0], lantern_frost: [84, 0xffd8a0, 0.95, 0.04], cabin: [70, 0xffcf90, 0.6, 0.02], brazier_blue: [84, 0x70b0ff, 0.95, 0.06], obelisk: [50, 0xffe090, 0.6, 0], floating_rune: [34, 0x80c8ff, 0.6, 0],
   void_rift: [60, 0xc070ff, 0.8, 0.04], ghost_flower: [24, 0xd8c8ff, 0.4, 0], last_light: [120, 0xfff0c0, 1, 0.03], eye_stalk: [0, 0, 0, 0], house_a: [60, 0xffd8a0, 0.5, 0], house_b: [60, 0xffd8a0, 0.5, 0], house_c: [60, 0xffd8a0, 0.5, 0],
+  hueterschrein: [64, 0xfff2c8, 0.75, 0.02], riss_stein: [66, 0x9a90ff, 0.8, 0.06], mana_surge: [84, 0x70ffe0, 0.9, 0.05], star_shard: [44, 0xfff0c8, 0.65, 0.04], lore_stone: [22, 0x70ffe0, 0.35, 0],
+  station_cook: [82, 0xffb060, 0.95, 0.07], station_enchant: [56, 0x80c0ff, 0.7, 0.03], station_alchemy: [30, 0x70ffd8, 0.4, 0.02],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]
   gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92],
@@ -102,6 +105,8 @@ export class GameScene extends Phaser.Scene {
   private moveLockUntil = 0; private stepAt = 0; private dustAt = 0; private stepDist = 0; private stepSide = 1;
   private timeOffset: number | null = null;
   private target: ObjView | PlayerView | null = null;
+  /** zuletzt getroffener Gegner (für die Zielanzeige mit Schwächen) */
+  private focusId = 0; private focusAt = 0;
   private hoverCheck = 0;
   private serverAnim: Anim = Anim.Idle;
   private aim = Math.PI / 2;
@@ -249,7 +254,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.centerOn(i.x, i.y);
     try { if (this.game.renderer.type === Phaser.WEBGL) { this.cameras.main.postFX.clear(); this.cameras.main.postFX.addVignette(0.5, 0.5, 0.92, def.indoor ? 0.42 : 0.26); } } catch { /* Canvas-Renderer: ohne Vignette */ }
     audio.setAmbience(def.ambience as AmbienceId);
-    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1 } }); audio.playMusic(this.bossMusic()); }
+    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1, ...this.bossAff(i.boss.el) } }); audio.playMusic(this.bossMusic()); }
     else audio.playMusic(def.music as MusicId);
     live.zone = i.zone;
     this.sentX = i.x; this.sentY = i.y;
@@ -443,6 +448,7 @@ export class GameScene extends Phaser.Scene {
       case 'node': img(o.x, o.y + 7, 'node_' + pr.kind); break;
       case 'shard': img(o.x, o.y + 4, 'shard_0', undefined, false); v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(0.5).setTint(0x70ffe8).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); v.light = [46, 0x70ffe8, 0.7]; break;
       case 'sign': img(o.x, o.y + 7, 'signpost'); break;
+      case 'cookfire': img(o.x, o.y + 7, this.cookLook(pr.look) + '_0'); v.light = [100, 0xffb060, 1]; v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.8).setTint(0xffa040).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); break;
     }
     this.applyObjState(v, true);
     this.applyObjVisible(v);
@@ -675,7 +681,7 @@ export class GameScene extends Phaser.Scene {
           if (!e.pl) { this.hitStop(55); this.shake(0.007, 90); }
         } else this.fx.play(this.fx.pick(e.el === 'phys' ? 'hit' : 'hit_magic', 'hit'), hx, hy, { tint, fps: 22, depth: 9100, rot: Math.random() * 6.28 }, c);
         this.burst(this.sparks, e.c ? 8 : 3, hx, hy, tint);
-        if (mv && !mv.boss) this.tweens.add({ targets: mv.sprite, scaleX: mv.scale * 1.18, scaleY: mv.scale * 0.86, duration: 55, yoyo: true });
+        if (mv && !mv.boss) { this.tweens.add({ targets: mv.sprite, scaleX: mv.scale * 1.18, scaleY: mv.scale * 0.86, duration: 55, yoyo: true }); this.focusId = e.id; this.focusAt = nowP; }
         if (mine) {
           this.sfxAt('player_hurt'); this.shake(0.012); this.flash(this.me.x, this.me.y - 10, 80, 0xff4030, 0.7, 220);
           if (this.animClock >= this.me.lockUntil) this.me.play('hit', 180, true);
@@ -751,7 +757,7 @@ export class GameScene extends Phaser.Scene {
       case 'boss': {
         const cur = store.state.boss;
         const v = this.mobs.get(e.id);
-        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1 } });
+        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el) } });
         if (!cur) { audio.playMusic(this.bossMusic()); this.shake(0.02, 400); }
         if (v && (!cur || cur.phase !== e.phase || cur.el !== e.el)) {
           const tint = elTint(e.el);
@@ -869,6 +875,24 @@ export class GameScene extends Phaser.Scene {
         break;
       }
     }
+  }
+  /** Grafik der Kochstelle: die eigene Stations-Grafik, falls der Atlas sie schon enthält, sonst das Lagerfeuer der Zone. */
+  private cookLook(look?: string): string { return this.objTex.has('station_cook_0') ? 'station_cook' : this.objTex.has((look ?? 'campfire') + '_0') ? look ?? 'campfire' : 'campfire'; }
+  private bossAff(el: Element) { const a = mobAffinity(this.map.def.boss ?? '', true, el); return { weak: a.weak, resist: a.resist }; }
+  /** Zielanzeige: Gegner unter dem Mauszeiger, sonst der zuletzt getroffene in der Nähe. */
+  private updateTarget(now: number) {
+    let v: MobView | undefined;
+    if (store.state.inputMode === 'kbm' && !uiBlocksGame()) {
+      const p = this.worldPointer();
+      let bd = 1e9;
+      for (const m of this.mobs.values()) { if (m.boss || !m.seen) continue; const d = Math.hypot(m.x - p.x, m.y - m.top / 2 - p.y); if (d < Math.max(12, m.w * 0.45) && d < bd) { bd = d; v = m; } }
+    }
+    if (!v && now - this.focusAt < 4000) { const m = this.mobs.get(this.focusId); if (m && !m.boss && Math.hypot(m.x - this.me.x, m.y - this.me.y) < 320) v = m; }
+    const cur = store.state.target;
+    if (!v) { if (cur) store.set({ target: null }); return; }
+    if (cur && cur.id === v.info.id && cur.hp === v.hp && cur.maxHp === v.info.maxHp) return;
+    const a = cur && cur.id === v.info.id ? cur : mobAffinity(v.info.mob, false);
+    store.set({ target: { id: v.info.id, name: v.info.name ?? '', lvl: v.info.lvl, hp: v.hp, maxHp: v.info.maxHp, el: a.el, elite: !!v.info.elite, weak: a.weak, resist: a.resist } });
   }
   private playerNear(x: number, y: number): PlayerView | undefined {
     if (Math.hypot(this.me.x - x, this.me.y - y) < 6) return this.me;
@@ -990,6 +1014,7 @@ export class GameScene extends Phaser.Scene {
     if (now - this.liveAt > 150) {
       this.liveAt = now;
       live.x = mx; live.y = my; live.fps = this.game.loop.actualFps;
+      this.updateTarget(now);
       live.players = [...this.players.values()].map(p => ({ x: p.x, y: p.y, name: p.info.name, party: this.inMyParty(p.info) }));
       live.mobs = [...this.mobs.values()].filter(m => m.seen && Math.hypot(m.x - mx, m.y - my) < 420).map(m => ({ x: m.x, y: m.y, boss: m.boss }));
       const c = st.char!;
@@ -1014,7 +1039,7 @@ export class GameScene extends Phaser.Scene {
     const me = this.me, st = store.state, c = st.char!;
     const stats = this.getStats();
     const dead = !!(me.flags & FLAG_DEAD) || !!st.dead;
-    const stunned = !!(me.flags & STATUS_BIT.stun);
+    const stunned = !!(me.flags & (STATUS_BIT.stun | STATUS_BIT.freeze));
     const blocked = uiBlocksGame();
     const cls = CLASSES[c.cls];
     let moving = false, slowGait = false;
@@ -1035,7 +1060,7 @@ export class GameScene extends Phaser.Scene {
         this.fx.play(this.fx.pick('dodge_trail'), me.x, me.y - 9, { rot: this.rollDir, tint: 0xffffff, alpha: 0.6, fps: 16, follow: () => (performance.now() < until ? { x: this.me.x - Math.cos(this.rollDir) * 10, y: this.me.y - 9 } : null) }, this.animClock);
       }
       let vx = 0, vy = 0;
-      let speed = stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
+      let speed = me.flags & STATUS_BIT.root ? 0 : stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
       if (now < this.rollUntil) { speed *= CFG.player.dodgeSpeedMul; vx = Math.cos(this.rollDir) * speed; vy = Math.sin(this.rollDir) * speed; }
       else if (ml > 0.1 && now >= this.moveLockUntil) { vx = mv.x * speed; vy = mv.y * speed; slowGait = ml < 0.6 || !!(me.flags & STATUS_BIT.slow); }
       if (vx || vy) {
@@ -1192,6 +1217,7 @@ export class GameScene extends Phaser.Scene {
         case 'stone': if (o.state) v.parts[0].setFrame(anim('quellstein', 150, 4)); break;
         case 'shard': if (!o.state) { v.parts[0].setFrame(anim('shard', 130, 4)); v.parts[0].y = o.y + 4 + Math.sin(now / 300) * 2; } break;
         case 'exit': if (o.props?.look === 'portal') v.parts[0].setFrame(anim('portal', 100, 4)); break;
+        case 'cookfire': v.parts[0].setFrame(anim(this.cookLook(o.props?.look), 110, 4)); break;
         case 'spikes': {
           const pr = o.props!;
           const ph = ((sn + pr.offset) % pr.period) / pr.period;
@@ -1231,6 +1257,7 @@ export class GameScene extends Phaser.Scene {
         case 'shrine': text = o.state === 2 ? 'Erinnerung erneut ansehen' : 'Hüterschrein berühren'; break;
         case 'rift': text = `${ECHOES[o.tag!]?.name ?? 'Riss'} berühren`; break;
         case 'exit': if (o.props?.manual) text = `Hinabsteigen: ${o.props.label ?? ''}`; break;
+        case 'cookfire': text = 'Am Feuer kochen'; break;
       }
       if (!text) continue;
       const reach = o.type === 'door' || o.type === 'bossdoor' || o.type === 'shrine' || o.props?.manual ? d - 12 : d;
@@ -1257,6 +1284,7 @@ export class GameScene extends Phaser.Scene {
     if (o.type === 'npc') { store.set({ dialog: { npc: o.tag! }, panel: null, prompt: null }); return; }
     if (o.type === 'board') { store.set({ dialog: { npc: 'ayla' }, panel: null, prompt: null }); return; }
     if (o.type === 'sign') { store.set({ sign: o.props?.text ?? '', prompt: null }); return; }
+    if (o.type === 'cookfire') { store.set({ craft: { at: 'fire', station: 'cooking' }, panel: null, dialog: null, prompt: null }); return; }
     net.send({ t: 'interact', id: o.id });
     if (o.type === 'stone') this.time.delayedCall(250, () => store.set({ panel: 'map', nearStone: true }));
   }

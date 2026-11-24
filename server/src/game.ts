@@ -16,6 +16,7 @@ import { newCharacter } from '../../shared/src/stats';
 import type { AttrKey, ClientMsg, ItemInstance, PartyMember, PlayerInfo, ServerInfo, ServerMsg, Slot } from '../../shared/src/types';
 import { SLOTS } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
+import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
 import { Story } from './story';
@@ -161,6 +162,7 @@ export class Game {
       case 'sell': return this.sell(p, m.uid, m.qty);
       case 'buy': return this.buy(p, m.npc, m.idx, m.qty ?? 1);
       case 'upgrade': return this.upgrade(p, m.uid, m.npc);
+      case 'craft': case 'reforge': case 'infuse': case 'enchant': return handleCraft(this, p, m);
       case 'attr': return this.attr(p, m.a, m.n ?? 1);
       case 'learn': return this.learn(p, m.id);
       case 'hotbar': if (Array.isArray(m.slots)) { p.char.hotbar = [0, 1, 2, 3].map(i => { const id = m.slots[i]; return typeof id === 'string' && p.char.skills[id] && SKILLS[id]?.effects ? id : null; }); p.sync('hotbar'); } return;
@@ -231,6 +233,7 @@ export class Game {
     const fresh = char.x === 0 && char.y === 0;
     const useStart = fresh || z.def.kind === 'dungeon';
     z.addPlayer(p, useStart ? z.map.start.x : char.x, useStart ? z.map.start.y : char.y);
+    restoreTimed(p);
     if (fresh) char.respawn = { zone: z.id, x: z.map.start.x, y: z.map.start.y };
     p.send({ t: 'entered', char, charId, init: z.initFor(p) });
     if (!char.flags.intro) { char.flags.intro = 1; this.story(p, 'intro'); }
@@ -334,7 +337,8 @@ export class Game {
     else if (cmd === 'kill') { for (const m of [...p.zone.mobs.values()]) if (Math.hypot(m.x - p.x, m.y - p.y) < 300 && !m.invuln) p.zone.hitMob(m, p, 1e7, 'phys'); }
     else if (cmd === 'goto') { p.x = +a[0]; p.y = +a[1]; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
     else if (Story.dev(this, p, cmd, a)) { /* Story-Befehle */ }
-    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag');
+    else if (devCraft(this, p, cmd, a)) { /* Handwerks-Befehle: server/src/craft.ts */ }
+    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag');
   }
 
   // ------------------------------------------------------------------ Gruppen
@@ -417,6 +421,7 @@ export class Game {
   private consume(p: Player, it: ItemInstance): boolean {
     const u = ITEMS[it.base].use;
     if (!u || p.dead) return false;
+    if (u.learn || u.buff || u.cleanse) return useSpecial(this, p, it);
     if (this.now < p.potionReadyAt) { p.toast('Tränke sind noch nicht wieder bereit.', 'bad'); return false; }
     const hp = (u.hp ?? 0) + ((u.hpPct ?? 0) / 100) * p.stats.maxHp, mp = (u.mp ?? 0) + ((u.mpPct ?? 0) / 100) * p.stats.maxMp;
     if ((hp === 0 || p.hp >= p.stats.maxHp) && (mp === 0 || p.mp >= p.stats.maxMp)) { p.toast('Das brauchst du gerade nicht.'); return false; }
@@ -431,7 +436,7 @@ export class Game {
   private useItem(p: Player, uid: string) { const it = p.char.inv.find(i => i.uid === uid); if (it) this.consume(p, it); }
   private quick(p: Player, kind: 'hp' | 'mp') {
     const missing = kind === 'hp' ? p.stats.maxHp - p.hp : p.stats.maxMp - p.mp;
-    const have = [1, 2, 3].map(t => p.char.inv.find(i => i.base === `potion_${kind}${t}`)).filter(Boolean) as ItemInstance[];
+    const have = [1, 2, 3, 4].map(t => p.char.inv.find(i => i.base === `potion_${kind}${t}`)).filter(Boolean) as ItemInstance[];
     if (!have.length) { const e = p.char.inv.find(i => i.base === 'elixir'); if (e) this.consume(p, e); else p.toast(kind === 'hp' ? 'Keine Heiltränke mehr!' : 'Keine Manatränke mehr!', 'bad'); return; }
     const pick = have.find(i => ((ITEMS[i.base].use as any)[kind] ?? 0) >= missing) ?? have[have.length - 1];
     this.consume(p, pick);

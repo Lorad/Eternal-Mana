@@ -12,6 +12,7 @@ import type { Room } from '../../shared/src/maps/mapgen';
 import { TILE } from '../../shared/src/maps/tiles';
 import { Anim } from '../../shared/src/types';
 import type { Element, ItemInstance, StatusSpec } from '../../shared/src/types';
+import { bossLoot } from './loot';
 import type { Player } from './player';
 import { Story } from './story';
 import { Mob, type Zone } from './zone';
@@ -145,6 +146,7 @@ export class BossCtl {
       p.gainXp(d.xp * (first ? 1 : 0.4));
       p.gainGold(d.gold * (first ? 1 : 0.4));
       if (!p.countItem(d.seal)) p.give(makeStack(d.seal));
+      bossLoot(z, p, d.id, d.element, first);
       const party = p.party ? [...p.party.members].filter(q => q.zone === z).length : 1;
       p.questEvent({ t: 'boss', boss: d.id, party });
       if (first && STORY[d.seal]) z.game.story(p, d.seal);

@@ -2,11 +2,12 @@
  * Eine Zonen-Instanz: autoritative Simulation von Spielern, Gegnern, Geschossen, Flächeneffekten und Objekten.
  */
 import { angleDiff, circleFree, distToSegment, lineClear, moveCircle } from '../../shared/src/collision';
-import { CFG, elementMultiplier } from '../../shared/src/config';
+import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { BOSSES, ENEMIES, type EnemyDef } from '../../shared/src/data/enemies';
 import { ITEMS, TIER_MATERIAL, generateGear, itemName, makeStack, rollRarity, tierOf } from '../../shared/src/data/items';
 import { SKILLS, skillCd, skillMp, type Effect } from '../../shared/src/data/skills';
+import { ELEM_STATUS, affinityMul, resistFactor } from '../../shared/src/elements';
 import { NODE_TYPES, ZONES, type ZoneDef } from '../../shared/src/data/zones';
 import { getMap, type GameMap, type MobSpawn } from '../../shared/src/maps/mapgen';
 import { T, TILE } from '../../shared/src/maps/tiles';
@@ -14,9 +15,12 @@ import { Anim, FLAG_ELITE, FLAG_INVULN, STATUS_BIT } from '../../shared/src/type
 import type { DropInfo, Element, GameEvent, ItemInstance, MobInfo, ObjInfo, ProjInfo, SnapMob, SnapPlayer, StatusId, StatusSpec, ZoneFx, ZoneInit } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { BossCtl } from './boss';
+import { cookFires } from './craft';
 import type { Game } from './game';
+import { chestExtras, nodeBonus, rollMaterials } from './loot';
 import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
+import { legendAttack, legendOnHit, legendShield, tryReaction } from './react';
 
 export interface Obj extends ObjInfo {
   looted?: Set<number>;
@@ -29,7 +33,7 @@ export interface Obj extends ObjInfo {
 export class Mob {
   id = nextId();
   x: number; y: number; hx: number; hy: number;
-  hp: number; maxHp: number; dmg: number; defv: number;
+  hp: number; maxHp: number; dmg: number; baseDmg: number; defv: number;
   element: Element; radius: number; speed: number;
   state: 'idle' | 'chase' | 'windup' | 'charge' | 'recover' | 'return' = 'idle';
   t = 0; target: Player | null = null; facingLeft = 0; anim = Anim.Idle;
@@ -37,6 +41,8 @@ export class Mob {
   aimX = 1; aimY = 0; wanderT = 0; wx = 0; wy = 0; cdUntil = 0; blinkAt = 0; hopT = 0;
   awake = false; dead = false; scaled = false; hurtUntil = 0;
   kx = 0; ky = 0;
+  /** 0.4: frühester Zeitpunkt der nächsten Reaktion / Mal-Detonation; Schutz vor erneutem Festsetzen */
+  reactAt = 0; detAt = 0; ccImmuneUntil = 0;
   hitters = new Set<Player>();
   chargeHit = new Set<number>();
   boss: BossCtl | null = null;
@@ -47,7 +53,7 @@ export class Mob {
     this.x = this.hx = x; this.y = this.hy = y;
     this.maxHp = Math.round(CFG.enemy.hp(lvl) * def.hpMul * (elite ? CFG.enemy.eliteHpMul : 1));
     this.hp = this.maxHp;
-    this.dmg = CFG.enemy.dmg(lvl) * def.dmgMul * (elite ? CFG.enemy.eliteDmgMul : 1);
+    this.dmg = this.baseDmg = CFG.enemy.dmg(lvl) * def.dmgMul * (elite ? CFG.enemy.eliteDmgMul : 1);
     this.defv = CFG.enemy.def(lvl) * def.defMul;
     this.element = def.element; this.radius = def.radius * (elite ? 1.15 : 1); this.speed = def.speed;
     this.name = (elite ? 'Erwachter ' : '') + def.name;
@@ -75,9 +81,6 @@ interface FxZone extends ZoneFx {
 }
 interface Drop { id: number; x: number; y: number; owner: Player; item?: ItemInstance; gold?: number; until: number }
 
-const ELEM_STATUS: Partial<Record<Element, StatusSpec>> = {
-  fire: { id: 'burn', dur: 3 }, water: { id: 'slow', dur: 2.5 }, earth: { id: 'stun', dur: 0.6 }, light: { id: 'weak', dur: 3 }, dark: { id: 'mark', dur: 4 },
-};
 const HAZARD_ELEMENT: Record<string, Element> = { gruenwald: 'earth', kristall: 'light', glut: 'fire', frost: 'water', ruinen: 'wind', schatten: 'dark' };
 
 export class Zone {
@@ -113,6 +116,7 @@ export class Zone {
       this.objs.set(obj.id, obj);
       this.setBlock(obj, true);
     }
+    for (const f of cookFires(this.map)) this.objs.set(f.id, f);
     this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
     if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, BOSSES[def.boss], this.map.bossRoom);
     this.weather = this.rng.weighted(def.weathers);
@@ -200,23 +204,30 @@ export class Zone {
   }
 
   // ------------------------------------------------------------------ Schaden
-  applyStatusMob(m: Mob, s: StatusSpec, srcDmg: number) {
+  /** `el`/`by`: Element und Urheber des auslösenden Treffers – daran hängen die Reaktionen (server/src/react.ts). */
+  applyStatusMob(m: Mob, s: StatusSpec, srcDmg: number, el?: Element, by?: Player) {
     if (s.chance !== undefined && !this.rng.chance(s.chance)) return;
     let dur = s.dur;
-    if (m.boss) { if (s.id === 'stun') return; if (s.id === 'slow') dur *= 0.5; }
     const now = this.game.now;
+    const cc = s.id === 'freeze' || s.id === 'root';
+    // Bosse lassen sich nicht festsetzen; alle anderen nicht pausenlos
+    if (m.boss) { if (s.id === 'stun' || cc) return; if (s.id === 'slow') dur *= 0.5; }
+    if (cc) { if (now < m.ccImmuneUntil) return; if (m.elite) dur *= CFG.elements.eliteCcMul; m.ccImmuneUntil = now + dur + CFG.elements.freezeImmuneSec; }
     const dps = s.id === 'burn' ? srcDmg * CFG.combat.burnTick : s.id === 'poison' ? srcDmg * CFG.combat.poisonTick : 0;
     const old = m.statuses.get(s.id);
-    m.statuses.set(s.id, { until: Math.max(old?.until ?? 0, now + dur), dps: Math.max(old && old.until > now ? old.dps : 0, dps) });
+    const tag = !!el && el !== 'phys';
+    m.statuses.set(s.id, { until: Math.max(old?.until ?? 0, now + dur), dps: Math.max(old && old.until > now ? old.dps : 0, dps), el: tag ? el : old?.el, by: tag ? by : old?.by });
   }
-  hitMob(m: Mob, src: Player | null, raw: number, el: Element, o: { crit?: number; status?: StatusSpec; kb?: number; ang?: number; dot?: boolean } = {}): number {
+  /** `extra`: Folgetreffer (Reaktion, Abpraller, Schockwelle) – nie kritisch, löst weder Zustände noch weitere Folgen aus. */
+  hitMob(m: Mob, src: Player | null, raw: number, el: Element, o: { crit?: number; status?: StatusSpec; kb?: number; ang?: number; dot?: boolean; extra?: boolean } = {}): number {
     if (m.dead || m.invuln || m.hidden) return 0;
     const now = this.game.now;
     let dmg = raw * (o.dot ? 1 : 1 + this.rng.range(-CFG.combat.variance, CFG.combat.variance));
     let crit = false;
-    if (src && !o.dot && this.rng.chance(src.stats.crit + (o.crit ?? 0))) { crit = true; dmg *= src.stats.critDmg; }
-    dmg *= elementMultiplier(el, m.element);
-    if (el !== 'phys' && src) dmg *= 1 + src.stats.elemPct / 100;
+    if (src && !o.dot && !o.extra && this.rng.chance(src.stats.crit + (o.crit ?? 0) + (m.has('expose', now) ? CFG.combat.exposeCrit : 0))) { crit = true; dmg *= src.stats.critDmg; }
+    const adef = m.boss?.def ?? m.def;
+    dmg *= affinityMul(el, { element: m.element, weak: adef.weak, resist: adef.resist });
+    if (el !== 'phys' && src) dmg *= (1 + src.stats.elemPct / 100) * (el === src.stats.attackElement ? 1 + CFG.craft.infuseDmg[src.stats.elemLvl] : 1);
     if (m.has('mark', now)) dmg *= CFG.combat.markDmgTaken;
     if (src && src.statuses.get('weak') && src.statuses.get('weak')!.until > now) dmg *= CFG.combat.weakDmgDealt;
     if (!o.dot) dmg *= 1 - CFG.combat.mitigation(m.defv, src?.level ?? m.lvl);
@@ -232,8 +243,13 @@ export class Zone {
     this.ev({ k: 'dmg', id: m.id, a: dmg, c: crit ? 1 : undefined, el, x: Math.round(m.x), y: Math.round(m.y) });
     if (!o.dot) {
       m.hurtUntil = now + 0.15;
-      if (o.status) this.applyStatusMob(m, o.status, dmg);
-      else if (ELEM_STATUS[el] && this.rng.chance(CFG.combat.elemProc[el])) this.applyStatusMob(m, ELEM_STATUS[el]!, dmg);
+      if (src && !o.extra) {
+        tryReaction(this, m, src, el);
+        legendOnHit(this, m, src, el, raw, crit);
+        const proc = CFG.combat.elemProc[el] * (el === src.stats.attackElement ? CFG.craft.infuseProc[src.stats.elemLvl] : 1);
+        if (o.status) this.applyStatusMob(m, o.status, dmg, el, src);
+        else if (ELEM_STATUS[el] && this.rng.chance(proc)) this.applyStatusMob(m, ELEM_STATUS[el]!, dmg, el, src);
+      } else if (!src && o.status) this.applyStatusMob(m, o.status, dmg);
       if (o.kb && !m.boss && o.ang !== undefined) { const k = o.kb * (el === 'wind' ? 1.6 : 1); m.kx = Math.cos(o.ang) * k; m.ky = Math.sin(o.ang) * k; }
     }
     if (m.hp <= 0 && m.boss?.spare()) return dmg; // Story-Bosse ergeben sich, statt zu sterben
@@ -246,7 +262,9 @@ export class Zone {
     if (now < p.iframesUntil) { if (now < p.rollUntil) this.ev({ k: 'txt', x: p.x, y: p.y - 20, s: 'Ausgewichen', col: '#bfe9ff' }); return 0; }
     let dmg = raw * (1 + this.rng.range(-CFG.combat.variance, CFG.combat.variance));
     dmg *= 1 - CFG.combat.mitigation(p.stats.def, lvl);
+    dmg *= resistFactor(p.stats.res[el] ?? 0);
     if (p.statuses.get('mark') && p.statuses.get('mark')!.until > now) dmg *= CFG.combat.markDmgTaken;
+    if (p.hasStatus('expose', now)) dmg *= CFG.combat.exposeDmgTaken;
     dmg = Math.max(1, Math.round(dmg));
     for (const b of p.buffs) {
       if (b.shield <= 0 || dmg <= 0) continue;
@@ -267,7 +285,7 @@ export class Zone {
   }
   killPlayer(p: Player, by: string) {
     p.hp = 0; p.dead = true; p.char.deaths++;
-    p.statuses.clear(); p.buffs = []; p.buffsDirty = true; p.recalc();
+    p.statuses.clear(); p.buffs = p.buffs.filter(b => b.keep); p.buffsDirty = true; p.recalc();
     const loss = Math.floor(p.char.gold * CFG.player.deathGoldLoss);
     p.char.gold -= loss; p.sync('gold', 'deaths');
     p.send({ t: 'dead', by });
@@ -320,6 +338,7 @@ export class Zone {
       if (ITEMS[item].kind === 'quest' && !p.needsQuestItem(item)) continue;
       if (r.chance(ch * (m.elite ? 2 : 1))) this.dropItemFor(p, makeStack(item), ...at());
     }
+    rollMaterials(this, p, m);
   }
   dropInfo(d: Drop): DropInfo {
     if (d.item) { const b = ITEMS[d.item.base]; return { id: d.id, x: d.x, y: d.y, kind: 'item', icon: b.icon, rarity: d.item.rarity, name: itemName(d.item) }; }
@@ -393,7 +412,7 @@ export class Zone {
     if (atk.kind === 'arc') {
       const range = atk.range * (fin ? 1.3 : 1);
       const dealt = this.arcHit(p, ang, range, atk.arc! + (fin ? 40 : 0), raw, el, { kb: fin ? 80 : 25 });
-      if (dealt > 0) p.mp = Math.min(p.stats.maxMp, p.mp + atk.mpGain);
+      if (dealt > 0) { p.mp = Math.min(p.stats.maxMp, p.mp + atk.mpGain); legendAttack(this, p, el); }
       this.ev({ k: 'atk', id: p.id, ang, kind: cls.weapon, el, combo: p.combo, range });
     } else {
       this.spawnProj({ x: p.x + Math.cos(ang) * 8, y: p.y - 6 + Math.sin(ang) * 8, vx: Math.cos(ang) * atk.speed!, vy: Math.sin(ang) * atk.speed!, life: atk.range / atk.speed!, r: 4,
@@ -442,7 +461,7 @@ export class Zone {
       case 'arc': {
         const dealt = this.arcHit(p, ang, e.range, e.arc, raw, el, { kb: e.kb, status: e.status });
         this.ev({ k: 'atk', id: p.id, ang, kind: 'skill', el, combo: 2, range: e.range });
-        if (e.healSelf && dealt > 0) p.heal(dealt * e.healSelf * (1 + p.stats.healPct / 100));
+        if (e.healSelf && dealt > 0) { const h = dealt * e.healSelf * (1 + p.stats.healPct / 100); p.heal(h); legendShield(this, p, p, h); }
         break;
       }
       case 'spin': {
@@ -507,7 +526,7 @@ export class Zone {
       }
       case 'heal': {
         const amount = raw * (1 + p.stats.healPct / 100);
-        for (const q of this.players.values()) if (!q.dead && Math.hypot(q.x - p.x, q.y - p.y) <= e.party) { q.heal(amount); this.ev({ k: 'fx', n: 'heal', x: q.x, y: q.y, el: 'light' }); }
+        for (const q of this.players.values()) if (!q.dead && Math.hypot(q.x - p.x, q.y - p.y) <= e.party) { q.heal(amount); legendShield(this, p, q, amount); this.ev({ k: 'fx', n: 'heal', x: q.x, y: q.y, el: 'light' }); }
         break;
       }
     }
@@ -578,6 +597,7 @@ export class Zone {
         o.harvested!.set(p.charId, now + 150);
         const item = NODE_TYPES[o.props!.kind].item;
         p.give(makeStack(item, this.rng.int(1, 2)));
+        nodeBonus(this, p);
         p.pev.push({ k: 'obj', id: o.id, state: 1 }, { k: 'sfx', n: 'harvest' });
         break;
       }
@@ -617,6 +637,7 @@ export class Zone {
     if (pr.bonus) p.give(generateGear(r, lvl + 1, Math.max(2, rollRarity(r, w)), p.char.cls));
     if (tier !== 'wood') p.give(makeStack(TIER_MATERIAL[tierOf(lvl) - 1], r.int(1, 3)));
     if (r.chance(0.6)) p.give(makeStack(lvl <= 8 ? 'potion_hp1' : lvl <= 20 ? 'potion_hp2' : 'potion_hp3', r.int(1, 2)));
+    chestExtras(this, p, tier, !!pr.boss);
     if (tier === 'gold' && pr.boss) {
       const u = this.boss!.uniqueFor(p);
       if (u) p.give(u);
@@ -779,14 +800,17 @@ export class Zone {
         if (st.until <= now) { m.statuses.delete(id); continue; }
         if (st.dps > 0 && Math.floor(now * 2) !== Math.floor((now - dt) * 2)) this.hitMob(m, null, st.dps * 0.5, id === 'burn' ? 'fire' : 'earth', { dot: true });
       }
-      if (m.dead || m.boss) continue;
+      if (m.dead) continue;
+      // „Geschwächt“ senkt den ausgeteilten Schaden (bei Bossen nur halb so stark)
+      m.dmg = m.baseDmg * (m.has('weak', now) ? (m.boss ? (1 + CFG.combat.weakDmgDealt) / 2 : CFG.combat.weakDmgDealt) : 1);
+      if (m.boss) continue;
       const near = this.nearestPlayer(m.x, m.y, CFG.enemy.wakeDist);
       m.awake = !!near || m.state !== 'idle';
       if (!m.awake) continue;
       // Rückstoß
       if (Math.abs(m.kx) + Math.abs(m.ky) > 2) { this.moveMob(m, m.kx, m.ky, dt); const f = Math.pow(0.002, dt); m.kx *= f; m.ky *= f; }
       if (now < m.hurtUntil) { m.anim = Anim.Hurt; }
-      if (m.has('stun', now)) { m.anim = Anim.Hurt; continue; }
+      if (m.has('stun', now) || m.has('freeze', now)) { m.anim = Anim.Hurt; continue; }
       this.mobAI(m, dt, now);
     }
     // Gegner schieben sich auseinander
@@ -805,7 +829,8 @@ export class Zone {
 
   private mobAI(m: Mob, dt: number, now: number) {
     const def = m.def, atk = def.atk;
-    const speed = m.speed * (m.has('slow', now) ? CFG.combat.slowFactor : 1);
+    const rooted = m.has('root', now);
+    const speed = rooted ? 0 : m.speed * (m.has('slow', now) ? CFG.combat.slowFactor : 1);
     const hurt = now < m.hurtUntil;
     switch (m.state) {
       case 'idle': {
@@ -854,7 +879,7 @@ export class Zone {
           else { const s = (m.id % 2 ? 1 : -1) * 0.4; mvx = (-dy / d) * s; mvy = (dx / d) * s; }
         } else if (d > Math.max(8, atk.range * 0.7)) {
           [mvx, mvy] = this.steer(m, t);
-          if (def.ai === 'blink' && d > 70 && now >= m.blinkAt) {
+          if (def.ai === 'blink' && d > 70 && now >= m.blinkAt && !rooted) {
             m.blinkAt = now + 4.5;
             for (let k = 0; k < 8; k++) {
               const a = this.rng.range(0, 6.28), nx = t.x + Math.cos(a) * 26, ny = t.y + Math.sin(a) * 26;
@@ -898,7 +923,7 @@ export class Zone {
       case 'charge': {
         m.anim = Anim.Attack;
         m.t -= dt;
-        const hit = this.moveMob(m, m.aimX * m.speed * 4.2, m.aimY * m.speed * 4.2, dt);
+        const hit = rooted || this.moveMob(m, m.aimX * m.speed * 4.2, m.aimY * m.speed * 4.2, dt);
         for (const p of this.players.values()) if (!m.chargeHit.has(p.id) && Math.hypot(p.x - m.x, p.y - m.y) <= (atk.reach ?? 12) + CFG.player.radius) { m.chargeHit.add(p.id); this.hitPlayer(p, m.dmg * (atk.mult ?? 1), m.element, m.lvl, m.name, atk.status); }
         if (m.t <= 0 || hit) { m.state = 'recover'; m.t = hit ? 0.9 : 0.4; }
         break;
@@ -966,7 +991,7 @@ export class Zone {
       }
     } else {
       for (const m of [...this.mobs.values()]) if (this.fxHits(z, m.x, m.y, m.radius)) this.hitMob(m, z.owner ?? null, z.raw, z.el, { status: z.status });
-      if (z.healAllies) for (const p of this.players.values()) if (!p.dead && this.fxHits(z, p.x, p.y, 0)) p.heal(z.healAllies * (z.tick ?? 1), false);
+      if (z.healAllies) for (const p of this.players.values()) if (!p.dead && this.fxHits(z, p.x, p.y, 0)) { const h = z.healAllies * (z.tick ?? 1); p.heal(h, false); if (z.owner) legendShield(this, z.owner, p, h); }
       for (const ob of this.objs.values()) if (ob.type === 'boulder' && ob.state === 0 && this.fxHits(z, ob.x, ob.y, 8)) this.breakBoulder(ob, z.owner ?? null);
     }
   }

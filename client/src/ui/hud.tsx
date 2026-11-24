@@ -14,9 +14,10 @@ import { NPCS } from '../../../shared/src/data/npcs';
 import { QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
-import { FLAG_SHIELD, STATUS_BIT, STATUS_NAME } from '../../../shared/src/types';
+import { FLAG_SHIELD, STATUS_BIT, STATUS_MASK, STATUS_NAME } from '../../../shared/src/types';
 import type { CharData, StatusId } from '../../../shared/src/types';
 import { Bar, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, useSettings, useTick } from './common';
+import { Affinity, TargetInfo } from './elements';
 import { MinimapCanvas } from './mapview';
 
 // ------------------------------------------------------------------ Tastenhinweise (Tastatur oder Gamepad)
@@ -31,9 +32,9 @@ export function useHint(): (a: Action) => string {
 }
 
 // ------------------------------------------------------------------ Spielerrahmen
-const STATUS_COLOR: Record<StatusId, string> = { burn: '#ff7a3c', poison: '#8fd14a', slow: '#7fc8ff', stun: '#ffe14a', weak: '#b9a0c8', mark: '#ff5a8a' };
+const STATUS_COLOR: Record<StatusId, string> = { burn: '#ff7a3c', poison: '#8fd14a', slow: '#7fc8ff', stun: '#ffe14a', weak: '#b9a0c8', mark: '#ff5a8a', expose: '#8ef0c0', root: '#c9a85a', freeze: '#bfe9ff' };
 function StatusChips() {
-  const flags = useStore(s => s.me.flags & (63 | FLAG_SHIELD));
+  const flags = useStore(s => s.me.flags & (STATUS_MASK | FLAG_SHIELD));
   if (!flags) return null;
   return (
     <div class="status-row">
@@ -44,16 +45,17 @@ function StatusChips() {
     </div>
   );
 }
-function BuffIcon({ b }: { b: { id: string; name: string; glyph: string; until: number } }) {
+function BuffIcon({ b }: { b: { id: string; name: string; glyph: string; until: number; icon?: string; desc?: string } }) {
   const ref = useRef<HTMLSpanElement>(null);
   useTick(now => {
     const el = ref.current; if (!el) return;
-    const t = Math.max(0, Math.ceil((b.until - now) / 1000)) + '';
+    const sec = Math.max(0, Math.ceil((b.until - now) / 1000));
+    const t = sec > 99 ? Math.ceil(sec / 60) + 'm' : sec + '';   // Speisen und Elixiere laufen minutenlang
     if (el.textContent !== t) el.textContent = t;
   }, [b.until]);
   return (
-    <div class="buff" title={b.name}>
-      <Icon k={'skill_' + b.glyph} el="light" size={30} />
+    <div class="buff" {...tipProps(() => <div class="tip-text"><b>{b.name}</b>{b.desc}</div>)}>
+      {b.icon ? <Icon k={b.icon} size={30} /> : <Icon k={'skill_' + b.glyph} el="light" size={30} />}
       <span ref={ref} class="buff-t" />
     </div>
   );
@@ -288,6 +290,7 @@ function BossBar() {
       <div class="boss-name"><span class="boss-gem" />{boss.name}<span class="boss-gem" /></div>
       <Bar kind="boss" v={boss.hp} max={boss.maxHp} label={`${Math.max(0, Math.ceil((boss.hp / Math.max(1, boss.maxHp)) * 100))} %`} color={`linear-gradient(90deg, color-mix(in srgb, ${col} 45%, #400), ${col})`} />
       <div class="boss-pips" aria-label={`Phase ${boss.phase} von 3`}>{[1, 2, 3].map(n => <i class={cx(n <= boss.phase && 'on')} />)}<span>Phase {boss.phase}</span></div>
+      <Affinity weak={boss.weak} resist={boss.resist} />
     </div>
   );
 }
@@ -461,7 +464,7 @@ export function Hud() {
     <div class="hud">
       <PlayerFrame />
       <div class="hud-tr"><MinimapBox /><QuestTracker /></div>
-      <div class="hud-tc"><BossBar /><InvitePopup /></div>
+      <div class="hud-tc"><BossBar /><TargetInfo /><InvitePopup /></div>
       <ZoneBanner />
       <StoryToasts />
       <div class="hud-bc"><Prompt /><Hotbar /></div>

@@ -13,6 +13,7 @@ import { ITEMS, baseMods, canEquip, isGear, itemMods, itemName, sellPrice, slotO
 import type { ItemBase } from '../../../shared/src/data/items';
 import { MOD_LABEL } from '../../../shared/src/types';
 import type { CharData, ClientMsg, Element, ItemInstance, ModKey, Mods, Slot } from '../../../shared/src/types';
+import { ItemExtras } from './itemextra';
 
 // ------------------------------------------------------------------ Hilfsfunktionen
 export function sfx(n: SfxName) { try { audio.playSfx(n); } catch { /* Audio noch gesperrt */ } }
@@ -236,6 +237,7 @@ export function ItemSlot(p: SlotProps) {
       {it && (it.qty ?? 1) > 1 && <span class="slot-qty">{it.qty}</span>}
       {it && it.up > 0 && <span class="slot-up">+{it.up}</span>}
       {it?.element && <span class="slot-el" style={{ background: ELEMENT_CSS[it.element] }} />}
+      {it?.set && <span class="slot-set" title="Setteil" />}
       {p.equipped && it && <span class="slot-eq">A</span>}
     </button>
   );
@@ -270,6 +272,7 @@ export function ItemDetails({ item: it, char, equipped, price, compare = true }:
       {base.length > 0 && <ul class="tip-stats base">{base.map(([k, v]) => <li>{fmtMod(k, v)}</li>)}</ul>}
       {it.affixes.length > 0 && <ul class="tip-stats affix">{it.affixes.map(([k, v]) => <li>{fmtMod(k, v)}</li>)}</ul>}
       {it.element && <div class="tip-el" style={{ color: ELEMENT_CSS[it.element] }}>◆ Element: {ELEMENT_NAME[it.element]}{b.kind === 'weapon' ? ' – Angriffe verursachen Elementarschaden' : ''}</div>}
+      <ItemExtras item={it} char={char} />
       {b.desc && <p class="tip-desc">{b.desc}</p>}
       {gear && char && lvlReq > 1 && <div class={cx('tip-req', char.level < lvlReq && 'bad')}>Benötigt Stufe {lvlReq}</div>}
       {cls.length > 0 && <div class={cx('tip-req', !usable && 'bad')}>Klasse: {cls.join(', ')}</div>}
