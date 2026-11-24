@@ -3,6 +3,26 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.5.0 – Endspiel: Mana-Risse und der Neue Kreis
+_24.11.2026_
+
+### Mana-Risse
+- Nach dem Sieg über den Hohlen König erwacht der **Riss-Stein** in Quellhain. Wählt einen der sechs Dungeons und eine Stufe (1–30) – jeder Riss ist eine eigene Instanz eurer Gruppe.
+- **Zwölf Modifikatoren** verändern jeden Riss: brennender Boden, berstende Gegner, Elementwochen, Finsternis, Horden und mehr. Ihr seht sie vor dem Betreten.
+- **Boss-Echos:** Am Ende wartet das Echo des Bosses – mit einer neuen Mechanik.
+- **Richtzeit und Lebensfunken:** Wer schnell ist, bekommt eine Bonustruhe. Die Gruppe teilt sich Lebensfunken; Aufhelfen kostet nichts.
+- **Neue Beute:** Ausrüstung über Stufe 40 hinaus, Setteile und Unikate auf Riss-Stufe, Echo-Fragmente und Ätherstaub.
+
+### Fortschritt
+- **Quellstufen:** Erfahrung verfällt auf Stufe 40 nicht mehr. Jede Quellstufe gibt einen Punkt für kleine, dauerhafte Boni (sechs Pfade).
+- **Angleichen und Echo-Runen:** Borin hebt Legendäre Waffen, Setteile und Unikate auf eure Riss-Stufe; Fenwick ritzt die stärksten Runen.
+- **Prüfung der Sieben:** Sieben Echos nacheinander – für den Titel „Bezwinger der Sieben“ und ein Rezept, das es nur dort gibt.
+
+### Neuer Kreis
+- Nach dem Epilog beginnt bei Mirelda die Geschichte von vorn – härter, mit allem, was ihr könnt. So lassen sich alle drei Enden erleben.
+- Stufe, Ausrüstung, Rezepte, Chronik, Quellstufen und Riss-Fortschritt bleiben; frühere Entscheidungen werden festgehalten.
+- Gruppen spielen in der Welt des Mitglieds mit dem niedrigsten Kreis.
+
 ## 0.4.0 – Akt II: Das falsche Lied
 _24.11.2026_
 

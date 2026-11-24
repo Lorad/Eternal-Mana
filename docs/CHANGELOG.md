@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 – Endspiel
+
+- Mana-Risse: instanzierte Dungeonläufe in 30 Stufen (`server/src/rift.ts`, `shared/src/data/rifts.ts`), zwölf Modifikatoren,
+  Richtzeit, Lebensfunken, Beute über Gegenstandsstufe 40 (bis 70).
+- Boss-Echos mit je einer zusätzlichen Mechanik (`server/src/echo.ts`); Prüfung der Sieben als Bossfolge.
+- Quellstufen (60 Stufen, sechs Pfade), Echo-Fragmente mit Verwendung (Angleichen, Echo-Runen, Ätherstaub).
+- Neuer Kreis (`server/src/endgame.ts`): bis zu drei härtere Durchgänge, eigene Weltinstanz je Kreis (`Zone.key` = `id#kN`),
+  Gruppen spielen im niedrigsten Kreis.
+- Oberfläche: Endspiel-Fenster, Riss-Anzeige, Angleichen-Reiter in der Schmiede.
+- Tests: 40 neue in `tests/endgame.test.ts`; Browser-Durchlauf `tests/e2e/endgame.mjs`; Simulation `scripts/rift-sim.ts`.
+
 ## 0.4.0 – Akt II: Das falsche Lied
 
 - Story-Engine: Gesprächsbäume mit serverseitig geprüfter Auswahl, Entscheidungen in `flags` (`d:`), Bedingungen
