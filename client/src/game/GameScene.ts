@@ -538,7 +538,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
   private addDrop(d: DropInfo) {
-    const f = d.kind === 'gold' ? 'drop_gold' : /^(potion|food|elx_)/.test(d.icon) ? 'drop_potion' : d.icon === 'key' ? 'drop_key' : d.icon.startsWith('mat') || d.icon === 'gem' || d.icon === 'scroll' || d.icon === 'recipe' || (d.icon === 'charm' && d.rarity === 0) ? 'drop_bag' : 'drop_gear';
+    const f = d.kind === 'gold' ? 'drop_gold' : /^(potion|food|elx_)/.test(d.icon) ? 'drop_potion' : d.icon === 'key' ? 'drop_key' : /^(mat|tro_|tmap_)/.test(d.icon) || d.icon === 'gem' || d.icon === 'scroll' || d.icon === 'recipe' || (d.icon === 'charm' && d.rarity === 0) ? 'drop_bag' : 'drop_gear';
     const s = this.add.image(d.x, d.y, 'obj', f).setOrigin(0.5, 1).setDepth(d.y);
     const col = [0, 0x70e070, 0x60b0ff, 0xd090ff, 0xffb040][d.rarity];
     let label: Phaser.GameObjects.Text | undefined;
