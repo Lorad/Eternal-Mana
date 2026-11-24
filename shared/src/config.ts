@@ -174,6 +174,63 @@ export const CFG = {
     mats: (up: number) => 1 + Math.floor(up / 2),
   },
   respecGold: (level: number) => 50 * level,
+  /** Endspiel (0.5): Mana-Risse. Modifikatoren, Echos und Texte: shared/src/data/rifts.ts */
+  rift: {
+    maxStufe: 30,
+    /** Gegnerstufe und Gegenstandsstufe der Beute je Riss-Stufe (oberhalb der Höchststufe 40) */
+    mobLevel: (stufe: number) => 40 + 2 * stufe,
+    ilvl: (stufe: number) => 40 + stufe,
+    /** Anzahl der Modifikatoren */
+    modCount: (stufe: number) => (stufe >= 20 ? 3 : stufe >= 10 ? 2 : 1),
+    /** Richtzeit: Grundzeit + Zeit je Raum des Dungeons + Zuschlag je Stufe (s) */
+    parBase: 150, parPerRoom: 42, parPerStufe: 4,
+    /** Lebensfunken: so oft darf die Gruppe am Eingang wiederkehren (allein / je weiterem Mitglied) */
+    revives: 3, revivesPerExtra: 1,
+    joinRadius: 420,          // so nah am Riss-Stein müssen Gruppenmitglieder stehen, um mitgenommen zu werden
+    stoneRadius: 70,
+    eliteChance: 0.08,
+    /** Boss-Echo: einheitliche Stärke, damit alle sechs Dungeons vergleichbar sind */
+    echo: { hpMul: 17, dmgMul: 1.5, defMul: 1.5, levelPlus: 2, xpMul: 45, goldMul: 70 },
+    /** Seltenheitsgewichte der Belohnungstruhe bei Stufe 1 und bei der höchsten Stufe (dazwischen linear) */
+    rarityLow: [0, 18, 52, 25, 5], rarityHigh: [0, 0, 30, 50, 20],
+    chestGear: 2, bonusGear: 1,
+    fragments: (stufe: number) => 2 + Math.floor(stufe / 3),
+    bonusFragments: (stufe: number) => 1 + Math.floor(stufe / 5),
+    fragElite: 0.25,          // Echo-Fragment von Erwachten im Riss
+    aether: (stufe: number) => Math.min(1, 0.15 + 0.03 * stufe),
+    bonusAether: 0.5,
+    setPiece: (stufe: number) => Math.min(0.75, 0.3 + 0.015 * stufe),
+    scroll: 0.4, unique: 0.12,
+    // ---- Modifikatoren
+    brand: { radius: 22, dur: 6, mult: 0.35 },
+    bersten: { radius: 34, delay: 1.2, mult: 1.4 },
+    finsternis: { aggro: 0.6, light: 0.5 },
+    versiegt: { heal: 0.5 },
+    horde: { extra: 0.8, hp: 0.6, dmg: 0.8 },
+    erwacht: { eliteChance: 0.3 },
+    wucher: { regen: 0.03, calm: 3 },
+    hast: { speed: 1.3, cd: 0.75 },
+    glas: { dmgTaken: 1.4, cd: 0.7 },
+    sturm: { every: 6, radius: 26, delay: 1.1, mult: 1.2 },
+    duerre: { regen: 0.5, gain: 2 },
+    /** Angleichen (Schmiede): Stufen je Schritt, Echo-Fragmente je Stufe, Ätherstaub je Schritt bei Legendären Waffen, Gold je Stufe */
+    attune: { step: 5, frags: 2, legendFrags: 3, legendAether: 1, gold: (ilvl: number) => 120 + ilvl * 12 },
+    /** Prüfung der Sieben */
+    trial: { unlock: 15, stufe: 18, hpMul: 0.6, revives: 3, pause: 5, fragments: 8, aether: 2 },
+  },
+  /** Endspiel (0.5): Quellstufen – Erfahrung über die Höchststufe hinaus. Bahnen: QUELL_TRACKS in data/rifts.ts */
+  quell: {
+    xpToNext: (q: number) => 15000 + 1500 * q,
+    trackCap: 10,
+  },
+  /** Endspiel (0.5): Neuer Kreis */
+  kreis: {
+    max: 3,
+    floor: 36,                // ab dem 1. Kreis ist kein Gegner schwächer als diese Stufe …
+    levelPer: 4,              // … und jeder Kreis legt so viele Stufen darauf
+    bossXp: 40, bossGold: 60, // Boss-Belohnung mindestens: Gegner-EP/-Gold seiner Stufe × Faktor
+    pointFragments: 1,        // ab dem 1. Kreis geben Quests statt Attribut-/Fähigkeitspunkten Echo-Fragmente
+  },
   world: {
     dayLengthSec: 720,     // ein voller Tag-Nacht-Zyklus
     weatherMinSec: 90,

@@ -6,9 +6,10 @@ import type { WebSocket } from 'ws';
 import { circleFree } from '../../shared/src/collision';
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
-import { ITEMS, TIER_MATERIAL, canEquip, generateGear, isGear, itemName, itemPrice, makeStack, newUid, sellPrice, slotOf, tierOf } from '../../shared/src/data/items';
+import { ITEMS, TIER_MATERIAL, canEquip, equipLevel, generateGear, isGear, itemName, itemPrice, makeStack, newUid, sellPrice, slotOf, tierOf } from '../../shared/src/data/items';
 import { NPCS, shopStock } from '../../shared/src/data/npcs';
 import { QUESTS, STORY, questAvailable, questComplete } from '../../shared/src/data/quests';
+import { kreisLevel, kreisOf, titleName } from '../../shared/src/data/rifts';
 import { SKILLS } from '../../shared/src/data/skills';
 import { ZONES } from '../../shared/src/data/zones';
 import { getMap } from '../../shared/src/maps/mapgen';
@@ -17,6 +18,8 @@ import type { AttrKey, ClientMsg, ItemInstance, PartyMember, PlayerInfo, ServerI
 import { SLOTS } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
+import { devEndgame, handleEndgame, questPoints } from './endgame';
+import { Rift } from './rift';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
 import { Story } from './story';
@@ -32,6 +35,8 @@ export class Party {
   static next = 1;
   id = Party.next++;
   members = new Set<Player>();
+  /** Anführer ist, wer am längsten dabei ist (0.5: öffnet Mana-Risse) */
+  get leader(): Player | undefined { return this.members.values().next().value; }
 }
 
 const DEV = !!process.env.EM_DEV;
@@ -70,17 +75,44 @@ export class Game {
     for (const s of this.sessions) try { s.ws.close(1001, 'Server wird beendet'); } catch { /* egal */ }
   }
 
-  zone(id: string): Zone {
-    let z = this.zones.get(id);
-    if (!z) { z = new Zone(this, ZONES[id]); this.zones.set(id, z); }
+  /** Die Welt-Instanz einer Zone. Jeder Neue Kreis (0.5) hat seine eigene; Kreis 0 liegt wie bisher unter der Zonen-ID. */
+  zone(id: string, kreis = 0): Zone {
+    const key = kreis > 0 ? `${id}#k${kreis}` : id;
+    let z = this.zones.get(key);
+    if (!z) { z = new Zone(this, ZONES[id], { key, kreis }); this.zones.set(key, z); }
     return z;
+  }
+  /**
+   * In welchem Kreis der Welt spielt dieser Charakter? Allein: in seinem eigenen. In einer Gruppe: im NIEDRIGSTEN Kreis aller
+   * Mitglieder – so landet die Gruppe immer in derselben Welt, und niemand wird in eine Welt gezogen, die ihm zu schwer ist.
+   */
+  worldKreis(p: Player): number {
+    let k = kreisOf(p.char);
+    if (p.party) for (const q of p.party.members) k = Math.min(k, kreisOf(q.char));
+    return k;
+  }
+  /** Setzt einen Spieler in eine bestimmte Instanz (Zonenwechsel, Riss, Wiederkehr im Dungeon). */
+  moveTo(p: Player, z: Zone, pos: { x: number; y: number }) {
+    p.zone.removePlayer(p);
+    p.statuses.clear();
+    z.addPlayer(p, pos.x, pos.y);
+    p.send({ t: 'zone', init: z.initFor(p) });
+    this.savePlayer(p);
+  }
+  /** Nach einem Gruppenwechsel oder Neuen Kreis: steht der Spieler noch in der Welt seines (Gruppen-)Kreises? Sonst hinüberwechseln. */
+  rehome(p: Player) {
+    const cur = p.zone;
+    if (cur.rift || !this.players.has(p.charId)) return;
+    const want = this.zone(cur.id, this.worldKreis(p));
+    if (want !== cur) this.moveTo(p, want, cur.def.kind === 'dungeon' ? want.map.start : { x: p.x, y: p.y });
   }
 
   private tick(dt: number) {
     this.now += dt;
     for (const [id, z] of this.zones) {
       if (z.players.size) z.update(dt);
-      else if (z.def.kind === 'dungeon' && this.now - z.emptySince > CFG.world.dungeonResetSec) this.zones.delete(id);
+      // leere Dungeons, Riss-Instanzen und Welten höherer Kreise werden nach einer Weile verworfen und bei Bedarf frisch erzeugt
+      else if ((z.def.kind === 'dungeon' || z.key !== z.id) && this.now - z.emptySince > CFG.world.dungeonResetSec) this.zones.delete(id);
     }
     // getrennte Spieler nach Schonfrist entfernen
     for (const p of this.players.values()) if (p.linkdead && this.now - p.linkdeadAt > CFG.net.reconnectGraceMs / 1000) this.removePlayer(p);
@@ -174,6 +206,7 @@ export class Game {
       case 'dlgOpen': return Story.dlgOpen(this, p, String(m.npc), String(m.topic));
       case 'dlgPick': return Story.dlgPick(this, p, m);
       case 'cineEnd': return Story.cineEnd(p);
+      case 'rift': case 'quell': case 'kreis': case 'attune': case 'title': return handleEndgame(this, p, m);
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': return this.partyMsg(p, m.a, m.id);
@@ -229,7 +262,7 @@ export class Game {
     const p = new Player(acc.id, charId, char, msg => this.send(s, msg));
     s.player = p;
     this.players.set(charId, p);
-    const z = this.zone(char.zone);
+    const z = this.zone(char.zone, kreisOf(char));
     const fresh = char.x === 0 && char.y === 0;
     const useStart = fresh || z.def.kind === 'dungeon';
     z.addPlayer(p, useStart ? z.map.start.x : char.x, useStart ? z.map.start.y : char.y);
@@ -243,13 +276,8 @@ export class Game {
 
   transfer(p: Player, to: string, from: string, pos?: { x: number; y: number }) {
     if (!ZONES[to]) return;
-    p.zone.removePlayer(p);
-    const z = this.zone(to);
-    const e = pos ?? z.map.entries[from] ?? z.map.start;
-    p.statuses.clear();
-    z.addPlayer(p, e.x, e.y);
-    p.send({ t: 'zone', init: z.initFor(p) });
-    this.savePlayer(p);
+    const z = this.zone(to, this.worldKreis(p));
+    this.moveTo(p, z, pos ?? z.map.entries[from] ?? z.map.start);
   }
   private teleport(p: Player, zoneId: string) {
     if (p.dead || !ZONES[zoneId] || !p.char.flags[`t:${zoneId}`]) return;
@@ -267,11 +295,11 @@ export class Game {
     p.dead = false; p.hp = p.stats.maxHp; p.mp = p.stats.maxMp;
     p.iframesUntil = this.now + CFG.player.respawnInvuln;
     const cur = p.zone;
-    if (cur.def.kind === 'dungeon') this.transfer(p, cur.id, '', cur.map.start);
+    if (cur.rift) Rift.respawn(this, p);
+    else if (cur.def.kind === 'dungeon') this.moveTo(p, cur, cur.map.start);
     else {
       const r = p.char.respawn;
-      const z = this.zone(r.zone);
-      this.transfer(p, r.zone, '', r.x ? { x: r.x, y: r.y } : z.map.start);
+      this.transfer(p, r.zone, '', r.x ? { x: r.x, y: r.y } : getMap(r.zone).start);
     }
   }
 
@@ -294,7 +322,7 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ Infos
-  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0 }; }
+  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0, title: titleName(p.char) }; }
   broadcastPlayerInfo(p: Player) { for (const q of p.zone.players.values()) if (q !== p) q.pev.push({ k: 'pl+', p: this.playerInfo(p) }); }
   story(p: Player, id: string) { const st = STORY[id]; if (st) p.send({ t: 'story', id, title: st.title, lines: st.lines }); }
   sysChat(s: string) { for (const p of this.players.values()) p.send({ t: 'chat', from: '', s, ch: 'sys' }); }
@@ -338,7 +366,8 @@ export class Game {
     else if (cmd === 'goto') { p.x = +a[0]; p.y = +a[1]; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
     else if (Story.dev(this, p, cmd, a)) { /* Story-Befehle */ }
     else if (devCraft(this, p, cmd, a)) { /* Handwerks-Befehle: server/src/craft.ts */ }
-    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag');
+    else if (devEndgame(this, p, cmd, a)) { /* Endspiel-Befehle: server/src/endgame.ts */ }
+    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /quell n, /echo n, /kreis [n], /pruefung');
   }
 
   // ------------------------------------------------------------------ Gruppen
@@ -361,6 +390,7 @@ export class Game {
       from.party.members.add(p); p.party = from.party;
       for (const q of p.party.members) { q.toast(`${p.name} ist der Gruppe beigetreten.`, 'good'); this.broadcastPlayerInfo(q); }
       this.sendParty(p.party);
+      for (const q of [...p.party.members]) this.rehome(q); // 0.5: die Gruppe spielt in der Welt ihres niedrigsten Kreises
     } else if (a === 'decline') {
       const from = this.invites.get(p.id);
       this.invites.delete(p.id);
@@ -371,11 +401,13 @@ export class Game {
     const party = p.party;
     if (!party) return;
     party.members.delete(p); p.party = null;
+    const rest = [...party.members];
     p.send({ t: 'party', members: [] });
     for (const q of party.members) q.toast(`${p.name} hat die Gruppe verlassen.`);
     if (party.members.size === 1) { const last = [...party.members][0]; last.party = null; last.send({ t: 'party', members: [] }); party.members.clear(); if (this.players.has(last.charId)) this.broadcastPlayerInfo(last); }
     else this.sendParty(party);
     if (this.players.has(p.charId)) this.broadcastPlayerInfo(p);
+    for (const q of [p, ...rest]) this.rehome(q);
   }
   private partyMembers(party: Party): PartyMember[] {
     return [...party.members].map(q => ({ id: q.id, charId: q.charId, name: q.name, cls: q.char.cls, level: q.level, hp: Math.max(0, Math.round(q.hp)), maxHp: q.stats.maxHp, zone: q.zone.id, online: !q.linkdead }));
@@ -400,7 +432,7 @@ export class Game {
     const it = c.inv[i], b = ITEMS[it.base];
     if (!isGear(b)) return;
     if (!canEquip(c.cls, b)) { p.toast('Deine Klasse kann das nicht ausrüsten.', 'bad'); return; }
-    if (it.ilvl > c.level + 2) { p.toast(`Benötigt Stufe ${it.ilvl - 2}.`, 'bad'); return; }
+    if (c.level < equipLevel(it.ilvl)) { p.toast(`Benötigt Stufe ${equipLevel(it.ilvl)}.`, 'bad'); return; }
     let slot = slotOf(b)!;
     if (b.kind === 'accessory') slot = want === 'acc2' || want === 'acc1' ? want : !c.equip.acc1 ? 'acc1' : !c.equip.acc2 ? 'acc2' : 'acc1';
     const old = c.equip[slot];
@@ -536,9 +568,8 @@ export class Game {
     const r = q.rewards;
     p.gainGold(r.gold);
     for (const [base, n] of r.items ?? []) p.give(makeStack(base, n));
-    if (r.gear !== undefined) p.give(generateGear(this.rng, Math.min(CFG.player.maxLevel, Math.max(q.level + 1, 1)), r.gear, c.cls));
-    if (r.skillPoints) { c.skillPoints += r.skillPoints; p.sync('skillPoints'); }
-    if (r.attrPoints) { c.attrPoints += r.attrPoints; p.sync('attrPoints'); }
+    if (r.gear !== undefined) p.give(generateGear(this.rng, kreisLevel(Math.min(CFG.player.maxLevel, Math.max(q.level + 1, 1)), kreisOf(c)), r.gear, c.cls));
+    questPoints(p, r.skillPoints, r.attrPoints); // ab dem zweiten Kreis: Echo-Fragmente statt Punkten
     p.sync('quests');
     p.toast(`Quest abgeschlossen: ${q.name}`, 'quest');
     p.pev.push({ k: 'sfx', n: 'quest_complete' });

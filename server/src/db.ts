@@ -11,6 +11,7 @@ import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { ITEMS } from '../../shared/src/data/items';
 import { ENCHANTS, RECIPES } from '../../shared/src/data/recipes';
+import { QUELL_MAX, QUELL_TRACKS, RIFT_DUNGEONS, TRIAL_ID, ownedTitles } from '../../shared/src/data/rifts';
 import { SETS } from '../../shared/src/data/sets';
 import { ZONES } from '../../shared/src/data/zones';
 import { computeStats, newCharacter } from '../../shared/src/stats';
@@ -48,6 +49,22 @@ export function sanitizeChar(raw: any): CharData | null {
     const t: Record<string, [string, number]> = {};
     if (c.timed && typeof c.timed === 'object') for (const k of ['food', 'elixir']) { const v = (c.timed as any)[k]; if (Array.isArray(v) && ITEMS[v[0]]?.use?.buff?.slot === k) t[k] = [v[0], num(v[1], 0, 0, 7200)]; }
     c.timed = t;
+  }
+  // 0.5: Endspiel – alte Stände haben diese Felder nicht und bekommen Standardwerte; beschädigte Werte werden begrenzt
+  {
+    const r: any = c.rift && typeof c.rift === 'object' ? c.rift : {}, best: Record<string, [number, number]> = {};
+    for (const d of [...RIFT_DUNGEONS, TRIAL_ID]) { const b = r.best?.[d]; if (Array.isArray(b)) best[d] = [Math.floor(num(b[0], 1, 1, CFG.rift.maxStufe)), Math.floor(num(b[1], 0, 0, 1e6))]; }
+    c.rift = { stufe: Math.floor(num(r.stufe, 1, 1, CFG.rift.maxStufe)), seed: Math.floor(num(r.seed, 1, 1, 1e9)), best };
+    if (num(r.trial, 0) > 0) c.rift.trial = Math.floor(num(r.trial, 0, 0, 1e6));
+    const q: any = c.quell && typeof c.quell === 'object' ? c.quell : {}, pts: Record<string, number> = {};
+    const lvl = Math.floor(num(q.lvl, 0, 0, QUELL_MAX));
+    let left = lvl;
+    for (const t of QUELL_TRACKS) { const n = Math.min(left, Math.floor(num(q.pts?.[t.id], 0, 0, CFG.quell.trackCap))); if (n > 0) { pts[t.id] = n; left -= n; } }
+    c.quell = { lvl, xp: Math.floor(num(q.xp, 0)), pts };
+    c.kreis = Math.floor(num(c.kreis, 0, 0, CFG.kreis.max));
+    c.kreise = (Array.isArray(c.kreise) ? c.kreise : []).filter(k => k && typeof k === 'object').slice(-12)
+      .map(k => ({ ende: Math.floor(num(k.ende, 0, 0, 3)), dec: Object.fromEntries(Object.entries(k.dec && typeof k.dec === 'object' ? k.dec : {}).filter(([, v]) => typeof v === 'number').slice(0, 24)) as Record<string, number> }));
+    if (c.title !== undefined && !ownedTitles(c).includes(c.title)) delete c.title;
   }
   if (!c.quests || typeof c.quests !== 'object') c.quests = {};
   if (!c.flags || typeof c.flags !== 'object') c.flags = {};

@@ -17,7 +17,7 @@ const essenceOf = (el: Element): string | undefined => (ESSENCE as Record<string
 /** Eine Rezeptrolle, die der Spieler noch nicht kennt und nicht schon bei sich trägt (passend zur Stufe des Gebiets). */
 export function pickScroll(z: Zone, p: Player, prefer?: string): string | null {
   const maxLvl = z.def.level[1] + 4;
-  const open = LEARNABLE.filter(r => !knowsRecipe(p.char, r) && !p.countItem(scrollOf(r.id)) && r.level <= maxLvl && (!r.cls || r.cls === p.char.cls));
+  const open = LEARNABLE.filter(r => !r.exclusive && !knowsRecipe(p.char, r) && !p.countItem(scrollOf(r.id)) && r.level <= maxLvl && (!r.cls || r.cls === p.char.cls));
   if (!open.length) return null;
   if (prefer && open.some(r => r.id === prefer)) return scrollOf(prefer);
   return scrollOf(z.rng.pick(open).id);

@@ -83,6 +83,16 @@ export interface CharData {
   recipes?: string[];
   /** laufende Speise / laufendes Elixier: Platz → [Gegenstand, Restdauer in s] */
   timed?: Record<string, [string, number]>;
+  // ---- 0.5 Endspiel (optional: alte Spielstände haben diese Felder nicht; Regeln in shared/src/data/rifts.ts)
+  /** Mana-Risse: höchste freigeschaltete Stufe, Zähler für die Auswahl der Modifikatoren, beste Abschlüsse je Dungeon [Stufe, Sekunden], bestandene Prüfungen der Sieben */
+  rift?: { stufe: number; seed: number; best: Record<string, [number, number]>; trial?: number };
+  /** Quellstufen: erreichte Stufe, Erfahrung zur nächsten, verteilte Punkte je Bahn */
+  quell?: { lvl: number; xp: number; pts: Record<string, number> };
+  /** Neuer Kreis: laufender Kreis (0 = erster Durchgang) und die abgeschlossenen Kreise mit ihren Entscheidungen (`ende` = gewähltes Ende) */
+  kreis?: number;
+  kreise?: { ende: number; dec: Record<string, number> }[];
+  /** gewählter Titel (TITLES in data/rifts.ts) */
+  title?: string;
 }
 
 export interface Derived {
@@ -124,8 +134,8 @@ export type SnapPlayer = [number, number, number, number, number, number, number
 /** Gegner im Snapshot: [id, x, y, facingLeft(0/1), anim, hp, flags] */
 export type SnapMob = [number, number, number, number, number, number, number];
 
-export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number }
-export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string }
+export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number; /** Titel hinter dem Namen (0.5) */ title?: string }
+export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string; /** Einfärbung (Boss-Echos, 0.5) */ tint?: number }
 export interface ObjInfo { id: number; type: string; x: number; y: number; state: number; tag?: string; props?: Record<string, any> }
 export interface DropInfo { id: number; x: number; y: number; kind: 'gold' | 'item'; icon: string; rarity: number; name: string }
 export interface ProjInfo { id: number; spr: string; x: number; y: number; vx: number; vy: number; el: Element; life: number; r: number; hostile: boolean }
@@ -202,6 +212,13 @@ export type ClientMsg =
   | { t: 'dlgOpen'; npc: string; topic: string }
   | { t: 'dlgPick'; npc: string; topic: string; node: string; opt: number }
   | { t: 'cineEnd'; id: string }
+  // ---- Endspiel (0.5): Mana-Riss öffnen/folgen/verlassen (am Riss-Stein; `dungeon` = Dungeon-ID oder 'pruefung'), Quellstufen-Punkt setzen,
+  //      Neuen Kreis beginnen (bei Mirelda), Ausrüstung angleichen (Schmiede), Titel wählen
+  | { t: 'rift'; a: 'start' | 'join' | 'leave'; dungeon?: string; stufe?: number }
+  | { t: 'quell'; track: string }
+  | { t: 'kreis' }
+  | { t: 'attune'; uid: string; at: string }
+  | { t: 'title'; id: string }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -216,6 +233,19 @@ export interface ZoneInit {
   tod: number;       // Tageszeit 0..1
   you: number;       // eigene Entity-ID
   boss?: { id: number; name: string; phase: number; el: Element };
+  /** laufender Mana-Riss dieser Instanz (0.5) */
+  rift?: RiftInfo;
+  /** Kreis dieser Welt (0.5; fehlt = 0) */
+  kreis?: number;
+}
+/** Zustand eines Mana-Risses für die Anzeige: `t` = bisher verstrichene Sekunden, `done` = abgeschlossen in so vielen Sekunden (`bonus` = unter der Richtzeit) */
+export interface RiftInfo {
+  dungeon: string; stufe: number; mods: string[]; el?: Element;
+  par: number; t: number; revives: number;
+  done?: { sec: number; bonus: boolean };
+  failed?: boolean;
+  /** Prüfung der Sieben: bezwungene Echos / Gesamtzahl */
+  trial?: [number, number];
 }
 
 export type ServerMsg =
@@ -243,6 +273,8 @@ export type ServerMsg =
   | { t: 'dlg'; npc: string; topic: string; node: string | null; err?: 1 }
   | { t: 'cine'; id: string }
   | { t: 'lore'; id: string; first?: 1 }
+  // ---- Endspiel (0.5): Zustand des laufenden Mana-Risses (null = keiner)
+  | { t: 'rift'; r: RiftInfo | null }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 
