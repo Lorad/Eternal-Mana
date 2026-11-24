@@ -268,7 +268,7 @@ const TROPHIES: Record<string, Fn> = {
     for (const [x, y, r] of [[6, 8, 5], [18, 8, 5], [12, 8, 5], [8, 14, 5], [16, 14, 5], [12, 19, 4]] as const) p.ball(x, y, r, r, F, 1, 3);
     for (const [x, y, r] of [[5, 7, 3.6], [19, 7, 3.2], [9, 12, 3.8], [15, 12, 3.4], [12, 17, 3.4]] as const) p.ball(x, y, r, r, G, 1, 4);
     p.ball(9, 5.5, 3.6, 2.6, G, 2, 4); p.ball(15, 5.5, 3.6, 2.6, G, 1, 4);
-    p.rect(10, 8, 4, 2, P.forest[0]); p.rect(11, 9, 2, 1, P.wood[0]);
+    p.ball(12, 21, 2.6, 2.2, G, 1, 4); tube(p, bez([11, 8], [7, 4], [2, 8], 10), 1.7, 0.6, L, 1); tube(p, bez([13, 8], [17, 4], [22, 8], 10), 1.7, 0.6, L, 1); p.rect(10, 9, 4, 2, P.forest[0]); p.rect(11, 10, 2, 1, P.wood[0]);
     for (const [x, y0, y1] of [[3, 10, 16], [21, 10, 15], [14, 19, 23], [9, 20, 22], [6, 16, 19], [18, 17, 20]] as const) { p.line(x, y0, x, y1, L[2]); p.set(x, y1, L[4]); p.set(x, y0, L[1]); }
     p.px([7, 10, 17, 11, 11, 15], WHITE); p.px([7, 11, 6, 10, 8, 10, 17, 12, 16, 11, 18, 11, 11, 16, 10, 15, 12, 15], P.pink[4]); p.px([7, 10, 17, 11, 11, 15], P.gold[4]);
     p.rect(14, 15, 3, 1, P.red[2]); p.set(15, 14, P.red[3]); p.set(15, 16, P.cream[4]);
@@ -511,15 +511,15 @@ const UNIQUES: Record<string, Fn> = {
     p.poly([[13, 16], [22, 15], [23, 22], [14, 23]], C[4]); p.poly([[20, 15], [22, 15], [23, 22], [21, 22]], C[3]); p.set(15, 17, P.wood[1]);
     p.px([15, 19, 15, 20, 16, 20, 16, 21, 16, 19, 18, 19, 18, 20, 18, 21, 20, 19, 20, 20, 20, 21, 19, 19, 22, 20, 22, 21], P.wood[0]);
   },
-  // Docht vom Letzten Licht: Glasröhrchen an goldener Kette, darin ein Docht mit kleiner blasser Flamme
+  // Docht vom Letzten Licht: Glasröhrchen mit Goldkappen an goldener Kette, darin ein Docht mit blasser Flamme
   uq_docht: (p) => {
-    const Y = P.gold, G = P.ice, L = mix(P.gold[4], WHITE, 0.6);
-    chain(p, Y[3], Y[1], 10);
-    p.rect(11, 8, 2, 2, Y[2]); p.rect(9, 10, 6, 2, Y[3]); p.rect(9, 10, 3, 1, Y[4]); p.rect(13, 11, 2, 1, Y[1]);
-    p.rect(9, 12, 6, 9, P.violet[0]); p.rect(9, 12, 1, 9, G[3]); p.rect(14, 12, 1, 9, G[1]); p.set(10, 13, G[4]);
-    p.rect(9, 21, 6, 2, Y[2]); p.rect(9, 21, 3, 1, Y[3]); p.rect(10, 23, 4, 1, Y[1]);
-    p.rect(12, 17, 1, 4, P.cream[2]); p.set(12, 17, P.wood[1]);
-    p.px([12, 13, 11, 15, 12, 16, 13, 15], P.gold[3]); p.px([12, 14, 12, 15, 11, 14], L); p.set(12, 15, WHITE);
+    const Y = P.gold, G = P.ice, L = mix(P.gold[4], WHITE, 0.6), N = P.violet;
+    chain(p, Y[3], Y[1], 9);
+    p.rect(11, 7, 2, 2, Y[2]); p.rect(8, 9, 8, 2, Y[3]); p.rect(8, 9, 4, 1, Y[4]); p.rect(14, 10, 2, 1, Y[1]);
+    p.rect(8, 11, 8, 10, mix(N[1], P.blue[1], 0.5)); p.rect(8, 11, 1, 10, G[3]); p.rect(15, 11, 1, 10, G[1]); p.rect(9, 12, 1, 8, mix(N[2], G[2], 0.5));
+    p.rect(12, 16, 1, 5, P.cream[1]); p.set(12, 17, P.wood[0]);
+    p.poly([[12.5, 11], [14.6, 14.5], [12.5, 16.6], [10.4, 14.5]], P.gold[3]); p.poly([[12.5, 12], [13.6, 14.5], [12.5, 16], [11.4, 14.5]], L); p.px([12, 14, 12, 15], WHITE);
+    p.rect(8, 21, 8, 2, Y[2]); p.rect(8, 21, 4, 1, Y[3]); p.rect(10, 23, 4, 1, Y[1]);
   },
   // Kompass der Umwege (fahrende Händlerin): Messingkompass, die Nadel nimmt nicht den geraden Weg
   uq_kompass: (p) => {
@@ -591,7 +591,7 @@ export const WORLD_GLOW: Record<string, Fn> = {
   uq_feuerstein: (p) => { halo(p, 18, 4, 4.5, P.fire[3], 70); },
   uq_wettschein: (p) => { soft(p, 21, 16, alpha(P.gold[4], 200)); },
   uq_fundnummer: (p) => { spark(p, 20, 3, P.gold[4]); },
-  uq_docht: (p) => { halo(p, 12, 15, 7, mix(P.gold[4], WHITE, 0.5), 56); },
+  uq_docht: (p) => { halo(p, 12.5, 14, 9, mix(P.gold[4], WHITE, 0.5), 60); },
   uq_kompass: (p) => { spark(p, 21, 5, P.gold[4]); },
   uq_pfennig: (p) => { spark(p, 20, 3, P.gold[4]); soft(p, 3, 5, alpha(P.green[4], 200)); },
 };
