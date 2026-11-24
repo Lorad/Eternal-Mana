@@ -207,9 +207,9 @@ export const CFG = {
       tiers: [0.2, 0.6],
       /** Belohnung je Stufe (Bronze, Silber, Gold) als Faktor */
       tierMul: [0.5, 0.75, 1],
-      gold: 12, xp: 10,            // × Gold/XP eines Gegners der Gebietsstufe
+      gold: 8, xp: 10,             // × Gold/XP eines Gegners der Gebietsstufe (Messung: scripts/world-income.ts)
       mapChance: 0.1, scrollChance: 0.06,
-      stars: { everySec: 5, lifeSec: 150, durSec: 170, bonusAt: 5 },
+      stars: { everySec: 8, lifeSec: 150, durSec: 170, bonusAt: 5 },
       trader: { durSec: 330 },
     },
     boss: {
@@ -218,21 +218,21 @@ export const CFG = {
       despawnSec: 900,
       hpPerPlayer: 0.7,            // zusätzliches Leben je weiterem Teilnehmer
       radius: 520,
-      gold: 40, xp: 30,
+      gold: 30, xp: 30,
       aether: 0.35, scroll: 0.3, map: 0.25,
       essences: [4, 6],
       rarity: [0, 0, 55, 35, 10],
     },
     rare: {
-      respawn: [600, 1200], firstDelay: [150, 480], despawnSec: 900,
+      respawn: [900, 1800], firstDelay: [150, 480], despawnSec: 900,
       spawnDist: 260,              // nicht vor den Augen der Spieler erscheinen
       hintDist: 300,
-      mats: [3, 5], essences: [2, 3], scroll: 0.25, map: 0.15, trophyRepeat: 0.25, gold: 10,
+      mats: [3, 5], essences: [2, 3], scroll: 0.25, map: 0.1, trophyRepeat: 0.25, gold: 4,
     },
     treasure: {
       spots: 24,                   // mögliche Grabstellen je Region
       radius: 26,
-      gold: [30, 45],              // × Gold eines Gegners der Gebietsstufe
+      gold: [12, 18],              // × Gold eines Gegners der Gebietsstufe
       rarity: [0, 0, 60, 32, 8],
       aether: 0.15, scroll: 0.2,
       eliteChance: 0.02,
@@ -243,8 +243,8 @@ export const CFG = {
       cooldown: [300, 540],
       chance: 0.5,                 // je Prüfung (alle 2 s), sobald alles andere stimmt
       lifeSec: 240,
-      gold: 6, xp: 4,
-      mapChance: 0.08,
+      gold: 3, xp: 4,
+      mapChance: 0.05,
     },
     routine: { speed: 30, segment: 48 },
   },
