@@ -196,25 +196,25 @@ export const Story = {
       if (!places || p.dead || p.linkdead) continue;
       for (const pl of places) {
         const inside = Math.hypot(p.x - pl.x, p.y - pl.y) <= pl.r;
+        // Questziel „besuchen“: zählt, solange man dort steht – auch wenn die Quest erst vor Ort angenommen wurde
+        if (inside && !p.char.flags[`v:${pl.id}`]) this.markVisit(p, pl.id);
+        // verborgene Quests lösen nur beim Betreten aus (nicht erneut, wenn man sie vor Ort aufgibt)
         if (inside === s.places.has(pl.id)) continue;
         if (!inside) { s.places.delete(pl.id); continue; }
         s.places.add(pl.id);
-        this.onVisit(p, pl.id);
+        for (const q of VISIT_QUESTS) if (q.trigger!.visit === pl.id) startQuest(p, q);
       }
     }
   },
-  onVisit(p: Player, place: string) {
+  markVisit(p: Player, place: string) {
     const c = p.char;
-    if (!c.flags[`v:${place}`]) {
-      for (const id in c.quests) {
-        if (c.quests[id].s !== 'active') continue;
-        if (!QUESTS[id]?.objectives.some(o => o.t === 'visit' && o.place === place)) continue;
-        setFlag(p, `v:${place}`);
-        p.checkCollectQuests();
-        break;
-      }
+    for (const id in c.quests) {
+      if (c.quests[id].s !== 'active') continue;
+      if (!QUESTS[id]?.objectives.some(o => o.t === 'visit' && o.place === place)) continue;
+      setFlag(p, `v:${place}`);
+      p.checkCollectQuests();
+      return;
     }
-    for (const q of VISIT_QUESTS) if (q.trigger!.visit === place) startQuest(p, q);
   },
 
   // ================================================================== Dialogbäume
