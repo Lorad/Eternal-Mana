@@ -160,7 +160,7 @@ function QuestTalk({ q, mode, npc, char, back }: { q: QuestDef; mode: 'offer' | 
         <div class="dlg-qinfo">
           {mode === 'offer' && <p class="qp-sum">{q.summary}</p>}
           {mode !== 'turnin' && <div><div class="sec-title">Ziele</div><Objectives q={q} char={char} /></div>}
-          <div><div class="sec-title">Belohnung</div><Rewards q={q} /></div>
+          <div><div class="sec-title">Belohnung</div><Rewards q={q} char={char} /></div>
         </div>
       )}
       <div class="row end dlg-actions">

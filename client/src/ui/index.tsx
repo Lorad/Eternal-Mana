@@ -51,7 +51,7 @@ function Root() {
 
   const narrow = uiScale.w < 860, short = uiScale.h < 600;
   return (
-    <div ref={ref} class={cx('em-root', narrow && 'is-narrow', short && 'is-short', uiScale.w < uiScale.h && 'is-portrait')}
+    <div ref={ref} class={cx('em-root', narrow && 'is-narrow', short && 'is-short', uiScale.w < uiScale.h && 'is-portrait', hasCine && 'is-cine')}
       style={{ width: uiScale.w + 'px', height: uiScale.h + 'px', transform: `scale(${s})` }}>
       {screen === 'boot' && <BootScreen />}
       {screen === 'menu' && <MainMenu />}

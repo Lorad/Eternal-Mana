@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks';
 import { useStore } from '../../state/store';
 import { ITEMS } from '../../../../shared/src/data/items';
 import { NPCS } from '../../../../shared/src/data/npcs';
-import { QUEST_LIST, objectiveProgress, objectiveTarget, questChapter, questComplete } from '../../../../shared/src/data/quests';
+import { QUEST_LIST, condOk, objectiveProgress, objectiveTarget, questChapter, questComplete } from '../../../../shared/src/data/quests';
 import { chapterLabel } from '../../../../shared/src/data/story';
 import type { QuestDef } from '../../../../shared/src/data/quests';
 import { ZONES } from '../../../../shared/src/data/zones';
@@ -14,8 +14,10 @@ import { ChronikTab, loreTotals } from '../story';
 export const QUEST_TYPE: Record<QuestDef['type'], string> = { main: 'Hauptquest', side: 'Nebenquest', repeat: 'Wiederholbar', group: 'Gruppe' };
 const ORDER: QuestDef['type'][] = ['main', 'side', 'repeat', 'group'];
 
-export function Rewards({ q }: { q: QuestDef }) {
+export function Rewards({ q, char }: { q: QuestDef; char?: CharData }) {
   const r = q.rewards;
+  // Zusatzbelohnungen hängen an Entscheidungen: Ist sie gefallen, steht hier die zutreffende – sonst nur ein Hinweis
+  const bonus = char ? (q.bonus ?? []).filter(b => condOk(char, b.if)) : [];
   return (
     <ul class="rewards">
       <li><i class="rw-xp">EP</i>{fmtNum(r.xp)} Erfahrung</li>
@@ -24,7 +26,8 @@ export function Rewards({ q }: { q: QuestDef }) {
       {r.gear !== undefined && <li><Icon k="item_armor_light" size={24} />Ausrüstung für deine Klasse{r.gear >= 2 ? ' (selten oder besser)' : ''}</li>}
       {r.skillPoints ? <li><i class="rw-xp">FP</i>{r.skillPoints} Fähigkeitspunkt{r.skillPoints > 1 ? 'e' : ''}</li> : null}
       {r.attrPoints ? <li><i class="rw-xp">AP</i>{r.attrPoints} Attributspunkt{r.attrPoints > 1 ? 'e' : ''}</li> : null}
-      {q.bonus?.length ? <li class="qp-bonus">Dazu eine weitere Belohnung – je nachdem, wie du dich entscheidest.</li> : null}
+      {bonus.map(b => <li class="qp-bonus">{b.note}</li>)}
+      {q.bonus?.length && !bonus.length ? <li class="qp-bonus">Dazu eine weitere Belohnung – je nachdem, wie du dich entscheidest.</li> : null}
     </ul>
   );
 }
@@ -98,7 +101,7 @@ export function QuestPanel() {
               )}
               {tab === 'done' && <div class="note">Abgeschlossen{times > 1 ? ` (${times}×)` : ''}.{(sel.type === 'repeat' || sel.type === 'group') ? ' Diese Quest kann erneut angenommen werden.' : ''}</div>}
               <div class="sec-title">Belohnung</div>
-              <Rewards q={sel} />
+              <Rewards q={sel} char={char} />
               <div class="qp-meta note">
                 Auftraggeber: <b>{NPCS[sel.giver]?.name ?? sel.giver}</b>{NPCS[sel.giver] ? `, ${NPCS[sel.giver].title}` : ''}
                 {sel.turnIn && sel.turnIn !== sel.giver && <> · Abgabe bei <b>{NPCS[sel.turnIn]?.name ?? sel.turnIn}</b></>}

@@ -269,7 +269,7 @@ export const ZONE_LIST: ZoneDef[] = [
     level: [34, 36], music: 'dungeon', ambience: 'dungeon', weathers: [['void', 1]], dark: 0.5, indoor: true,
     parent: 'schatten', gx: 3, gy: 3, maxRooms: 8, puzzle: 'torches', boss: 'vael',
     mobs: [['erinnerter', 4], ['wachschatten', 3], ['klagegeist', 3], ['albtraumross', 1.5]],
-    mapPos: [95, 52],
+    mapPos: [91, 54],
   }),
   Z({
     id: 'quellgrund', name: 'Quellgrund', subtitle: 'Wo das Wasser Atem holt', biome: 'kristall', kind: 'overworld', w: 84, h: 84, seed: 8101,
@@ -301,7 +301,7 @@ export const ZONE_LIST: ZoneDef[] = [
     level: [38, 40], music: 'dungeon', ambience: 'dungeon', weathers: [['motes', 1]], dark: 0.55, indoor: true,
     parent: 'quellgrund', gx: 4, gy: 4, maxRooms: 12, puzzle: 'levers', boss: 'aetherion',
     mobs: [['erinnerter', 4], ['tiefenlicht', 3], ['klagegeist', 3], ['albtraumross', 2], ['traumwaechter', 2]],
-    mapPos: [32, 90],
+    mapPos: [28, 79],
   }),
 ];
 
