@@ -1,11 +1,12 @@
-/** Die 15 NPC-Erscheinungen: eigene Köpfe, Körperbau, Farben und Requisiten. */
+/** Die 16 NPC-Erscheinungen: eigene Köpfe, Körperbau, Farben und Requisiten. */
 import type { Px } from '../draw';
 import { P, WHITE, alpha, mix } from '../palette';
 import type { Ramp } from '../palette';
-import { BUILD, FH, FW, art, head, legend, lo, mixR } from './rig';
+import { BUILD, FH, FOOT, FW, art, head, legend, lo, mixR } from './rig';
 import type { Art, Build, Costume, Dir, K, LayerFn } from './rig';
 import { braid, krieger, mSatchel, waldlaeufer, wQuiver } from './classes';
 import { book, bow, pickaxe, smithHammer, spear, stick } from './weapons';
+import { HAIR as V_HAIR, HOODDARK as V_HOOD, LIRON as V_IRON, MANT as V_MANT, OG as V_GOLD, PALE as V_PALE, SK as V_SKIN, STOLE as V_STOLE, UNDER as V_UNDER } from '../bosses/vael';
 
 const GINGER = lo(P.fire);
 const BLOND = mixR(P.gold, P.tan, 0.4);
@@ -944,8 +945,148 @@ const kraemer = base({
   carry: (dir) => (dir === 0 ? { mh: [-2, 2], wa: -90 } : dir === 1 ? { mh: [5, 2], wa: -90 } : { mh: [2, 2], wa: -90, wz: 1 }),
 });
 
+// ================================================================ Vael (Hüter der Dunkelheit)
+// Derselbe Mann wie der Boss (bosses/vael.ts, gleiche Farbrampen): hager und groß, Kapuze auf, bleiches Gesicht mit
+// weißem Bart, indigoblauer Ordensmantel mit verblichener Goldborte, in der Nebenhand die Laterne mit dem einen fahlen Licht.
+const vLg = legend(V_SKIN, V_HAIR, [V_MANT, [V_UNDER[1], V_UNDER[2], V_UNDER[3], V_STOLE[1], V_STOLE[2]], V_GOLD, [P.shadow[0], V_HOOD, V_MANT[0], V_MANT[1], V_MANT[1]]]);
+const hoodRow = (rimL: string, face: string, rimR: string): string => `.bA${rimL}${face}${rimR}Aa.`;
+/** Laterne; (hx, hy) = Hand. 5×8 px, hängt am Tragring unter der Hand. */
+function vaelLantern(l: Px, hx: number, hy: number): void {
+  const I = V_IRON, O = V_GOLD, L = V_PALE;
+  l.set(hx, hy + 2, I[3]); l.set(hx + 1, hy + 2, I[2]);
+  l.rect(hx - 1, hy + 3, 3, 1, O[3]); l.set(hx + 1, hy + 3, O[1]);
+  l.rect(hx - 2, hy + 4, 5, 1, I[2]); l.set(hx - 2, hy + 4, I[4]);
+  for (let j = 0; j < 4; j++) { l.set(hx - 2, hy + 5 + j, I[3]); l.set(hx + 2, hy + 5 + j, I[1]); l.rect(hx - 1, hy + 5 + j, 3, 1, j === 0 || j === 3 ? L[2] : L[3]); }
+  l.rect(hx, hy + 6, 1, 2, WHITE);
+  l.rect(hx - 2, hy + 9, 5, 1, I[1]); l.set(hx - 2, hy + 9, I[3]);
+}
+/** fahler Lichtschein um die Laterne (nur auf freien Pixeln), atmet mit dem Wiegen der Figur */
+function vaelGlow(p: Px, k: K): void {
+  const cx = k.oh[0] + 0.5, cy = Math.min(k.oh[1], FOOT - 10) + 7, r = 5.4 + (k.ps.sw > 0 ? 0.7 : k.ps.sw < 0 ? -0.3 : 0);
+  for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) {
+    if (x < 1 || y < 1 || x >= FW - 1 || y >= FH - 1 || p.d[y * FW + x] >>> 24) continue;
+    const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy) / r;
+    if (d < 1) p.d[y * FW + x] = alpha(V_PALE[3], Math.round(d < 0.5 ? 96 : d < 0.75 ? 60 : 30));
+  }
+}
+const vael = base({
+  key: 'npc_vael', lg: vLg, B: B({ leg: 8, arm: 8 }), fullHead: true, reach: 'm',
+  head: [
+    head([
+      '....AbbAAa....',
+      '..AbbBbAAAAa..',
+      '.AbBbAAAAAAAa.',
+      '.bBAggggggAAa.',
+      hoodRow('f', 'gsSSsg', 'e'),
+      hoodRow('A', 'sSttSs', 'a'),
+      hoodRow('f', 'SSttSs', 'e'),
+      hoodRow('A', 'SXttXS', 'a'),
+      hoodRow('f', 'sSttSs', 'e'),
+      hoodRow('A', 'sUVVUs', 'a'),
+      '.aAAUVVVVUAa..',
+      '..aAuUVVUuAa..',
+      '....uUVVUu....',
+      '.....UVVu.....',
+      '......Uu......',
+    ], 2),
+    head([
+      '...AbbAAAa....',
+      '.AbbBbAAAAAa..',
+      'AbBbAAAAAAAAa.',
+      'AbBAAAAAAAAAAa',
+      'bBAAAAAAAAfgg.',
+      'bAAAaAAAAAgsSt',
+      'bAAAaAAAAfgSSt',
+      'bAAAaAAAAagSXt',
+      'bAAAAaAAAfsStT',
+      'AAAAAaAAAaUVVU',
+      'aAAAAaAAaUVVVu',
+      '.aAAAAAAaUVVu.',
+      '........uUVu..',
+      '.........UVu..',
+      '..........u...',
+    ], 2),
+    head([
+      '....AbbAAa....',
+      '..AbbBbAAAAa..',
+      '.AbBbAAAAAAAa.',
+      '.bBAAAAAAAAAa.',
+      '.bAAAbAAAAAAa.',
+      '.bAAbAAAaAAAa.',
+      '.bAAbAAAaAAAa.',
+      '.bAAbAAAAaAAa.',
+      '.bAAbAAAAaAAa.',
+      '.AAAbAAAAaAAa.',
+      '.aAAAbAAaAAaa.',
+      '..aAAAAAAAaa..',
+      '...aAAAAAaa...',
+      '.....aAAa.....',
+    ], 2),
+  ],
+  torso: [
+    art([
+      '..AbbAAAAa..',
+      '.AbBbAAAAAa.',
+      'AbBbAAAAAAAa',
+      'fAfAfAeAeAeA',
+      '..AbcDdCAa..',
+      '..eEEfEEee..',
+      '..AbeDdeAa..',
+      '.AAbcDdCAaa.',
+      '.AbAeDdeAAa.',
+      '.AbAcDdCAAa.',
+      '.AbAeDdeAAa.',
+      'AAbAcDdCAAaa',
+      'AbAAeDdeAAAa',
+      'AbAAcDdCAAAa',
+      'fAfAfAeAeAeA',
+    ], 6),
+    art([
+      '..AbAa..',
+      '.AbBAAa.',
+      '.AbBAAAa',
+      '.fAfAeAe',
+      '.aAbAcD.',
+      '.eEfEEe.',
+      '.aAbAeD.',
+      '.aAAbAcD',
+      'aAAAbAeD',
+      'aAAAbAcD',
+      'aAAAbAeD',
+      'aAAAbAcD',
+      'aAAAbAeD',
+      'aAAAbAcD',
+      'afAfAeAe',
+    ], 6),
+    art([
+      '..AbbAAAAa..',
+      '.AbBbAAAAAa.',
+      'AbBbAAAAAAAa',
+      'AbBAAbAAAAAa',
+      'fAfAfAeAeAeA',
+      '..eEfEEEee..',
+      '..AbAAaAAa..',
+      '.AAbAAaAAaa.',
+      '.AbAAAaAAAa.',
+      '.AbAAAaAAAa.',
+      '.AbAAAaAAAa.',
+      'AAbAAAaAAAaa',
+      'AbAAAAaAAAAa',
+      'AbAAAAaAAAAa',
+      'fAfAfAeAeAeA',
+    ], 6),
+  ],
+  arm: { up: [V_MANT[3], V_MANT[2]], low: [V_MANT[3], V_MANT[2]], hand: [V_SKIN[3], V_SKIN[2]] },
+  leg: { c: r3(P.ash, 4), boot: r3(P.ash, 4), robe: true },
+  off: (l, k, hx, hy) => { vaelLantern(l, hx, Math.min(hy, FOOT - 10)); }, // beim Knien steht die Laterne am Boden
+  post: vaelGlow,
+  swing: [0.5, 0.1],
+  carry: (dir) => (dir === 0 ? { oh: [2, 4] } : dir === 1 ? { oh: [6, 3], oz: 1 } : { oh: [-2, 4] }),
+});
+
 export const NPCS: Record<string, Costume> = {
   npc_aelteste: aelteste, npc_schmied: schmied, npc_haendlerin: haendlerin, npc_gelehrter: gelehrter, npc_kind: kind,
   npc_jaegerin: jaegerin, npc_wache: wache, npc_bergfrau: bergfrau, npc_nomade: nomade, npc_einsiedler: einsiedler,
   npc_fellhaendlerin: fellhaendlerin, npc_archaeologin: archaeologin, npc_geist: geist, npc_echo: echo, npc_kraemer: kraemer,
+  npc_vael: vael,
 };

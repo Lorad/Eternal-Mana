@@ -181,7 +181,7 @@ export const krieger: Costume = {
 };
 
 // ================================================================ Magier
-const M_ROBE = mixR(P.blue, P.violet, 0.5);
+export const M_ROBE = mixR(P.blue, P.violet, 0.5);
 const mLg = legend(P.skin, P.snow, [M_ROBE, P.violet, P.gold, P.tan]);
 const mTab: Tab = {
   attack: [
@@ -534,7 +534,7 @@ export const waldlaeufer: Costume = {
 
 // ================================================================ Paladin
 const P_HAIR = mixR(P.gold, P.tan, 0.4);
-const P_SKY = [P.blue[2], P.blue[3], mix(P.blue[3], P.blue[4], 0.5), P.blue[4]];
+export const P_SKY = [P.blue[2], P.blue[3], mix(P.blue[3], P.blue[4], 0.5), P.blue[4]];
 const pLg = legend(P.skin, P_HAIR, [P.cream, P.gold, P_SKY, P.wood, P.blue, P.snow]);
 const pTab: Tab = {
   attack: [
@@ -676,9 +676,9 @@ export const paladin: Costume = {
 };
 
 // ================================================================ Schattenjäger
-const S_TEAL = [P.teal[0], P.teal[1], mix(P.teal[1], P.teal[2], 0.55), P.teal[2]];
-const S_COAL = [P.ash[2], P.ash[3], P.ash[4], mix(P.ash[4], P.stone[3], 0.5)];
-const S_PINK = [P.pink[1], P.pink[2], P.pink[3], P.pink[4]];
+export const S_TEAL = [P.teal[0], P.teal[1], mix(P.teal[1], P.teal[2], 0.55), P.teal[2]];
+export const S_COAL = [P.ash[2], P.ash[3], P.ash[4], mix(P.ash[4], P.stone[3], 0.5)];
+export const S_PINK = [P.pink[1], P.pink[2], P.pink[3], P.pink[4]];
 const sLg = legend(P.skin, P.snow, [S_TEAL, S_COAL, S_PINK, P.teal, P.steel]);
 const SB: typeof BUILD = { ...BUILD, shX: 5, legX: 3 };
 const sTab: Tab = {

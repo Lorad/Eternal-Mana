@@ -27,7 +27,6 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 
 - Kein Mensch hat Akt II bisher gespielt: Tempo, Erfahrungskurve und Schwierigkeit der Kapitel 7–10 sind berechnet, nicht
   erprobt. Ob die Muster von Vael und Aetherion ohne Unverwundbarkeit fair ausweichbar sind, ist ungeprüft.
-- Vael als NPC ist ein eingefärbter Einsiedler und sieht anders aus als sein Boss-Sprite.
 - Aetherion wechselt oft das Element (häufiges Aufblitzen). Ton und Animationen der Filmszenen nur in Standbildern geprüft.
 - Koop nur mit zwei Test-Bots geprüft, nicht mit zwei echten Browsern.
 
@@ -38,14 +37,13 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 - Koop nur mit simulierten Spielern. Spieler in verschiedenen Kreisen sehen sich ohne Gruppe nicht (eigene Weltinstanzen);
   wer mit einem Kreis-0-Charakter gruppiert, spielt in dessen leichterer Welt.
 - Riss-Stufen werden von der Gruppe getragen (ein Mitglied kann weit nach oben gezogen werden).
-- Echo-Fragmente nutzen das Symbol der Quellsplitter; die Einfärbung der Echos ist bei manchen Bossen dezent.
+- Die Einfärbung der Echos ist bei manchen Bossen dezent.
 
 ### Offene Punkte aus 0.6
 
 - Kein Mensch hat es gespielt: Weltboss-Muster, Besonderheiten der seltenen Monster und das Tempo der Ereignisse sind berechnet.
 - Nicht im Browser gesehen: Stolleneinsturz, Aschesturm, Schneesturmjagd, Geleit, Duell, Graben, NPCs in Bewegung,
   alles in einem Kreis ab 1.
-- Eigene Symbole fehlen für Sternsplitter, Echo-Fragmente, Trophäen, Schatzkarten und neue Speisen (vorerst vorhandene).
 - NPCs laufen ohne Kollision auf einem Rasterweg; seltene Monster können unter Baumkronen stehen.
 - Die Anzeige oben rechts kann auf kleinen Bildschirmen voll werden (Karte, Riss, Quests, Ereignisse).
 - Die Jahreszeiten-Uhr läuft nur, während der Server läuft.

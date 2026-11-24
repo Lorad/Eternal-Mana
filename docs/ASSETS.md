@@ -34,6 +34,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `npc_kraemer` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_nomade` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_schmied` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_vael` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_wache` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 
 ## Spritesheets: mobs
@@ -78,6 +79,36 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `boss_kristallkoloss` | 112×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_vael` | 96×96 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_ysolde` | 96×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
+
+## Spritesheets: outfits (Garderobe; 25 Sheets, 384 kB; werden erst bei Bedarf geladen, Raster und Animationen wie das Klassen-Sheet)
+
+| Sheet | Klasse | Frame | Frames | Größe |
+|---|---|---|---|---|
+| `char_krieger_frost` | `char_krieger` | 32×40 | 129 | 14.6 kB |
+| `char_krieger_glut` | `char_krieger` | 32×40 | 129 | 14.7 kB |
+| `char_krieger_gold` | `char_krieger` | 32×40 | 129 | 14.1 kB |
+| `char_krieger_schatten` | `char_krieger` | 32×40 | 129 | 14.7 kB |
+| `char_krieger_wald` | `char_krieger` | 32×40 | 129 | 14.6 kB |
+| `char_magier_frost` | `char_magier` | 32×40 | 129 | 17.0 kB |
+| `char_magier_glut` | `char_magier` | 32×40 | 129 | 17.0 kB |
+| `char_magier_gold` | `char_magier` | 32×40 | 129 | 16.7 kB |
+| `char_magier_schatten` | `char_magier` | 32×40 | 129 | 17.0 kB |
+| `char_magier_wald` | `char_magier` | 32×40 | 129 | 16.9 kB |
+| `char_paladin_frost` | `char_paladin` | 32×40 | 129 | 14.9 kB |
+| `char_paladin_glut` | `char_paladin` | 32×40 | 129 | 14.9 kB |
+| `char_paladin_gold` | `char_paladin` | 32×40 | 129 | 14.4 kB |
+| `char_paladin_schatten` | `char_paladin` | 32×40 | 129 | 14.8 kB |
+| `char_paladin_wald` | `char_paladin` | 32×40 | 129 | 15.1 kB |
+| `char_schattenjaeger_frost` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
+| `char_schattenjaeger_glut` | `char_schattenjaeger` | 32×40 | 129 | 14.6 kB |
+| `char_schattenjaeger_gold` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
+| `char_schattenjaeger_schatten` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
+| `char_schattenjaeger_wald` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
+| `char_waldlaeufer_frost` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
+| `char_waldlaeufer_glut` | `char_waldlaeufer` | 32×40 | 129 | 16.0 kB |
+| `char_waldlaeufer_gold` | `char_waldlaeufer` | 32×40 | 129 | 15.6 kB |
+| `char_waldlaeufer_schatten` | `char_waldlaeufer` | 32×40 | 129 | 16.0 kB |
+| `char_waldlaeufer_wald` | `char_waldlaeufer` | 32×40 | 129 | 15.8 kB |
 
 ## Atlas: obj (635 Frames, 2048×371)
 
@@ -486,7 +517,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `void_mote` | 5×5 | 3 (`_0…_2`) | Wetter/Umgebung |
 | `weak` | 16×16 | 2 (`_0…_1`) | Effekt |
 
-## Atlas: icons (371 Frames, 501×476)
+## Atlas: icons (411 Frames, 501×526)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -501,7 +532,10 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_charm` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_dagger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_crit` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_gelehrt` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_grube` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_guard` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_laterne` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_power` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_res_dark` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_res_earth` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -509,15 +543,21 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_elx_res_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_res_water` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_res_wind` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_sieben` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_speed` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_elx_stern` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_beeren` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_eintopf` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_feigen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_fest` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_fladen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_kresse` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_pilz` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_spiess` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_stern` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_tee` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_food_wette` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_gem` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_gold` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_hammer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -543,6 +583,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_mat_core_kristallkoloss` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_core_ysolde` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_crystal` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_echo` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_ember` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_ess_dark` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_ess_earth` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -559,6 +600,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_mat_lichen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_pepper` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_rune` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_mat_star` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_void` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_weave` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_wood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -581,6 +623,35 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_shard` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_staff` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_sword` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tmap_frost` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tmap_glut` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tmap_gruenwald` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tmap_kristall` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tmap_ruinen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tmap_schatten` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_altvater_reif` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_aschenmaul` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_borkenkoenig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_fliegenhut` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_glucke` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_guenther` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_hohlprinz` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_meister_russ` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_moosgrimm` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_niemand` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_nordlicht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_quill` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_sockel` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_stunde` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_tante_echo` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_brunnenmuenze` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_docht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_feuerstein` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_fundnummer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_kompass` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_pfennig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_schichtmarke` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uq_wettschein` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `skill_arrow_dark` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
 | `skill_arrow_earth` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |
 | `skill_arrow_fire` | 24×24 | 1 | Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste) |

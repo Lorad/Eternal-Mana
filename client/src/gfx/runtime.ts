@@ -11,6 +11,10 @@ export { paintGround } from './tiles/index';
 const BASE = import.meta.env.BASE_URL + 'assets/';
 let bundle: GfxBundle | null = null;
 let icons: Sheet | null = null;
+interface GridMeta { file: string; fw: number; fh: number; cols: number; rows: number }
+/** Gewand-Varianten der Garderobe (Manifest-Abschnitt `outfits`): werden erst bei Bedarf geladen, siehe loadCharSheet */
+let outfitMeta: Record<string, GridMeta> = {};
+const lazySheets = new Map<string, Promise<Sheet | null>>();
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
@@ -28,6 +32,12 @@ function toCanvas(img: CanvasImageSource, sx: number, sy: number, w: number, h: 
   ctx.drawImage(img, sx, sy, w, h, 0, 0, w, h);
   return cv;
 }
+/** Raster-Sheet aus einem geladenen Bild: Frames "0".."n-1" zeilenweise */
+function gridSheet(img: HTMLImageElement, m: GridMeta): Sheet {
+  const frames: Record<string, FrameRect> = {};
+  for (let i = 0; i < m.cols * m.rows; i++) frames[String(i)] = { x: (i % m.cols) * m.fw, y: Math.floor(i / m.cols) * m.fh, w: m.fw, h: m.fh };
+  return { canvas: toCanvas(img, 0, 0, img.width, img.height), frames };
+}
 
 /** Lädt alle Spielgrafiken. onProgress: 0..1 */
 export async function loadGfx(onProgress: (p: number) => void = () => {}): Promise<GfxBundle> {
@@ -42,9 +52,7 @@ export async function loadGfx(onProgress: (p: number) => void = () => {}): Promi
   for (const key in man.sheets) {
     const m = man.sheets[key];
     track(loadImage(BASE + m.file)).then(img => {
-      const frames: Record<string, FrameRect> = {};
-      for (let i = 0; i < m.cols * m.rows; i++) frames[String(i)] = { x: (i % m.cols) * m.fw, y: Math.floor(i / m.cols) * m.fh, w: m.fw, h: m.fh };
-      const sheet = { canvas: toCanvas(img, 0, 0, img.width, img.height), frames };
+      const sheet = gridSheet(img, m);
       (key.startsWith('mob_') ? mobs : key.startsWith('boss_') ? bosses : chars)[key] = sheet;
     });
   }
@@ -79,8 +87,32 @@ export async function loadGfx(onProgress: (p: number) => void = () => {}): Promi
   measure(mobs, man.mobMeta, 'mob_', 3);
   measure(bosses, man.bossMeta, 'boss_', 6);
   icons = atlas.icons ?? null;
+  outfitMeta = man.outfits ?? {};
   bundle = { chars, mobs, mobMeta: man.mobMeta, bosses, bossMeta: man.bossMeta, obj: atlas.obj, fx: atlas.fx, liquids, overlays };
   return bundle;
+}
+
+/** Schlüssel der Gewand-Sheets, die nicht beim Start, sondern bei Bedarf geladen werden (`char_<klasse>_<variante>`). */
+export function lazyCharKeys(): string[] { return Object.keys(outfitMeta); }
+/**
+ * Liefert ein Figuren-Sheet. Klassen und NPCs sind nach loadGfx sofort da; die Gewand-Varianten der Garderobe
+ * (`char_<klasse>_<variante>`, z. B. `char_krieger_frost`) werden beim ersten Aufruf nachgeladen – ein PNG von rund 20 kB –,
+ * in `bundle.chars` eingetragen und danach wie alle anderen geführt (portraitUrl kennt sie dann ebenfalls).
+ * Mehrere Aufrufe für denselben Schlüssel teilen sich einen Ladevorgang. Unbekannter Schlüssel oder Ladefehler → null;
+ * der Aufrufer bleibt dann beim Klassen-Sheet. Die Registrierung als Phaser-Textur übernimmt wie bisher das Spiel.
+ */
+export function loadCharSheet(key: string): Promise<Sheet | null> {
+  const b = bundle;
+  if (!b) return Promise.resolve(null);
+  if (b.chars[key]) return Promise.resolve(b.chars[key]);
+  const m = outfitMeta[key];
+  if (!m) return Promise.resolve(null);
+  let p = lazySheets.get(key);
+  if (!p) {
+    p = loadImage(BASE + m.file).then(img => (b.chars[key] = gridSheet(img, m)), () => { lazySheets.delete(key); return null; });
+    lazySheets.set(key, p);
+  }
+  return p;
 }
 
 const EMPTY = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';

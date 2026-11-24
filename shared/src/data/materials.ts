@@ -74,7 +74,7 @@ export const CRAFT_ITEMS: ItemBase[] = [
   mat('core_archivar', 'Stiller Kern', 'mat_core_archivar', 640, 'Der letzte Eintrag des Archivars. Man hört darin, wie jemand Luft holt und nichts sagt.'),
   mat('core_hohlkoenig', 'Hohler Kern', 'mat_core_hohlkoenig', 900, 'Was vom Hohlen König blieb. Er ist leichter, als er sein dürfte.'),
   mat('mat_aether', 'Ätherstaub', 'mat_aether', 400, 'Staub aus reinem Mana, wie er nur bei den mächtigsten Geschöpfen zurückbleibt. Borin fasst ihn nur mit der Zange an.'),
-  mat('mat_echo', 'Echo-Fragment', 'shard', 180, 'Ein Splitter aus einem Mana-Riss. Hält man ihn ans Ohr, hört man einen Kampf, der längst vorbei ist. Borin gleicht damit besondere Stücke an, Fenwick ritzt Echo-Runen hinein.'),
+  mat('mat_echo', 'Echo-Fragment', 'mat_echo', 180, 'Ein Splitter aus einem Mana-Riss. Hält man ihn ans Ohr, hört man einen Kampf, der längst vorbei ist. Borin gleicht damit besondere Stücke an, Fenwick ritzt Echo-Runen hinein.'),
   // ---- Tränke
   use('potion_hp4', 'Quellheiltrank', 'potion_hp4', 240, 'Stellt 1100 Leben wieder her.', { hp: 1100 }),
   use('potion_mp4', 'Quellmanatrank', 'potion_mp4', 220, 'Stellt 480 Mana wieder her.', { mp: 480 }),

@@ -15,12 +15,12 @@ const WIND: Ramp = [P.teal[0], P.teal[1], P.teal[2], P.teal[3], P.teal[4]];
 const ASH: Ramp = P.ash;
 
 /** Funkelstern: weißer Kern mit farbigen Armen */
-const spark = (p: Px, x: number, y: number, c: number, big = false): void => {
+export const spark = (p: Px, x: number, y: number, c: number, big = false): void => {
   p.set(x, y, WHITE); p.px([x - 1, y, x + 1, y, x, y - 1, x, y + 1], c);
   if (big) p.px([x - 2, y, x + 2, y, x, y - 2, x, y + 2], alpha(c, 150));
 };
 /** Weicher Schein, nur auf freien Pixeln */
-const halo = (p: Px, cx: number, cy: number, r: number, c: number, a = 70): void => {
+export const halo = (p: Px, cx: number, cy: number, r: number, c: number, a = 70): void => {
   for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) {
     const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy) / r;
     if (d < 1 && p.get(x, y) >>> 24 === 0) p.set(x, y, alpha(c, Math.round(a * (d < 0.55 ? 1 : d < 0.8 ? 0.6 : 0.3))));
@@ -352,8 +352,8 @@ const glyph = (p: Px, x: number, y: number, rows: string[], c: number, c2 = INK)
   rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') p.set(x - 3 + i, y - 3 + j, r[i] === 'X' ? c : c2); });
 };
 /** wie glyph, mit dunklem Schlagschatten für helle Flüssigkeiten */
-const emboss = (p: Px, x: number, y: number, rows: string[], sh: number, fg: number = WHITE): void => { glyph(p, x + 1, y + 1, rows, sh, sh); glyph(p, x, y, rows, fg); };
-const MARK: Record<string, string[]> = {
+export const emboss = (p: Px, x: number, y: number, rows: string[], sh: number, fg: number = WHITE): void => { glyph(p, x + 1, y + 1, rows, sh, sh); glyph(p, x, y, rows, fg); };
+export const MARK: Record<string, string[]> = {
   fire: ['...X...', '...XX..', '..XXX..', '.XXXXX.', '.XX.XX.', '.XXXXX.', '..XXX..'],
   water: ['...X...', '..XXX..', '..XXX..', '.XXXXX.', '.XXXXX.', '.XXXXX.', '..XXX..'],
   earth: ['.......', '..X....', '.XXX.X.', '.XXXXXX', 'XXXXXXX', 'XXXXXXX', '.......'],
@@ -364,6 +364,7 @@ const MARK: Record<string, string[]> = {
   speed: ['..XX...', '...XX..', 'X...XX.', 'XX...XX', 'X...XX.', '...XX..', '..XX...'],
   crit: ['.......', '..XXX..', '.XXoXX.', 'XXoooXX', '.XXoXX.', '..XXX..', '.......'],
   power: ['...X...', '..XXX..', '.XXXXX.', 'XXXXXXX', '..XXX..', '..XXX..', '..XXX..'],
+  star: ['...X...', '...X...', 'XXXXXXX', '.XXXXX.', '..XXX..', '.XX.XX.', '.X...X.'],
 };
 /** Quelltrank: facettierte Karaffe mit Goldkragen und Kristallstopfen (höchste Trankstufe) */
 const quell = (r: Ramp): Fn => (p) => {
@@ -379,7 +380,7 @@ const quell = (r: Ramp): Fn => (p) => {
   p.rect(8, 21, 8, 1, Y[2]); p.rect(8, 21, 3, 1, Y[3]);
 };
 /** Elixier (Wert): Kegelkolben mit Korken, Zeichen auf der Flüssigkeit */
-const flask = (r: Ramp, mark: string): Fn => (p) => {
+export const flask = (r: Ramp, mark: string): Fn => (p) => {
   p.rect(10, 1, 4, 2, P.tan[2]); p.rect(10, 1, 2, 1, P.tan[4]);
   p.rect(10, 3, 4, 6, P.ice[3]); p.rect(10, 3, 1, 6, P.ice[4]); p.rect(9, 3, 6, 1, P.ice[4]);
   p.poly([[10, 9], [14, 9], [21, 19], [20, 22], [4, 22], [3, 19]], P.ice[3]);

@@ -7,13 +7,13 @@ import type { Cond } from './cond';
 import type { NpcDef } from './npcs';
 
 export const NPCS_AKT2: NpcDef[] = [
-  { id: 'fremder', name: 'Fremder', title: 'am Brunnen', look: 'einsiedler', tint: 0x7c6cc0, alpha: 0.78,
+  { id: 'fremder', name: 'Fremder', title: 'am Brunnen', look: 'vael', alpha: 0.78,
     greet: ['Guten Abend. Oder Morgen. Ich verwechsle das.', 'Verzeiht, stehe ich im Weg? Ich stehe meistens im Weg. Es ist gewissermaßen mein Beruf.', 'Euer Brunnen singt falsch. Das ist kein Tadel. Er singt, so gut er kann.'],
     talk: [
       { if: { done: 'm_sitze' }, text: 'Ihr habt sie gehört. Dann wisst Ihr jetzt mehr über mich, als mir lieb ist, und weniger, als nötig wäre.' },
       { if: { done: 'm_name' }, text: 'Es hat seinen Namen gehört. Aus Eurem Brunnen, mit Eurer Stimme im Rücken. Verzeiht, wenn ich einen Moment brauche.' },
     ] },
-  { id: 'vael', name: 'Vael', title: 'Hüter der Dunkelheit', look: 'einsiedler', tint: 0xb4a8e6,
+  { id: 'vael', name: 'Vael', title: 'Hüter der Dunkelheit', look: 'vael',
     greet: ['Guten Abend. Hier ist immer Abend. Das vereinfacht die Begrüßung.', 'Verzeiht die Laterne. Ich lege sie nicht gern ab. Wir sind lange zusammen.', 'Sprecht ruhig laut. Es schläft tief. Meistens.'],
     talk: [
       { if: { dec: ['ende', 3] }, text: 'Verzeiht, wenn ich blinzle. Es ist nicht das Licht. Es ist die Menge davon.' },
