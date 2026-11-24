@@ -149,6 +149,8 @@ world('c_fladen', 'cooking', 'food', 'food_fladen', 2, 13, 0, [[PEPPER, 3], ['mm
 world('c_wette', 'cooking', 'food', 'food_wette', 2, 18, 0, [[LICHEN, 3], ['mm_fang', 1], [PEPPER, 1]], 'ruf');
 world('a_gelehrt', 'alchemy', 'elixir', 'elx_gelehrt', 1, 23, 70, [[FIG, 3], ['mat_rune', 2], [ESSENCE.wind, 2]], 'ruf');
 world('a_laterne', 'alchemy', 'elixir', 'elx_laterne', 1, 28, 90, [[BLOOM, 3], [STAR, 1], [ESSENCE.light, 2]], 'ruf');
+// Zuhause (0.7): ein Begleiter aus dem Kochtopf (PET_ITEM in data/pets.ts) – von Anfang an bekannt, an jeder Kochstelle
+item('c_pilzling', 'cooking', 'food', 'pet_pilzling', 1, 6, 150, [[CAP, 12], ['mm_chitin', 6], [ESSENCE.earth, 4], [BERRY, 4]]);
 
 export const RECIPE_LIST: RecipeDef[] = R;
 export const RECIPES: Record<string, RecipeDef> = Object.fromEntries(R.map(r => [r.id, r]));
