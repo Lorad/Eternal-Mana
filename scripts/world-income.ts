@@ -34,6 +34,7 @@ function run(zoneId: string, world: boolean, timed = false): Result {
     const z: Zone = t.p.zone, p = t.p;
     p.god = true; p.char.inv = []; p.char.gold = 0;
     const zs = World.state.zone(z);
+    sim.seed(z, 20261124);   // gleicher Zufall in allen Läufen einer Region, damit sie vergleichbar bleiben
     const res: Result = { gold: 0, mats: 0, matValue: 0, gearValue: 0, otherValue: 0, stars: 0, scrolls: 0, rep: 0, events: 0, rares: 0, maps: 0 };
     const kill = (mobs: Iterable<Mob>) => { for (const m of [...mobs]) { if (m.dead) continue; p.x = m.x + 10; p.y = m.y; m.invuln = false; z.hitMob(m, p, 1e9, 'phys'); } };
     const pickUp = () => { for (const d of [...z.drops.values()]) { if (d.owner !== p) continue; p.x = d.x; p.y = d.y; sim.step(0.05); } };

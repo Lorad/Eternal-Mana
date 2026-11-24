@@ -20,10 +20,10 @@ import { CFG } from '../shared/src/config';
 import { ENEMIES } from '../shared/src/data/enemies';
 import { EVENTS, EVENT_POOL, SEASON_NAMES, SEASON_NODES, eventPool, isNight, seasonAt, seasonWeathers } from '../shared/src/data/events';
 import { FACTIONS, FACTION_LIST, RANK_NAMES, backfillRep, factionOfZone, factionStock, rankOf, repOf, shopPrice } from '../shared/src/data/factions';
-import { ownedTitles, titleName as titleOf } from '../shared/src/data/rifts';
-import { ITEMS, makeStack } from '../shared/src/data/items';
+import { KREIS_QUEST, RIFT_UNLOCK_QUEST, kreisLevel, ownedTitles, titleName as titleOf } from '../shared/src/data/rifts';
+import { ITEMS, isGear, makeStack } from '../shared/src/data/items';
 import { NPCS } from '../shared/src/data/npcs';
-import { QUESTS } from '../shared/src/data/quests';
+import { QUESTS, QUEST_LIST } from '../shared/src/data/quests';
 import { RARE_LIST, WORLD_BOSS_LIST } from '../shared/src/data/rares';
 import { LEARNABLE, RECIPES, scrollOf } from '../shared/src/data/recipes';
 import { ROUTINE_LIST, routineState } from '../shared/src/data/routines';
@@ -1009,6 +1009,143 @@ describe('Leere Zonen kosten nichts', () => {
       // der Spieltakt selbst prüft nur Weltbosse und laufende Ereignisse
       expect(World.state.game(s.game).events.size).toBe(0);
     } finally { s.close(); }
+  });
+});
+
+// =====================================================================================================================
+describe('Neuer Kreis und Mana-Risse (0.5)', () => {
+  it('jede Welt (Kreis) hat ihre eigenen Ereignisse, Monster, Bosse und Tagesabläufe; Stufen und Beute folgen dem Kreis', () => {
+    const { t: a, z: z0, x, y } = hero('Kreisa', 'gruenwald', 40);
+    const b = sim.join('Kreisb', 'krieger', 40);
+    b.p.char.kreis = 1; b.p.god = true;
+    sim.game.rehome(b.p);
+    const z1 = b.p.zone;
+    expect(z1).not.toBe(z0);
+    expect([z1.id, z1.key, z1.kreis]).toEqual(['gruenwald', 'gruenwald#k1', 1]);
+    b.p.x = x; b.p.y = y;
+    // Tagesabläufe: jede Welt hat ihre eigenen Dorfbewohner
+    sim.step(1);
+    expect(zs(z1).routines!.length).toBe(zs(z0).routines!.length);
+    expect(zs(z1).routines![0].obj).not.toBe(zs(z0).routines![0].obj);
+    // Ereignis nur in der Welt des zweiten Kreises – mit Gegnern auf dessen Stufe; der Spieler im ersten Kreis sieht es nicht
+    for (const m of [...z1.mobs.values()]) z1.mobs.delete(m.id);
+    const ev = World.startEvent(z1, 'woge', { x: x + 50, y })!;
+    sim.step(1.4);
+    expect(world(b).ev.some(e => e.id === ev.id)).toBe(true);
+    expect(world(a).ev.some(e => e.id === ev.id)).toBe(false);
+    expect(zs(z0).event).toBeNull();
+    expect(ev.mobs.size).toBeGreaterThan(0);
+    expect([...ev.mobs].every(m => m.lvl >= kreisLevel(1, 1))).toBe(true);
+    finishEvent(ev, 'fail', true);
+    // seltenes Monster wächst mit
+    const rare = World.spawnRare(z1, 'borkenkoenig')!;
+    expect(rare.lvl).toBe(kreisLevel(6, 1));
+    expect(zs(z0).rares?.get('borkenkoenig')?.mob ?? null).toBeNull();
+    kill(z1, b, [rare]);
+    // Weltboss: der Auftritt gilt für die Region in jeder Welt
+    const e0 = World.startBoss(sim.game, 'moosgrimm', z0, { x: x + 60, y })!;
+    const e1 = zs(z1).boss!;
+    expect(e0).toBeTruthy(); expect(e1).toBeTruthy(); expect(e1).not.toBe(e0);
+    expect(e0.bossMob!.lvl).toBe(ZONES.gruenwald.level[1] + 2);
+    expect(e1.bossMob!.lvl).toBe(kreisLevel(ZONES.gruenwald.level[1], 1) + 2);
+    z0.hitMob(e0.bossMob!, a.p, 10, 'phys'); sim.step(0.6);
+    kill(z0, a, [e0.bossMob!]);
+    expect(zs(z0).boss).toBeNull();
+    expect(zs(z1).boss).toBe(e1);                                              // in der anderen Welt steht er noch
+    expect(a.p.char.flags['wb:moosgrimm']).toBe(1);
+    expect(b.p.char.flags['wb:moosgrimm']).toBeUndefined();
+    sim.step(1.2);
+    expect(world(a).ev.some(e => e.boss)).toBe(false);
+    expect(world(b).ev.some(e => e.boss && e.zone === 'gruenwald')).toBe(true);
+    expect(World.startBoss(sim.game, 'moosgrimm', z0)).toBeNull();             // hier ist er für diesen Auftritt erledigt
+    z1.hitMob(e1.bossMob!, b.p, 10, 'phys'); sim.step(0.6);
+    kill(z1, b, [e1.bossMob!]);
+    expect(b.p.char.flags['wb:moosgrimm']).toBe(1);
+    expect(b.p.char.inv.some(it => isGear(ITEMS[it.base]) && it.ilvl > CFG.player.maxLevel), 'Ausrüstung über Stufe 40').toBe(true);
+    World.state.game(sim.game).bossWin.clear();
+    // verlässt der letzte Spieler die Welt eines höheren Kreises, wird sie verworfen – samt ihren Ereignissen
+    const ev2 = World.startEvent(z1, 'haendler', { x: x + 40, y })!;
+    expect(World.state.game(sim.game).events.has(ev2)).toBe(true);
+    sim.travel(b, 'kristall');
+    expect(b.p.zone.key).toBe('kristall#k1');
+    sim.step(CFG.world.dungeonResetSec + 4);
+    expect(sim.game.zones.has('gruenwald#k1')).toBe(false);
+    expect([...World.state.game(sim.game).events].some(e => e.zone === z1)).toBe(false);
+    expect(world(b).ev.some(e => e.id === ev2.id)).toBe(false);
+    // und entsteht beim nächsten Besuch frisch
+    sim.travel(b, 'gruenwald');
+    expect(b.p.zone).not.toBe(z1);
+    expect(zs(b.p.zone).event).toBeNull();
+    sim.clear();
+  });
+  it('im Mana-Riss gibt es nichts davon: keine Ereignisse, Monster, Wege, Schatzkarten', () => {
+    const t = sim.join('Rissgast', 'krieger', 40);
+    t.p.char.quests[RIFT_UNLOCK_QUEST] = { s: 'done', p: [], n: 1 };
+    t.p.char.rift = { stufe: 1, seed: 1, best: {} };
+    t.p.god = true;
+    const stone = [...t.p.zone.objs.values()].find(o => o.type === 'riftstone')!;
+    t.p.x = stone.x; t.p.y = stone.y + 12;
+    t.send({ t: 'rift', a: 'start', dungeon: 'wurzelgruft', stufe: 1 });
+    const z = t.p.zone;
+    expect(z.rift).toBeTruthy();
+    sim.step(3);
+    const st = zs(z);
+    expect([st.routines, st.rares, st.event, st.boss, st.nextEventAt, st.encounters.size]).toEqual([null, null, null, null, -1, 0]);
+    expect(World.startEncounter(t.p, 'hinterhalt')).toBeNull();
+    // Erwachte im Riss lassen keine Schatzkarten fallen, Truhen dort enthalten keine
+    const before = z.drops.size;
+    const old = CFG.living.treasure.eliteChance;
+    CFG.living.treasure.eliteChance = 1;
+    try {
+      const m = [...z.mobs.values()].find(q => !q.boss)!;
+      m.elite = true;
+      z.hitMob(m, t.p, 1e9, 'phys');
+      expect([...z.drops.values()].slice(before).some(d => d.item?.base.startsWith('tmap_'))).toBe(false);
+    } finally { CFG.living.treasure.eliteChance = old; }
+    expect(world(t).season).toBeGreaterThanOrEqual(0);                         // Jahreszeit und Weltzustand kommen trotzdem an
+    sim.clear();
+  });
+  it('Neuer Kreis: Ruf, Titel, Trophäen, Siege und Schatzkarten bleiben – die Quests bringen erneut Ruf', () => {
+    const t = sim.join('Wiederkehr', 'krieger', 40), c = t.p.char;
+    for (const q of QUEST_LIST) if (q.type === 'main') c.quests[q.id] = { s: 'done', p: [], n: 1 };
+    expect(c.quests[KREIS_QUEST]?.s).toBe('done');
+    c.rep = { quellhain: CFG.living.rep.ranks[3] + 50, lichter: 300 };
+    c.title = 'quellhain';
+    t.give(mapOf('gruenwald'), 1); t.give(trophyOf('guenther'), 1);
+    t.send({ t: 'use', uid: c.inv.find(i => i.base === mapOf('gruenwald'))!.uid });
+    const spot = activeTreasure(c, t.p.zone.map)!;
+    expect(spot).toBeTruthy();
+    Object.assign(c.flags, { 'd:ende': 1, 'tr:borkenkoenig': 1, 'rk:borkenkoenig': 3, 'wb:moosgrimm': 2, 'tm:frost': 2, 'fu:quellhain': 1, 'vu:kompass': 1, 't:frost': 1, 'b:dornenmutter': 1 });
+    const mine = () => JSON.stringify([c.rep, c.title, Object.fromEntries(Object.entries(c.flags).filter(([k]) => /^(tr|rk|wb|tm|tk|fu|vu):/.test(k))), t.count(mapOf('gruenwald')), t.count(trophyOf('guenther'))]);
+    const kept = mine();
+    sim.gotoNpc(t, 'mirelda');
+    t.send({ t: 'kreis' });
+    expect(c.kreis).toBe(1);
+    expect(c.quests).toEqual({});
+    expect(c.flags['t:frost']).toBeUndefined();                                // Quellsteine setzt der Neue Kreis zurück …
+    expect(c.flags['b:dornenmutter']).toBeUndefined();
+    expect(mine()).toBe(kept);                                                 // … die Lebendige Welt nicht
+    expect(titleOf(c)).toBe(FACTIONS.quellhain.title);
+    expect(ownedTitles(c)).toContain('quellhain');
+    expect(sim.game.playerInfo(t.p).title).toBe(FACTIONS.quellhain.title);
+    expect(activeTreasure(c, t.p.zone.map)).toEqual(spot);                     // die gelesene Karte gilt auch in der neuen Welt
+    expect(t.p.zone.key).toBe('gruenwald#k1');
+    // Graben geht in der Welt des neuen Kreises – die Beute folgt ihrer Stufe
+    t.p.x = spot.x; t.p.y = spot.y;
+    t.send({ t: 'dig' });
+    expect(c.flags['tm:gruenwald']).toBe(1);
+    expect(c.inv.some(it => isGear(ITEMS[it.base]) && it.ilvl > CFG.player.maxLevel)).toBe(true);
+    // dieselbe Quest bringt im neuen Kreis wieder Ruf
+    const rep = repOf(c, 'quellhain');
+    sim.gotoNpc(t, 'mirelda');
+    c.quests.m_erwachen = { s: 'active', p: [5] };
+    t.send({ t: 'qTurnIn', id: 'm_erwachen', npc: 'mirelda' });
+    expect(repOf(c, 'quellhain')).toBe(rep + CFG.living.rep.quest.main);
+    // und ein Spielstand übersteht das Laden
+    sim.leave(t); sim.reenter(t);
+    expect(t.p.char.rep).toMatchObject({ quellhain: rep + CFG.living.rep.quest.main, lichter: 300 });
+    expect(t.p.char.title).toBe('quellhain');
+    sim.clear();
   });
 });
 

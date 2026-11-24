@@ -267,7 +267,7 @@ export const CFG = {
       tiers: [0.2, 0.6],
       /** Belohnung je Stufe (Bronze, Silber, Gold) als Faktor */
       tierMul: [0.5, 0.75, 1],
-      gold: 8, xp: 10,             // × Gold/XP eines Gegners der Gebietsstufe (Messung: scripts/world-income.ts)
+      gold: 7, xp: 10,             // × Gold/XP eines Gegners der Gebietsstufe (Messung: scripts/world-income.ts)
       mapChance: 0.1, scrollChance: 0.06,
       stars: { everySec: 8, lifeSec: 150, durSec: 170, bonusAt: 5 },
       trader: { durSec: 330 },
@@ -287,12 +287,12 @@ export const CFG = {
       respawn: [900, 1800], firstDelay: [150, 480], despawnSec: 900,
       spawnDist: 260,              // nicht vor den Augen der Spieler erscheinen
       hintDist: 300,
-      mats: [3, 5], essences: [2, 3], scroll: 0.25, map: 0.1, trophyRepeat: 0.25, gold: 4,
+      mats: [3, 5], essences: [2, 3], scroll: 0.25, map: 0.1, trophyRepeat: 0.25, gold: 3,
     },
     treasure: {
       spots: 24,                   // mögliche Grabstellen je Region
       radius: 34,                  // etwas größer als der Radius, in dem der Client „Hier graben“ anbietet
-      gold: [12, 18],              // × Gold eines Gegners der Gebietsstufe
+      gold: [10, 15],              // × Gold eines Gegners der Gebietsstufe
       rarity: [0, 0, 60, 32, 8],
       aether: 0.15, scroll: 0.2,
       eliteChance: 0.02,
