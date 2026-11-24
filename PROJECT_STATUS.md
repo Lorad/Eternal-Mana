@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.2.1 (Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen; Spielumfang wie 0.1.0)
+Stand: Version 0.3.0 (Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -9,12 +9,20 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 
 | Version | Inhalt | Stand |
 |---|---|---|
-| 0.3 | Geschichte: Akt II, Dialoge mit Entscheidungen, Filmszenen, Chronik, Story-Bosse | in Arbeit |
-| 0.4 | Handwerk & Elemente | in Arbeit |
+| 0.3 | Handwerk & Elemente: Rohstoffe, vier Stationen, 86 Rezepte, 6 Sets, 5 Legendäre Waffen, Runen, Resistenzen, 8 Reaktionen | **fertig** |
+| 0.4 | Geschichte: Akt II, Dialoge mit Entscheidungen, Filmszenen, Chronik, Story-Bosse | in Arbeit (Grafik für Vael und Aetherion liegt vor) |
 | 0.5 | Endspiel | geplant |
 | 0.6 | Lebendige Welt | geplant |
 | 0.7 | Gemeinsam & Zuhause | geplant |
 | 0.8 | Feinschliff | geplant |
+
+### Offene Punkte aus 0.3
+
+- Eigene Symbole für die 50 neuen Gegenstände fehlen noch (vorerst vorhandene Symbole; alle sechs Essenzen teilen sich eines).
+- Lagerfeuer, Brunnen und Esse fehlen als Deko in den erzeugten Karten (`addDecor` lehnt Wegfelder ab); die Kochstellen
+  setzt deshalb der Server als Objekte.
+- Nicht im Spiel zu zweit erprobt: Reaktionen und Handwerk über echte Verbindungen (nur in Tests ohne Netzwerk).
+- Legendäre Waffen von Magier, Schattenjäger und Paladin wirken im Einzelkampf schwach; Feinschliff in 0.8.
 
 ## Starten und Testen
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 – Handwerk und Elemente
+
+- Handwerk an vier Stationen (Schmiede, Alchemie, Kochen, Verzauberung), 86 Rezepte, 13 davon über Rezeptrollen; alles
+  serverseitig geprüft (`server/src/craft.ts`, Daten in `shared/src/data/{materials,recipes,sets}.ts`).
+- 25 neue Rohstoffe (Monster-Rohstoffe, Zutaten, Essenzen, Bosskerne, Ätherstaub), eingebunden in Beute, Truhen und Sammelstellen.
+- Umschmieden, Element einschmieden (drei Stufen), 17 Runen, 6 Rüstungssets (2er-/4er-Bonus), 5 Legendäre Waffen mit Wirkung.
+- Elemente: Resistenzen für Spieler, Schwächen/Resistenzen für Gegner und Bosse, neue Zustände (Entblößt, Verwurzelt, Gefroren),
+  acht Reaktionen mit Bonus bei zwei Spielern (`server/src/react.ts`, `shared/src/elements.ts`).
+- Speisen und Elixiere als zeitliche Stärkungen, die Speichern und Tod überdauern.
+- Neue Objekt-Grafiken (Hüterschrein, Chronik-Dokumente, Riss-Stein, Stationen, Hausmöbel, Ereignis-Objekte) und die
+  Boss-Sprites Vael und Aetherion für kommende Versionen.
+- Tests: 51 neue (Handwerk, Elemente) ohne Netzwerk über `tests/helpers/sim.ts`; Balance-Vergleich `scripts/balance-sim.ts`.
+
 ## 0.2.1 – Launcher, Kamera und Licht
 
 - Launcher (`Eternal-Mana.bat`, `eternal-mana.sh`, Quellcode in `launcher/`): eigenes Fenster im Stil des Spiels mit

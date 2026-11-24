@@ -3,6 +3,32 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.3.0 – Handwerk und Elemente
+_24.11.2026_
+
+### Handwerk
+- **Vier Stationen** ohne Berufsstufen: Es zählen nur Rezept, Rohstoffe, Gold und die richtige Station.
+- **Schmiede** (Borin, Hedda, Rakhan, Pim): Ausrüstung für deine Klasse schmieden, Eigenschaften umschmieden und ein Element in die Waffe schmieden (bis Stufe 3).
+- **Alchemie** (Sella, Pim): stärkere Tränke, ein Läuterungstrank und Elixiere – es wirkt immer nur eines.
+- **Kochen** an Lagerfeuern und bei Ayla, Jorund und Rakhan: Speisen mit 15 Minuten Wirkung. Das Quellhainer Festmahl stärkt auch deine Gruppe.
+- **Verzauberung** bei Fenwick und Liora: eine Rune je Ausrüstungsteil, bezahlt mit Essenzen.
+- **Neue Rohstoffe überall:** Jedes Gebiet hat einen eigenen Monster-Rohstoff und eine Zutat. Gegner lassen Element-Essenzen fallen, Bosse ihren Bosskern, ganz selten gibt es Ätherstaub.
+- **Rezeptrollen** von Elitegegnern, aus Truhen und von Bossen schalten Meisterwaffen, Schutzelixiere und das Festmahl frei.
+
+### Ausrüstung
+- **Sechs Rüstungssets** aus den Dungeons mit Boni bei 2 und 4 Teilen.
+- **Fünf Legendäre Waffen**, eine je Klasse, aus allen sechs Bosskernen – jede mit eigener Wirkung.
+
+### Elemente
+- Gegner haben **Schwächen und Resistenzen**; sie werden oben im Bild angezeigt. Du selbst sammelst Resistenzen über Ausrüstung, Runen, Sets und Elixiere.
+- Jedes Element hat seinen Zustand: Neu ist „Entblößt“ durch Wind, und „Geschwächt“ senkt jetzt auch den Schaden von Gegnern.
+- **Reaktionen:** Treffen zwei Elemente aufeinander, entstehen Feuersturm, Frost, Dampf, Schlamm, Zwielicht, Sandsturm, Fäulnis oder Quellsegen. Zu zweit ausgelöst wirken sie deutlich stärker.
+
+### Sonstiges
+- Der Charakterbogen zeigt Resistenzen und rechnet laufende Stärkungen mit ein.
+- Alte Spielstände funktionieren unverändert.
+- Neue Gegenstände tragen vorerst vorhandene Symbole; eigene folgen.
+
 ## 0.2.1 – Launcher, Kamera und Licht
 _22.11.2026_
 

@@ -5,7 +5,7 @@
 import type { Element } from './types';
 
 export const CFG = {
-  version: '0.2.1',
+  version: '0.3.0',
   net: {
     defaultPort: 7777,
     tickRate: 20,            // Server-Simulationsschritte pro Sekunde (= Snapshot-Rate)

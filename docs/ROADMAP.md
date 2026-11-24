@@ -124,8 +124,8 @@ Bewusst schlank: wenige Währungen, keine Berufsstufen, alles über Rezepte, Roh
 
 | Version | Inhalt |
 |---|---|
-| 0.3 | **Geschichte:** Akt II (Kapitel 7–10), verzweigte Dialoge, Entscheidungen, Filmszenen, Chronik (Lore-Dokumente), Charakter- und Geheimquests, Story-Bosse Vael und Aetherion |
-| 0.4 | **Handwerk & Elemente:** Rohstoffe, Stationen, Rezepte, Sets, Legendäre Waffen, Verzauberung, Resistenzen, Zustände, Reaktionen |
+| 0.3 | **Handwerk & Elemente:** Rohstoffe, Stationen, Rezepte, Sets, Legendäre Waffen, Verzauberung, Resistenzen, Zustände, Reaktionen |
+| 0.4 | **Geschichte:** Akt II (Kapitel 7–10), verzweigte Dialoge, Entscheidungen, Filmszenen, Chronik (Lore-Dokumente), Charakter- und Geheimquests, Story-Bosse Vael und Aetherion |
 | 0.5 | **Endspiel:** Mana-Risse, Modifikatoren, Boss-Echos, Weltbosse, Quellstufen, Neuer Kreis |
 | 0.6 | **Lebendige Welt:** Ruf und Fraktionen, Ereignisse, seltene Monster, Schätze, Tagesabläufe, Jahreszeiten |
 | 0.7 | **Gemeinsam & Zuhause:** Gruppenverwaltung, Handel, Haus mit Lager, Begleiter, Sammlung, Erscheinungen |
