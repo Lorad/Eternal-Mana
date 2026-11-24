@@ -197,19 +197,19 @@ const quelldrachling: Pet = (p, f) => {
   const wy = 7 + dy - fl;
   p.poly([[6, 12 + dy], [4, wy], [7, wy + 2], [9, wy - 1], [10, 12 + dy]], I[3]); p.line(6, 12 + dy, 4, wy, I[4]); p.line(9, 12 + dy, 9, wy, T[3]); p.set(4, wy, WHITE); p.set(9, wy - 1, I[4]); p.set(7, wy + 3, T[3]);
   // Rumpf, heller Bauch
-  p.ell(8.8, 14 + dy, 4.2, 2.8, A[2]); p.ell(8.2, 13.2 + dy, 3, 1.5, A[3]); p.ell(9.8, 15.6 + dy, 2.6, 1, I[4]);
+  p.ell(8.8, 14 + dy, 4.2, 2.8, A[2]); p.ell(8.2, 13.2 + dy, 3, 1.5, A[3]); p.ell(9.8, 15.6 + dy, 2.6, 1, A[4]);
   // Hals, großer Kopf mit Schnauze
-  p.ell(12.2, 12.2 + dy, 1.9, 2.4, A[2]); p.px([13, 13 + dy, 13, 14 + dy], I[4]);
+  p.ell(12.2, 12.2 + dy, 1.9, 2.4, A[2]); p.px([13, 13 + dy, 13, 14 + dy], A[4]);
   const hx = 14, hy = 9 + dy;
   // zwei Kristallhörner
   p.line(hx - 1, hy - 3, hx - 3, hy - 6, T[4]); p.line(hx - 2, hy - 3, hx - 4, hy - 6, T[3]); p.set(hx - 3, hy - 6, WHITE);
   p.line(hx + 1, hy - 3, hx + 1, hy - 6, I[4]); p.set(hx + 2, hy - 4, T[3]);
-  p.ell(hx, hy, 3.3, 2.9, A[2]); p.ell(hx - 0.6, hy - 0.9, 2.2, 1.4, A[3]); p.ell(hx + 2.9, hy + 1, 1.8, 1.3, A[3]); p.px([hx + 1, hy + 2, hx + 2, hy + 2, hx + 3, hy + 2], I[4]);
-  p.rect(hx + 1, hy - 1, 1, 2, INK); p.set(hx + 2, hy - 1, WHITE); p.set(hx + 4, hy + 0.5, A[0]); p.px([hx - 3, hy + 1, hx - 2, hy + 2], T[4]);
+  p.ell(hx, hy, 3.3, 2.9, A[2]); p.ell(hx - 0.6, hy - 0.9, 2.2, 1.4, A[3]); p.ell(hx + 2.9, hy + 1, 1.8, 1.3, A[3]); p.px([hx + 1, hy + 2, hx + 2, hy + 2], A[4]);
+  p.rect(hx + 1, hy - 1, 1, 2, INK); p.set(hx + 2, hy - 1, WHITE); p.set(hx + 4, hy + 0.5, A[0]); p.set(hx - 3, hy + 1, T[4]);
   // nahe Beine mit hellen Krallen
   const lift = (k: number): number => (w === k ? 1 : 0);
   p.rect(12 + a, 15 + dy, 2, 4 - dy - lift(1), A[2]); p.rect(5 - a, 15 + dy, 2, 4 - dy - lift(3), A[2]);
-  p.set(13 + a, 18 - lift(1), I[4]); p.set(6 - a, 18 - lift(3), I[4]); p.set(12 + a, 15 + dy, A[3]);
+  p.set(13 + a, 18 - lift(1), A[4]); p.set(6 - a, 18 - lift(3), A[4]); p.set(12 + a, 15 + dy, A[3]);
   inkOutline(p, 0.5, 0.68, P.blue[0]);
   glow(p, 2.5, ty, 3.6, T[4], 85);
   // Funkeln: wandert über die Frames
