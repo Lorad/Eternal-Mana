@@ -10,6 +10,10 @@ import Phaser from 'phaser';
 import { moveCircle } from '../../../shared/src/collision';
 import { CFG, ELEMENT_COLOR } from '../../../shared/src/config';
 import { CLASSES } from '../../../shared/src/data/classes';
+import { ENEMIES } from '../../../shared/src/data/enemies';
+import { SEASON_TINT } from '../../../shared/src/data/events';
+import { routineState } from '../../../shared/src/data/routines';
+import { activeTreasure } from '../../../shared/src/world';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { npcMarker } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
@@ -31,7 +35,7 @@ import { live } from '../state/live';
 import { settings } from '../state/settings';
 import { store, uiBlocksGame } from '../state/store';
 import { Ambient } from './ambient';
-import { CHAR_ANIMS, animDuration, dirOf } from './anim';
+import { CHAR_ANIMS, animDuration, charFrame, dirOf } from './anim';
 import { Fx } from './fxlib';
 import { input, pointer, pollInput } from './input';
 import { Lighting, daylight, lerpC, mulC, skyColor, type LightSrc } from './lighting';
@@ -120,6 +124,8 @@ export class GameScene extends Phaser.Scene {
   private sun: ShadowCfg = { rot: -0.5, len: 0.5, alpha: 0 };
   private sunKey = '';
   private liveAt = 0; private bossAt = 0; private smokeAt = 0; private markerChar: CharData | null = null;
+  // Lebendige Welt (0.6): Grabstelle der aktiven Schatzkarte (nur lokal dargestellt), Schlafanzeige der NPCs
+  private digView: ObjView | null = null; private digKey = ''; private digCount = 0; private sleepAt = 0;
 
   constructor() { super('game'); }
 
@@ -133,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     this.players.clear(); this.mobs.clear(); this.objs.clear(); this.drops.clear(); this.projs.clear(); this.zfx.clear();
     this.animDecor = []; this.decorShadows = []; this.fadeDecor = []; this.staticLights = []; this.flashes = []; this.smokeSpots = []; this.dying = [];
     this.blocked.clear(); this.frameCounts.clear(); this.target = null; this.timeOffset = null; this.markerChar = null; this.sunKey = ''; this.liquidFrame = -1;
+    this.digView = null; this.digKey = ''; this.sleepAt = 0;
     this.objTex = this.textures.get('obj');
     this.fx = new Fx(this);
     this.lighting = new Lighting(this);
@@ -303,7 +310,7 @@ export class GameScene extends Phaser.Scene {
     if (!settings.lighting) return 0xffffff;
     const def = this.map.def, w = store.state.weather;
     if (def.indoor) return INDOOR[def.biome][this.map.dungeon ? 1 : 0];
-    let c = skyColor(store.state.tod);
+    let c = mulC(skyColor(store.state.tod), SEASON_TINT[store.state.world?.season ?? -1] ?? 0xffffff); // 0.6: Jahreszeit färbt das Himmelslicht
     if (def.dark > 0) c = mulC(c, lerpC(0xffffff, def.biome === 'glut' ? 0xd0a090 : 0xc8c8d8, Math.min(1, def.dark * 4)));
     if (w === 'rain' || w === 'blizzard') c = mulC(c, 0xc4ccdc);
     return c;
@@ -357,9 +364,10 @@ export class GameScene extends Phaser.Scene {
   private addPlayer(p: PlayerInfo) {
     if (p.id === this.me.info.id) { this.me.info = p; return; }
     const old = this.players.get(p.id);
-    if (old) { old.info = p; old.label?.setText(p.name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff'); return; }
+    const name = p.title ? `${p.name} · ${p.title}` : p.name; // 0.6: Fraktionstitel
+    if (old) { old.info = p; old.label?.setText(name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff'); return; }
     const v = new PlayerView(this.ctx, p, false);
-    v.label?.setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff');
+    v.label?.setText(name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff');
     v.x = -999; v.y = -999;
     this.players.set(p.id, v);
   }
@@ -418,6 +426,14 @@ export class GameScene extends Phaser.Scene {
         v.label = this.text(o.x, o.y - 34, ECHOES[o.tag!]?.name ?? '', '#bfe9ff', 7).setOrigin(0.5, 1);
         break;
       }
+      // ---- Lebendige Welt (0.6): Objekte der Ereignisse und Begegnungen – Frame aus dem Objekt-Atlas, optional Beschriftung und Licht
+      case 'wobj': {
+        const fr: string | undefined = pr.frame, f = fr ? this.resolveFrame(fr) : null;
+        if (f) img(o.x, o.y + 8, f.frame, FLAT.test(fr!) ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_'));
+        if (pr.label) v.label = this.text(o.x, o.y - (f ? 30 : 36), pr.label, '#bfe9ff', 7).setOrigin(0.5, 1);
+        if (pr.light) { v.light = pr.light; v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(pr.light[0] / 110).setTint(pr.light[1]).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }
+        break;
+      }
       case 'chest': img(o.x, o.y + 7, 'chest_wood_closed'); break;
       case 'door': case 'bossdoor': case 'boulder': {
         const cells: number[] = pr.cells ?? [];
@@ -466,7 +482,7 @@ export class GameScene extends Phaser.Scene {
   /** Story-Objekte mit Bedingung (`props.when`) und geschlossene Risse existieren für diesen Charakter nicht. */
   private applyObjVisible(v: ObjView) {
     const o = v.o;
-    const hidden = !objVisible(store.state.char, o) || (o.type === 'rift' && o.state === 1);
+    const hidden = !objVisible(store.state.char, o) || (o.type === 'rift' && o.state === 1) || (o.type === 'wobj' && !!o.props?.hide1 && o.state === 1);
     if (hidden === v.hidden) return;
     v.hidden = hidden;
     for (const p of v.parts) p.setVisible(!hidden);
@@ -508,6 +524,7 @@ export class GameScene extends Phaser.Scene {
         v.glow?.setAlpha(o.state === 2 ? 0.55 : o.state === 1 ? 0.45 : 0.25);
         if (!initial && o.state) { this.fx.play(this.fx.pick('pillar'), o.x, o.y + 8, { originY: 1, tint: v.light?.[1] ?? 0xffffff, add: true, fps: 12, depth: o.y + 2 }, this.animClock); this.burst(this.stars, 16, o.x, o.y - 10, v.light?.[1] ?? 0xffffff); }
         break;
+      case 'wobj': if (!initial) { if (o.state && pr.hide1) this.burst(this.stars, 10, o.x, o.y - 6, 0xfff0c8); this.applyObjVisible(v); } break;
       case 'rift': if (!initial && o.state) { this.ring(o.x, o.y - 8, 44, 0x70ffe8, 500); this.burst(this.stars, 14, o.x, o.y - 8, 0x70ffe8); v.light = null; } if (!initial) this.applyObjVisible(v); break;
     }
   }
@@ -752,12 +769,19 @@ export class GameScene extends Phaser.Scene {
         }
         break;
       case 'obj-': this.objs.get(e.id)?.destroy(); this.objs.delete(e.id); break;
+      case 'omv': { // 0.6: NPC geht zu seinem nächsten Platz (t = 0: steht sofort dort)
+        const v = this.objs.get(e.id);
+        if (!v) break;
+        if (e.t > 0.05) v.mv = { x0: v.o.x, y0: v.o.y, x1: e.x, y1: e.y, t0: nowP, t1: nowP + e.t * 1000 };
+        else { v.mv = null; this.placeObj(v, e.x, e.y); }
+        break;
+      }
       case 'pl+': this.addPlayer(e.p); break;
       case 'pl-': this.players.get(e.id)?.destroy(); this.players.delete(e.id); break;
       case 'boss': {
         const cur = store.state.boss;
         const v = this.mobs.get(e.id);
-        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el) } });
+        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el, v) } });
         if (!cur) { audio.playMusic(this.bossMusic()); this.shake(0.02, 400); }
         if (v && (!cur || cur.phase !== e.phase || cur.el !== e.el)) {
           const tint = elTint(e.el);
@@ -878,7 +902,41 @@ export class GameScene extends Phaser.Scene {
   }
   /** Grafik der Kochstelle: die eigene Stations-Grafik, falls der Atlas sie schon enthält, sonst das Lagerfeuer der Zone. */
   private cookLook(look?: string): string { return this.objTex.has('station_cook_0') ? 'station_cook' : this.objTex.has((look ?? 'campfire') + '_0') ? look ?? 'campfire' : 'campfire'; }
-  private bossAff(el: Element) { const a = mobAffinity(this.map.def.boss ?? '', true, el); return { weak: a.weak, resist: a.resist }; }
+  /** Schwächen des Bosses; Weltbosse (0.6) sind gewöhnliche Gegner mit eigener Definition */
+  private bossAff(el: Element, v?: MobView) { const a = v && !v.boss ? mobAffinity(v.info.mob, false, el) : mobAffinity(this.map.def.boss ?? '', true, el); return { weak: a.weak, resist: a.resist }; }
+  /** Versetzt ein Objekt samt Schatten, Beschriftung und Marker (0.6: NPCs mit Tagesablauf, Begleitete) */
+  private placeObj(v: ObjView, x: number, y: number) {
+    const o = v.o, dx = x - o.x, dy = y - o.y;
+    if (!dx && !dy) return;
+    o.x = x; o.y = y;
+    for (const p of v.parts) { p.x += dx; p.y += dy; if (p.depth > 4) p.setDepth(y); }
+    for (const s of v.shadows) s.setData('x', (s.getData('x') as number) + dx).setData('y', (s.getData('y') as number) + dy);
+    v.label?.setPosition(v.label.x + dx, v.label.y + dy);
+    v.marker?.setX(v.marker.x + dx);
+    v.glow?.setPosition(v.glow.x + dx, v.glow.y + dy);
+  }
+  /** Grabstelle der aktiven Schatzkarte: nur lokal dargestellt, der Server prüft beim Graben (0.6) */
+  private syncDig(c: CharData) {
+    const s = this.map.dungeon ? null : activeTreasure(c, this.map);
+    const key = s ? `${s.x}:${s.y}` : '', count = c.flags[`tm:${this.map.id}`] ?? 0;
+    if (key === this.digKey) { this.digCount = count; return; }
+    const old = this.digView;
+    if (old) {
+      if (count > this.digCount) { // Schatz gehoben: die Truhe kommt kurz zum Vorschein
+        const { x, y } = old.o;
+        const chest = this.add.image(x, y + 8, 'obj', this.objTex.has('chest_buried') ? 'chest_buried' : 'chest_wood_open').setOrigin(0.5, 1).setDepth(y);
+        this.burst(this.stars, 18, x, y - 6, 0xffe080); this.flash(x, y - 6, 80, 0xffe090, 0.9, 500);
+        this.tweens.add({ targets: chest, alpha: 0, delay: 2600, duration: 600, onComplete: () => chest.destroy() });
+      }
+      old.destroy(); this.objs.delete(old.o.id); this.digView = null;
+    }
+    this.digKey = key; this.digCount = count;
+    if (!s) return;
+    const v = new ObjView({ id: -77, type: 'dig', x: s.x, y: s.y, state: 0 });
+    v.parts.push(this.add.image(s.x, s.y + 6, 'obj', this.objTex.has('dig_spot') ? 'dig_spot' : 'pebbles_0').setOrigin(0.5, 1).setDepth(3));
+    v.glow = this.add.image(s.x, s.y - 2, 'fx', 'glow').setScale(0.5).setTint(0xffd070).setAlpha(0.3).setBlendMode(Phaser.BlendModes.ADD).setDepth(s.y + 1);
+    this.objs.set(-77, v); this.digView = v;
+  }
   /** Zielanzeige: Gegner unter dem Mauszeiger, sonst der zuletzt getroffene in der Nähe. */
   private updateTarget(now: number) {
     let v: MobView | undefined;
@@ -1016,9 +1074,12 @@ export class GameScene extends Phaser.Scene {
       live.x = mx; live.y = my; live.fps = this.game.loop.actualFps;
       this.updateTarget(now);
       live.players = [...this.players.values()].map(p => ({ x: p.x, y: p.y, name: p.info.name, party: this.inMyParty(p.info) }));
-      live.mobs = [...this.mobs.values()].filter(m => m.seen && Math.hypot(m.x - mx, m.y - my) < 420).map(m => ({ x: m.x, y: m.y, boss: m.boss }));
+      live.mobs = [...this.mobs.values()].filter(m => m.seen && Math.hypot(m.x - mx, m.y - my) < 420).map(m => ({ x: m.x, y: m.y, boss: m.boss, rare: !m.boss && !!ENEMIES[m.info.mob]?.named }));
       const c = st.char!;
-      live.objs = [...this.objs.values()].filter(v => !v.hidden && !v.o.props?.anchor && ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board'].includes(v.o.type)).map(v => ({ x: v.o.x, y: v.o.y, type: v.o.type, state: v.o.state, mark: v.o.type === 'npc' ? npcMarker(c, v.o.tag!) : null, label: v.o.props?.label }));
+      // 0.6: Objekte der Weltsysteme tragen `props.mark` (star, trader, enc); Ereignisorte kommen aus dem Weltzustand
+      const wmark = (v: ObjView): string | null => (v.o.type === 'dig' ? 'dig' : v.o.props?.mark && v.o.props.mark !== 'event' ? v.o.props.mark : null);
+      live.objs = [...this.objs.values()].filter(v => !v.hidden && !v.o.props?.anchor && (wmark(v) || ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board'].includes(v.o.type)))
+        .map(v => { const w = wmark(v); return { x: v.o.x, y: v.o.y, type: w ? 'w_' + w : v.o.type, state: v.o.state, mark: !w && v.o.type === 'npc' ? npcMarker(c, v.o.tag!) : null, label: v.o.props?.label }; });
     }
   }
 
@@ -1187,6 +1248,9 @@ export class GameScene extends Phaser.Scene {
     const c = store.state.char!;
     const refreshMarks = this.markerChar !== c;
     this.markerChar = c;
+    if (refreshMarks) this.syncDig(c);
+    const sleepTick = now - this.sleepAt > 2000;
+    if (sleepTick) this.sleepAt = now;
     const sn = (now + (this.timeOffset ?? 0)) / 1000;
     const anim = (name: string, period: number, fallback: number) => `${name}_${Math.floor(now / period) % (this.countFrames(name) || fallback)}`;
     for (const v of this.objs.values()) {
@@ -1198,11 +1262,31 @@ export class GameScene extends Phaser.Scene {
         case 'shrine': if (this.countFrames('hueterschrein') > 1) v.parts[0].setFrame(anim('hueterschrein', o.state ? 140 : 260, 4)); if (v.glow && o.state === 1) v.glow.setAlpha(0.35 + 0.2 * Math.sin(now / 220)); break;
         case 'rift': if (this.countFrames('void_rift') > 1) v.parts[0].setFrame(anim('void_rift', 120, 4)); v.parts[0].y = o.y + 8 + Math.sin(now / 260) * 2; break;
         case 'lore': if (!o.state && v.glow) v.glow.setAlpha(0.35 + 0.15 * Math.sin(now / 300 + o.id)); break;
+        case 'wobj': {
+          const fr: string | undefined = o.props?.frame, s0 = v.parts[0];
+          if (!fr || !s0) break;
+          const n = o.props!.frames ?? this.countFrames(fr);
+          if (n > 1) s0.setFrame(`${fr}_${Math.floor((now + o.id * 53) / (fr.startsWith('pet_') ? 460 : 130)) % n}`);
+          if (fr === 'star_shard') s0.y = o.y + 6 + Math.sin(now / 280 + o.id) * 2;
+          break;
+        }
         case 'npc': {
           const s = v.parts[0] as Phaser.GameObjects.Sprite;
+          // 0.6: unterwegs zum nächsten Platz – Position zwischen zwei Wegpunkten, Gehanimation in Laufrichtung
+          if (v.mv) {
+            const k = Math.min(1, (now - v.mv.t0) / Math.max(1, v.mv.t1 - v.mv.t0));
+            v.walkDir = Math.atan2(v.mv.y1 - v.mv.y0, v.mv.x1 - v.mv.x0); v.walkUntil = now + 220;
+            this.placeObj(v, Math.round(v.mv.x0 + (v.mv.x1 - v.mv.x0) * k), Math.round(v.mv.y0 + (v.mv.y1 - v.mv.y0) * k));
+            if (k >= 1) v.mv = null;
+          }
+          const walking = now < v.walkUntil;
+          if (sleepTick && v.label && !o.props?.anchor && !o.props?.dyn) {
+            const name = NPCS[o.tag!]?.name ?? '', t = !walking && routineState(this.map.id, o.tag!, store.state.tod).sleep ? name + '  z z z' : name;
+            if (v.label.text !== t) v.label.setText(t);
+          }
           const d = Math.hypot(this.me.x - o.x, this.me.y - o.y);
-          const [row, flip] = d < 60 ? dirOf(Math.atan2(this.me.y - o.y, this.me.x - o.x)) : [0, false];
-          const f = String(row * 43 + (Math.floor((this.animClock + o.id * 137) / 200) % 4));
+          const [row, flip] = walking ? dirOf(v.walkDir) : d < 60 ? dirOf(Math.atan2(this.me.y - o.y, this.me.x - o.x)) : [0, false];
+          const f = walking ? charFrame('walk', row, this.animClock + o.id * 137) : String(row * 43 + (Math.floor((this.animClock + o.id * 137) / 200) % 4));
           s.setFrame(f).setFlipX(flip);
           v.shadows[0]?.setFrame(f).setFlipX(flip);
           if (refreshMarks) {
@@ -1242,6 +1326,9 @@ export class GameScene extends Phaser.Scene {
       let text: string | null = null;
       switch (o.type) {
         case 'npc': text = `Mit ${NPCS[o.tag!]?.name ?? '???'} sprechen`; break;
+        // ---- Lebendige Welt (0.6)
+        case 'wobj': if (o.props?.prompt && !(o.props.hide1 && o.state)) text = o.props.prompt; break;
+        case 'dig': text = 'Hier graben'; break;
         case 'chest': if (!o.state) text = 'Truhe öffnen'; break;
         case 'door': if (!o.state) text = o.props?.locked && !o.props?.unlocked ? 'Tür aufschließen' : 'Tür öffnen'; break;
         case 'bossdoor': if (!o.state) text = 'Bosstor öffnen'; break;
@@ -1281,7 +1368,8 @@ export class GameScene extends Phaser.Scene {
     audio.playSfx('ui_click');
     this.me.facing = Math.atan2(o.y - this.me.y, o.x - this.me.x);
     this.me.play('interact', 380, true);
-    if (o.type === 'npc') { store.set({ dialog: { npc: o.tag! }, panel: null, prompt: null }); return; }
+    if (o.type === 'dig') { net.send({ t: 'dig' }); return; }                                       // 0.6: der Server prüft Karte und Stelle
+    if (o.type === 'npc' && !o.props?.enc) { store.set({ dialog: { npc: o.tag! }, panel: null, prompt: null }); return; }
     if (o.type === 'board') { store.set({ dialog: { npc: 'ayla' }, panel: null, prompt: null }); return; }
     if (o.type === 'sign') { store.set({ sign: o.props?.text ?? '', prompt: null }); return; }
     if (o.type === 'cookfire') { store.set({ craft: { at: 'fire', station: 'cooking' }, panel: null, dialog: null, prompt: null }); return; }

@@ -31,7 +31,7 @@ export const PAD_NAME = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'St
 const GROUPS: [string, Action[]][] = [
   ['Bewegung & Kampf', ['up', 'down', 'left', 'right', 'attack', 'dodge', 'interact']],
   ['Fähigkeiten & Tränke', ['skill1', 'skill2', 'skill3', 'skill4', 'potionHp', 'potionMp']],
-  ['Fenster', ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'chat', 'menu']],
+  ['Fenster', ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'ruf', 'chat', 'menu']],
 ];
 
 function Slider(p: { label: string; value: number; min: number; max: number; step: number; fmt: (v: number) => string; onChange: (v: number) => void }) {

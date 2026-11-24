@@ -2,6 +2,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { useStore } from '../../state/store';
+import { RANK_NAMES, factionOfZone, rankIn } from '../../../../shared/src/data/factions';
 import { WORLD_LINKS, ZONES, ZONE_LIST } from '../../../../shared/src/data/zones';
 import type { ZoneDef } from '../../../../shared/src/data/zones';
 import { Btn, Tabs, Window, closePanel, cx, send, sfx } from '../common';
@@ -28,6 +29,7 @@ const SPOTS = [[-34, -10], [-24, 13], [26, -15], [33, 9], [-12, -23], [12, 22], 
 function WorldMap({ sel, onSel }: { sel: string; onSel: (z: string) => void }) {
   const flags = useStore(s => s.char?.flags);
   const zone = useStore(s => s.zone);
+  const evs = useStore(s => s.world?.ev);
   const known = (id: string) => id === zone || !!flags?.['z:' + id];
   return (
     <div class="wmap">
@@ -78,6 +80,7 @@ function WorldMap({ sel, onSel }: { sel: string; onSel: (z: string) => void }) {
           <button type="button" class={cx('wnode', z.kind, 'b-' + z.biome, !k && 'unknown', z.id === zone && 'here', z.id === sel && 'sel', !!flags?.['t:' + z.id] && 'stone')}
             style={{ left: z.mapPos[0] + '%', top: z.mapPos[1] + '%' }} aria-label={k ? z.name : 'Unentdeckter Ort'} onClick={() => { sfx('ui_click'); onSel(z.id); }}>
             <i class="wnode-dot" />
+            {evs?.some(e => e.zone === z.id) && <i class={cx('wnode-ev', evs.some(e => e.zone === z.id && e.boss) && 'boss')} title={evs.filter(e => e.zone === z.id).map(e => e.name).join(', ')}>{evs.some(e => e.zone === z.id && e.boss) ? '☠' : '✦'}</i>}
             <span class="wnode-label"><b>{k ? z.name : '???'}</b>{k && <small>St. {z.level[0]}–{z.level[1]}</small>}</span>
           </button>
         );
@@ -91,6 +94,9 @@ function ZoneInfo({ id }: { id: string }) {
   const zone = useStore(s => s.zone);
   const nearStone = useStore(s => s.nearStone);
   const level = useStore(s => s.char?.level ?? 1);
+  const char = useStore(s => s.char);
+  const evs = useStore(s => s.world?.ev)?.filter(e => e.zone === id) ?? [];
+  const fac = factionOfZone(id);
   const z = ZONES[id];
   if (!z) return null;
   const known = id === zone || !!flags?.['z:' + id];
@@ -106,6 +112,8 @@ function ZoneInfo({ id }: { id: string }) {
           <h3 class="qp-name">{z.name}</h3>
           <p class="winfo-sub">{z.subtitle}</p>
           {here && <div class="pill gold-pill">Du bist hier</div>}
+          {fac && char && z.kind === 'overworld' && <p class="note">{fac.name}: <b>{RANK_NAMES[rankIn(char, fac.id) - 1]}</b></p>}
+          {evs.map(e => <p class="note winfo-ev"><b>{e.boss ? 'Weltboss' : 'Ereignis'}:</b> {e.name}</p>)}
           {z.kind === 'dungeon' && <p class="note">{parent ? `Eingang in: ${parent.name}. ` : ''}Dungeons setzen sich zurück, sobald sie leer sind. Am Ende wartet ein Boss.</p>}
           {level < z.level[0] - 2 && <p class="note bad">Die Gegner hier sind deutlich stärker als du.</p>}
           {z.kind === 'overworld' && (
@@ -155,6 +163,9 @@ export function MapPanel() {
             <li><i class="lg-dia" />Quellstein</li>
             <li><i class="lg-sq" />Ausgang</li>
             <li><i class="lg-sq" style={{ background: '#e3b75c' }} />Truhe (in Sichtweite)</li>
+            <li><i class="lg-dia" style={{ background: '#6effdc' }} />Ereignis</li>
+            <li><i class="lg-dia" style={{ background: '#ffb02e' }} />Seltenes Monster (in der Nähe)</li>
+            <li><b class="lg-q" style={{ color: '#ff5a3c' }}>✗</b>Grabstelle deiner Schatzkarte</li>
           </ul>
         </div>
       )}

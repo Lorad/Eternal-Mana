@@ -127,12 +127,13 @@ export class MobView {
     this.foot = this.boss ? 6 : 3;
     this.originY = (meta.h - this.foot) / meta.h;
     this.x = info.x; this.y = info.y; this.hp = info.hp;
-    this.scale = info.elite ? 1.2 : 1;
+    const edef = this.boss ? undefined : ENEMIES[info.mob];
+    this.scale = (edef?.scale ?? 1) * (info.elite ? 1.2 : 1); // 0.6: seltene Monster und Weltbosse sind größer
     this.blob = sc.add.image(0, 0, 'fx', meta.w > 40 ? 'shadow_l' : 'shadow').setDepth(4).setAlpha(0.45);
-    if (this.boss) this.blob.setScale(meta.w / 56);
+    if (this.boss) this.blob.setScale(meta.w / 56); else if (this.scale > 1.3) this.blob.setScale(this.scale * 0.8);
     this.shadow = makeShadow(sc, this.key, '0', this.originY);
     this.sprite = sc.add.sprite(info.x, info.y, this.key, '0').setOrigin(0.5, this.originY).setScale(this.scale);
-    if (info.elite) this.label = ctx.text(0, 0, info.name ?? '', '#ffd070').setOrigin(0.5, 1);
+    if (info.elite || edef?.named) this.label = ctx.text(0, 0, info.name ?? '', edef?.named ? '#ffb8f0' : '#ffd070').setOrigin(0.5, 1);
     this.bar = sc.add.graphics();
   }
   private baseTint?: number;
@@ -181,7 +182,7 @@ export class MobView {
     this.bar.clear();
     const top = py - this.top - 6;
     if (!this.boss && this.hp < this.info.maxHp && this.hp > 0) {
-      const w = this.info.elite ? 26 : 18;
+      const w = this.scale > 1.3 ? 40 : this.info.elite ? 26 : 18;
       this.bar.fillStyle(0x10131c, 0.8).fillRect(px - w / 2 - 1, top, w + 2, 3);
       this.bar.fillStyle(this.info.elite ? 0xffb030 : 0xe04848, 1).fillRect(px - w / 2, top + 1, w * Math.max(0, this.hp / this.info.maxHp), 1);
     }
@@ -197,6 +198,9 @@ export class ObjView {
   light: [number, number, number] | null = null;
   /** für diesen Charakter nicht vorhanden (Story-Bedingung) */
   hidden = false;
+  /** 0.6: laufende Bewegung (NPC geht zu seinem nächsten Platz), Zeiten in performance.now() */
+  mv: { x0: number; y0: number; x1: number; y1: number; t0: number; t1: number } | null = null;
+  walkUntil = 0; walkDir = 0;
   constructor(public o: ObjInfo) {}
   destroy() { for (const p of this.parts) p.destroy(); for (const s of this.shadows) s.destroy(); this.label?.destroy(); this.marker?.destroy(); this.glow?.destroy(); }
 }

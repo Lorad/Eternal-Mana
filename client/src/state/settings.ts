@@ -2,14 +2,14 @@
 export type Action =
   | 'up' | 'down' | 'left' | 'right' | 'attack' | 'dodge' | 'interact'
   | 'skill1' | 'skill2' | 'skill3' | 'skill4' | 'potionHp' | 'potionMp'
-  | 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'party' | 'chat' | 'menu';
+  | 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'party' | 'ruf' | 'chat' | 'menu';
 
 export const ACTION_LABEL: Record<Action, string> = {
   up: 'Nach oben', down: 'Nach unten', left: 'Nach links', right: 'Nach rechts',
   attack: 'Angriff', dodge: 'Ausweichrolle', interact: 'Interagieren',
   skill1: 'Fähigkeit 1', skill2: 'Fähigkeit 2', skill3: 'Fähigkeit 3', skill4: 'Fähigkeit 4',
   potionHp: 'Heiltrank', potionMp: 'Manatrank',
-  inventory: 'Inventar', character: 'Charakter', skills: 'Fähigkeiten', quests: 'Questlog', map: 'Weltkarte', party: 'Gruppe', chat: 'Chat', menu: 'Menü',
+  inventory: 'Inventar', character: 'Charakter', skills: 'Fähigkeiten', quests: 'Questlog', map: 'Weltkarte', party: 'Gruppe', ruf: 'Ruf und Welt', chat: 'Chat', menu: 'Menü',
 };
 export const ACTIONS = Object.keys(ACTION_LABEL) as Action[];
 
@@ -19,7 +19,7 @@ export const DEFAULT_KEYS: Record<Action, string[]> = {
   attack: ['Mouse0', 'KeyJ'], dodge: ['Space'], interact: ['KeyE'],
   skill1: ['Digit1', 'Mouse2'], skill2: ['Digit2'], skill3: ['Digit3'], skill4: ['Digit4'],
   potionHp: ['KeyQ'], potionMp: ['KeyR'],
-  inventory: ['KeyI'], character: ['KeyC'], skills: ['KeyK'], quests: ['KeyL'], map: ['KeyM'], party: ['KeyP'], chat: ['Enter'], menu: ['Escape'],
+  inventory: ['KeyI'], character: ['KeyC'], skills: ['KeyK'], quests: ['KeyL'], map: ['KeyM'], party: ['KeyP'], ruf: ['KeyU'], chat: ['Enter'], menu: ['Escape'],
 };
 
 /** Gamepad-Belegung (Standard-Mapping): Aktion → Button-Index */

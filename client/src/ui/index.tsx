@@ -10,6 +10,7 @@ import { Hud } from './hud';
 import { DeathOverlay, SignOverlay, StoryOverlay } from './overlays';
 import { PanelHost } from './panels';
 import { CineOverlay, LoreOverlay } from './story';
+import { EncounterDialog, WorldShop } from './world';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -17,6 +18,7 @@ import './styles/screens.css';
 import './styles/hud.css';
 import './styles/panels.css';
 import './styles/craft.css';
+import './styles/world.css';
 
 /** Berechnet den Maßstab: Die Oberfläche ist für rund 1280×720 entworfen und skaliert mit dem Fenster. */
 function computeScale() {
@@ -41,6 +43,8 @@ function Root() {
   const hasStory = useStore(s => !!s.story);
   const hasCine = useStore(s => !!s.cine);
   const hasLore = useStore(s => !!s.lore);
+  const hasEnc = useStore(s => !!s.enc);
+  const hasWshop = useStore(s => !!s.wshop);
   const dead = useStore(s => !!s.dead);
   const s = computeScale();
 
@@ -65,6 +69,8 @@ function Root() {
       {screen !== 'game' && panel === 'settings' && <SettingsPanel />}
       {screen === 'game' && hasDialog && !dead && <NpcDialog />}
       {screen === 'game' && hasCraft && !dead && <CraftWindow />}
+      {screen === 'game' && hasWshop && !dead && <WorldShop />}
+      {screen === 'game' && hasEnc && !dead && <EncounterDialog />}
       {screen === 'game' && hasSign && <SignOverlay />}
       {screen === 'game' && dead && <DeathOverlay />}
       {hasStory && screen === 'game' && <StoryOverlay />}

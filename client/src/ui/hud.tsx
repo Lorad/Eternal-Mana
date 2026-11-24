@@ -19,6 +19,7 @@ import type { CharData, StatusId } from '../../../shared/src/types';
 import { Bar, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, useSettings, useTick } from './common';
 import { Affinity, TargetInfo } from './elements';
 import { MinimapCanvas } from './mapview';
+import { EventTracker, seasonLabel } from './world';
 
 // ------------------------------------------------------------------ Tastenhinweise (Tastatur oder Gamepad)
 const PAD_NAME = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', '↑', '↓', '←', '→'];
@@ -230,6 +231,7 @@ function MinimapBox() {
   const clock = useStore(s => Math.floor((((s.tod % 1) + 1) % 1) * 144));  // 10-Minuten-Schritte
   const weather = useStore(s => s.weather);
   const keys = useStore(s => s.keys);
+  const season = useStore(s => s.world?.season ?? -1);
   const s = useSettings();
   const z = ZONES[zone];
   const h = Math.floor(clock / 6), m = (clock % 6) * 10;
@@ -245,6 +247,7 @@ function MinimapBox() {
       <div class="mm-info">
         <b>{z?.name ?? ''}</b>
         <span><i class={cx('sun', night && 'moon')} />{String(h).padStart(2, '0')}:{String(m).padStart(2, '0')} · {dayPart(h + m / 60)}{z && !z.indoor ? ' · ' + (WEATHER[weather] ?? weather) : WEATHER[weather] && weather !== 'clear' ? ' · ' + WEATHER[weather] : ''}</span>
+        {season >= 0 && z?.kind === 'overworld' && <span class="mm-season">{seasonLabel(season)}</span>}
       </div>
       {keys > 0 && <div class="keys" title="Schlüssel in diesem Dungeon"><Icon k="item_key" size={24} /><b>× {keys}</b></div>}
     </div>
@@ -395,11 +398,12 @@ const MENU_ICON: Record<string, ComponentChildren> = {
   quests: <Svg><path d="M3 1h9v2h2v3h-2v9H3zM5 4h5v1H5zM5 7h5v1H5zM5 10h4v1H5z" fill-rule="evenodd" /></Svg>,
   map: <Svg><path d="M1 3l4-2 6 2 4-2v12l-4 2-6-2-4 2zM5 3v9l1 .3V3.3zM10 4.7v9l1 .3V5z" fill-rule="evenodd" /></Svg>,
   party: <Svg><path d="M2 3h4v4H2zM10 3h4v4h-4zM1 8h6v6H1zM9 8h6v6H9z" /></Svg>,
+  ruf: <Svg><path d="M3 1h2v14H3zM5 2h8l-2 3 2 3H5z" /></Svg>,
   menu: <Svg><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z" /></Svg>,
 };
 const MENU: [Panel, string, Action][] = [
   ['inventory', 'Inventar', 'inventory'], ['character', 'Charakter', 'character'], ['skills', 'Fähigkeiten', 'skills'], ['quests', 'Quests', 'quests'],
-  ['map', 'Karte', 'map'], ['party', 'Gruppe', 'party'], ['menu', 'Menü', 'menu'],
+  ['map', 'Karte', 'map'], ['party', 'Gruppe', 'party'], ['ruf', 'Ruf und Welt', 'ruf'], ['menu', 'Menü', 'menu'],
 ];
 function MenuBar() {
   const panel = useStore(s => s.panel);
@@ -463,7 +467,7 @@ export function Hud() {
   return (
     <div class="hud">
       <PlayerFrame />
-      <div class="hud-tr"><MinimapBox /><QuestTracker /></div>
+      <div class="hud-tr"><MinimapBox /><QuestTracker /><EventTracker /></div>
       <div class="hud-tc"><BossBar /><TargetInfo /><InvitePopup /></div>
       <ZoneBanner />
       <StoryToasts />

@@ -13,6 +13,8 @@ import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
 import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, modEntries, send, sfx } from './common';
 import { StationOptions } from './craft';
+import { WorldOptions, worldGreeting } from './world';
+import { shopDiscount, shopPrice } from '../../../shared/src/data/factions';
 import { Objectives, QUEST_TYPE, Rewards } from './panels/quests';
 
 type View =
@@ -43,6 +45,8 @@ function Dialog({ npc }: { npc: string }) {
   const zone = useStore(s => s.zone);
   const [view, setView] = useState<View>({ k: 'main' });
   const [greet] = useState(() => def.greet[Math.floor(Math.random() * def.greet.length)] ?? '…');
+  // 0.6: Begrüßung nach Uhrzeit (wer schläft, antwortet mürrisch) und Ruf bei der Fraktion
+  const [wg] = useState(() => (store.state.char ? worldGreeting(npc, store.state.char, store.state.zone, store.state.tod) : null));
   const dn = useStore(s => s.dlgNode);
   useEffect(() => { store.set({ dlgNode: null }); send({ t: 'talk', npc }); sfx('dialog_blip'); return () => hideTip(); }, []);
   if (!char) return null;
@@ -52,7 +56,7 @@ function Dialog({ npc }: { npc: string }) {
   const turnIns = QUEST_LIST.filter(q => (q.turnIn ?? q.giver) === npc && questComplete(char, q));
   const offers = QUEST_LIST.filter(q => q.giver === npc && questAvailable(char, q));
   const running = QUEST_LIST.filter(q => char.quests[q.id]?.s === 'active' && ((q.turnIn ?? q.giver) === npc || q.giver === npc) && !questComplete(char, q));
-  const line = def.talk?.find(t => condOk(char, t.if))?.text ?? greet;
+  const line = wg?.sleep ? wg.text : def.talk?.find(t => condOk(char, t.if))?.text ?? wg?.text ?? greet;
   // Gesprächsthemen (Dialogbäume, ab 0.3): Der Server bestätigt jeden Knoten; `dn` ist der aktuell gültige.
   const topics = topicsOf(npc).filter(t => condOk(char, t.if));
   const talking = dn && dn.npc === npc && TOPIC[dn.topic]?.nodes[dn.node] ? dn : null;
@@ -77,6 +81,7 @@ function Dialog({ npc }: { npc: string }) {
           {def.services?.includes('upgrade') && <Opt mark="⚒" onClick={() => setView({ k: 'upgrade' })}>Ausrüstung verbessern</Opt>}
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
           <StationOptions npc={npc} />
+          <WorldOptions npc={npc} />
           <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length && !topics.length}>Auf Wiedersehen</Opt>
         </div>
       </>
@@ -84,7 +89,7 @@ function Dialog({ npc }: { npc: string }) {
   } else if (view.k === 'quest') {
     body = <QuestTalk key={view.id + view.mode} q={QUEST_LIST.find(q => q.id === view.id)!} mode={view.mode} npc={npc} char={char} back={main} />;
   } else if (view.k === 'shop') {
-    body = <Shop npc={npc} char={char} zoneLevel={(ZONES[zone]?.level[0] ?? 1) + 1} back={main} />;
+    body = <Shop npc={npc} char={char} zone={zone} zoneLevel={(ZONES[zone]?.level[0] ?? 1) + 1} back={main} />;
   } else if (view.k === 'upgrade') {
     body = <Upgrade npc={npc} char={char} back={main} />;
   } else {
@@ -177,7 +182,8 @@ function QuestTalk({ q, mode, npc, char, back }: { q: QuestDef; mode: 'offer' | 
 }
 
 // ------------------------------------------------------------------ Handel
-function Shop({ npc, char, zoneLevel, back }: { npc: string; char: CharData; zoneLevel: number; back: () => void }) {
+function Shop({ npc, char, zone, zoneLevel, back }: { npc: string; char: CharData; zone: string; zoneLevel: number; back: () => void }) {
+  const disc = shopDiscount(char, zone);
   const [tab, setTab] = useState<'buy' | 'sell'>('buy');
   const [qty, setQty] = useState<Record<number, number>>({});
   const [sel, setSel] = useState<string | null>(null);
@@ -196,14 +202,14 @@ function Shop({ npc, char, zoneLevel, back }: { npc: string; char: CharData; zon
     <div class="shop">
       <div class="row between wrap">
         <Tabs tabs={[['buy', 'Kaufen'], ['sell', 'Verkaufen']]} value={tab} onChange={setTab} />
-        <span class="note">Rucksack: <b class={cx(full && 'bad')}>{char.inv.length} / {INV_SIZE}</b></span>
+        <span class="note">{disc > 0 && <>Nachlass durch deinen Ruf: <b class="good">{Math.round(disc * 100)} %</b> · </>}Rucksack: <b class={cx(full && 'bad')}>{char.inv.length} / {INV_SIZE}</b></span>
       </div>
       {tab === 'buy' ? (
         <ul class="shop-list scroll">
           {stock.map((e, idx) => {
             const b = ITEMS[e.item.base];
             if (!b) return null;
-            const price = itemPrice(e.item), q = b.stack ? qty[idx] ?? 1 : 1, total = price * q;
+            const price = shopPrice(char, zone, e.item), q = b.stack ? qty[idx] ?? 1 : 1, total = price * q;
             const afford = char.gold >= total;
             return (
               <li class="shop-row">

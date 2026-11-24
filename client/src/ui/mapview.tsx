@@ -104,6 +104,11 @@ export function currentMarkers(zone: string, map: GameMap): Marker[] {
   if (live.zone === zone && live.objs.length) return live.objs;
   return staticMarkers(map);
 }
+/** 0.6: laufende Ereignisse und Weltbosse dieser Zone als Marker */
+export function eventMarkers(zone: string): Marker[] {
+  return (store.state.world?.ev ?? []).filter(e => e.zone === zone).map(e => ({ x: e.x, y: e.y, type: e.boss ? 'w_boss' : 'w_event', label: e.name }));
+}
+const WORLD_MARKS = new Set(['w_star', 'w_trader', 'w_enc', 'w_dig']);
 
 function diamond(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
 function outlined(ctx: CanvasRenderingContext2D, fill: string) { ctx.lineWidth = 2; ctx.strokeStyle = '#05060a'; ctx.stroke(); ctx.fillStyle = fill; ctx.fill(); }
@@ -130,6 +135,21 @@ export function drawMarker(ctx: CanvasRenderingContext2D, m: Marker, x: number, 
     case 'chest': if (!m.state) { ctx.beginPath(); ctx.rect(x - u * 1.5, y - u * 1.1, u * 3, u * 2.2); outlined(ctx, '#e3b75c'); } break;
     case 'shard': if (!m.state) { diamond(ctx, x, y, u * 1.4); outlined(ctx, '#d6c4ff'); } break;
     case 'board': { ctx.beginPath(); ctx.rect(x - u * 1.3, y - u * 1.3, u * 2.6, u * 2.6); outlined(ctx, '#c58f4a'); break; }
+    // ---- Lebendige Welt (0.6)
+    case 'w_event': case 'w_boss': {
+      const boss = m.type === 'w_boss', r = u * (2.4 + 0.5 * Math.sin(performance.now() / 300));
+      ctx.beginPath(); ctx.arc(x, y, r * 1.7, 0, 7); ctx.strokeStyle = boss ? 'rgba(255,90,130,.7)' : 'rgba(110,255,220,.7)'; ctx.lineWidth = 2; ctx.stroke();
+      diamond(ctx, x, y, u * 2.4); outlined(ctx, boss ? '#ff3b6b' : '#6effdc');
+      break;
+    }
+    case 'w_star': if (!m.state) { diamond(ctx, x, y, u * 1.3); outlined(ctx, '#fff0a8'); } break;
+    case 'w_trader': { ctx.beginPath(); ctx.arc(x, y, u * 2, 0, 7); outlined(ctx, '#ffcf5e'); ctx.fillStyle = '#5a3a10'; ctx.fillRect(x - u * 0.5, y - u * 0.5, u, u); break; }
+    case 'w_enc': { ctx.beginPath(); ctx.arc(x, y, u * 1.6, 0, 7); outlined(ctx, '#9fd8ff'); break; }
+    case 'w_dig': {
+      ctx.lineCap = 'round';
+      for (const [w, c] of [[u * 1.9, '#05060a'], [u * 1.1, '#ff5a3c']] as const) { ctx.lineWidth = w; ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x - u * 2, y - u * 2); ctx.lineTo(x + u * 2, y + u * 2); ctx.moveTo(x + u * 2, y - u * 2); ctx.lineTo(x - u * 2, y + u * 2); ctx.stroke(); }
+      break;
+    }
     default: break;
   }
 }
@@ -162,9 +182,9 @@ export function MinimapCanvas({ zone, size, view = 34 }: { zone: string; size: n
       ctx.drawImage(mc.cv, sx, sy, sw, sw, 0, 0, R, R);
       const tx = (wx: number) => (wx / TILE - cxT) * ppt + R / 2, ty = (wy: number) => (wy / TILE - cyT) * ppt + R / 2;
       const inView = (x: number, y: number) => x > -8 && y > -8 && x < R + 8 && y < R + 8;
-      for (const m of currentMarkers(zone, mc.map)) {
+      for (const m of [...currentMarkers(zone, mc.map), ...eventMarkers(zone)]) {
         let x = tx(m.x), y = ty(m.y);
-        const important = m.type === 'exit' || m.type === 'stone' || (m.type === 'npc' && m.mark && m.mark !== 'progress');
+        const important = m.type === 'exit' || m.type === 'stone' || (m.type === 'npc' && m.mark && m.mark !== 'progress') || m.type === 'w_event' || m.type === 'w_boss' || m.type === 'w_dig' || m.type === 'w_trader';
         if (!inView(x, y)) {
           if (!important) continue;
           // wichtige Ziele außerhalb des Ausschnitts am Rand anzeigen
@@ -176,7 +196,11 @@ export function MinimapCanvas({ zone, size, view = 34 }: { zone: string; size: n
         drawMarker(ctx, m, x, y, u);
       }
       if (live.zone === zone) {
-        for (const m of live.mobs) { const x = tx(m.x), y = ty(m.y); if (!inView(x, y)) continue; ctx.beginPath(); ctx.arc(x, y, m.boss ? u * 2.6 : u * 1.2, 0, 7); outlined(ctx, m.boss ? '#ff3b6b' : '#ff5a48'); }
+        for (const m of live.mobs) {
+          const x = tx(m.x), y = ty(m.y); if (!inView(x, y)) continue;
+          if (m.rare) { diamond(ctx, x, y, u * (2.2 + 0.4 * Math.sin(now / 200))); outlined(ctx, '#ffb02e'); continue; }   // seltenes Monster in der Nähe
+          ctx.beginPath(); ctx.arc(x, y, m.boss ? u * 2.6 : u * 1.2, 0, 7); outlined(ctx, m.boss ? '#ff3b6b' : '#ff5a48');
+        }
         for (const p of live.players) { const x = tx(p.x), y = ty(p.y); if (!inView(x, y)) continue; ctx.beginPath(); ctx.arc(x, y, u * 1.7, 0, 7); outlined(ctx, p.party ? '#7bdc7b' : '#6fb7ff'); }
       }
       drawSelf(ctx, R / 2, R / 2, u, now);
@@ -204,7 +228,10 @@ export function ZoneMapCanvas({ zone }: { zone: string }) {
       ctx.drawImage(mc.cv, 0, 0, cv.width, cv.height);
       const tx = (wx: number) => (wx / TILE) * CELL * k, ty = (wy: number) => (wy / TILE) * CELL * k;
       const seen = new Set<string>();
-      const marks = [...staticMarkers(mc.map)];
+      // 0.6: NPCs folgen ihrem Tagesablauf – in der eigenen Zone zählt ihr tatsächlicher Standort
+      const here = live.zone === zone && live.objs.length > 0;
+      const marks = here ? [...staticMarkers(mc.map).filter(m => m.type !== 'npc'), ...live.objs.filter(o => o.type === 'npc' || WORLD_MARKS.has(o.type))] : [...staticMarkers(mc.map)];
+      marks.push(...eventMarkers(zone));
       const me = selfPos(zone);
       // Truhen und Splitter nur in Sichtweite – die große Karte soll nichts verraten
       if (live.zone === zone) for (const o of live.objs) if ((o.type === 'chest' || o.type === 'shard') && Math.hypot(o.x - me.x, o.y - me.y) < 280) marks.push(o);

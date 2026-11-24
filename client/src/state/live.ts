@@ -8,7 +8,7 @@ export const live = {
   /** andere Spieler: x, y, party (gleiche Gruppe) */
   players: [] as { x: number; y: number; name: string; party: boolean }[],
   /** aktive Gegner */
-  mobs: [] as { x: number; y: number; boss: boolean }[],
+  mobs: [] as { x: number; y: number; boss: boolean; rare?: boolean }[],
   /** sichtbare Objekte für die Minimap: type = 'npc'|'exit'|'stone'|'chest'|'shard'|'node'|…; mark = Questmarker */
   objs: [] as { x: number; y: number; type: string; state: number; mark?: 'offer' | 'turnin' | 'progress' | null; label?: string }[],
   fps: 60,

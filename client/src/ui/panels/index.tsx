@@ -8,6 +8,7 @@ import { QuestPanel } from './quests';
 import { SettingsPanel } from './settings';
 import { SkillsPanel } from './skills';
 import { HelpPanel, PausePanel } from './system';
+import { RepPanel } from '../world';
 
 export function PanelHost({ panel }: { panel: Panel }) {
   switch (panel) {
@@ -20,6 +21,7 @@ export function PanelHost({ panel }: { panel: Panel }) {
     case 'settings': return <SettingsPanel />;
     case 'menu': return <PausePanel />;
     case 'help': return <HelpPanel />;
+    case 'ruf': return <RepPanel />;
   }
   return null;
 }
