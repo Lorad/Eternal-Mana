@@ -7,7 +7,8 @@ import { CFG } from '../../shared/src/config';
 import { ITEMS, generateGear, itemName, makeStack, rescaleItem } from '../../shared/src/data/items';
 import { AETHER, ECHO_FRAG } from '../../shared/src/data/materials';
 import { QUEST_LIST } from '../../shared/src/data/quests';
-import { KREIS_KEEP_FLAGS, KREIS_NAME, KREIS_NPC, KREIS_QUEST, KREIS_RESET_FLAGS, KREIS_RESET_PREFIX, QUELL_MAX, RIFT_UNLOCK_QUEST, QUELL_TRACK, TRIAL_ID, attuneBlock, attunePlan, kreisBlock, kreisOf, nextKreis, ownedTitles, quellBonus, quellFree, riftUnlocked } from '../../shared/src/data/rifts';
+import { KREIS_KEEP_FLAGS, KREIS_NAME, KREIS_NPC, KREIS_QUEST, KREIS_RESET_FLAGS, KREIS_RESET_PREFIX, QUELL_MAX, RIFT_DUNGEONS, RIFT_UNLOCK_QUEST, riftMods, QUELL_TRACK, TRIAL_ID, attuneBlock, attunePlan, kreisBlock, kreisOf, nextKreis, ownedTitles, quellBonus, quellFree, riftUnlocked } from '../../shared/src/data/rifts';
+import { ZONES } from '../../shared/src/data/zones';
 import { getMap } from '../../shared/src/maps/mapgen';
 import { MOD_LABEL, SLOTS } from '../../shared/src/types';
 import type { ClientMsg, ItemInstance } from '../../shared/src/types';
@@ -125,7 +126,7 @@ function attune(g: Game, p: Player, uid: string, at: string) {
 }
 
 // ------------------------------------------------------------------ Entwickler-Befehle (EM_DEV=1)
-/** /endspiel · /riss <stufe> · /risstein · /quell <n> · /echo <n> · /kreis [n] · /pruefung */
+/** /endspiel · /riss <stufe> · /risstein · /rissmod <id> [dungeon] [stufe] · /quell <n> · /echo <n> · /kreis [n] · /pruefung */
 export function devEndgame(g: Game, p: Player, cmd: string, a: string[]): boolean {
   const c = p.char;
   const rift = () => (c.rift ??= { stufe: 1, seed: 1, best: {} });
@@ -143,6 +144,12 @@ export function devEndgame(g: Game, p: Player, cmd: string, a: string[]): boolea
     toStone();
   } else if (cmd === 'riss') { rift().stufe = Math.max(1, Math.min(CFG.rift.maxStufe, +a[0] || 1)); p.sync('rift'); }
   else if (cmd === 'risstein') toStone();
+  else if (cmd === 'rissmod') { // /rissmod <modifikator> [dungeon] [stufe]: stellt den Zähler so, dass dieser Riss den Modifikator trägt
+    const d = RIFT_DUNGEONS.includes(a[1]) ? a[1] : RIFT_DUNGEONS[0], s = Math.max(1, Math.min(CFG.rift.maxStufe, +a[2] || rift().stufe));
+    rift().stufe = Math.max(rift().stufe, s);
+    for (let seed = 1; seed < 5000; seed++) if (riftMods(seed, d, s).mods.includes(a[0] as any)) { rift().seed = seed; p.toast(`Dev: ${ZONES[d].name} Stufe ${s} trägt jetzt „${a[0]}“.`); break; }
+    p.sync('rift');
+  }
   else if (cmd === 'quell') { for (let i = Math.max(1, +a[0] || 1); i > 0 && (c.quell?.lvl ?? 0) < QUELL_MAX; i--) p.gainQuellXp(CFG.quell.xpToNext(c.quell?.lvl ?? 0) - (c.quell?.xp ?? 0)); }
   else if (cmd === 'echo') { p.give(makeStack(ECHO_FRAG, +a[0] || 20), false); p.give(makeStack(AETHER, Math.ceil((+a[0] || 20) / 5)), false); }
   else if (cmd === 'kreis') { c.kreis = Math.max(0, Math.min(CFG.kreis.max, a[0] !== undefined ? +a[0] || 0 : kreisOf(c) + 1)); p.sync('kreis'); g.rehome(p); }

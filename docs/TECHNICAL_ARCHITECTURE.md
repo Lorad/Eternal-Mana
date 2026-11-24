@@ -203,7 +203,7 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Oberfläche:** `client/src/ui/endgame.tsx` (Fenster mit drei Reitern, Riss-Anzeige im HUD, Reiter „Angleichen“ der
   Schmiede, Einstieg bei Mirelda). `ZoneInit.rift` / Nachricht `rift` tragen den Zustand des Risses, `ZoneInit.kreis`
   den Kreis der Welt.
-- **Entwickler-Befehle:** `/endspiel`, `/riss <stufe>`, `/risstein`, `/quell <n>`, `/echo <n>`, `/kreis [n]`, `/pruefung`.
+- **Entwickler-Befehle:** `/endspiel`, `/riss <stufe>`, `/risstein`, `/rissmod <id> [dungeon] [stufe]`, `/quell <n>`, `/echo <n>`, `/kreis [n]`, `/pruefung`.
 - **Simulation:** `npx tsx scripts/rift-sim.ts` vergleicht Riss-Stufen 1/10/20/30 für drei Ausrüstungsstände.
 
 ## Tests
