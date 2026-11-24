@@ -7,7 +7,8 @@
 .craft { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
 .craft-left { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .craft-filters { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
-.craft-filters .toggle { padding: 2px 4px; }
+.craft-filters .toggle { width: auto; padding: 2px 4px; }
+.craft-filters .tabs { width: 100%; }
 .craft-list { display: flex; flex-direction: column; gap: 3px; max-height: 430px; padding-right: 4px; }
 .is-short .craft-list { max-height: 270px; }
 .craft-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 3px 10px 3px 3px; text-align: left; background: rgba(9, 11, 19, .5); border: 1px solid transparent; box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }

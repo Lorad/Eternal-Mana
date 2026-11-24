@@ -90,7 +90,7 @@ export function CharacterPanel() {
             {stats.map(([name, val, help]) => (
               <li title={help}><span>{name}<small>{help}</small></span><b>{val}</b></li>
             ))}
-            <li><span>Angriffselement<small>Bestimmt durch deine Waffe.</small></span><b style={{ color: ELEMENT_CSS[d.attackElement] }}>{ELEMENT_NAME[d.attackElement]}{d.elemLvl > 1 ? ` · Stufe ${d.elemLvl}` : ''}</b></li>
+            <li><span>Angriffselement<small>Bestimmt durch deine Waffe{d.elemLvl > 1 ? ` (Elementstufe ${d.elemLvl})` : ''}.</small></span><b style={{ color: ELEMENT_CSS[d.attackElement] }}>{ELEMENT_NAME[d.attackElement]}</b></li>
           </ul>
           <div class="sec-title">Resistenzen <span class="pill">höchstens {CFG.elements.resCap} %</span></div>
           <ul class={cx('stat-list', 'compact', 'res-list')}>

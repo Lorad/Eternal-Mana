@@ -98,11 +98,14 @@ export const CRAFT_ITEMS: ItemBase[] = [
   legend('schattenjaeger', 'dagger', 'Zwielichtfänge', '„Zwei Klingen. Ich hab sie nicht geschärft. Sie waren schon so.“ – Borin'),
 ];
 
-/** Beschreibung der Sonderwirkung der Legendären Waffen (Zahlen: CFG.legend) */
+const pct = (x: number) => Math.round(x * 100) + ' %';
+const sec = (x: number) => String(x).replace('.', ',');
+const LG = CFG.legend;
+/** Beschreibung der Sonderwirkung der Legendären Waffen – die Zahlen stammen aus CFG.legend */
 export const LEGEND_TEXT: Record<ClassId, string> = {
-  krieger: 'Jeder vierte Treffer deiner Standardangriffe entfesselt eine Schockwelle, die alle Gegner um dich trifft.',
-  magier: 'Reaktionen, die du auslöst, treffen 50 % härter, und das Ziel kann eine Sekunde früher erneut reagieren.',
-  waldlaeufer: 'Kritische Treffer prallen auf einen weiteren Gegner in der Nähe ab (70 % Schaden). Steht keiner dort, hallt der Treffer am selben Ziel nach (35 %).',
-  paladin: 'Deine Heilungen legen einen Schild auf alle Geheilten (30 % des Heilwerts, höchstens 20 % ihres Lebens).',
-  schattenjaeger: 'Triffst du ein gezeichnetes Ziel, detoniert das Mal: Dunkelschaden für alle Gegner im Umkreis (höchstens alle 2,5 Sekunden je Ziel).',
+  krieger: `Jeder ${LG.krieger.every}. Treffer deiner Standardangriffe entfesselt eine Schockwelle, die alle Gegner um dich trifft (${pct(LG.krieger.mult)} deines Angriffs).`,
+  magier: `Reaktionen, die du auslöst, treffen ${LG.magier.reactMul === 2 ? 'doppelt so hart' : pct(LG.magier.reactMul - 1) + ' härter'}, und das Ziel kann ${sec(LG.magier.reactCdCut)} Sekunden früher erneut reagieren.`,
+  waldlaeufer: `Kritische Treffer prallen auf einen weiteren Gegner in der Nähe ab (${pct(LG.waldlaeufer.ricochet)} Schaden). Steht keiner dort, hallt der Treffer am selben Ziel nach (${pct(LG.waldlaeufer.echo)}).`,
+  paladin: `Deine Heilungen legen einen Schild auf alle Geheilten (${pct(LG.paladin.shield)} des Heilwerts, höchstens ${pct(LG.paladin.cap)} ihres Lebens).`,
+  schattenjaeger: `Triffst du ein gezeichnetes Ziel, detoniert das Mal: Schaden im Element deiner Waffe (ohne Element: Dunkelheit) für alle Gegner im Umkreis – ${pct(LG.schattenjaeger.mult)} deines Angriffs, höchstens alle ${sec(LG.schattenjaeger.cd)} Sekunden je Ziel.`,
 };

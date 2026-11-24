@@ -58,7 +58,7 @@ export const ENEMY_LIST: EnemyDef[] = [
   E({ id: 'aschenhund', name: 'Aschenhund', element: 'fire', hpMul: 1, dmgMul: 1.2, defMul: 0.8, xpMul: 1.15, speed: 80, radius: 8, ai: 'charge', aggro: 150,
     atk: { range: 80, windup: 0.5, cd: 1.9, reach: 13, mult: 1.25 }, drops: [['mat_ember', 0.15]], weak: ['earth'] }),
   E({ id: 'magmaschleim', name: 'Magmaschleim', element: 'fire', hpMul: 1.15, dmgMul: 1, defMul: 1, xpMul: 1, speed: 40, radius: 7, ai: 'chase', move: 'hop', aggro: 100,
-    atk: { range: 18, windup: 0.45, cd: 1.3, reach: 14, status: { id: 'burn', dur: 3, chance: 0.5 } }, drops: [['mat_ember', 0.2]], weak: ['earth'], resist: ['phys'] }),
+    atk: { range: 18, windup: 0.45, cd: 1.3, reach: 14, status: { id: 'burn', dur: 3, chance: 0.5 } }, drops: [['mat_ember', 0.2]], weak: ['earth'] }),
   E({ id: 'schlackengolem', name: 'Schlackengolem', element: 'fire', hpMul: 2.2, dmgMul: 1.5, defMul: 2, xpMul: 2, speed: 32, radius: 11, ai: 'caster', aggro: 130,
     atk: { range: 90, windup: 0.3, cd: 2.8, aoe: { radius: 30, delay: 0.9 }, mult: 1.3 }, drops: [['q_kern', 0.6], ['mat_ember', 0.5]], weak: ['earth'], resist: ['phys'] }),
   // ---------------- Frostgebirge
@@ -81,7 +81,7 @@ export const ENEMY_LIST: EnemyDef[] = [
     atk: { range: 150, windup: 0.7, cd: 2.4, proj: { spr: 'lance', speed: 230 }, mult: 1.3 }, drops: [['mat_rune', 0.25]], weak: ['wind'] }),
   // ---------------- Schattenreich
   E({ id: 'schattenwandler', name: 'Schattenwandler', element: 'dark', hpMul: 1, dmgMul: 1.3, defMul: 0.8, xpMul: 1.3, speed: 70, radius: 7, ai: 'blink', aggro: 170,
-    atk: { range: 22, windup: 0.35, cd: 1.3, reach: 16 }, drops: [['mat_void', 0.25]], weak: ['fire'], resist: ['phys'] }),
+    atk: { range: 22, windup: 0.35, cd: 1.3, reach: 16 }, drops: [['mat_void', 0.25]], weak: ['fire'] }),
   E({ id: 'leerenbrut', name: 'Leerenbrut', element: 'dark', hpMul: 1.2, dmgMul: 1, defMul: 1, xpMul: 1.1, speed: 48, radius: 7, ai: 'chase', move: 'hop', aggro: 130,
     atk: { range: 18, windup: 0.4, cd: 1.2, reach: 15, status: { id: 'mark', dur: 4, chance: 0.4 } }, drops: [['mat_void', 0.2]], weak: ['fire'] }),
   E({ id: 'nachtmahr', name: 'Nachtmahr', element: 'dark', hpMul: 1.7, dmgMul: 1.4, defMul: 1.1, xpMul: 1.7, speed: 76, radius: 10, ai: 'charge', aggro: 170,

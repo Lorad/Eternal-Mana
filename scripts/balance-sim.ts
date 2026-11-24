@@ -1,6 +1,8 @@
-// Balance-Vergleich per Simulation (ohne Netzwerk):  npx tsx scripts/balance-sim.ts [--csv]
+// Balance-Vergleich per Simulation (ohne Netzwerk):  npx tsx scripts/balance-sim.ts [--csv] [--ausbau]
 // Spielt für jede Klasse auf mehreren Stufen einen Standard-Charakter gegen den häufigsten Gegner des passenden Gebiets
-// und misst „Sekunden bis zum Sieg“ sowie den erlittenen Schaden. Dient dem Vorher/Nachher-Vergleich bei Systemänderungen.
+// und misst Schaden je Sekunde sowie den erlittenen Schaden. Dient dem Vorher/Nachher-Vergleich bei Systemänderungen.
+// --ausbau: zusätzlich derselbe Charakter mit allem, was das Handwerk (0.4) hergibt – Runen, Set, Speise, Elixier,
+//           eingeschmiedetes Element (bestes und mittleres der sechs), ab Stufe 30 mit Legendärer Waffe.
 import { CFG } from '../shared/src/config';
 import { CLASSES, CLASS_IDS } from '../shared/src/data/classes';
 import { BOSSES } from '../shared/src/data/enemies';
@@ -10,8 +12,13 @@ import { ZONE_LIST } from '../shared/src/data/zones';
 import { computeStats, newCharacter } from '../shared/src/stats';
 import type { CharData, ClassId } from '../shared/src/types';
 import { Rng } from '../shared/src/util/rng';
+import { applyTimed } from '../server/src/craft';
 import { Game } from '../server/src/game';
 import { Player } from '../server/src/player';
+import { ELEMENTS } from '../shared/src/config';
+import { makeLegendary } from '../shared/src/craft';
+import { SET_LIST } from '../shared/src/data/sets';
+import type { Element } from '../shared/src/types';
 
 const LEVELS = [1, 5, 10, 15, 20, 25, 30, 35, 40];
 const KILLS = 30;
@@ -106,11 +113,35 @@ export function simulate(char: CharData, lvl: number, kills = KILLS, prep?: (p: 
   return { dps, ttk: baseHp / dps, dtps, ttd: p.stats.maxHp / Math.max(0.01, dtps), power: p.stats.power, hp: p.stats.maxHp };
 }
 
+/** Der Standard-Charakter, ausgebaut mit den Systemen der Version 0.4 (gleiche Ausrüstung, gleiche Seltenheit). */
+export function investedChar(cls: ClassId, lvl: number, el: Element, legend = false): CharData {
+  const c = standardChar(cls, lvl);
+  const t = Math.max(1, Math.min(6, 1 + Math.floor((lvl - 1) / 5)));
+  if (legend) c.equip.weapon = makeLegendary(new Rng(77 + lvl), cls, lvl);
+  const w = c.equip.weapon!;
+  w.element = el; w.elv = lvl >= 25 ? 3 : lvl >= 10 ? 2 : 1;
+  if (lvl >= 11) w.ench = 'macht'; else if (lvl >= 6) w.ench = 'fokus';
+  if (lvl >= 4) { c.equip.helm!.ench = 'vital'; c.equip.armor!.ench = 'vital'; }
+  c.equip.acc1!.base = `c_ring_${t}`; c.equip.acc2!.base = `c_amulet_${t}`;
+  if (lvl >= 5) c.equip.acc1!.ench = 'eile';
+  if (lvl >= 10) c.equip.acc2!.ench = 'weitsicht';
+  const set = SET_LIST.filter(s => s.ilvl - 2 <= lvl).at(-1);
+  if (set) for (const s of ['helm', 'armor', 'acc1', 'acc2'] as const) c.equip[s]!.set = set.id;
+  return c;
+}
+function buffUp(lvl: number) {
+  return (p: Player) => {
+    applyTimed(p, lvl >= 11 ? 'food_spiess' : 'food_beeren', 9999);
+    if (lvl >= 3) applyTimed(p, lvl >= 11 ? 'elx_power' : lvl >= 8 ? 'elx_crit' : 'elx_guard', 9999);
+  };
+}
+
 function main() {
-  const csv = process.argv.includes('--csv');
+  const csv = process.argv.includes('--csv'), ausbau = process.argv.includes('--ausbau');
   const rows: string[] = [];
   console.log(`Balance-Simulation (Version ${CFG.version}) – Standard-Charakter, Ausrüstung „Ungewöhnlich“ auf eigener Stufe`);
-  console.log('Klasse          St.  Angriff  Leben  Schaden/s  s/Gegner  erlitten/s  s bis Tod   Boss-s (geschätzt)');
+  console.log('Klasse          St.  Angriff  Leben  Schaden/s  s/Gegner  erlitten/s  s bis Tod   Boss-s (geschätzt)' + (ausbau ? '   | Ausbau: Schaden bestes Element / mittleres, s bis Tod' + '  | mit Legendärer Waffe' : ''));
+  const sum: Record<number, { best: number; mid: number; ttd: number; leg: number; n: number }> = {};
   for (const cls of CLASS_IDS) for (const lvl of LEVELS) {
     const c = standardChar(cls, lvl);
     const r = simulate(c, lvl);
@@ -121,8 +152,27 @@ function main() {
       bossS = `${boss.name}: ${Math.round((CFG.enemy.hp(boss.level) * boss.hpMul) / (r.dps * adj))}`;
     }
     const d = computeStats(c);
-    console.log(`${cls.padEnd(15)} ${String(lvl).padStart(3)}  ${d.power.toFixed(0).padStart(7)}  ${String(d.maxHp).padStart(5)}  ${r.dps.toFixed(1).padStart(9)}  ${r.ttk.toFixed(2).padStart(8)}  ${r.dtps.toFixed(1).padStart(10)}  ${r.ttd.toFixed(1).padStart(9)}   ${bossS}`);
+    let extra = '';
+    if (ausbau) {
+      const runs = ELEMENTS.map(el => ({ el, r: simulate(investedChar(cls, lvl, el), lvl, KILLS, buffUp(lvl)) })).sort((a, b) => b.r.dps - a.r.dps);
+      const best = runs[0], mid = (runs[2].r.dps + runs[3].r.dps) / 2;
+      const ttd = runs.reduce((a, x) => a + x.r.ttd, 0) / runs.length;
+      extra = `   | ×${(best.r.dps / r.dps).toFixed(2)} (${best.el}) / ×${(mid / r.dps).toFixed(2)}, Tod ×${(ttd / r.ttd).toFixed(2)}`;
+      const S = (sum[lvl] ??= { best: 0, mid: 0, ttd: 0, leg: 0, n: 0 });
+      S.best += best.r.dps / r.dps; S.mid += mid / r.dps; S.ttd += ttd / r.ttd; S.n++;
+      if (lvl >= 30) {
+        const lr = ELEMENTS.map(el => simulate(investedChar(cls, lvl, el, true), lvl, KILLS, buffUp(lvl)).dps).sort((a, b) => b - a);
+        const lmid = (lr[2] + lr[3]) / 2;
+        extra += `  | ×${(lr[0] / r.dps).toFixed(2)} / ×${(lmid / r.dps).toFixed(2)}`;
+        S.leg += lmid / r.dps;
+      }
+    }
+    console.log(`${cls.padEnd(15)} ${String(lvl).padStart(3)}  ${d.power.toFixed(0).padStart(7)}  ${String(d.maxHp).padStart(5)}  ${r.dps.toFixed(1).padStart(9)}  ${r.ttk.toFixed(2).padStart(8)}  ${r.dtps.toFixed(1).padStart(10)}  ${r.ttd.toFixed(1).padStart(9)}   ${bossS.padEnd(22)}${extra}`);
     rows.push([cls, lvl, d.power, d.maxHp, r.dps.toFixed(2), r.ttk.toFixed(3), r.dtps.toFixed(2), r.ttd.toFixed(2)].join(';'));
+  }
+  if (ausbau) {
+    console.log('\nMittel über alle Klassen – Ausbau gegenüber Standard:');
+    for (const lvl of LEVELS) { const S = sum[lvl]; console.log(`  Stufe ${String(lvl).padStart(2)}: Schaden ×${(S.best / S.n).toFixed(2)} (bestes Element), ×${(S.mid / S.n).toFixed(2)} (mittleres); Überleben ×${(S.ttd / S.n).toFixed(2)}${lvl >= 30 ? `; mit Legendärer Waffe ×${(S.leg / S.n).toFixed(2)} (mittleres Element)` : ''}`); }
   }
   if (csv) console.log('\n' + rows.join('\n'));
 }

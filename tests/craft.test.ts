@@ -622,7 +622,7 @@ describe('Alte Spielstände', () => {
     expect(t.p.buffs.length).toBe(0);
     // und er kann sofort handwerken: die alte Elementwaffe auf Stufe 2 bringen
     sim.gotoNpc(t, 'borin');
-    t.p.char.gold = 100000; t.give('ess_fire', 12);
+    t.p.char.gold = 100000; t.give('ess_fire', CFG.craft.infuseEssences[1]);
     t.send({ t: 'infuse', uid: 'old-w', el: 'fire', at: 'borin' });
     expect(c.equip.weapon!.elv).toBe(2);
     t.give(scrollOf('c_fest'), 1);

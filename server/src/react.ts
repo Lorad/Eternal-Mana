@@ -86,10 +86,12 @@ export function legendOnHit(z: Zone, m: Mob, src: Player, el: Element, raw: numb
   } else if (lg === 'schattenjaeger' && !m.dead && m.has('mark', now) && now >= m.detAt) {
     const C = CFG.legend.schattenjaeger;
     m.detAt = now + C.cd;
-    z.ev({ k: 'fx', n: 'explosion', x: Math.round(m.x), y: Math.round(m.y), r: C.radius, el: 'dark' });
+    // Das Mal detoniert im Element der Waffe; ohne eingeschmiedetes Element als Dunkelheit
+    const del: Element = src.stats.attackElement === 'phys' ? 'dark' : src.stats.attackElement;
+    z.ev({ k: 'fx', n: 'explosion', x: Math.round(m.x), y: Math.round(m.y), r: C.radius, el: del });
     z.ev({ k: 'sfx', n: 'cast_dark', x: Math.round(m.x), y: Math.round(m.y) });
     const x = m.x, y = m.y;
-    for (const t of [...z.mobs.values()]) if (!t.dead && Math.hypot(t.x - x, t.y - y) - t.radius <= C.radius) z.hitMob(t, src, src.stats.power * C.mult, 'dark', { extra: true });
+    for (const t of [...z.mobs.values()]) if (!t.dead && Math.hypot(t.x - x, t.y - y) - t.radius <= C.radius) z.hitMob(t, src, src.stats.power * C.mult, del, { extra: true });
   }
 }
 

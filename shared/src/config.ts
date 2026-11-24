@@ -135,7 +135,7 @@ export const CFG = {
     reforgeGold: (ilvl: number, rarity: number) => Math.floor((20 + ilvl * 6) * (1 + rarity)),
     reforgeMats: 2,           // Erz der Stufe + ebenso viele Monster-Rohstoffe
     /** Element einschmieden: Essenzen und Gold je Zielstufe 1..3; Stufe 3 braucht zusätzlich den Bosskern des Elements */
-    infuseEssences: [5, 12, 20],
+    infuseEssences: [8, 14, 22],
     infuseGold: (ilvl: number, level: number) => Math.floor((40 + ilvl * 10) * level * level),
     /** Mehrschaden mit dem Waffenelement und Faktor auf die Zustandschance je Elementstufe 0..3 */
     infuseDmg: [0, 0, 0.04, 0.08],
@@ -160,11 +160,11 @@ export const CFG = {
   },
   /** Legendäre Waffen (0.4): Zahlen der Sonderwirkungen */
   legend: {
-    krieger: { every: 4, mult: 0.9, radius: 52 },
-    magier: { reactMul: 1.5, reactCdCut: 1 },
-    waldlaeufer: { ricochet: 0.7, echo: 0.35, range: 110 },
+    krieger: { every: 4, mult: 1.2, radius: 52 },
+    magier: { reactMul: 2, reactCdCut: 1.5 },
+    waldlaeufer: { ricochet: 0.6, echo: 0.22, range: 110 },
     paladin: { shield: 0.3, cap: 0.2, dur: 6 },
-    schattenjaeger: { mult: 1.2, radius: 48, cd: 2.5 },
+    schattenjaeger: { mult: 2, radius: 48, cd: 1.5 },
   },
   upgrade: {
     max: 10,

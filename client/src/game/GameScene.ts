@@ -386,7 +386,7 @@ export class GameScene extends Phaser.Scene {
       case 'node': img(o.x, o.y + 7, 'node_' + pr.kind); break;
       case 'shard': img(o.x, o.y + 4, 'shard_0', undefined, false); v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(0.5).setTint(0x70ffe8).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); v.light = [46, 0x70ffe8, 0.7]; break;
       case 'sign': img(o.x, o.y + 7, 'signpost'); break;
-      case 'cookfire': img(o.x, o.y + 7, (pr.look ?? 'campfire') + '_0'); v.light = [100, 0xffb060, 1]; v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.8).setTint(0xffa040).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); break;
+      case 'cookfire': img(o.x, o.y + 7, this.cookLook(pr.look) + '_0'); v.light = [100, 0xffb060, 1]; v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.8).setTint(0xffa040).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); break;
     }
     this.applyObjState(v, true);
   }
@@ -781,6 +781,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
   }
+  /** Grafik der Kochstelle: die eigene Stations-Grafik, falls der Atlas sie schon enthält, sonst das Lagerfeuer der Zone. */
+  private cookLook(look?: string): string { return this.objTex.has('station_cook_0') ? 'station_cook' : this.objTex.has((look ?? 'campfire') + '_0') ? look ?? 'campfire' : 'campfire'; }
   private bossAff(el: Element) { const a = mobAffinity(this.map.def.boss ?? '', true, el); return { weak: a.weak, resist: a.resist }; }
   /** Zielanzeige: Gegner unter dem Mauszeiger, sonst der zuletzt getroffene in der Nähe. */
   private updateTarget(now: number) {
@@ -1115,7 +1117,7 @@ export class GameScene extends Phaser.Scene {
         case 'stone': if (o.state) v.parts[0].setFrame(anim('quellstein', 150, 4)); break;
         case 'shard': if (!o.state) { v.parts[0].setFrame(anim('shard', 130, 4)); v.parts[0].y = o.y + 4 + Math.sin(now / 300) * 2; } break;
         case 'exit': if (o.props?.look === 'portal') v.parts[0].setFrame(anim('portal', 100, 4)); break;
-        case 'cookfire': v.parts[0].setFrame(anim(o.props?.look ?? 'campfire', 110, 4)); break;
+        case 'cookfire': v.parts[0].setFrame(anim(this.cookLook(o.props?.look), 110, 4)); break;
         case 'spikes': {
           const pr = o.props!;
           const ph = ((sn + pr.offset) % pr.period) / pr.period;
