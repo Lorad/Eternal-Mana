@@ -5,6 +5,7 @@
 import { Px } from './draw';
 import { gruenwaldObjects } from './objects/gruenwald';
 import { commonObjects } from './objects/common';
+import { PET_IDS } from './objects/cm_pets';
 import { checkFrames } from './objects/kit';
 import type { PaintableMap, Sheet } from './spec';
 import { T } from '../../../shared/src/maps/tiles';
@@ -50,6 +51,8 @@ const EXPECTED: string[] = [
   // Geschichte & Weltereignisse (cm_story), Handwerk & Zuhause (cm_home)
   ...A4('hueterschrein'), 'lore_book', 'lore_tablet', 'lore_scroll', 'lore_stone', ...A4('riss_stein'), ...A4('mana_surge'), ...A4('star_shard'), 'dig_spot', 'chest_buried',
   'station_alchemy', ...A4('station_cook'), ...A4('station_enchant'), 'stash_chest', 'bed', 'house_table', 'house_shelf', 'rug', 'trophy_stand',
+  // Begleiter (cm_pets): je 6 Frames – 0,1 Ruhe · 2..5 Lauf
+  ...PET_IDS.flatMap((id) => AN('pet_' + id, 6)),
 ];
 {
   const miss = EXPECTED.filter((n) => !F.has(n)), extra = [...F.keys()].filter((n) => !EXPECTED.includes(n));
@@ -125,7 +128,7 @@ const SCENES: Scene[] = [
       ['crit_butterfly_a', 140, 120], ['crit_butterfly_b', 310, 118], ['crit_bird_idle', 174, 144], ['crit_bird_peck', 280, 206], ['crit_bird_fly', 220, 60], ['crit_rabbit_idle', 330, 152], ['crit_rabbit_hop', 120, 212],
       ['crit_squirrel_idle', 84, 118], ['crit_squirrel_run', 250, 222], ['crit_firefly', 200, 110], ['crit_firefly', 350, 118], ['crit_frog_idle', 380, 92], ['crit_dragonfly', 420, 56],
       ['quellstein', 150, 196], ['node_herb', 312, 212], ['node_wood', 410, 214], ['chest_wood_closed', 228, 204], ['shard', 46, 196], ['signpost', 270, 160],
-      ['@char', 190, 176], ['@char', 290, 186],
+      ['@char', 190, 176], ['@char', 290, 186], ['pet_moosling', 172, 178], ['pet_glutfuchs', 310, 190], ['pet_wisp', 206, 170], ['pet_pilzling', 272, 192],
     ],
   },
   {
@@ -249,7 +252,11 @@ async function main(): Promise<void> {
   info.textContent = `Bauzeit: gruenwald ${tGw.toFixed(0)} ms (${gw.length} Frames) · common ${tCm.toFixed(0)} ms (${cm.length} Frames)`;
   root.append(info);
   for (const e of errs) { const d = document.createElement('div'); d.className = 'err'; d.textContent = e; root.append(d); }
-  if (view === 'all' || view === 'sheet') { sheet('Grünwald – Kontaktbogen', gw); sheet('Allgemein – Kontaktbogen', cm); }
+  if (view === 'all' || view === 'sheet') {
+    sheet('Grünwald – Kontaktbogen', gw); sheet('Allgemein – Kontaktbogen', cm);
+    // Begleiter getrennt nach Ruhe- und Laufschleife (mit ?anim=1 als Animation)
+    sheet('Begleiter – Ruhe (Frames 0–1) und Lauf (Frames 2–5)', PET_IDS.flatMap((id) => [0, 1, 2, 3, 4, 5].map((k): [string, Px] => [`pet_${id}_${k < 2 ? 'ruhe_' + k : 'lauf_' + (k - 2)}`, F.get(`pet_${id}_${k}`)!])));
+  }
   if (view === 'all' || view === 'scenes') {
     // Bevorzugt das komplette Bundle; fällt auf Einzelteile zurück, solange Nachbarmodule im Umbau sind.
     try {

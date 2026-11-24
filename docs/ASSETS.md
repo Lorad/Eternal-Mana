@@ -79,7 +79,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `boss_vael` | 96×96 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_ysolde` | 96×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 
-## Atlas: obj (587 Frames, 2048×360)
+## Atlas: obj (635 Frames, 2048×371)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -291,6 +291,14 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `obsidian_big` | 36×48 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `ore_crate` | 16×18 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `pebbles` | 16×8 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `pet_glutfuchs` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_moosling` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_pilzling` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_quelldrachling` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_runenkaefer` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_schattenkatze` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_schneeeule` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
+| `pet_wisp` | 20×20 | 6 (`_0…_5`) | Weltdeko · Modul `objects/common.ts` |
 | `pickaxe_rack` | 20×26 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `pillar` | 18×52 | 1 | Weltdeko · Modul `objects/ruinen.ts` |
 | `pillar_broken` | 18×30 | 1 | Weltdeko · Modul `objects/ruinen.ts` |
