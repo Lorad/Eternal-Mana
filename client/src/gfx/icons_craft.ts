@@ -8,12 +8,10 @@ import { Px, bez, crystal, tube } from './draw';
 import { P, Ramp, INK, WHITE, alpha, mix } from './palette';
 
 type Fn = (p: Px) => void;
-type El = 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark';
 
 /** Elementrampen passend zu ELEMENT_COLOR (shared/src/config.ts) */
 const EARTH: Ramp = [P.wood[0], mix(P.sand[1], P.wood[2], 0.35), mix(P.sand[2], P.gold[2], 0.3), mix(P.sand[3], P.gold[3], 0.25), mix(P.sand[4], P.gold[4], 0.3)];
 const WIND: Ramp = [P.teal[0], P.teal[1], P.teal[2], P.teal[3], P.teal[4]];
-const EL: Record<El, Ramp> = { fire: P.fire, water: P.blue, earth: EARTH, wind: WIND, light: P.gold, dark: P.violet };
 const ASH: Ramp = P.ash;
 
 /** Funkelstern: weißer Kern mit farbigen Armen */
@@ -68,13 +66,15 @@ const ESSENCES: Record<string, Fn> = {
   // Wirbel
   mat_ess_wind: (p) => {
     const T = WIND;
-    for (let a = 0; a < 8.4; a += 0.06) {
-      const r = 1 + a * 1.02, x = 12.5 + Math.cos(a + 0.9) * r, y = 12.5 + Math.sin(a + 0.9) * r * 0.94;
-      const lit = Math.cos(a + 0.9) * 0.5 + Math.sin(a + 0.9) * 0.7;
-      p.rect(Math.round(x - 1), Math.round(y - 1), 2, 2, lit < -0.35 ? T[4] : lit > 0.45 ? T[2] : T[3]);
+    // kräftige Spirale: außen 3 px, innen 2 px; läuft unten links in zwei Böenstriche aus
+    for (const pass of [0, 1]) for (let a = 0; a < 7.5; a += 0.05) {
+      const r = 1.4 + a * 1.0, an = a + 1.3, x = 13 + Math.cos(an) * r, y = 11.5 + Math.sin(an) * r * 0.95, w = a > 2.6 ? 3 : 2;
+      const lit = Math.cos(an) * 0.5 + Math.sin(an) * 0.7;
+      if (pass === 0) p.rect(Math.round(x - w / 2), Math.round(y - w / 2), w, w, lit > 0.3 ? T[2] : T[3]);
+      else if (lit < 0.1) p.rect(Math.round(x - w / 2), Math.round(y - w / 2), w - 1, w - 1, lit < -0.45 ? WHITE : T[4]);
     }
-    p.rect(11, 12, 3, 2, T[4]); p.set(12, 12, WHITE);
-    p.rect(1, 20, 5, 1, T[3]); p.rect(3, 22, 4, 1, T[2]); p.px([20, 2, 21, 2], T[3]); p.set(4, 3, T[4]);
+    p.rect(12, 11, 2, 2, WHITE);
+    p.rect(1, 21, 7, 2, T[3]); p.rect(1, 21, 5, 1, T[4]); p.rect(3, 18, 4, 1, T[3]); p.px([21, 1, 22, 1, 2, 4], T[4]);
   },
   // vierstrahliger Stern
   mat_ess_light: (p) => {
@@ -101,15 +101,19 @@ const CORES: Record<string, Fn> = {
   // Dornenmutter: verholztes Herz, Dornenranke, rosa Knospe
   mat_core_dornenmutter: (p) => {
     const W = P.wood, G = P.green;
-    p.ball(8, 11, 5, 5, W, 1, 4); p.ball(16, 11, 5, 5, W, 1, 3); p.poly([[3, 12], [21, 12], [12, 23]], W[2]);
-    p.poly([[3, 12], [9, 12], [10, 21]], W[3]); p.poly([[15, 13], [21, 12], [13, 22]], W[1]);
-    p.line(8, 9, 10, 19, W[1]); p.line(13, 12, 12, 20, W[1]); p.px([6, 9, 5, 11, 6, 13], W[4]); p.line(16, 9, 15, 15, W[0]);
-    // Ranke quer, Dornen
-    p.line(2, 16, 8, 14, G[2], 2); p.line(8, 14, 15, 15, G[2], 2); p.line(15, 15, 21, 12, G[1], 2); p.px([3, 16, 5, 15, 9, 14, 12, 14], G[3]);
-    p.px([5, 13, 11, 13, 17, 13, 7, 17, 14, 17, 20, 15], P.cream[4]);
-    // Trieb
-    p.rect(12, 5, 1, 4, G[2]); p.px([13, 6, 14, 5, 15, 5], G[4]); p.set(11, 7, G[3]);
-    p.ell(12, 3, 2.6, 2.6, P.pink[2]); p.px([11, 2, 11, 3, 12, 1], P.pink[3]); p.set(11, 1, P.pink[4]); p.px([13, 4, 14, 3], P.pink[1]);
+    const C = P.cream;
+    // Dornen ragen aus dem Umriss
+    p.poly([[4, 9], [0, 7], [3, 12]], C[3]); p.poly([[20, 9], [23, 7], [21, 12]], C[2]); p.poly([[6, 16], [2, 18], [7, 18]], C[3]); p.poly([[18, 16], [22, 18], [17, 18]], C[2]);
+    p.px([1, 8, 3, 17], C[4]);
+    // Herz aus Holz
+    p.ball(8, 11, 5.2, 5, W, 1, 4); p.ball(16, 11, 5.2, 5, W, 1, 3); p.poly([[3, 12.5], [21, 12.5], [12, 23]], W[2]);
+    p.poly([[3, 12.5], [8, 12.5], [11, 21]], W[3]); p.poly([[16, 13], [21, 12.5], [12.5, 22.5], [13, 19]], W[1]);
+    p.rect(11, 6, 2, 4, W[0]); p.line(7, 9, 9, 17, W[1]); p.line(15, 9, 14, 18, W[0]); p.px([5, 9, 5, 10, 6, 8], W[4]); p.px([17, 14, 18, 13], W[0]);
+    // frische Ranke um die Flanke
+    p.px([5, 14, 6, 15, 7, 15, 8, 16, 9, 16, 10, 15, 11, 15], G[3]); p.px([12, 16, 13, 16, 14, 15], G[2]); p.px([6, 14, 10, 14], G[4]);
+    // Trieb aus der Kerbe: zwei Blätter und eine rosa Knospe (die Blüte der Dornenmutter)
+    p.rect(12, 3, 1, 5, G[2]); p.poly([[12, 6], [7, 3], [8, 7]], G[3]); p.poly([[13, 5], [18, 3], [16, 7]], G[2]); p.px([8, 4, 9, 5], G[4]); p.set(16, 4, G[3]);
+    p.ell(12.5, 2.5, 2.6, 2.6, P.pink[2]); p.px([11, 1, 12, 1, 11, 2], P.pink[3]); p.set(11, 1, P.pink[4]); p.px([14, 3, 13, 4], P.pink[1]); p.set(12, 2, P.gold[4]);
   },
   // Kristallkoloss: goldenes Brustprisma in Fels mit Kristallen
   mat_core_kristallkoloss: (p) => {
@@ -127,7 +131,8 @@ const CORES: Record<string, Fn> = {
   mat_core_ignarok: (p) => {
     const F = P.fire, A = ASH;
     p.poly([[5, 14], [2, 9], [3, 2], [6, 8], [8, 13]], A[3]); p.poly([[19, 14], [22, 9], [21, 2], [18, 8], [16, 13]], A[2]);
-    p.px([3, 3, 3, 5, 4, 7, 5, 9], A[4]); p.px([21, 4, 21, 6, 20, 8], A[3]); p.px([4, 11, 5, 12, 20, 11, 19, 12], F[1]);
+    p.px([3, 3, 3, 5, 4, 7, 5, 9], mix(A[4], P.bone[2], 0.5)); p.px([2, 8, 3, 7, 2, 6], A[4]); p.px([21, 4, 21, 6, 20, 8], A[4]);
+    p.px([4, 11, 5, 12, 20, 11, 19, 12, 6, 9, 7, 11, 18, 9, 17, 11], F[1]); p.px([6, 10, 7, 12], F[2]);
     p.ball(12, 13, 6.4, 6.4, F, 0, 4); p.ell(11, 12, 2.6, 2.6, F[4]); p.px([10, 11, 11, 11, 10, 12], WHITE);
     p.poly([[3, 15], [6, 20], [12, 23], [18, 20], [21, 15], [18, 17], [12, 19], [6, 17]], A[2]);
     p.poly([[3, 15], [6, 17], [9, 18], [7, 21]], A[3]); p.poly([[15, 18.5], [18, 17], [21, 15], [18, 20], [13, 22.5]], A[1]);
@@ -142,11 +147,13 @@ const CORES: Record<string, Fn> = {
     p.poly(o, B[2]);
     const tone = [I[3], I[2], B[2], B[1], B[2], I[4]];
     for (let k = 0; k < 6; k++) p.poly([o[k], o[(k + 1) % 6], m[(k + 1) % 6], m[k]], tone[k]);
-    p.poly(m, B[1]); p.poly(hex(4.4), B[2]);
-    for (let k = 0; k < 6; k++) { p.line(12, 12, m[k][0] - (m[k][0] > 12 ? 1 : 0), m[k][1] - (m[k][1] > 12 ? 1 : 0), k === 0 || k === 5 || k === 4 ? I[4] : I[2]); }
-    p.rect(11, 11, 2, 2, WHITE); p.px([11, 10, 10, 11, 13, 12, 12, 13], I[4]);
-    p.line(5, 7, 11, 3, WHITE); p.px([4, 9, 4, 10], WHITE);
-    p.px([12, 0, 21, 6, 21, 17, 12, 23, 2, 17, 2, 6], I[3]);
+    p.poly(m, B[1]);
+    for (let k = 0; k < 6; k++) p.line(o[k][0] - (o[k][0] > 12 ? 1 : 0), o[k][1] - (o[k][1] > 12 ? 1 : 0), m[k][0] - (m[k][0] > 12 ? 1 : 0), m[k][1] - (m[k][1] > 12 ? 1 : 0), k === 5 || k === 0 ? WHITE : k === 4 || k === 1 ? I[2] : B[0]);
+    // sechsstrahliger Stern, spiegelgleich gesetzt
+    p.rect(11, 7, 2, 10, I[3]); p.rect(11, 7, 2, 4, I[4]);
+    p.px([10, 10, 9, 10, 8, 9, 7, 9, 13, 10, 14, 10, 15, 9, 16, 9], I[4]); p.px([10, 13, 9, 13, 8, 14, 7, 14, 13, 13, 14, 13, 15, 14, 16, 14], I[2]);
+    p.rect(11, 11, 2, 2, WHITE);
+    p.line(5, 7, 11, 3, WHITE); p.px([3, 9, 3, 10], WHITE);
   },
   // Archivar: lidschweres Auge, goldene Bahnringe, ein Blatt
   mat_core_archivar: (p) => {
@@ -204,7 +211,7 @@ const MONSTER: Record<string, Fn> = {
   },
   // Aschenkralle: gekrümmte Kralle mit glühender Wurzel
   mat_ashclaw: (p) => {
-    const K: Ramp = [P.ash[1], P.ash[3], P.ash[4], mix(P.ash[4], P.bone[2], 0.55), P.bone[3]], F = P.fire;
+    const K: Ramp = [P.ash[2], P.ash[4], mix(P.ash[4], P.bone[2], 0.5), P.bone[2], P.bone[3]], F = P.fire;
     tube(p, [...bez([6, 19], [4, 6], [15, 5], 14), ...bez([15, 5], [22, 5], [20, 16], 10)], 3.6, 0.5, K, 1);
     p.px([20, 15, 20, 16, 20, 17], K[2]); p.set(20, 18, K[3]);
     p.px([9, 8, 10, 7, 12, 6, 14, 5], K[4]); p.line(8, 17, 10, 12, K[0]); p.line(11, 11, 15, 9, K[0]);
@@ -248,9 +255,10 @@ const MONSTER: Record<string, Fn> = {
       p.set(x, y, lit < -0.4 ? (s ? V[4] : V[3]) : lit < 0.4 ? (s ? V[3] : V[2]) : s ? V[2] : V[1]);
     }
     p.line(9, 9, 14, 14, P.pink[3]); p.line(10, 9, 15, 14, P.pink[2]); p.set(9, 9, P.pink[4]);
-    // lose Fäden lösen sich auf
-    p.px([20, 2, 21, 1, 22, 3, 2, 21, 1, 22, 3, 22], V[3]); p.px([22, 5, 19, 1, 4, 20, 1, 19], V[2]); p.px([18, 3, 5, 18], V[4]);
-    p.px([16, 16, 18, 13, 6, 6], V[2]); p.set(17, 15, P.pink[3]);
+    // lose Fäden: gewellt an beiden Enden, lösen sich in Flocken auf
+    p.px([20, 3, 21, 4, 22, 5, 22, 6, 21, 7, 21, 8, 22, 9], V[3]); p.px([19, 2, 20, 1], V[4]); p.set(22, 11, V[2]);
+    p.px([3, 20, 2, 19, 1, 18, 1, 17, 2, 16, 2, 15, 1, 14], V[3]); p.px([4, 21, 3, 22], V[2]); p.set(1, 12, V[2]);
+    p.px([17, 16, 19, 14, 5, 6], V[2]); p.set(18, 17, P.pink[3]);
   },
 };
 
@@ -292,11 +300,16 @@ const INGREDIENTS: Record<string, Fn> = {
   // Gletscherflechte: blasse Rosette auf grauem Stein, Reif
   mat_lichen: (p) => {
     const L: Ramp = [P.forest[1], mix(P.forest[3], P.ice[1], 0.5), mix(P.green[3], P.ice[2], 0.55), mix(P.green[4], P.ice[3], 0.5), P.ice[4]], S = P.steel;
-    p.ell(12, 19, 10, 4, S[2]); p.ell(10, 18, 7, 2.4, S[3]); p.rect(5, 21, 14, 1, S[1]); p.px([15, 20, 17, 19, 19, 20], S[1]); p.px([4, 18, 5, 17], P.snow[3]);
-    for (const [x, y, rx, ry] of [[7, 13, 4.6, 3.6], [17, 13, 4.4, 3.4], [12, 9.5, 5.2, 4.2], [12, 15, 4.6, 3]] as const) { p.ell(x, y, rx, ry, L[1]); p.ell(x - 0.4, y - 0.5, rx - 0.9, ry - 0.9, L[2]); p.ell(x - 1, y - 1, rx - 2.2, ry - 2, L[3]); }
-    p.px([8, 6, 10, 5, 13, 5, 16, 6, 3, 12, 4, 10, 20, 11, 21, 13, 9, 17, 15, 17], L[4]);
-    p.px([11, 9, 6, 13, 17, 13], L[1]); p.px([12, 9, 7, 13, 18, 13, 12, 15], L[0]); p.px([10, 8, 5, 12, 16, 12], WHITE);
-    p.px([20, 7, 2, 16], P.ice[4]); p.set(22, 9, P.ice[3]);
+    // Stein mit Schneekappe, darauf ein Büschel verzweigter Flechte (helle Spitzen)
+    p.ell(12, 19.5, 10, 3.4, S[2]); p.ell(10, 18.8, 7, 2, S[3]); p.rect(5, 21, 14, 1, S[1]); p.px([16, 20, 18, 19, 20, 20], S[1]); p.px([3, 18, 4, 17, 5, 17, 19, 18], P.snow[4]);
+    p.ell(12, 16, 7.4, 2.6, L[1]); p.ell(11, 15.4, 5.6, 1.8, L[2]);
+    const stalk = (x0: number, x1: number, y1: number, ax: number, ay: number, bx: number, by: number): void => {
+      p.line(x0, 16, x1, y1, L[1], 2); p.line(x0, 16, x1, y1, L[2]); p.line(x1, y1, ax, ay, L[2]); p.line(x1 + 1, y1, bx, by, L[3]);
+      p.set(ax, ay, L[4]); p.set(bx, by, WHITE); p.set(x1, y1, L[3]);
+    };
+    stalk(6, 3, 12, 1, 9, 4, 8); stalk(17, 20, 12, 19, 8, 22, 9); stalk(8, 7, 9, 5, 5, 8, 4); stalk(15, 16, 9, 15, 5, 18, 5); stalk(11, 11, 7, 10, 2, 13, 3);
+    p.px([9, 13, 13, 12, 5, 14, 18, 14], L[3]); p.px([10, 14, 14, 14], L[4]);
+    p.px([21, 4, 2, 5], P.ice[4]);
   },
   // Sonnenfeige: goldene Frucht, daneben eine aufgeschnittene Hälfte
   mat_fig: (p) => {
@@ -440,10 +453,10 @@ const FOODS: Record<string, Fn> = {
   },
   // Feuerschoten-Spieß: Fleisch und Schoten im Wechsel
   food_spiess: (p) => {
-    const W = P.wood, M: Ramp = [P.wood[0], P.wood[1], mix(P.tan[1], P.red[1], 0.25), P.tan[2], P.tan[3]], R = P.red;
-    p.line(1, 22, 22, 1, W[3]); p.px([22, 1, 21, 2], W[4]); p.line(1, 22, 3, 20, W[2], 2);
+    const W = P.wood, M: Ramp = [P.wood[0], P.wood[1], mix(P.wood[3], P.red[1], 0.25), P.tan[2], P.tan[4]], R = P.red;
+    p.line(1, 22, 22, 1, P.tan[3]); p.px([22, 1, 21, 2], P.tan[4]); p.line(1, 22, 3, 20, P.tan[2], 2);
     const meat = (x: number, y: number): void => { p.poly([[x, y - 4], [x + 4, y], [x, y + 4], [x - 4, y]], M[2]); p.poly([[x, y - 4], [x + 1, y - 1], [x - 2, y + 1], [x - 4, y]], M[3]); p.poly([[x + 4, y], [x, y + 4], [x, y + 2], [x + 2, y]], M[1]); p.line(x - 1, y - 1, x + 1, y + 1, M[0]); p.set(x - 1, y - 2, M[4]); };
-    meat(6.5, 17.5); p.ball(10.5, 13.5, 2.8, 2.8, R, 1, 4); meat(14.5, 9.5); p.ball(18.5, 5.5, 2.8, 2.8, R, 1, 4);
+    meat(6.5, 17.5); p.ball(10.5, 13.5, 3.2, 3.2, R, 1, 4); meat(14.5, 9.5); p.ball(18.5, 5.5, 3.2, 3.2, R, 1, 4);
     p.px([9, 12, 17, 4], WHITE); p.px([12, 12, 20, 4], P.green[3]);
     p.px([21, 7, 22, 5], P.fire[2]); p.set(22, 6, P.fire[3]);
   },
@@ -595,11 +608,8 @@ const onTile = (p: Px, sh: number, fn: Fn): void => {
   for (const [dx, dy] of [[1, 1], [0, 1], [1, 0], [-1, 0], [0, -1]] as const) for (let y = 2; y < 22; y++) for (let x = 2; x < 22; x++) if (q.get(x - dx, y - dy) >>> 24) p.set(x, y, sh);
   for (let y = 2; y < 22; y++) for (let x = 2; x < 22; x++) { const c = q.get(x, y); if (c >>> 24) p.set(x, y, c); }
 };
-const ring = (q: Px, cx: number, cy: number, r: number, c: number, c2: number, a0 = 0, a1 = Math.PI * 2): void => {
-  for (let a = a0; a < a1; a += 0.04) { const x = Math.round(cx + Math.cos(a) * r - 1), y = Math.round(cy + Math.sin(a) * r - 1); q.rect(x, y, 2, 2, Math.sin(a) * 0.7 + Math.cos(a) * 0.5 > 0.35 ? c2 : c); }
-};
 const BUFFS: Record<string, Fn> = {
-  // Einklang: zwei Elemente, zwei verschlungene Ringe
+  // Einklang: zwei Elemente (Feuer und Wasser) als Tropfen, die einander umkreisen
   buff_einklang: (p) => {
     const N: Ramp = [P.shadow[1], P.blue[0], mix(P.blue[1], P.violet[1], 0.5), mix(P.blue[2], P.violet[2], 0.5), P.ice[3]];
     iconTile(p, N);
@@ -635,6 +645,10 @@ export const CRAFT_GLOW: Record<string, Fn> = {
   mat_ess_light: (p) => { halo(p, 12, 12, 7, P.gold[4], 60); },
   mat_core_ignarok: (p) => { halo(p, 12, 12, 9, P.fire[2], 55); },
   mat_core_kristallkoloss: (p) => { spark(p, 20, 4, P.gold[4]); },
+  mat_core_ysolde: (p) => { spark(p, 21, 3, P.ice[3]); p.set(2, 20, alpha(P.ice[4], 220)); },
+  mat_core_hohlkoenig: (p) => { p.set(20, 5, alpha(P.violet[4], 220)); p.set(3, 18, alpha(P.violet[3], 180)); },
+  mat_core_dornenmutter: (p) => { p.set(18, 1, alpha(P.pink[4], 220)); p.set(6, 1, alpha(P.green[4], 200)); },
+  mat_core_archivar: (p) => { spark(p, 4, 5, P.gold[4]); },
   mat_glimmer: (p) => { spark(p, 7, 7, P.teal[4]); spark(p, 17, 5, P.pink[4], true); p.set(12, 3, WHITE); p.set(21, 10, P.teal[4]); p.set(3, 11, alpha(P.ice[4], 200)); },
   mat_cavecap: (p) => { halo(p, 12.5, 8, 11, P.teal[4], 50); p.set(21, 4, alpha(P.teal[4], 220)); p.set(2, 5, alpha(P.teal[4], 160)); },
   mat_ghostbloom: (p) => { halo(p, 12, 8, 10, P.violet[4], 45); },
@@ -655,4 +669,3 @@ export const CRAFT_GLOW: Record<string, Fn> = {
   recipe: (p) => { spark(p, 20, 9, P.gold[4]); },
   mat_aether: (p) => { halo(p, 12, 5, 6.5, P.teal[4], 70); spark(p, 12, 4, P.teal[4]); p.set(8, 3, P.pink[4]); p.set(16, 2, P.gold[4]); p.set(18, 5, alpha(WHITE, 220)); p.set(6, 6, alpha(P.teal[4], 200)); p.set(12, 1, alpha(WHITE, 200)); },
 };
-void EL; void spark;
