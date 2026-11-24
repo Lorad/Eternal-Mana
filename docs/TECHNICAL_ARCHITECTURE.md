@@ -110,6 +110,12 @@ Snapshots.
   Wetterwahl, Abbaustellen, Nachrichten, Dev-Befehle); daneben `rep.ts`, `events.ts` (Rahmen: ansagen → laufen → Beiträge zählen
   → jeden Beteiligten einmal persönlich belohnen → aufräumen; dazu Weltbosse und Händlerin), `rares.ts`, `encounters.ts`,
   `treasure.ts`, `routines.ts`. Zustand hängt per WeakMap an `Game` bzw. `Zone` (`state.ts`).
+- **Welten (0.5):** Jede Welt-Instanz der Oberwelt hat ihren eigenen Zustand (`Zone.key`: je Neuem Kreis eine); in Mana-Rissen
+  und Dungeons läuft nichts davon. Stufen folgen dem Kreis (`Zone.def` trägt sie schon, seltene Monster über `kreisLevel`).
+  Der Auftritt eines Weltbosses gilt für eine Region in jeder Welt – in einer Instanz steht er, sobald dort jemand ist, und
+  wird je Instanz einmal besiegt. Der Weltzustand, den ein Client bekommt, zeigt nur die Ereignisse seiner Welt.
+  Fraktionstitel hängen sich in das Titelsystem aus 0.5 ein (`TITLES`, `TITLE_SOURCES` in `data/rifts.ts`).
+  Ein Neuer Kreis lässt Ruf, Titel, Trophäen, Siege und Schatzkarten unberührt.
 - **Kosten:** Zonen ohne Spieler werden nicht simuliert, Dungeons übersprungen. Im Spieltakt läuft einmal je Sekunde ein
   Zeitvergleich je Weltboss und laufendem Ereignis (räumt Ereignisse verlassener Zonen ab). Betritt jemand eine leere Zone,
   stehen die NPCs sofort am Platz ihrer Tageszeit.
