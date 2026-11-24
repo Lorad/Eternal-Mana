@@ -103,7 +103,7 @@ export const World = {
   },
   onMobDeath(z: Zone, m: Mob, rec: Player[]) {
     // Schatzkarten von Erwachten (auch in Dungeons: Karte der Region)
-    if (m.elite && !m.summoned && !z.rift) { const reg = regionOf(z); if (reg) for (const p of rec) if (z.rng.chance(L.treasure.eliteChance)) z.dropItemFor(p, makeStack(mapOf(reg)), m.x, m.y); }
+    if (m.elite && !m.summoned && !z.rift) { const reg = regionOf(z); if (reg) for (const p of rec) if (z.rng.chance(L.treasure.eliteChance * p.perk.maps)) z.dropItemFor(p, makeStack(mapOf(reg)), m.x, m.y); }
     if (z.def.kind !== 'overworld' || z.rift) return;
     const zs = zw(z);
     if (zs.boss && zs.boss.bossMob === m) return bossKilled(zs.boss, rec);
@@ -112,7 +112,7 @@ export const World = {
   },
   onChest(z: Zone, p: Player, tier: string) {
     const reg = z.rift ? undefined : regionOf(z);
-    if (reg && z.rng.chance(L.treasure.chest[tier] ?? 0)) p.give(makeStack(mapOf(reg)));
+    if (reg && z.rng.chance((L.treasure.chest[tier] ?? 0) * p.perk.maps)) p.give(makeStack(mapOf(reg))); // 0.7: `perk.maps` = Begleiter „Schneeeule“
   },
   /** Objekte der Weltsysteme (Sternsplitter, Geröll, Fährten, Begegnungen) */
   interact(z: Zone, p: Player, o: Obj): boolean {

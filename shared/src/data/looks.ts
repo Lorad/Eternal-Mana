@@ -46,5 +46,16 @@ export const LOOK_LIST: LookDef[] = [
   { id: 'w_lied', kind: 'w', name: 'Glanz des Lieds', color: 0xffb0e0, desc: 'Vier Töne und der fünfte.', how: 'Ende „Das Lied vollenden“', has: c => seenEndings(c).includes(3) },
 ];
 export const LOOKS: Record<string, LookDef> = Object.fromEntries(LOOK_LIST.map(l => [l.id, l]));
+/**
+ * EINZIGE Stelle für den Rückfall der Gewand-Grafik: Gibt es das Sheet `char_<klasse>_<variante>` (Kunst-Pipeline), wird es
+ * verwendet; solange es fehlt, das Grund-Sheet der Klasse, eingefärbt mit der Farbe des Gewands. `has(key)` fragt die
+ * geladenen Sheets ab (Phaser-Texturen in der Spielszene, das Grafik-Bündel in der Oberfläche).
+ */
+export function outfitSheet(has: (key: string) => boolean, cls: string, g?: string | null): { key: string; tint?: number } {
+  const base = 'char_' + cls, l = g ? LOOKS[g] : undefined;
+  if (!l || l.kind !== 'g') return { key: base };
+  const key = `${base}_${l.id}`;
+  return has(key) ? { key } : { key: base, tint: l.color };
+}
 /** Farbe des gewählten Waffenglanzes (undefined = Farbe des Elements, wie bisher) */
 export function glowColor(w: string | undefined | null): number | undefined { const l = w ? LOOKS[w] : undefined; return l?.kind === 'w' ? l.color : undefined; }

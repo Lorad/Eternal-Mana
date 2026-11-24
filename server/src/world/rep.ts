@@ -13,7 +13,7 @@ import type { Player } from '../player';
 /** Verbucht Ruf bei einer Fraktion und meldet einen Rangaufstieg. */
 export function addRep(p: Player, faction: string, n: number, quiet = false) {
   const f = FACTIONS[faction];
-  n = Math.round(n);
+  n = Math.round(n * p.perk.rep); // 0.7: Begleiter „Runenkäfer“, ausgestellte Weltboss-Trophäe
   if (!f || n <= 0) return;
   const rep = (p.char.rep ??= {});
   const before = repOf(p.char, faction), after = before + n;

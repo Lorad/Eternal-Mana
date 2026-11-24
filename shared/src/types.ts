@@ -336,8 +336,8 @@ export type ServerMsg =
   // ---- Lebendige Welt (0.6): Weltzustand (Jahreszeit, Ereignisse, Händlerangebot), Begegnungsgespräch (null = beendet)
   | { t: 'world'; w: WorldInfo }
   | { t: 'encdlg'; d: EncDialog | null }
-  // ---- Zuhause (0.7): geänderte Teile des Profil-Stands (wie `char`)
-  | { t: 'home'; h: Partial<HomeData> }
+  // ---- Zuhause (0.7): geänderte Teile des Profil-Stands (wie `char`); `note` = Hinweise der Sammlung (der Client zeigt sie wie Toasts)
+  | { t: 'home'; h: Partial<HomeData>; note?: { s: string; kind: 'info' | 'good' | 'story'; icon?: string }[] }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 

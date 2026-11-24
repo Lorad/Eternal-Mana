@@ -6,7 +6,7 @@ import { CFG } from './config';
 import { CLASSES } from './data/classes';
 import { ITEMS, TIER_MATERIAL, generateGear, isGear, newUid, rollAffixes, rollRarity, tierOf } from './data/items';
 import { ELEMENT_CORE, ESSENCE, TIER_MONSTER } from './data/materials';
-import { ENCHANTS, FIRE, STATION_NPCS, type EnchantDef, type InfuseElement, type RecipeDef, type StationId } from './data/recipes';
+import { ENCHANTS, FIRE, HOME_AT, HOME_STATIONS, STATION_NPCS, type EnchantDef, type InfuseElement, type RecipeDef, type StationId } from './data/recipes';
 import { SETS, setPieceName, type SetPiece } from './data/sets';
 import type { CharData, ClassId, ItemInstance } from './types';
 import type { Rng } from './util/rng';
@@ -16,7 +16,7 @@ export interface Cost { gold: number; mats: [string, number][] }
 export function knowsRecipe(c: CharData, r: RecipeDef): boolean { return r.unlock === 'start' || !!c.recipes?.includes(r.id); }
 export function countItem(c: CharData, base: string): number { let n = 0; for (const it of c.inv) if (it.base === base) n += it.qty ?? 1; return n; }
 /** Stationen, die `at` (NPC-ID oder 'fire') anbietet */
-export function stationsOf(at: string): StationId[] { return at === FIRE ? ['cooking'] : STATION_NPCS[at] ?? []; }
+export function stationsOf(at: string): StationId[] { return at === FIRE ? ['cooking'] : at === HOME_AT ? HOME_STATIONS : STATION_NPCS[at] ?? []; }
 
 /** Gegenstandsstufe geschmiedeter Ausrüstung: die eigene Stufe, begrenzt auf den Bereich der Materialstufe. */
 export function tierIlvl(tier: number, level: number): number {

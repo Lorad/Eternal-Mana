@@ -15,12 +15,9 @@ import { TROPHIES } from './worlditems';
 import { HOME_ZONE } from './zones';
 
 export const HOME_ID = HOME_ZONE.id;
-/** Kennung der Stationen auf dem Hof (statt einer NPC-ID – wie `FIRE` für Lagerfeuer) */
-export const HOME_AT = 'heim';
 export const HOME_NPC = 'mirelda';
 /** Der Wegweiser zum Hof steht wie der Riss-Stein als Server-Objekt am Dorfrand von Quellhain (nächste freie Kachel) */
 export const HOME_SIGN = { zone: 'gruenwald', poi: 'dorf', dx: 9, dy: 11 };
-export const HOME_STATIONS = ['forge', 'alchemy', 'cooking', 'enchant'] as const;
 
 export function emptyHome(): HomeData {
   return { v: 1, owned: 0, level: 0, gold: 0, stash: [], stands: Array<string>(CFG.home.stands[CFG.home.stands.length - 1]).fill(''), pets: [], looks: [], kills: {}, seen: {}, ms: [] };

@@ -8,10 +8,10 @@
  */
 import { CFG } from '../config';
 import { mobAffinity } from '../elements';
-import type { CharData, Element, HomeData, ItemInstance } from '../types';
+import type { CharData, Element, HomeData, ItemInstance, Mods } from '../types';
 import { SLOTS } from '../types';
 import { BOSSES, ENEMY_LIST } from './enemies';
-import { HOME_MAX, HOME_TROPHIES, HOME_TROPHY, baseSlots, emptyHome, trophySeen } from './home';
+import { HOME_MAX, HOME_TROPHIES, HOME_TROPHY, baseSlots, emptyHome, trophyPerks, trophySeen } from './home';
 import { BOSS_UNIQUE, ITEMS } from './items';
 import { LOOKS, LOOK_LIST } from './looks';
 import { BIOME_MATS, BOSS_CORE, ESSENCE } from './materials';
@@ -105,6 +105,14 @@ export function proofs(c: CharData): { seen: string[]; pets: string[]; looks: st
   for (const s of SLOTS) { const it = c.equip[s]; if (it) seen.push(...itemSeen(it)); }
   for (const b in BOSS_UNIQUE) if (c.flags['u:' + b]) seen.push('f:uni:' + b);
   return { seen, pets: PET_LIST.filter(p => p.has?.(c)).map(p => p.id), looks: LOOK_LIST.filter(l => l.has?.(c)).map(l => l.id) };
+}
+
+/** Wirkung von Begleiter und ausgestellten Trophäen auf einen Charakter – der Server rechnet sie ein, die Oberfläche zeigt sie. */
+export function perksOf(h: HomeData, c: CharData): { mods: Mods; pickup: number; rep: number; maps: number; rest: number } {
+  const pet = c.pet && h.pets.includes(c.pet) ? PETS[c.pet] : undefined, t = trophyPerks(h);
+  const mods: Mods = { ...t.mods };
+  if (pet?.mods) for (const k in pet.mods) (mods as any)[k] = ((mods as any)[k] ?? 0) + (pet.mods as any)[k];
+  return { mods, pickup: pet?.pickup ?? 1, rep: (pet?.rep ?? 1) + t.rep, maps: pet?.maps ?? 1, rest: t.rest };
 }
 
 // ------------------------------------------------------------------ Fortschritt und Meilensteine

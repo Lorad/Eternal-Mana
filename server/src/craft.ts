@@ -7,13 +7,14 @@ import { CFG, ELEMENTS, ELEMENT_NAME } from '../../shared/src/config';
 import { craftBlock, enchantBlock, enchantCost, infuseBlock, infusePlan, knowsRecipe, makeCrafted, makeLegendary, makeSetPiece, recipeCost, recipeLabel, reforgeBlock, reforgeCost, stationsOf, type Cost } from '../../shared/src/craft';
 import { ITEMS, itemName, makeStack, rollAffixes } from '../../shared/src/data/items';
 import { AETHER, ALL_CORES, ESSENCE, TIER_INGREDIENT, TIER_MONSTER, TIER_ORE } from '../../shared/src/data/materials';
-import { COOK_SPOTS, ENCHANTS, FIRE, LEARNABLE, RECIPES, type InfuseElement, type StationId } from '../../shared/src/data/recipes';
+import { COOK_SPOTS, ENCHANTS, FIRE, HOME_AT, LEARNABLE, RECIPES, type InfuseElement, type StationId } from '../../shared/src/data/recipes';
 import { SETS, SET_PIECES } from '../../shared/src/data/sets';
 import type { GameMap } from '../../shared/src/maps/mapgen';
 import { TILE } from '../../shared/src/maps/tiles';
 import { MOD_LABEL, SLOTS } from '../../shared/src/types';
 import type { ClientMsg, ItemInstance, ModKey, Mods } from '../../shared/src/types';
 import type { Game } from './game';
+import { Home } from './home';
 import { nextId, type Player } from './player';
 import type { Obj } from './zone';
 
@@ -42,6 +43,7 @@ export function cookFires(map: GameMap): Obj[] {
 /** Steht der Spieler an `at` (NPC-ID oder 'fire') und bietet diese Stelle die Station an? */
 export function atStation(g: Game, p: Player, at: string, station: StationId): boolean {
   if (typeof at !== 'string' || !stationsOf(at).includes(station)) return false;
+  if (at === HOME_AT) return Home.atStation(p, station); // 0.7: Stationen auf einem ausgebauten Hof
   if (at === FIRE) { for (const o of p.zone.objs.values()) if (o.type === 'cookfire' && Math.hypot(o.x - p.x, o.y - p.y) <= CFG.craft.fireRadius) return true; return false; }
   return g.nearNpc(p, at);
 }

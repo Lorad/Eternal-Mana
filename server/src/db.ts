@@ -10,6 +10,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { ITEMS } from '../../shared/src/data/items';
+import { sanitizeHome } from '../../shared/src/data/collection';
+import { LOOKS } from '../../shared/src/data/looks';
+import { PETS } from '../../shared/src/data/pets';
 import { FACTIONS, backfillRep } from '../../shared/src/data/factions';
 import { QUESTS } from '../../shared/src/data/quests';
 import { ENCHANTS, RECIPES } from '../../shared/src/data/recipes';
@@ -17,7 +20,7 @@ import { QUELL_MAX, QUELL_TRACKS, RIFT_DUNGEONS, TRIAL_ID, ownedTitles } from '.
 import { SETS } from '../../shared/src/data/sets';
 import { ZONES } from '../../shared/src/data/zones';
 import { computeStats, newCharacter } from '../../shared/src/stats';
-import type { CharData, CharSummary, ClassId } from '../../shared/src/types';
+import type { CharData, CharSummary, ClassId, HomeData } from '../../shared/src/types';
 
 const sha = (s: string) => createHash('sha1').update(s).digest('hex');
 
@@ -74,6 +77,16 @@ export function sanitizeChar(raw: any): CharData | null {
   if (c.rep === undefined || c.rep === null || typeof c.rep !== 'object') c.rep = backfillRep(c, QUESTS);
   else { const rep: Record<string, number> = {}; for (const f in FACTIONS) { const v = num((c.rep as any)[f], 0, 0, 1e7); if (v > 0) rep[f] = Math.floor(v); } c.rep = rep; }
   if (c.title !== undefined && !ownedTitles(c).includes(c.title)) delete c.title; // noch einmal mit bereinigtem Ruf (Fraktionstitel)
+  // 0.7: Zuhause – Begleiter, Erscheinung, „Ausgeruht“. Ob das Profil sie freigeschaltet hat, prüft server/src/home beim Betreten.
+  if (c.pet !== undefined && !PETS[c.pet as any]) delete c.pet;
+  if (c.look !== undefined) {
+    const l: any = c.look && typeof c.look === 'object' ? c.look : {}, look: NonNullable<CharData['look']> = {};
+    if (LOOKS[l.g]?.kind === 'g') look.g = l.g;
+    if (LOOKS[l.w]?.kind === 'w') look.w = l.w;
+    if (look.g || look.w) c.look = look; else delete c.look;
+  }
+  if (c.rest !== undefined) { c.rest = num(c.rest, 0); if (!c.rest) delete c.rest; }
+  if (c.cv !== undefined) { c.cv = Math.floor(num(c.cv, 0, 0, 99)); if (!c.cv) delete c.cv; }
   if (!ZONES[c.zone]) { c.zone = 'gruenwald'; c.x = 0; c.y = 0; }
   if (!c.respawn || !ZONES[c.respawn.zone]) c.respawn = { zone: 'gruenwald', x: 0, y: 0 };
   const d = computeStats(c);
@@ -127,7 +140,42 @@ export class Db {
       CREATE TABLE IF NOT EXISTS char_snapshots (id INTEGER PRIMARY KEY, char_id INTEGER NOT NULL, ts INTEGER, data TEXT NOT NULL, checksum TEXT NOT NULL);
       CREATE INDEX IF NOT EXISTS idx_snap_char ON char_snapshots(char_id);
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
+      CREATE TABLE IF NOT EXISTS homes (account_id INTEGER PRIMARY KEY, data TEXT NOT NULL, checksum TEXT NOT NULL, updated INTEGER);
+      CREATE TABLE IF NOT EXISTS home_snapshots (id INTEGER PRIMARY KEY, account_id INTEGER NOT NULL, ts INTEGER, data TEXT NOT NULL, checksum TEXT NOT NULL);
+      CREATE INDEX IF NOT EXISTS idx_snap_home ON home_snapshots(account_id);
     `);
+  }
+
+  // ------------------------------------------------------------------ Zuhause (0.7): Stand eines Profils (Hof, Lagertruhe, Sammlung)
+  /** Lädt den Profil-Stand; fehlt er, ist er leer. Bei defekter Prüfsumme greift der jüngste intakte Snapshot. */
+  loadHome(accountId: number): HomeData {
+    const row = this.db.prepare('SELECT data, checksum FROM homes WHERE account_id = ?').get(accountId) as any;
+    if (!row) return sanitizeHome(null);
+    const tryParse = (data: string, checksum: string): HomeData | null => {
+      if (sha(data) !== checksum) return null;
+      try { return sanitizeHome(JSON.parse(data)); } catch { return null; }
+    };
+    let h = tryParse(row.data, row.checksum);
+    if (h) return h;
+    console.error(`[db] Profil ${accountId}: Zuhause beschädigt – versuche Snapshots …`);
+    const snaps = this.db.prepare('SELECT data, checksum FROM home_snapshots WHERE account_id = ? ORDER BY ts DESC').all(accountId) as any[];
+    for (const s of snaps) { h = tryParse(s.data, s.checksum); if (h) return h; }
+    try { return sanitizeHome(JSON.parse(row.data)); } catch { return sanitizeHome(null); }
+  }
+  /** Schreibt den Profil-Stand (innerhalb einer laufenden Transaktion, siehe saveChar) */
+  private writeHome(accountId: number, h: HomeData, now: number) {
+    const data = JSON.stringify(h), sum = sha(data);
+    this.db.prepare('INSERT INTO homes (account_id, data, checksum, updated) VALUES (?,?,?,?) ON CONFLICT(account_id) DO UPDATE SET data = excluded.data, checksum = excluded.checksum, updated = excluded.updated').run(accountId, data, sum, now);
+    if (now - (this.lastHomeSnapshot.get(accountId) ?? 0) > 5 * 60_000) {
+      this.lastHomeSnapshot.set(accountId, now);
+      this.db.prepare('INSERT INTO home_snapshots (account_id, ts, data, checksum) VALUES (?,?,?,?)').run(accountId, now, data, sum);
+      this.db.prepare('DELETE FROM home_snapshots WHERE account_id = ? AND id NOT IN (SELECT id FROM home_snapshots WHERE account_id = ? ORDER BY ts DESC LIMIT ?)').run(accountId, accountId, CFG.save.charSnapshotsKept);
+    }
+  }
+  private lastHomeSnapshot = new Map<number, number>();
+  saveHome(accountId: number, h: HomeData) {
+    this.db.exec('BEGIN');
+    try { this.writeHome(accountId, h, Date.now()); this.db.exec('COMMIT'); } catch (e) { this.db.exec('ROLLBACK'); throw e; }
   }
 
   account(token: string, name: string): AccountRow {
@@ -175,12 +223,17 @@ export class Db {
     try { return sanitizeChar(JSON.parse(row.data)); } catch { return null; }
   }
 
-  saveChar(id: number, c: CharData) {
+  /**
+   * `home` (0.7): der Profil-Stand wird in DERSELBEN Transaktion geschrieben. Was zwischen Rucksack und Lagertruhe wandert,
+   * ist damit nach einem Absturz entweder ganz hier oder ganz dort – nie doppelt, nie verloren.
+   */
+  saveChar(id: number, c: CharData, home?: { accountId: number; data: HomeData }) {
     const data = JSON.stringify(c);
     const sum = sha(data);
     const now = Date.now();
     this.db.exec('BEGIN');
     try {
+      if (home) this.writeHome(home.accountId, home.data, now);
       this.db.prepare('UPDATE characters SET level = ?, zone = ?, playtime = ?, data = ?, checksum = ?, updated = ? WHERE id = ?').run(c.level, c.zone, c.playtime, data, sum, now, id);
       if (now - (this.lastSnapshot.get(id) ?? 0) > 5 * 60_000) {
         this.lastSnapshot.set(id, now);

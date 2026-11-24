@@ -23,6 +23,9 @@ export const STATION_NPCS: Record<string, StationId[]> = {
 };
 /** Stations-Kennung für Lagerfeuer in der Welt (statt einer NPC-ID) */
 export const FIRE = 'fire';
+/** 0.7: Stations-Kennung der Stationen auf einem ausgebauten Hof (alle vier; Regeln in data/home.ts) */
+export const HOME_AT = 'heim';
+export const HOME_STATIONS: StationId[] = ['forge', 'alchemy', 'cooking', 'enchant'];
 /**
  * Kochstellen in der Welt: Zone → [POI-ID, dx, dy in Kacheln, Aussehen]. Der Server stellt dort beim Erzeugen der Zone
  * ein Lagerfeuer (Objekttyp `cookfire`) auf die nächste freie Kachel – die Karten selbst bleiben unverändert.

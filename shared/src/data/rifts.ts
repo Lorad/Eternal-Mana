@@ -205,7 +205,7 @@ export const KREIS_NPC = 'mirelda';
 export const KREIS_RESET_PREFIX = ['d:', 'h:', 'e:', 'v:', 'q:', 'k:', 'b:', 'c:', 't:'];
 export const KREIS_RESET_FLAGS = ['ch'];
 /** Quellstein, der auch im neuen Kreis aktiv bleibt (Heimat) */
-export const KREIS_KEEP_FLAGS = ['t:gruenwald'];
+export const KREIS_KEEP_FLAGS = ['t:gruenwald', 't:heim']; // 0.7: der Weg zum eigenen Hof bleibt
 export function kreisOf(c: CharData): number { return Math.max(0, Math.min(CFG.kreis.max, Math.floor(c.kreis ?? 0))); }
 /** Gegnerstufe im Kreis `k`: im ersten Durchgang unverändert, danach nie unter der Sockelstufe und je Kreis einige Stufen höher. */
 export function kreisLevel(base: number, k: number): number { return k <= 0 ? base : Math.max(base, CFG.kreis.floor) + k * CFG.kreis.levelPer; }

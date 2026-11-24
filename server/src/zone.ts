@@ -18,6 +18,7 @@ import { Rng } from '../../shared/src/util/rng';
 import { BossCtl } from './boss';
 import { cookFires } from './craft';
 import type { Game } from './game';
+import { Home } from './home';
 import { chestExtras, nodeBonus, rollMaterials } from './loot';
 import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
@@ -142,6 +143,7 @@ export class Zone {
     }
     for (const f of cookFires(this.map)) this.objs.set(f.id, f);
     for (const f of riftStones(this.map)) this.objs.set(f.id, f);
+    for (const f of Home.signs(this.map)) this.objs.set(f.id, f); // 0.7: Wegweiser zum Hof
     if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
     if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);
     if (this.rift) Rift.setup(this);
@@ -207,7 +209,7 @@ export class Zone {
       zones: [...this.fx.values()].map(z => this.fxInfo(z)),
       weather: this.weather, tod: this.game.tod(),
       boss: this.boss?.active ? { id: this.boss.mob.id, name: this.boss.def.name, phase: this.boss.phase, el: this.boss.mob.element } : undefined,
-      rift: this.rift ? Rift.info(this) : undefined, kreis: this.kreis || undefined,
+      rift: this.rift ? Rift.info(this) : undefined, kreis: this.kreis || undefined, heim: Home.init(this, p),
     };
   }
   addPlayer(p: Player, x: number, y: number) {
@@ -334,6 +336,7 @@ export class Zone {
     if (m.spawnIdx >= 0 && !this.map.dungeon) this.respawns.push({ idx: m.spawnIdx, at: this.game.now + CFG.enemy.respawnSec });
     const rec = this.recipients(m);
     World.onMobDeath(this, m, rec);
+    Home.onKill(this, m, rec); // 0.7: Bestiarium
     const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
     for (const p of rec) {
       p.char.kills++; p.sync('kills');
@@ -633,7 +636,7 @@ export class Zone {
         break;
       }
       case 'exit': this.useExit(p, o); break;
-      default: if (!World.interact(this, p, o)) Story.interact(this, p, o); // Weltobjekte (0.6) · Chronik, Hüterschrein, Mana-Riss
+      default: if (!World.interact(this, p, o) && !Home.interact(this, p, o)) Story.interact(this, p, o); // Weltobjekte (0.6) · Hof (0.7) · Chronik, Hüterschrein, Mana-Riss
     }
   }
   private checkPuzzle(p: Player) {
@@ -745,7 +748,7 @@ export class Zone {
       }
       // Beute aufsammeln
       for (const [id, d] of this.drops) {
-        if (d.owner !== p || Math.hypot(d.x - p.x, d.y - p.y) > CFG.player.pickupRadius) continue;
+        if (d.owner !== p || Math.hypot(d.x - p.x, d.y - p.y) > CFG.player.pickupRadius * p.perk.pickup) continue; // 0.7: Begleiter „Moosling“
         if (d.gold) { p.gainGold(d.gold); p.pev.push({ k: 'txt', x: d.x, y: d.y - 8, s: `+${d.gold} Gold`, col: '#ffd84a' }, { k: 'sfx', n: 'pickup_gold' }); }
         else if (d.item) {
           if (!p.addItem(d.item)) { if (now - p.msgAt > 4) { p.msgAt = now; p.toast('Inventar voll!', 'bad'); } continue; }
