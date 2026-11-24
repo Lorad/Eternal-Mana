@@ -34,6 +34,8 @@ export class BossCtl {
   private elemIdx = 0;
   /** Story-Bosse (spared): erneuter Kampf auf Wunsch eines Spielers */
   private forced = false;
+  /** hat sich in dieser Instanz ergeben und verharrt in seiner Ruhepose (Vael kniet, Aetherion ist ruhiges Licht) */
+  private yielded = false;
 
   constructor(public zone: Zone, public def: BossDef, public room: Room) {
     this.cx = ((room.x0 + room.x1 + 1) / 2) * TILE;
@@ -60,6 +62,7 @@ export class BossCtl {
   private start() {
     const n = Math.max(1, this.players().length);
     this.active = true; this.phase = 1; this.idx = 0; this.gen = null; this.wait = 1.6; this.emptyT = 0;
+    this.yielded = false; this.mob.anim = Anim.Idle;
     this.mob.invuln = false;
     this.mob.maxHp = Math.round(this.baseHp * (1 + CFG.enemy.bossHpPerExtraPlayer * (n - 1)));
     this.mob.hp = this.mob.maxHp;
@@ -109,9 +112,17 @@ export class BossCtl {
     const m = this.mob;
     this.say(this.def.outro ?? '…');
     this.finish(true);
-    m.hp = m.maxHp = this.baseHp; m.x = this.cx; m.y = this.cy - 8; m.invuln = true; m.vuln = 1; m.statuses.clear(); m.hitters.clear(); m.anim = Anim.Idle; m.element = this.def.element;
-    this.forced = false; this.phase = 1;
-    this.zone.ev({ k: 'mob-', id: m.id }); this.zone.ev({ k: 'mob+', m: m.info() });
+    this.moveTo(this.cx, this.cy - 8);
+    // Ruhepose halten: Anim.Dead zeigt das Schlussbild der Sterbe-Animation (der Boss wird NICHT entfernt)
+    m.hp = m.maxHp = this.baseHp; m.invuln = true; m.vuln = 1; m.statuses.clear(); m.hitters.clear(); m.anim = Anim.Dead; m.element = this.def.element;
+    this.forced = false; this.phase = 1; this.yielded = true;
+  }
+  /** Ruht der Boss? Nach dem Aufgeben – oder (calm) wenn alle Anwesenden die Prüfung längst bestanden haben. */
+  private resting(): boolean {
+    if (this.yielded) return true;
+    if (!this.def.calm || !this.zone.players.size) return false;
+    for (const p of this.zone.players.values()) if (!p.char.flags[`b:${this.def.id}`]) return false;
+    return true;
   }
 
   onDeath() { this.finish(false); }
@@ -157,6 +168,7 @@ export class BossCtl {
     const pl = this.players();
     if (!this.active) {
       if (this.shouldStart()) this.start();
+      else if (this.def.spared !== undefined) m.anim = this.resting() ? Anim.Dead : Anim.Idle;
       return;
     }
     if (!pl.length) { this.emptyT += dt; if (this.emptyT > 2.5) this.reset(); return; }

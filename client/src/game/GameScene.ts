@@ -551,10 +551,12 @@ export class GameScene extends Phaser.Scene {
     for (const s of m.m) {
       const v = this.mobs.get(s[0]);
       if (!v) continue;
+      const first = !v.seen;
       if (!v.seen || Math.hypot(s[1] - v.x, s[2] - v.y) > 120) { v.x = s[1]; v.y = s[2]; v.buf = []; v.seen = true; }
       v.buf.push({ t: m.n, x: s[1], y: s[2] }); if (v.buf.length > 8) v.buf.shift();
       v.left = s[3]; v.hp = s[5]; v.flags = s[6];
       const a = s[4];
+      if (a === Anim.Dead) { v.rest(first); continue; } // verschonter Story-Boss in Ruhepose (0.3)
       v.play(a === Anim.Move ? 'move' : a === Anim.Windup ? 'windup' : a === Anim.Attack ? 'attack' : a === Anim.Hurt ? 'hit' : a === Anim.Special ? 'special' : 'idle');
     }
     if (m.ev) for (const e of m.ev) this.onEvent(e);

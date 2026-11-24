@@ -120,6 +120,7 @@ export class MobView {
     // Darstellung: Story-Bosse mit Rückfall-Sheet; neue Gegner (0.3) verwenden Sprite und Farbton aus ihrer Definition
     const look = this.boss ? bossSheet(sc, info.mob) : { id: ENEMIES[info.mob]?.sprite ?? info.mob, tint: ENEMIES[info.mob]?.tint };
     this.baseTint = look.tint;
+    this.fallback = look.id !== info.mob;
     this.key = (this.boss ? 'boss_' : 'mob_') + look.id;
     const meta = (this.boss ? ctx.gfx.bossMeta : ctx.gfx.mobMeta)[look.id] ?? { w: 32, h: 32 };
     this.w = meta.w; this.h = meta.h; this.visTop = meta.top ?? 0;
@@ -135,6 +136,18 @@ export class MobView {
     this.bar = sc.add.graphics();
   }
   private baseTint?: number;
+  private fallback = false;
+  /**
+   * Ruhepose eines verschonten Story-Bosses: spielt die Sterbe-Animation einmal und hält ihr Schlussbild
+   * (Vael kniet, Aetherion wird ruhiges Licht). `skip` = sofort im Schlussbild (beim Betreten der Zone).
+   * Mit Rückfall-Grafik bleibt der Boss einfach stehen – deren Schlussbild ist leer.
+   */
+  rest(skip: boolean) {
+    if (this.dying) return;
+    if (this.fallback) { this.play('idle'); return; }
+    if (this.anim === 'death') return;
+    this.anim = 'death'; this.animStart = this.ctx.clock() - (skip ? 1e7 : 0);
+  }
   /** sichtbare Höhe über dem Standpunkt */
   private visTop = 0;
   get top() { return (this.visTop || (this.h - this.foot) * 0.8) * this.scale; }

@@ -131,6 +131,8 @@ export interface BossDef {
   outro?: string;
   /** Filmszene beim ersten Kampfbeginn */
   awaken?: string;
+  /** Ruhepose (Schlussbild der Sterbe-Animation) auch ohne vorherigen Kampf, wenn alle Anwesenden bestanden haben */
+  calm?: boolean;
 }
 export const BOSSES: Record<string, BossDef> = {
   dornenmutter: { id: 'dornenmutter', name: 'Dornenmutter', title: 'Herz der Wurzelgruft', element: 'earth', level: 6, hpMul: 13, dmgMul: 1.3, defMul: 1.2, radius: 20, speed: 0, seal: 'seal_earth', xp: 420, gold: 150,
@@ -150,7 +152,7 @@ export const BOSSES: Record<string, BossDef> = {
     spared: 0.1, outro: '„Genug. Genug, ich bitte Euch. … Bestanden.“',
     intro: '„Ich bitte um Verzeihung für das, was jetzt kommt. Es ist nicht persönlich. Es ist gründlich.“' },
   aetherion: { id: 'aetherion', name: 'Aetherion', fightName: 'Die Große Stille', title: 'Albtraum des Träumers', element: 'earth', level: 40, hpMul: 26, dmgMul: 1.7, defMul: 1.6, radius: 22, speed: 36, seal: 'q_herzton', xp: 12000, gold: 5000,
-    spared: 0.04, awaken: 'erwachen', outro: '… ♪ … Die Große Stille bricht. Darunter ist jemand wach.',
+    spared: 0.04, awaken: 'erwachen', calm: true, outro: '… ♪ … Die Große Stille bricht. Darunter ist jemand wach.',
     intro: 'Die Nacht am Quellrand beginnt von vorn: Asche, sieben Schatten, ein erhobener Hammer. Diesmal stehst du mittendrin.' },
 };
 // Unikate der Story-Bosse (hier registriert, damit items.ts unberührt bleibt)
