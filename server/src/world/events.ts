@@ -6,7 +6,7 @@
  */
 import { CFG } from '../../../shared/src/config';
 import { knowsRecipe } from '../../../shared/src/craft';
-import { EVENTS, EVENT_POOL, TRADER_SLOTS, isNight, isRegion, traderGoods, type EventDef, type EventKind } from '../../../shared/src/data/events';
+import { EVENTS, TRADER_SLOTS, eventPool, isNight, isRegion, traderGoods, type EventDef, type EventKind } from '../../../shared/src/data/events';
 import { discounted, shopDiscount } from '../../../shared/src/data/factions';
 import { ITEMS, generateGear, makeStack, newUid, rollRarity } from '../../../shared/src/data/items';
 import { AETHER, BIOME_MATS, ESSENCE } from '../../../shared/src/data/materials';
@@ -21,7 +21,7 @@ import type { Game } from '../game';
 import type { Player } from '../player';
 import type { Mob, Obj, Zone } from '../zone';
 import { addRep, addZoneRep } from './rep';
-import { addObj, alive, eventSites, gw, placeName, playersNear, removeMob, removeObj, ringSpot, rnd, spawnMob, worldTime, zoneLevel, zw, type ActiveEvent, type TraderState } from './state';
+import { addObj, alive, eventSites, gw, placeName, playersNear, removeMob, removeObj, ringSpot, rnd, seasonOf, spawnMob, worldTime, zoneLevel, zw, type ActiveEvent, type TraderState } from './state';
 
 const E = CFG.living.events, B = CFG.living.boss;
 const TIER_NAME = ['', 'Bronze', 'Silber', 'Gold'];
@@ -383,8 +383,7 @@ export function scheduleEvents(z: Zone, now: number) {
   if (zs.event || !isRegion(z.id)) return;
   if (zs.nextEventAt < 0) { zs.nextEventAt = now + rnd(z, E.firstDelay); return; }
   if (now < zs.nextEventAt) return;
-  const night = isNight(z.game.tod());
-  const pool = EVENT_POOL[z.id].filter(([k]) => !EVENTS[k].night || night);
+  const pool = eventPool(z.id, seasonOf(z.game).season, isNight(z.game.tod()));
   if (!pool.length || !startEvent(z, z.rng.weighted(pool))) zs.nextEventAt = now + 30; // kein freier Ort: gleich noch einmal versuchen
 }
 export function tickEvent(ev: ActiveEvent, now: number) {
@@ -467,7 +466,7 @@ export function startBoss(g: Game, def: WorldBossDef, zoneId?: string, at?: { x:
   if (zs.boss) return null;
   const sites = eventSites(z, 0), site = at ?? (sites.length ? z.rng.pick(sites) : null);
   if (!site) return null;
-  const evDef: EventDef = { kind: 'boss' as EventKind, name: def.name, glyph: '☠', start: def.announce, goal: `Besiegt ${def.name} – ${def.title}`, win: def.win, fail: def.gone, mul: 1 };
+  const evDef: EventDef = { kind: 'boss' as EventKind, name: def.name, glyph: '☠', start: def.announce, goal: def.title, win: def.win, fail: def.gone, mul: 1 };
   const ev = newEvent(z, evDef, Math.round(site.x), Math.round(site.y), now);
   ev.boss = def; ev.engaged = true; ev.until = now + B.despawnSec;
   const m = spawnMob(z, def.mob, z.def.level[1] + 2, ev.x, ev.y, { summoned: false });

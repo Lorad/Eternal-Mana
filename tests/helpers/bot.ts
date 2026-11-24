@@ -67,6 +67,8 @@ export class Bot {
           else if (e.k === 'mob-') this.mobs.delete(e.id);
           else if (e.k === 'obj') { const o = this.objs.get(e.id); if (o) { o.state = e.state; if (e.props) Object.assign(o.props ??= {}, e.props); } }
           else if (e.k === 'obj+') this.objs.set(e.o.id, e.o);
+          else if (e.k === 'obj-') this.objs.delete(e.id);
+          else if (e.k === 'omv') { const o = this.objs.get(e.id); if (o) { o.x = e.x; o.y = e.y; } }   // 0.6: NPCs wandern (Tagesabläufe)
         }
         break;
     }

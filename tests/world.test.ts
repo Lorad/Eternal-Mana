@@ -14,7 +14,7 @@ import { routineOfNpc } from '../server/src/world/routines';
 import type { Mob, Obj, Zone } from '../server/src/zone';
 import { CFG } from '../shared/src/config';
 import { ENEMIES } from '../shared/src/data/enemies';
-import { EVENTS, EVENT_POOL, SEASON_NAMES, SEASON_NODES, isNight, seasonAt, seasonWeathers } from '../shared/src/data/events';
+import { EVENTS, EVENT_POOL, SEASON_NAMES, SEASON_NODES, eventPool, isNight, seasonAt, seasonWeathers } from '../shared/src/data/events';
 import { FACTIONS, FACTION_LIST, RANK_NAMES, backfillRep, factionOfZone, factionStock, rankOf, repOf, shopPrice, titleOf } from '../shared/src/data/factions';
 import { ITEMS, makeStack } from '../shared/src/data/items';
 import { NPCS } from '../shared/src/data/npcs';
@@ -944,6 +944,12 @@ describe('Jahreszeiten', () => {
     expect(winter.water).toBeGreaterThan(10); expect(summer.water).toBe(0);
     expect(winter.lichen).toBeGreaterThan(20); expect(summer.lichen).toBe(0);
     expect(autumn.cap).toBeGreaterThan(30); expect(summer.cap).toBe(0);
+    // Ereignisse: im Sommer gibt es keine Schneesturmjagd, Sternenregen nur nachts und im Winter häufiger
+    const pool = (season: number, night: boolean) => Object.fromEntries(eventPool('frost', season, night));
+    expect(pool(1, true).jagd).toBeUndefined();
+    expect(pool(3, true).jagd).toBeGreaterThan(pool(2, true).jagd);
+    expect(pool(3, false).sterne).toBeUndefined();
+    expect(pool(3, true).sterne).toBeGreaterThan(pool(0, true).sterne);
     // seltene Monster: der Hohlprinz zeigt sich nur in Herbst und Winter
     sim.travel(t, 'schatten');
     World.setSeason(sim.game, 1);

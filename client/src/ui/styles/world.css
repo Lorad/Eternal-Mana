@@ -5,7 +5,8 @@
 .ev-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 9px; background: rgba(9, 11, 19, .78); border: 2px solid #05060a; box-shadow: inset 0 0 0 1px #2f6f66; border-radius: 3px; font-size: 13px; line-height: 1.3; }
 .ev-row b { display: block; color: #8ef0d8; }
 .ev-row b small { font-weight: 400; color: var(--dim); }
-.ev-row span { color: var(--text); }
+.ev-row .grow { min-width: 0; }
+.ev-row span { color: var(--text); white-space: normal; overflow-wrap: anywhere; }
 .ev-row.far { opacity: .85; }
 .ev-row.boss { box-shadow: inset 0 0 0 1px #8a2f4a; }
 .ev-row.boss b { color: #ff8aa6; }
@@ -58,7 +59,7 @@
 .rep-list li::before { content: '›'; position: absolute; left: 0; color: #3fbfa6; }
 .rep-detail { display: flex; flex-direction: column; gap: 8px; padding: 14px; max-height: 560px; overflow-y: auto; }
 .is-short .rep-detail { max-height: 380px; }
-.rep-ranks { display: flex; flex-direction: column; gap: 3px; }
+.rep-ranks { display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 0; list-style: none; }
 .rep-ranks li { display: grid; grid-template-columns: 120px 1fr; gap: 0 10px; padding: 5px 8px; border-radius: 3px; background: rgba(0, 0, 0, .22); opacity: .6; font-size: 13px; line-height: 1.35; }
 .rep-ranks li.on { opacity: 1; }
 .rep-ranks li.cur { box-shadow: inset 0 0 0 1px #3fbfa6; }

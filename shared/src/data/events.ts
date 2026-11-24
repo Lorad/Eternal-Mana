@@ -101,6 +101,14 @@ export const EVENT_POOL: Record<RegionId, [EventKind, number][]> = {
   ruinen: [['woge', 3], ['sterne', 3], ['haendler', 2]],
   schatten: [['woge', 3], ['haendler', 2]],
 };
+/** Faktor auf das Gewicht je Jahreszeit (0 = fällt in dieser Jahreszeit aus): im Sommer gibt es keine Schneesturmjagd, im Winter kaum Aschestürme, klare Winternächte bringen mehr Sternenregen */
+export const EVENT_SEASON: Partial<Record<EventKind, number[]>> = {
+  woge: [1.5, 1, 1, 1], sterne: [1, 1.3, 1, 2], aschesturm: [1, 1.5, 2, 0.4], jagd: [0.6, 0, 1, 2.5],
+};
+/** Ereignisse, die in dieser Region zu dieser Jahres- und Tageszeit beginnen können, mit Gewicht */
+export function eventPool(zone: RegionId, season: number, night: boolean): [EventKind, number][] {
+  return EVENT_POOL[zone].map(([k, w]) => [k, w * (EVENT_SEASON[k]?.[season] ?? 1)] as [EventKind, number]).filter(([k, w]) => w > 0 && (night || !EVENTS[k].night));
+}
 export const isRegion = (zone: string): zone is RegionId => (REGIONS as readonly string[]).includes(zone);
 
 // =====================================================================================================================

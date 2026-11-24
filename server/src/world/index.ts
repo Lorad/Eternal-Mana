@@ -172,13 +172,23 @@ export const World = {
   /** Entwickler-Befehle (nur EM_DEV=1) */
   dev(g: Game, p: Player, cmd: string, a: string[]): boolean {
     const z = p.zone, here = () => ringSpot(z, p.x, p.y, 70, 110);
+    const warp = (x: number, y: number) => { p.x = x; p.y = y; p.epoch++; p.send({ t: 'pos', x, y, e: p.epoch }); };
     switch (cmd) {
       case 'event': if (EVENTS[a[0] as EventKind] && isRegion(z.id)) { const zs = zw(z); if (zs.event) finishEvent(zs.event, 'fail', true); startEvent(z, a[0] as EventKind, here(), true); } else p.toast('Dev: /event woge|sterne|haendler|einsturz|aschesturm|jagd (in einer der sechs Regionen)'); return true;
       case 'wboss': if (!World.startBoss(g, a[0], z.id, here())) p.toast('Dev: /wboss moosgrimm|aschenmaul|niemand (in einer seiner Regionen)'); return true;
-      case 'rare': if (!RARES[a[0]] || !spawnRare(z, a[0], true)) p.toast('Dev: /rare <id> – ' + Object.values(RARES).filter(r => r.zone === z.id).map(r => r.id).join(', ')); else { const m = zw(z).rares!.get(a[0])!.mob!; p.x = m.x; p.y = m.y + 60; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); } return true;
+      case 'rare': {
+        if (RARES[a[0]]) spawnRare(z, a[0], true);
+        const m = zw(z).rares?.get(a[0])?.mob; // lebt es schon, geht es einfach dorthin
+        if (m) warp(m.x, m.y + 60); else p.toast('Dev: /rare <id> – ' + Object.values(RARES).filter(r => r.zone === z.id).map(r => r.id).join(', '));
+        return true;
+      }
       case 'season': World.setSeason(g, +a[0] || 0); return true;
       case 'rep': if (FACTIONS[a[0]]) addRep(p, a[0], +a[1] || 500); else p.toast('Dev: /rep ' + Object.keys(FACTIONS).join('|') + ' n'); return true;
-      case 'enc': if (!['hinterhalt', 'reisender', 'tier', 'duell'].includes(a[0]) || !startEncounter(p, a[0] as EncounterKind)) p.toast('Dev: /enc hinterhalt|reisender|tier|duell (in einer der sechs Regionen)'); return true;
+      case 'enc': {
+        const e = ['hinterhalt', 'reisender', 'tier', 'duell'].includes(a[0]) ? startEncounter(p, a[0] as EncounterKind, here()) : null;
+        if (!e) p.toast('Dev: /enc hinterhalt|reisender|tier|duell (in einer der sechs Regionen)'); else if (e.objs[0]) warp(e.objs[0].x, e.objs[0].y + 20);
+        return true;
+      }
       case 'tmap': if (isRegion(z.id)) p.give(makeStack(mapOf(z.id))); return true;
       case 'welt': World.setAuto(g, a[0] !== 'aus'); p.toast('Lebendige Welt von selbst: ' + (a[0] !== 'aus')); return true;
     }
