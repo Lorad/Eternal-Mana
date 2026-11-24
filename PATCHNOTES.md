@@ -3,6 +3,29 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.6.0 – Lebendige Welt
+_24.11.2026_
+
+### Ruf
+- **Sechs Fraktionen**, eine je Region. Quests, Ereignisse, seltene Monster, Schätze und gespendete Rohstoffe bringen Ruf.
+- **Fünf Ränge** öffnen Vorräte, Rezepte, Nachlässe bei allen Händlern der Region und einen Titel. Übersicht mit **U**.
+- Wer schon Quests erledigt hat, bekommt den Ruf dafür einmalig gutgeschrieben.
+
+### Draußen ist etwas los
+- **Weltereignisse:** Mana-Wogen, Sternenregen (nur nachts), die Fahrende Händlerin Vesna, dazu Stolleneinsturz, Aschesturm und Schneesturmjagd. Angesagt, auf der Karte markiert, und jeder Beteiligte bekommt seine eigene Belohnung.
+- **Weltbosse:** Moosgrimm, Aschenmaul und Feldwebel Niemand ziehen durch je zwei Regionen. Je mehr mitkämpfen, desto zäher werden sie.
+- **Seltene Monster:** Zwölf benannte Geschöpfe mit eigener Besonderheit, manche nur nachts, bei bestimmtem Wetter oder zu einer Jahreszeit. Jedes hinterlässt eine Trophäe.
+- **Schatzkarten:** Karte lesen, Stelle finden, graben.
+- **Begegnungen am Weg:** Hinterhalte, ein verirrter Kartenzeichner, verletzte Tiere und ein Ritter, der jeden herausfordert – notfalls Wegweiser.
+
+### Die Welt lebt
+- **Tagesabläufe:** Dorfbewohner gehen mittags essen und abends nach Hause. Wer schläft, bedient trotzdem – mürrisch.
+- **Jahreszeiten:** Frühling, Sommer, Herbst und Winter (je 20 Minuten) verändern Wetter, Licht, Abbaustellen und was sich draußen zeigt.
+- **Sternsplitter:** Neuer Rohstoff für drei Runen und neue Rezepte.
+
+### Behoben
+- Einen abgelegten Titel zeigt das Spiel jetzt sofort nicht mehr an.
+
 ## 0.5.0 – Endspiel: Mana-Risse und der Neue Kreis
 _24.11.2026_
 

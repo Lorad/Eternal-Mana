@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.5.0 (Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.6.0 (Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -12,8 +12,8 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 | 0.3 | Handwerk & Elemente: Rohstoffe, vier Stationen, 86 Rezepte, 6 Sets, 5 Legendäre Waffen, Runen, Resistenzen, 8 Reaktionen | **fertig** |
 | 0.4 | Geschichte: Akt II (4 Kapitel + Epilog, 3 Enden), 47 Quests, Gesprächsbäume, 6 Entscheidungen, 25 Filmszenen, 49 Chronik-Dokumente, 3 Zonen, Bosse Vael und Aetherion | **fertig** |
 | 0.5 | Endspiel: Mana-Risse (30 Stufen, 12 Modifikatoren, 7 Boss-Echos), Prüfung der Sieben, Quellstufen, Neuer Kreis | **fertig** |
-| 0.6 | Lebendige Welt | in Arbeit |
-| 0.7 | Gemeinsam & Zuhause | geplant |
+| 0.6 | Lebendige Welt: Ruf (6 Fraktionen), 6 Ereignisarten, 3 Weltbosse, 12 seltene Monster, Schatzkarten, 4 Begegnungen, Tagesabläufe, Jahreszeiten | **fertig** |
+| 0.7 | Gemeinsam & Zuhause | in Arbeit |
 | 0.8 | Feinschliff | geplant |
 
 ### Offene Punkte aus 0.3
@@ -39,6 +39,16 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
   wer mit einem Kreis-0-Charakter gruppiert, spielt in dessen leichterer Welt.
 - Riss-Stufen werden von der Gruppe getragen (ein Mitglied kann weit nach oben gezogen werden).
 - Echo-Fragmente nutzen das Symbol der Quellsplitter; die Einfärbung der Echos ist bei manchen Bossen dezent.
+
+### Offene Punkte aus 0.6
+
+- Kein Mensch hat es gespielt: Weltboss-Muster, Besonderheiten der seltenen Monster und das Tempo der Ereignisse sind berechnet.
+- Nicht im Browser gesehen: Stolleneinsturz, Aschesturm, Schneesturmjagd, Geleit, Duell, Graben, NPCs in Bewegung,
+  alles in einem Kreis ab 1.
+- Eigene Symbole fehlen für Sternsplitter, Echo-Fragmente, Trophäen, Schatzkarten und neue Speisen (vorerst vorhandene).
+- NPCs laufen ohne Kollision auf einem Rasterweg; seltene Monster können unter Baumkronen stehen.
+- Die Anzeige oben rechts kann auf kleinen Bildschirmen voll werden (Karte, Riss, Quests, Ereignisse).
+- Die Jahreszeiten-Uhr läuft nur, während der Server läuft.
 
 ## Starten und Testen
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 – Lebendige Welt
+
+- Ruf bei sechs Fraktionen mit fünf Rängen (`shared/src/data/factions.ts`), Rückrechnung für alte Spielstände, rangabhängige
+  Vorräte, Nachlässe, Titel; Fenster „Ruf und Welt“.
+- Ereignis-Rahmen je Oberwelt-Instanz (`server/src/world/*`): Mana-Woge, Sternenregen, Fahrende Händlerin, drei regionale
+  Ereignisse, drei Weltbosse; Beitragsstufen und persönliche Belohnungen.
+- Zwölf seltene Monster mit Bedingungen (Nacht, Wetter, Jahreszeit) und Trophäen; Schatzkarten mit serverseitig geprüftem
+  Graben; vier Begegnungstypen unterwegs.
+- Tagesabläufe für 14 NPCs; Jahreszeiten auf gespeicherter Serveruhr mit Wirkung auf Wetter, Licht, Abbaustellen und Ereignisse.
+- Zusammenspiel mit 0.5: alles läuft je Weltinstanz (Kreis), nie in Rissen; Ruf, Titel und Trophäen überdauern den Neuen Kreis.
+- Tests: 36 neue in `tests/world.test.ts`; Browser-Durchlauf `tests/e2e/welt.mjs`; Einkommensmessung `scripts/world-income.ts`.
+
 ## 0.5.0 – Endspiel
 
 - Mana-Risse: instanzierte Dungeonläufe in 30 Stufen (`server/src/rift.ts`, `shared/src/data/rifts.ts`), zwölf Modifikatoren,
