@@ -189,14 +189,18 @@ function tick(e: Encounter, now: number, dt: number) {
       const o = e.objs[0], st = e.st;
       // der Reisende folgt seinem Begleiter
       const dx = own.x - o.x, dy = own.y - o.y, d = Math.hypot(dx, dy);
-      if (d > 26 && d < 260 && !own.dead) {
+      if (d > 26 && !own.dead) {
         const step = Math.min(d - 22, 74 * dt);
-        const r = moveCircle(z.solidWalk, o.x, o.y, (dx / d) * step, (dy / d) * step, 4);
-        if (circleFree(z.solidWalk, r.x, r.y, 4)) moveObj(z, o, r.x, r.y, dt);
+        const r = d < 200 ? moveCircle(z.solidWalk, o.x, o.y, (dx / d) * step, (dy / d) * step, 4) : o;
+        const moved = Math.hypot(r.x - o.x, r.y - o.y);
+        // hängt er fest oder ist er abgehängt, holt er keuchend auf – niemand soll einen Kartenzeichner um einen Busch lotsen müssen
+        st.stuck = moved < step * 0.3 ? (st.stuck ?? 0) + dt : 0;
+        if (d >= 200 || st.stuck > 2) { const c = ringSpot(z, own.x, own.y, 24, 36); st.stuck = 0; moveObj(z, o, c.x, c.y, 0.3); }
+        else if (moved > 0 && circleFree(z.solidWalk, r.x, r.y, 4)) moveObj(z, o, r.x, r.y, dt);
       }
       const left = Math.hypot(st.tx - o.x, st.ty - o.y);
       if (!st.ambushed && left < st.from * 0.5) { st.ambushed = true; ambush(e, own, 2, o.x, o.y); say(e, T.reisender.ambush); }
-      if (left < 30 && !e.mobs.size) { for (const l of T.reisender.done) say(e, `Odo: „${l}“`, 'good'); reward(e, 1.4, 0.25); end(e); }
+      if (left < 48 && !e.mobs.size) { for (const l of T.reisender.done) say(e, `Odo: „${l}“`, 'good'); reward(e, 1.4, 0.25); end(e); }
       break;
     }
     case 'tier':
