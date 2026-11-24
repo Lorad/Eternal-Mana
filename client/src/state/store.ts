@@ -1,6 +1,6 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, EncDialog, ItemInstance, Mods, PartyMember, RiftInfo, ServerInfo, WorldInfo } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, EncDialog, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo } from '../../../shared/src/types';
 import { bus } from './bus';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf';
@@ -30,7 +30,8 @@ export interface UiState {
   cds: Record<string, { until: number; total: number }>;
   buffs: { id: string; name: string; glyph: string; until: number; icon?: string; desc?: string; mods?: Mods }[];
   party: PartyMember[];
-  invite: { from: number; name: string } | null;
+  /** offene Gruppeneinladung; `until` = performance.now()-Zeitpunkt, zu dem sie verfällt (0.7) */
+  invite: (PartyInvite & { until?: number }) | null;
   boss: { id: number; name: string; hp: number; maxHp: number; phase: number; el: Element; weak?: Element[]; resist?: Element[] } | null;
   /** Gegner, den man gerade bekämpft oder anvisiert – mit Schwächen und Resistenzen (0.4) */
   target: { id: number; name: string; lvl: number; hp: number; maxHp: number; el: Element; elite: boolean; weak: Element[]; resist: Element[] } | null;
@@ -73,6 +74,16 @@ export interface UiState {
   enc: EncDialog | null;
   /** offenes Fenster: Vorräte / Spenden einer Fraktion oder Ware der Fahrenden Händlerin */
   wshop: { kind: 'faction' | 'donate' | 'trader'; npc: string } | null;
+  // ---- Gemeinsam (0.7)
+  /** laufender Handel (`tradeAt` = performance.now() beim Empfang, für die Sperrfrist) und offene Handelsanfrage an mich */
+  trade: TradeView | null; tradeAt: number;
+  tradeReq: { from: number; name: string; until: number } | null;
+  /** von Gruppenmitgliedern angebotene Quests */
+  qOffers: { id: string; from: string; until: number }[];
+  /** angesehener Spieler (nur lesen) */
+  inspect: InspectInfo | null;
+  /** kleines Menü zu einem anderen Spieler (Klick auf die Figur, den Gruppenrahmen oder die Online-Liste) */
+  playerMenu: { id: number; name: string; cls: ClassId; level: number; near?: boolean } | null;
   saved: number;                   // Zeitstempel der letzten Speicherbestätigung
 }
 
@@ -84,6 +95,7 @@ const state: UiState = {
   panel: null, dialog: null, sign: null, story: null, dlgNode: null, cine: null, lore: null, dead: null, prompt: null, nearStone: false,
   rift: null, riftAt: 0, kreis: 0, endgame: null,
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0, world: null, worldAt: 0, enc: null, wshop: null,
+  trade: null, tradeAt: 0, tradeReq: null, qOffers: [], inspect: null, playerMenu: null,
 };
 
 const listeners = new Set<() => void>();
@@ -129,7 +141,8 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {
   if (state.screen !== 'game' || state.cine) return;
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null });
+  if (state.trade) return; // erst den Handel beenden
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, inspect: null, playerMenu: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
@@ -137,6 +150,9 @@ export function closeTop(): boolean {
   if (state.lore) { store.set({ lore: null }); return true; }
   if (state.story) { store.set({ story: null }); return true; }
   if (state.sign) { store.set({ sign: null }); return true; }
+  if (state.playerMenu) { store.set({ playerMenu: null }); return true; }
+  if (state.inspect) { store.set({ inspect: null }); return true; }
+  if (state.trade) { bus.emit('ui:tradeCancel'); return true; }
   if (state.enc) { store.set({ enc: null }); return true; }
   if (state.wshop) { store.set({ wshop: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
@@ -148,5 +164,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop);
+  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.trade || state.inspect);
 }

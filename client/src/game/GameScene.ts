@@ -113,6 +113,8 @@ export class GameScene extends Phaser.Scene {
   /** zuletzt getroffener Gegner (für die Zielanzeige mit Schwächen) */
   private focusId = 0; private focusAt = 0;
   private hoverCheck = 0;
+  /** 0.7: der Klick, der ein Spieler-Menü geöffnet hat, löst keinen Angriff aus (bis die Taste losgelassen ist) */
+  private menuHold = false;
   private serverAnim: Anim = Anim.Idle;
   private aim = Math.PI / 2;
   // Darstellung
@@ -436,7 +438,7 @@ export class GameScene extends Phaser.Scene {
         if (pr.light) { v.light = pr.light; v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(pr.light[0] / 110).setTint(pr.light[1]).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }
         break;
       }
-      case 'chest': img(o.x, o.y + 7, 'chest_wood_closed'); break;
+      case 'chest': img(o.x, o.y + 7, 'chest_wood_closed'); if (pr.label) v.label = this.text(o.x, o.y - 22, pr.label, '#9dffb0', 7).setOrigin(0.5, 1); break; // 0.7: Gruppentruhe trägt ihren Namen
       case 'door': case 'bossdoor': case 'boulder': {
         const cells: number[] = pr.cells ?? [];
         if (o.type === 'bossdoor') img(pr.orient === 'v' ? o.x - 8 : o.x, o.y + 8, 'door_boss', undefined, false);
@@ -1183,9 +1185,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** 0.7: Menü zu einem anderen Spieler (Gruppe, Handel, Ansehen) */
+  private openPlayerMenu(v: PlayerView) {
+    audio.playSfx('ui_click');
+    store.set({ playerMenu: { id: v.info.id, name: v.info.name, cls: v.info.cls, level: v.info.level }, prompt: null });
+  }
+  /** 0.7: Ein Klick auf eine fremde Figur öffnet ihr Menü – aber nie mitten im Kampf und nie, wenn dort ein Gegner steht. */
+  private clickedPlayer(): PlayerView | null {
+    if (store.state.inputMode !== 'kbm' || !pointer.onCanvas) return null;
+    const p = this.worldPointer(), me = this.me;
+    for (const m of this.mobs.values()) if (Math.hypot(m.x - me.x, m.y - me.y) < 200 || Math.hypot(m.x - p.x, m.y - m.top / 2 - p.y) < Math.max(14, m.w * 0.5)) return null;
+    let best: PlayerView | null = null, bd = 13;
+    for (const v of this.players.values()) {
+      if (v.flags & FLAG_DEAD || Math.hypot(v.x - me.x, v.y - me.y) > 160) continue;
+      const d = Math.hypot(v.x - p.x, v.y - 11 - p.y);
+      if (d < bd) { bd = d; best = v; }
+    }
+    return best;
+  }
   private handleActions(now: number, stats: Derived, cls: (typeof CLASSES)[keyof typeof CLASSES]) {
     const me = this.me, st = store.state, c = st.char!;
-    const wantAtk = input.pressed('attack') || input.held('attack');
+    const click = input.pressed('attack');
+    if (click) { const v = this.clickedPlayer(); if (v) { this.openPlayerMenu(v); this.menuHold = true; } }
+    if (this.menuHold && !input.held('attack')) this.menuHold = false;
+    const wantAtk = (click || input.held('attack')) && !this.menuHold;
+    if (wantAtk && st.playerMenu) store.set({ playerMenu: null }); // wer zuschlägt, will kein Menü mehr
     if (wantAtk && now >= this.atkReady && now >= this.rollUntil) {
       const atk = cls.attack;
       const a = this.aimInfo(atk.kind === 'arc' ? 70 : atk.range);
@@ -1376,6 +1400,11 @@ export class GameScene extends Phaser.Scene {
       const d = Math.hypot(p.x - me.x, p.y - me.y);
       if (d < bd + 6) { bd = d; best = p; prompt = `${p.info.name} wiederbeleben`; }
     }
+    // 0.7: steht sonst nichts näher, gilt Interagieren dem nächsten Mitspieler (Gruppe, Handel, Ansehen)
+    if (!best) for (const p of this.players.values()) {
+      const d = Math.hypot(p.x - me.x, p.y - me.y);
+      if (d < bd) { bd = d; best = p; prompt = `${p.info.name}: Gruppe · Handel · Ansehen`; }
+    }
     this.target = best;
     const st = store.state;
     const shown = uiBlocksGame() ? null : prompt;
@@ -1385,7 +1414,11 @@ export class GameScene extends Phaser.Scene {
   private doInteract() {
     const t = this.target;
     if (!t || uiBlocksGame()) return;
-    if (t instanceof PlayerView) { net.send({ t: 'revive', id: t.info.id }); this.me.play('interact', 380, true); return; }
+    if (t instanceof PlayerView) {
+      if (t.flags & FLAG_DEAD) { net.send({ t: 'revive', id: t.info.id }); this.me.play('interact', 380, true); }
+      else this.openPlayerMenu(t);
+      return;
+    }
     const o = t.o;
     audio.playSfx('ui_click');
     this.me.facing = Math.atan2(o.y - this.me.y, o.x - this.me.x);

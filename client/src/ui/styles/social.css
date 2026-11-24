@@ -1,0 +1,76 @@
+/* ============================================================== Gemeinsam (0.7): Gruppe, Anfragen, Spieler-Menü, Handel, Ansehen */
+
+/* ---------------------------------------------------------------- Gruppenrahmen im HUD */
+.party-frames { width: 214px; }
+.em-root button.party-frame { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; pointer-events: auto; }
+.em-root button.party-frame:hover { filter: brightness(1.18); }
+.party-frame.down .bar-fill { background: #5a2420; }
+.party-zone { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.party-zone.apart { color: #c9b27a; }
+.pf-lead { display: inline-block; margin-right: 3px; color: var(--gold); font-style: normal; font-size: 11px; text-shadow: 0 0 6px rgba(227, 183, 92, .7); }
+
+/* ---------------------------------------------------------------- Anfragen */
+.invite { min-width: 300px; max-width: 420px; }
+.invite .note { font-size: 12px; line-height: 1.4; }
+.invite .row .note { font-variant-numeric: tabular-nums; }
+.qoffer-q b { font: 700 15px var(--serif); color: var(--gold-hi); }
+
+/* ---------------------------------------------------------------- Menü zu einem anderen Spieler */
+.pmenu {
+  position: absolute; left: calc(50% + 46px); top: calc(50% - 150px); z-index: 30; width: 236px;
+  display: flex; flex-direction: column; gap: 5px; padding: 9px 10px 10px;
+  background: rgba(18, 21, 36, .96); border: 2px solid #05060a; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--gold-dk), 0 8px 24px rgba(0, 0, 0, .65);
+  pointer-events: auto; text-shadow: none; animation: prompt-in .14s ease-out;
+}
+.pmenu-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; padding-bottom: 7px; border-bottom: 1px solid var(--line); }
+.pmenu-head b { color: var(--gold-hi); font: 700 15px var(--serif); }
+.pmenu-head .window-x { width: 24px; height: 24px; font-size: 12px; }
+.pmenu .btn { justify-content: flex-start; text-align: left; }
+.is-narrow .pmenu { left: 12px; top: 250px; }
+
+/* ---------------------------------------------------------------- Gruppenfenster */
+.win-party { width: 900px; }
+.pp-member { align-items: flex-start !important; }
+.pp-member.down { box-shadow: inset 0 0 0 1px var(--bad); }
+.pp-actions { margin-top: 6px; gap: 5px; }
+.pp-kreis { border-left: 3px solid var(--gold-dk); }
+.pp-help li { line-height: 1.45; }
+
+/* ---------------------------------------------------------------- Handel */
+.win-trade { width: 780px; }
+.trade { display: flex; flex-direction: column; gap: 10px; }
+.trade-offers { display: grid; grid-template-columns: 1fr 34px 1fr; gap: 8px; align-items: center; }
+.trade-arrow { text-align: center; font-size: 24px; color: var(--gold-dk); }
+.trade-side { transition: box-shadow .15s; }
+.trade-side.locked { box-shadow: inset 0 0 0 2px #5f8fd0; }
+.trade-side.ok { box-shadow: inset 0 0 0 2px var(--gold), 0 0 14px rgba(227, 183, 92, .25); }
+.pill.trade-locked { background: rgba(95, 143, 208, .22); color: #bcd7ff; }
+.trade-grid { display: grid; grid-template-columns: repeat(4, 42px); gap: 4px; justify-content: start; }
+.trade-gold { margin-top: 8px; font-size: 13px; }
+.trade-status { padding: 6px 10px; text-align: center; font-size: 13px; color: var(--parch); background: rgba(9, 11, 19, .5); border-radius: 3px; min-height: 30px; }
+.trade-status.warn { color: #ffcf7a; }
+.trade-status.ready { color: var(--good); }
+.trade-inv { display: grid; grid-template-columns: repeat(auto-fill, 42px); gap: 4px; padding: 6px; max-height: 148px; background: rgba(6, 7, 13, .55); border: 2px solid #07080e; box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }
+.trade-inv .note { grid-column: 1 / -1; }
+.trade-qty { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; padding: 6px 10px; }
+.trade-qty .input, .trade-goldrow .input { width: 96px; min-height: 28px; padding: 2px 8px; }
+.trade-goldrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; }
+.trade-goldrow > span:first-child { flex: 1 1 auto; }
+.trade-foot { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.is-narrow .trade-offers { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .trade-arrow { display: none; }
+.is-narrow .trade-foot { flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- Spieler ansehen */
+.win-inspect { width: 600px; }
+.insp { display: grid; grid-template-columns: 210px 1fr; gap: 18px; align-items: start; }
+.insp-doll { display: flex; flex-direction: column; gap: 8px; }
+.insp-doll .char-stage { width: 96px; height: 108px; margin: 0; }
+.insp-title { color: var(--gold) !important; font-style: italic; }
+.insp-facts { display: flex; flex-direction: column; gap: 2px; }
+.insp-gear { display: flex; flex-direction: column; gap: 8px; }
+.is-narrow .insp { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------------------------------------------------------------- Tooltip: gebundene Gegenstände */
+.tip-bound { color: #c9b27a; }

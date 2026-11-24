@@ -21,6 +21,7 @@ import { Affinity, TargetInfo } from './elements';
 import { EndgamePill, RiftHud } from './endgame';
 import { QUELL_MAX, titleName } from '../../../shared/src/data/rifts';
 import { MinimapCanvas } from './mapview';
+import { PartyFrames, PlayerMenu, SocialPopups } from './social';
 import { EventTracker, seasonLabel } from './world';
 
 // ------------------------------------------------------------------ Tastenhinweise (Tastatur oder Gamepad)
@@ -101,29 +102,6 @@ function PlayerFrame() {
       <StatusChips />
       <Buffs />
       <PartyFrames />
-    </div>
-  );
-}
-
-// ------------------------------------------------------------------ Gruppe
-function PartyFrames() {
-  const party = useStore(s => s.party);
-  const charId = useStore(s => s.charId);
-  const zone = useStore(s => s.zone);
-  const others = party.filter(m => m.charId !== charId);
-  if (!others.length) return null;
-  return (
-    <div class="party-frames">
-      {others.map(m => (
-        <div class={cx('party-frame', !m.online && 'offline', m.hp <= 0 && 'down')}>
-          <Face k={'char_' + m.cls} size={32} />
-          <div class="grow">
-            <div class="party-name"><b>{m.name}</b><span>St. {m.level}</span></div>
-            <Bar kind="hp" v={m.hp} max={m.maxHp} label={false} class="thin" />
-            {(!m.online || m.zone !== zone || m.hp <= 0) && <div class="party-zone">{!m.online ? 'Verbindung getrennt' : m.hp <= 0 ? 'Besiegt – hilf auf!' : ZONES[m.zone]?.name ?? m.zone}</div>}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -392,7 +370,7 @@ function Chat() {
             onInput={e => setText((e.target as HTMLInputElement).value)}
             onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); submit(); } else if (e.key === 'Escape') { e.preventDefault(); setText(''); close(); } }}
             onKeyUp={e => e.stopPropagation()} onBlur={close} />
-          <div class="chat-hint">Enter = senden · /p Text = Gruppenchat</div>
+          <div class="chat-hint">Enter = senden · /p Text = nur an die Gruppe</div>
         </div>
       ) : (
         <button type="button" class="chat-open" onClick={() => store.set({ chatOpen: true })} title="Chat öffnen"><Kbd>{hint('chat')}</Kbd> Chat</button>
@@ -460,27 +438,13 @@ function ReconnectOverlay() {
     </div>
   );
 }
-function InvitePopup() {
-  const inv = useStore(s => s.invite);
-  if (!inv) return null;
-  const answer = (a: 'accept' | 'decline') => { sfx('ui_click'); send({ t: 'party', a }); store.set({ invite: null }); };
-  return (
-    <div class="invite" role="alertdialog">
-      <div><b>{inv.name}</b> lädt dich in eine Gruppe ein.</div>
-      <div class="row end">
-        <button type="button" class="btn btn-small" onClick={() => answer('decline')}>Ablehnen</button>
-        <button type="button" class="btn btn-small btn-primary" onClick={() => answer('accept')}>Annehmen</button>
-      </div>
-    </div>
-  );
-}
-
 export function Hud() {
   return (
     <div class="hud">
       <PlayerFrame />
       <div class="hud-tr"><MinimapBox /><RiftHud /><QuestTracker /><EventTracker /></div>
-      <div class="hud-tc"><BossBar /><TargetInfo /><InvitePopup /></div>
+      <div class="hud-tc"><BossBar /><TargetInfo /><SocialPopups /></div>
+      <PlayerMenu />
       <ZoneBanner />
       <StoryToasts />
       <div class="hud-bc"><Prompt /><Hotbar /></div>

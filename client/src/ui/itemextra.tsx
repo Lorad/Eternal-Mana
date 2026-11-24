@@ -9,6 +9,7 @@ import { ITEMS } from '../../../shared/src/data/items';
 import { LEGEND_TEXT } from '../../../shared/src/data/materials';
 import { ENCHANTS, RECIPES } from '../../../shared/src/data/recipes';
 import { SETS, SET_PIECES, SET_PIECE_NAME, setCounts } from '../../../shared/src/data/sets';
+import { tradeBlock } from '../../../shared/src/social';
 import { MOD_LABEL } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey, Mods } from '../../../shared/src/types';
 
@@ -24,7 +25,8 @@ export function ItemExtras({ item: it, char }: { item: ItemInstance; char: CharD
   const ench = it.ench ? ENCHANTS[it.ench] : undefined;
   const set = it.set ? SETS[it.set] : undefined;
   const learn = b.use?.learn ? RECIPES[b.use.learn] : undefined;
-  if (!lvl && !ench && !set && !b.legend && !learn) return null;
+  const bound = tradeBlock(it); // 0.7: gebundene Gegenstände lassen sich nicht handeln
+  if (!lvl && !ench && !set && !b.legend && !learn && !bound) return null;
   const n = set && char ? setCounts(char)[set.id] ?? 0 : 0;
   const worn = (piece: string) => !!char && Object.values(char.equip).some(e => e?.set === set?.id && (piece === 'helm' ? e.base.startsWith('h_') : piece === 'armor' ? e.base.startsWith('a_') : e.base.startsWith('c_' + piece)));
   return (
@@ -45,6 +47,7 @@ export function ItemExtras({ item: it, char }: { item: ItemInstance; char: CharD
         </div>
       )}
       {learn && char && <div class={knowsRecipe(char, learn) ? 'tip-req' : 'tip-req good'}>{knowsRecipe(char, learn) ? 'Dieses Rezept kennst du bereits.' : 'Noch nicht gelernt.'}</div>}
+      {bound && <div class="tip-req tip-bound">⛓ Gebunden – nicht handelbar. {bound}</div>}
     </>
   );
 }

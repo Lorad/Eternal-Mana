@@ -4,7 +4,7 @@ import { itemName } from '../../../shared/src/data/items';
 import type { ClassId, ClientMsg, ServerMsg } from '../../../shared/src/types';
 import { bus } from '../state/bus';
 import { adoptServerSettings, getToken, setServerSync, settings, updateSettings } from '../state/settings';
-import { pushChat, pushToast, store } from '../state/store';
+import { pushChat, pushToast, store, type UiState } from '../state/store';
 
 let ws: WebSocket | null = null;
 let wantOpen = false;
@@ -71,12 +71,13 @@ function handle(m: ServerMsg) {
     case 'entered':
       resumed = true; resumeChar = m.charId;
       store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null,
-        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null });
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null,
+        trade: null, tradeReq: null, qOffers: [], inspect: null, playerMenu: null, invite: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
       store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0,
-        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null });
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null, inspect: null, playerMenu: null });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
@@ -88,8 +89,9 @@ function handle(m: ServerMsg) {
     case 'toast': pushToast(m.s, m.kind ?? 'info', m.icon); break;
     case 'loot': pushToast(itemName(m.item) + ((m.item.qty ?? 1) > 1 ? ` ×${m.item.qty}` : ''), 'loot', undefined, m.item); break;
     case 'chat': pushChat(m.from, m.s, m.ch); break;
-    case 'party': store.set({ party: m.members, invite: m.invite ?? (m.members.length ? null : st.invite) }); break;
-    case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null, craft: null, endgame: null }); break;
+    // invite gesetzt = neue Einladung, null = erloschen; eine Gruppenliste räumt eine alte Einladung weg
+    case 'party': store.set({ party: m.members, invite: m.invite !== undefined ? (m.invite ? { ...m.invite, until: performance.now() + (m.invite.sec ?? 30) * 1000 } : null) : m.members.length ? null : st.invite }); break;
+    case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null, craft: null, endgame: null, inspect: null, playerMenu: null }); break;
     case 'story': store.set({ story: { title: m.title ?? '', lines: m.lines } }); break;
     // ---- Story (ab 0.3)
     case 'dlg': store.set({ dlgNode: m.node ? { npc: m.npc, topic: m.topic, node: m.node, seq: (st.dlgNode?.seq ?? 0) + 1 } : null }); break;
@@ -99,6 +101,16 @@ function handle(m: ServerMsg) {
     // ---- Lebendige Welt (0.6)
     case 'world': store.set({ world: m.w, worldAt: performance.now(), ...(st.wshop?.kind === 'trader' && !m.w.trader ? { wshop: null } : {}) }); break;
     case 'encdlg': store.set(m.d ? { enc: m.d, dialog: null, panel: null, prompt: null } : { enc: null }); break;
+    // ---- Gemeinsam (0.7)
+    case 'trade': {
+      const patch: Partial<UiState> = {};
+      if (m.tr !== undefined) Object.assign(patch, { trade: m.tr, tradeAt: performance.now() }, m.tr && !st.trade ? { panel: null, dialog: null, craft: null, endgame: null, wshop: null, inspect: null, playerMenu: null, chatOpen: false, tradeReq: null } : {});
+      if (m.req !== undefined) patch.tradeReq = m.req ? { from: m.req.from, name: m.req.name, until: performance.now() + m.req.sec * 1000 } : null;
+      store.set(patch);
+      break;
+    }
+    case 'qOffer': store.set({ qOffers: [...st.qOffers.filter(o => o.id !== m.id), ...(m.sec > 0 ? [{ id: m.id, from: m.from, until: performance.now() + m.sec * 1000 }] : [])] }); break;
+    case 'inspect': store.set({ inspect: m.i, playerMenu: null }); break;
     case 'env': store.set({ ...(m.weather !== undefined ? { weather: m.weather } : {}), ...(m.tod !== undefined ? { tod: m.tod } : {}) }); bus.emit('net:env'); break;
     case 'online': store.set({ online: m.players }); break;
     case 'saved': store.set({ saved: Date.now() }); pushToast('Spielstand gespeichert.', 'good'); break;
@@ -134,3 +146,4 @@ export const net = {
   quitToMenu() { resumeChar = 0; net.send({ t: 'leave' }); window.setTimeout(() => { net.disconnect(); store.set({ screen: 'menu', char: null, panel: null }); bus.emit('net:left'); }, 150); },
 };
 setServerSync(json => net.send({ t: 'settings', data: json }));
+bus.on('ui:tradeCancel', () => net.send({ t: 'trade', a: 'cancel' })); // Esc im Handelsfenster

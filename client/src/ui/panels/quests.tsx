@@ -10,6 +10,7 @@ import { ZONES } from '../../../../shared/src/data/zones';
 import type { CharData } from '../../../../shared/src/types';
 import { Btn, Confirm, Gold, Icon, Tabs, Window, closePanel, cx, fmtNum, send, sfx } from '../common';
 import { ChronikTab, loreTotals } from '../story';
+import { shareBlock } from '../../../../shared/src/social';
 
 export const QUEST_TYPE: Record<QuestDef['type'], string> = { main: 'Hauptquest', side: 'Nebenquest', repeat: 'Wiederholbar', group: 'Gruppe' };
 const ORDER: QuestDef['type'][] = ['main', 'side', 'repeat', 'group'];
@@ -44,6 +45,7 @@ export function Objectives({ q, char }: { q: QuestDef; char: CharData }) {
 
 export function QuestPanel() {
   const char = useStore(s => s.char);
+  const inParty = useStore(s => s.party.length > 1);
   const [tab, setTab] = useState<'active' | 'done' | 'chronik'>('active');
   const [selId, setSel] = useState<string | null>(null);
   const [abandon, setAbandon] = useState<QuestDef | null>(null);
@@ -106,7 +108,13 @@ export function QuestPanel() {
                 Auftraggeber: <b>{NPCS[sel.giver]?.name ?? sel.giver}</b>{NPCS[sel.giver] ? `, ${NPCS[sel.giver].title}` : ''}
                 {sel.turnIn && sel.turnIn !== sel.giver && <> · Abgabe bei <b>{NPCS[sel.turnIn]?.name ?? sel.turnIn}</b></>}
               </div>
-              {tab === 'active' && sel.type !== 'main' && <div class="row end"><Btn kind="danger" onClick={() => setAbandon(sel)}>Aufgeben</Btn></div>}
+              {tab === 'active' && sel.type !== 'main' && (
+                <div class="row end">
+                  {/* 0.7: Mitglieder, die die Quest annehmen dürften, bekommen eine Anfrage – ohne zum Auftraggeber zu laufen */}
+                  {!shareBlock(sel) && <Btn disabled={!inParty} title={inParty ? 'Bietet die Quest allen Gruppenmitgliedern an, die sie annehmen dürfen.' : 'Dafür brauchst du eine Gruppe.'} onClick={() => send({ t: 'qShare', id: sel.id })}>Mit der Gruppe teilen</Btn>}
+                  <Btn kind="danger" onClick={() => setAbandon(sel)}>Aufgeben</Btn>
+                </div>
+              )}
               {tab === 'active' && sel.type === 'main' && <div class="note">Hauptquests können nicht aufgegeben werden.</div>}
             </>
           ) : <div class="note">Wähle links eine Quest aus.</div>}
