@@ -11,6 +11,9 @@
  *    Beim Abschluss wird alles noch einmal geprüft: Besitz, Menge, Gold, Platz im Inventar beider Seiten.
  *  - Der Tausch selbst ist atomar: erst vollständig geprüft, dann ausgeführt; schlägt das gemeinsame Speichern fehl, wird der
  *    Zustand beider Inventare zurückgesetzt.
+ *  - Gehandelt wird nur aus dem Rucksack des Charakters. Was dem Profil gehört (Lagertruhe, Gold in der Truhe, Begleiter,
+ *    Erscheinungen, Sammlung – server/src/home), ist für den Handel unerreichbar; gespeichert wird über `Home.saveMany`,
+ *    damit Charakter und Profil-Stand nie auseinanderlaufen.
  */
 import { CFG } from '../../../shared/src/config';
 import { ITEMS, itemName, newUid } from '../../../shared/src/data/items';
@@ -18,6 +21,7 @@ import { invFits, tradeBlock } from '../../../shared/src/social';
 import { SLOTS } from '../../../shared/src/types';
 import type { ClientMsg, ItemInstance, TradeSide, TradeView } from '../../../shared/src/types';
 import type { Game } from '../game';
+import { Home } from '../home';
 import type { Player } from '../player';
 import { dist, present, reject, ss, type Trade, type TradeSideState } from './state';
 
@@ -204,7 +208,7 @@ function commit(g: Game, tr: Trade) {
       s.p.char.gold += o.gold - s.gold;
       summary.push(`${o.p.name} → ${s.p.name}: ${[...moved.get(o)!.map(it => itemName(it) + ((it.qty ?? 1) > 1 ? ` ×${it.qty}` : '')), ...(o.gold ? [`${o.gold} Gold`] : [])].join(', ') || 'nichts'}`);
     }
-    g.db.saveChars([[a.charId, a.snapshotChar()], [b.charId, b.snapshotChar()]]);
+    Home.saveMany(g, [a, b]); // beide Charaktere – und ihr Profil-Stand (Hof, Truhe, Sammlung), falls er sich geändert hat – in EINER Transaktion
   } catch (e) {
     for (const s of backup) { s.p.char.inv = s.inv; s.p.char.gold = s.gold; s.p.sync('inv', 'gold'); }
     console.error('[handel] Tausch zurückgenommen:', e);

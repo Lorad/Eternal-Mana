@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 – Zuhause
+
+- Hof am Waldrand als eigene Instanz je Profil (`heim:<Konto>`, `server/src/home/*`, `shared/src/maps/homegen.ts`), Kauf bei
+  Mirelda, drei Ausbaustufen mit Sperren über Ruf und Riss-Fortschritt.
+- Lagertruhe je Profil in eigener Tabelle; Charakter und Truhe werden in einer Transaktion gespeichert.
+- 30 ausstellbare Trophäen, acht Begleiter (clientseitig mitlaufend, `client/src/game/pets.ts`), Sammlung mit sieben Bereichen
+  und elf Meilensteinen, Erscheinungen (fünf Gewänder je Klasse über nachgeladene Sheets, neun Farben Waffenglanz).
+- Grafik: 25 Gewand-Sheets, NPC-Aussehen für Vael, 40 Symbole für Gegenstände aus 0.5/0.6.
+- Tests: 29 neue in `tests/home.test.ts`; Browser-Durchlauf `tests/e2e/zuhause.mjs`.
+
 ## 0.6.0 – Lebendige Welt
 
 - Ruf bei sechs Fraktionen mit fünf Rängen (`shared/src/data/factions.ts`), Rückrechnung für alte Spielstände, rangabhängige

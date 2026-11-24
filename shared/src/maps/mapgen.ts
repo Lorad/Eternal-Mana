@@ -5,6 +5,7 @@
 import { DUNGEON_SIGNS, LORE } from '../data/lore';
 import { NODE_TYPES, ZONES, type Poi, type ZoneDef } from '../data/zones';
 import { Rng, fbm2, hash2, noise2 } from '../util/rng';
+import { genHome } from './homegen';
 import { placeStory } from './storygen';
 import { T, TILE, isWalkableTile, type BiomeId } from './tiles';
 
@@ -42,7 +43,7 @@ export function getMap(zoneId: string): GameMap {
   if (!m) {
     const def = ZONES[zoneId];
     if (!def) throw new Error('Unbekannte Zone: ' + zoneId);
-    m = def.kind === 'dungeon' ? genDungeon(def) : genOverworld(def);
+    m = def.kind === 'home' ? genHome(def) : def.kind === 'dungeon' ? genDungeon(def) : genOverworld(def);
     cache.set(zoneId, m);
   }
   return m;

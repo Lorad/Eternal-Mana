@@ -13,6 +13,7 @@ import { PanelHost } from './panels';
 import { CineOverlay, LoreOverlay } from './story';
 import { EncounterDialog, WorldShop } from './world';
 import { InspectWindow, TradeWindow } from './social';
+import { HofWindow } from './home';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -23,6 +24,7 @@ import './styles/craft.css';
 import './styles/endgame.css';
 import './styles/world.css';
 import './styles/social.css';
+import './styles/home.css';
 
 /** Berechnet den Maßstab: Die Oberfläche ist für rund 1280×720 entworfen und skaliert mit dem Fenster. */
 function computeScale() {
@@ -52,6 +54,7 @@ function Root() {
   const hasWshop = useStore(s => !!s.wshop);
   const hasTrade = useStore(s => !!s.trade);
   const hasInspect = useStore(s => !!s.inspect);
+  const hasHof = useStore(s => !!s.hof);
   const dead = useStore(s => !!s.dead);
   const s = computeScale();
 
@@ -78,6 +81,7 @@ function Root() {
       {screen === 'game' && hasCraft && !dead && <CraftWindow />}
       {screen === 'game' && hasEndgame && !dead && <EndgameWindow />}
       {screen === 'game' && hasWshop && !dead && <WorldShop />}
+      {screen === 'game' && hasHof && !dead && <HofWindow />}
       {screen === 'game' && hasEnc && !dead && <EncounterDialog />}
       {screen === 'game' && hasInspect && !dead && <InspectWindow />}
       {screen === 'game' && hasTrade && !dead && <TradeWindow />}

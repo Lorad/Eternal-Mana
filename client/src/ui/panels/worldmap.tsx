@@ -7,6 +7,7 @@ import { WORLD_LINKS, ZONES, ZONE_LIST } from '../../../../shared/src/data/zones
 import type { ZoneDef } from '../../../../shared/src/data/zones';
 import { Btn, Tabs, Window, closePanel, cx, send, sfx } from '../common';
 import { ZoneMapCanvas } from '../mapview';
+import { HomeTravel } from '../home';
 
 const VW = 400, VH = 300;
 const P = (z: ZoneDef) => [z.mapPos[0] * (VW / 100), z.mapPos[1] * (VH / 100)] as const;
@@ -130,6 +131,7 @@ function ZoneInfo({ id }: { id: string }) {
           <p class="note">Diesen Ort hast du noch nicht betreten. Folge den Wegen auf der Karte.</p>
         </>
       )}
+      <HomeTravel />
       <p class={cx('note', 'winfo-hint', nearStone && 'on')}>
         {nearStone ? 'Du stehst an einem Quellstein: Wähle eine Region mit aktiviertem Quellstein und reise sofort dorthin.' : 'Schnellreise: Stelle dich an einen Quellstein und öffne die Karte. Reisen kannst du zu jedem Quellstein, den du schon berührt hast.'}
       </p>

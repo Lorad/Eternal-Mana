@@ -389,11 +389,12 @@ const MENU_ICON: Record<string, ComponentChildren> = {
   map: <Svg><path d="M1 3l4-2 6 2 4-2v12l-4 2-6-2-4 2zM5 3v9l1 .3V3.3zM10 4.7v9l1 .3V5z" fill-rule="evenodd" /></Svg>,
   party: <Svg><path d="M2 3h4v4H2zM10 3h4v4h-4zM1 8h6v6H1zM9 8h6v6H9z" /></Svg>,
   ruf: <Svg><path d="M3 1h2v14H3zM5 2h8l-2 3 2 3H5z" /></Svg>,
+  sammlung: <Svg><path d="M2 2h5l1 1 1-1h5v11H9l-1 1-1-1H2zM4 4v7h3V4zM9 4v7h3V4z" fill-rule="evenodd" /></Svg>,
   menu: <Svg><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z" /></Svg>,
 };
 const MENU: [Panel, string, Action][] = [
   ['inventory', 'Inventar', 'inventory'], ['character', 'Charakter', 'character'], ['skills', 'Fähigkeiten', 'skills'], ['quests', 'Quests', 'quests'],
-  ['map', 'Karte', 'map'], ['party', 'Gruppe', 'party'], ['ruf', 'Ruf und Welt', 'ruf'], ['menu', 'Menü', 'menu'],
+  ['map', 'Karte', 'map'], ['party', 'Gruppe', 'party'], ['ruf', 'Ruf und Welt', 'ruf'], ['sammlung', 'Sammlung und Begleiter', 'sammlung'], ['menu', 'Menü', 'menu'],
 ];
 function MenuBar() {
   const panel = useStore(s => s.panel);

@@ -53,7 +53,12 @@ existiert auf deinem eigenen Server nicht (und umgekehrt).
   im Riss steckt. Wer neu dazukommt, folgt der Gruppe am Riss-Stein.
 - **Neuer Kreis:** Die Gruppe spielt in der Welt ihres niedrigsten Kreises; die Einladung nennt ihn. Ändert sich die Gruppe,
   wechseln alle in die passende Welt – wer gerade in einem Bosskampf steckt, erst danach.
-- **Ansehen:** Stufe, Klasse, Titel, Werte und Ausrüstung eines anderen Spielers lassen sich ansehen (nur lesen).
+- **Höfe:** Am Wegweiser in Quellhain besuchst du die Höfe deiner Gruppenmitglieder; der Gruppenrahmen zeigt, wer gerade auf
+  welchem Hof ist. Stationen, Gästebett und Kleiderschrank stehen Gästen offen, die Lagertruhe nicht. Wer nicht mehr zur Gruppe
+  des Gastgebers gehört (verlassen, entfernt, aufgelöst – oder der Gastgeber ist ganz weg), steht wieder in Quellhain.
+  „Hinreisen“ zu jemandem auf einem Hof führt zum Quellstein von Quellhain.
+- **Ansehen:** Stufe, Klasse, Titel, Werte, Ausrüstung, Begleiter und Erscheinung eines anderen Spielers lassen sich ansehen
+  (nur lesen).
 
 ## Handel
 
@@ -66,7 +71,9 @@ existiert auf deinem eigenen Server nicht (und umgekehrt).
 
 Abgebrochen wird der Handel durch Weggehen, Zonenwechsel, Tod, Verbindungsabriss oder „Abbrechen“. Nicht handelbar
 („Gebunden“, steht im Tooltip): Questgegenstände, Legendäre Waffen, Trophäen sowie Rezepte, die es nur für Ruf oder aus der
-Prüfung der Sieben gibt. Angelegtes muss vorher abgelegt werden.
+Prüfung der Sieben gibt. Angelegtes muss vorher abgelegt werden. Gehandelt wird nur aus dem Rucksack – die Lagertruhe des
+Hofs und alles, was dem Profil gehört (Begleiter, Erscheinungen, Sammlung), ist für den Handel unerreichbar. Einen
+„Pilzling im Topf“ darf man verschenken.
 
 ## Verbindung
 

@@ -13,13 +13,18 @@
  *    alle in die passende Welt – wer gerade in einem Bosskampf steckt, erst danach.
  *  - Reißt die Verbindung ganz ab (Schonfrist vorbei), bleibt der Platz CFG.social.seatSec frei; wer in dieser Zeit die Welt
  *    wieder betritt, ist wieder in der Gruppe.
+ *  - Höfe (server/src/home): Besuchen darf man nur die Höfe der eigenen Gruppe. Nach jedem Wechsel in der Gruppe (Verlassen,
+ *    Entfernen, Auflösen, Platz freigehalten) prüft `Game.rehome` → `Home.rehome`, ob ein Besucher noch zur Gruppe des
+ *    Besitzers gehört – sonst steht er wieder in Quellhain. Ein Wechsel des Anführers ändert daran nichts.
  */
 import { CFG } from '../../../shared/src/config';
 import { KREIS_NAME, kreisOf } from '../../../shared/src/data/rifts';
 import { ZONES } from '../../../shared/src/data/zones';
 import { getMap } from '../../../shared/src/maps/mapgen';
 import type { ClientMsg, PartyInvite, PartyMember } from '../../../shared/src/types';
+import { HOME_SIGN } from '../../../shared/src/data/home';
 import { Party, type Game } from '../game';
+import { Home } from '../home';
 import type { Player } from '../player';
 import { Rift, riftHome } from '../rift';
 import { present, reject, ss } from './state';
@@ -36,6 +41,7 @@ export function partyMembers(party: Party): PartyMember[] {
   const out: PartyMember[] = [...party.members].map(q => ({
     id: q.id, charId: q.charId, name: q.name, cls: q.char.cls, level: q.level, hp: Math.max(0, Math.round(q.hp)), maxHp: q.stats.maxHp, zone: q.zone.id, online: !q.linkdead,
     lead: q === lead ? 1 : undefined, dead: q.dead ? 1 : undefined, kreis: kreisOf(q.char) || undefined, inst: q.zone.key, rift: q.zone.rift ? q.zone.rift.stufe : undefined,
+    heim: Home.owner(q.zone)?.name,
   }));
   for (const s of party.seats.values()) out.push({ id: 0, charId: s.charId, name: s.name, cls: s.cls, level: s.level, hp: 0, maxHp: 1, zone: '', online: false, away: 1, kreis: s.kreis || undefined });
   return out;
@@ -237,7 +243,8 @@ function travel(g: Game, p: Player, id?: number) {
   if (!t || t === p) return;
   if (p.zone.rift) return reject(p, 'Aus einem Mana-Riss führt nur der Ausgang.');
   const z = t.zone;
-  const dest = z.rift ? riftHome().zone : z.def.kind === 'dungeon' ? z.def.parent ?? z.id : z.id;
+  // Riss → Riss-Stein; Dungeon → das Gebiet davor; Hof (eigener oder besuchter) → Quellhain, wo der Wegweiser steht
+  const dest = z.rift ? riftHome().zone : Home.owner(z) ? HOME_SIGN.zone : z.def.kind === 'dungeon' ? z.def.parent ?? z.id : z.id;
   if (!ZONES[dest] || !getMap(dest).objects.some(o => o.type === 'stone')) return reject(p, `Dort, wo ${t.name} ist, steht kein Quellstein.`);
   if (dest === p.zone.id) return reject(p, `${t.name} ist in deinem Gebiet${z.id !== dest || z.rift ? ' – nur eine Tür weiter' : ''}.`);
   if (!p.char.flags[`t:${dest}`]) return reject(p, `Den Quellstein „${ZONES[dest].name}“ hast du noch nicht aktiviert.`);

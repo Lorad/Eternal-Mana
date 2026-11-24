@@ -143,13 +143,17 @@ Snapshots.
 - **Handel:** Angebote sind `uid → Menge` je Seite; angeboten wird nur aus dem Inventar. Jede Änderung löscht Sperren und
   Bestätigungen und startet eine kurze Sperrfrist. Viermal je Sekunde und beim Abschluss prüft der Server Abstand, Instanz, Tod,
   Verbindung und ob das Angebotene noch da ist. Der Abschluss prüft erst alles (Besitz, Menge, Gold, Platz beider Seiten), führt
-  dann aus und speichert beide Charaktere in EINER Transaktion (`Db.saveChars`); scheitert das Speichern, werden beide Inventare
-  zurückgesetzt. Geteilte Stapel bekommen eine neue `uid`.
+  dann aus und speichert beide Charaktere – samt geändertem Profil-Stand (Zuhause) – in EINER Transaktion
+  (`Home.saveMany` → `Db.saveChars`); scheitert das Speichern, werden beide Inventare zurückgesetzt. Geteilte Stapel bekommen
+  eine neue `uid`. Gehandelt wird nur aus `CharData.inv`; die Lagertruhe des Profils ist unerreichbar.
+- **Gruppe und Höfe:** Besucht wird über die Gruppe (`home`-Nachricht `go` mit `owner`). Jeder Wechsel in der Gruppe läuft über
+  `rehomeSoon` → `Game.rehome` → `Home.rehome`: Besucher, die nicht mehr zur Gruppe des Besitzers gehören, stehen wieder in
+  Quellhain (auch wenn der Besitzer nur noch einen freigehaltenen Platz hat). `PartyMember.heim` nennt den Besitzer des Hofs.
 - **Wertung:** `Zone.recipients` (Beteiligte plus deren Gruppenmitglieder im Umkreis `CFG.combat.partyXpRadius`) gilt für
   Erfahrung, Kill-Zähler, Questziele, Ereignisse, seltene Monster und Weltbosse; Echos der Geschichte nutzen denselben Umkreis.
   Bosssiege und Riss-Abschlüsse zählen für alle in der Instanz.
 - **Protokoll (nur Zusätze):** `party` kennt zusätzlich `promote`, `kick`, `disband`, `travel`; `PartyMember` trägt optional
-  `lead`, `dead`, `kreis`, `inst`, `rift`, `away`; `party.invite` ist `PartyInvite | null` (null = erloschen). Neu: `trade`
+  `lead`, `dead`, `kreis`, `inst`, `rift`, `away`, `heim`; `party.invite` ist `PartyInvite | null` (null = erloschen). Neu: `trade`
   (Client: request/accept/decline/add/remove/gold/lock/unlock/confirm/cancel; Server: `tr` = Stand oder null, `req` = Anfrage),
   `qShare` / `qShareAns` / `qOffer`, `inspect`. Gruppentruhen sind dynamische Truhen mit `props.group`.
 - **Oberfläche:** `client/src/ui/social.tsx` (Gruppenrahmen, Anfragen, Spieler-Menü, Handelsfenster, Ansehen),
@@ -157,6 +161,44 @@ Snapshots.
   einem Mitspieler oder per Klick auf die Figur (nicht im Kampf).
 - **Werkzeuge:** `tests/e2e/coop.mjs` (zwei echte Browser), `scripts/load-check.ts` (Lastprobe mit Bots: Taktdauer, Snapshot-Größe),
   Dev-Befehl `/zu <Name> [dx] [dy]`.
+
+## Zuhause (0.7)
+
+- **Wem was gehört:** Hof, Lagertruhe, Trophäen, freigeschaltete Begleiter und Erscheinungen sowie die Sammlung gehören dem
+  PROFIL (`HomeData` in `types.ts`, Tabelle `homes` mit Prüfsumme und Snapshots wie bei Charakteren). Je Charakter gespeichert
+  wird nur die Auswahl: `CharData.pet`, `.look`, `.rest` („Ausgeruht“ bis zu dieser Spielzeit), `.cv` (in die Sammlung eingetragen).
+  Ein Neuer Kreis berührt nichts davon.
+- **Daten:** `shared/src/data/home.ts` (Kauf, vier Ausbaustufen, Truhen-Regeln, 30 Trophäen), `pets.ts`, `looks.ts`
+  (`outfitSheet` = EINZIGE Stelle für den Rückfall der Gewand-Grafik), `collection.ts` (Bestiarium, Fundstücke, Meilensteine,
+  `proofs`, `perksOf`, `sanitizeHome`), `homeitems.ts`; Karte: `shared/src/maps/homegen.ts`. Zahlen: `CFG.home`.
+- **Hof als Instanz:** Zone `heim` (`kind: 'home'`, nicht in `ZONE_LIST`, daher weder Weltkarte noch Chronik noch Weltsysteme),
+  je Besitzer eine Instanz `heim:<Konto>` (`Game.zones`, wie Riss- und Kreis-Instanzen; leer wird sie verworfen).
+  `Game.transfer(.., 'heim')` führt in die eigene; Besuch nur über die Gruppe (`home`-Nachricht `go` mit `owner`), ein
+  Gruppenwechsel setzt Besucher zurück nach Quellhain (`Home.rehome`). Die Möbel sind Kartenobjekte vom Typ `hobj` mit festem,
+  immer solidem Platz; Aussehen, Aufforderung und `ui`/`station` setzt der Server aus dem Stand des Besitzers (`dress`) –
+  der Client stellt sie wie `wobj` dar und baut sie bei einem `obj`-Ereignis neu auf. Der Wegweiser in Quellhain ist wie der
+  Riss-Stein ein Server-Objekt.
+- **Server:** `server/src/home/` – `index.ts` ist der einzige Einstieg für `Game`/`Zone`/`craft` (Nachricht `home` mit Aktion `a`,
+  Betreten, Speichern, Stationen, Dev-Befehle), `state.ts` (Profil-Stand im Speicher, Abgleich als `home`-Nachricht mit
+  geänderten Teilen und Hinweisen), `storage.ts` (Truhe), `collect.ts` (Sammlung). Haken in den Kernklassen: `Player.onDirty`
+  (vor jedem Abgleich geänderter Charakterdaten liest die Sammlung mit – Boss-, Welt- und Handwerkscode wissen nichts davon),
+  `Player.perkMods` / `.perk` (Begleiter, Trophäen), `Home.onKill` in `Zone.killMob`, `Home.atStation` in `craft.atStation`.
+- **Lagertruhe ohne Verdopplung:** Jede Bewegung ändert Rucksack und Truhe in einem Zug im Speicher und speichert sofort –
+  `Game.savePlayer` → `Home.save` → `Db.saveChar(id, char, home)` schreibt beide in EINER Transaktion. Nach Abbruch oder Absturz
+  gilt der letzte gemeinsame Stand. (Grenze: Muss nach beschädigter Prüfsumme ein älterer Snapshot einspringen, können
+  Charakter und Truhe auseinanderliegen – wie bisher schon Charakter und Welt.)
+- **Sammlung:** `proofs(char)` liest aus einem Spielstand Trophäen, Fundstücke, Rezepte, Begleiter und Erscheinungen – dieselbe
+  Funktion trägt alte Spielstände beim ersten Betreten nach (`cv` fehlt). Siege über gewöhnliche Gegner zählt `onKill`,
+  Siege über Bosse, seltene Monster und Weltbosse ergeben sich aus dem Zuwachs der Flags `b:`/`rk:`/`wb:`. Meilensteine zahlt
+  `payMilestones` genau einmal je Profil (`HomeData.ms`); Titel werden als Flag `sm:<id>` in jeden Charakter gespiegelt und hängen
+  sich in `TITLE_SOURCES` ein.
+- **Begleiter und Erscheinungen im Netz:** `PlayerInfo.pet/g/w` (beim Betreten und bei Wechsel als `pl+`), nichts im Snapshot.
+  Der Begleiter wird auf jedem Client aus der Position seines Besitzers berechnet (`client/src/game/pets.ts`). Gewand-Sheets
+  `char_<klasse>_<variante>` lädt `ensureCharTexture` (`game/textures.ts`) erst bei Bedarf; bis dahin und bei fehlendem Sheet
+  färbt `outfitSheet` das Klassen-Sheet ein. Waffenglanz färbt Hieb und Geschoss-Schweif (`ProjInfo.o` = Schütze).
+- **Oberfläche:** `client/src/ui/home.tsx` (Hof-Fenster, Fenster „Sammlung“ mit Taste B, Kauf bei Mirelda, Heimreise auf der Karte).
+- **Werkzeuge:** Dev-Befehle `/hof [stufe]`, `/begleiter <id|alle>`, `/gewand`, `/trophaeen`, `/bestiarium [n]`;
+  `tests/e2e/zuhause.mjs` (Browser-Durchlauf).
 
 ## Client
 
@@ -284,5 +326,9 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
   seltene Monster, Schatzkarten, Begegnungen, Tagesabläufe, Jahreszeiten, leere Zonen; ein Durchlauf gegen einen echten Server.
 - `tests/social.test.ts` – Gemeinsam: Regeln der Gruppe (Anführer, Fristen, Nachfolge, Riss, Kreis), Handel (Ablauf, jede Ablehnung,
   Exploits, Atomarität, Abbruchwege), Quest teilen, Gruppentruhe, Wertung, Wiederverbindung und freigehaltene Plätze.
+- `tests/home.test.ts` – Zuhause: Kauf und Betreten, getrennte Instanzen und Besuch, Lagertruhe (Stapel, Gold, volle Truhe,
+  volles Inventar, zweiter Charakter desselben Profils, Verbindungsabbruch, Absturz und Neustart, beschädigter Stand), Ausbau
+  und Stationen je Stufe, Bett, Trophäen, jeder Begleiter mit Quelle und Wirkung, Sammlung und Meilensteine, Nachtrag für alte
+  Spielstände, Erscheinungen samt Rückfall, Neuer Kreis.
 - `scripts/balance-sim.ts` – Kampfsimulation für Vorher/Nachher-Vergleiche (`--ausbau` rechnet den Handwerks-Ausbau mit).
 - `tests/e2e/smoke.mjs` – Browser-Durchlauf mit Playwright: Menü → Charakter erstellen → Welt → bewegen → angreifen.

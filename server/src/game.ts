@@ -19,6 +19,9 @@ import { SLOTS } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
 import { devEndgame, handleEndgame, questPoints, questUnlocks } from './endgame';
+import { HOME_AT } from '../../shared/src/data/recipes';
+import { HOME_ID } from '../../shared/src/data/home';
+import { Home } from './home';
 import { Rift } from './rift';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
@@ -112,6 +115,7 @@ export class Game {
   rehome(p: Player) {
     const cur = p.zone;
     if (cur.rift || !this.players.has(p.charId)) return;
+    if (Home.rehome(this, p)) return; // 0.7: Höfe sind Instanzen ihres Besitzers, kein Teil der Welt eines Kreises
     const want = this.zone(cur.id, this.worldKreis(p));
     if (want !== cur) this.moveTo(p, want, cur.def.kind === 'dungeon' ? want.map.start : { x: p.x, y: p.y });
   }
@@ -131,11 +135,13 @@ export class Game {
     if ((T.online += dt) >= 4) { T.online = 0; this.sendOnline(); }
     if ((T.env += dt) >= 15) { T.env = 0; const tod = this.tod(); for (const p of this.players.values()) if (!p.linkdead) p.send({ t: 'env', tod }); }
     World.tickGame(this, dt);
+    Home.tick(this, dt);
     if ((T.backup += dt) >= CFG.save.backupEveryMin * 60) { T.backup = 0; if (this.players.size) { try { this.db.backup(); } catch (e) { console.error('[backup]', e); } } }
   }
 
   // ------------------------------------------------------------------ Speichern
-  savePlayer(p: Player) { try { this.db.saveChar(p.charId, p.snapshotChar()); } catch (e) { console.error('[save] Fehler bei', p.name, e); } }
+  /** 0.7: Der Profil-Stand (Hof, Lagertruhe, Sammlung) wird in derselben Transaktion mitgeschrieben, wenn er sich geändert hat. */
+  savePlayer(p: Player) { try { Home.save(this, p); } catch (e) { console.error('[save] Fehler bei', p.name, e); } }
   saveAll() { for (const p of this.players.values()) this.savePlayer(p); World.save(this); }
   saveZonePlayers(z: Zone) { for (const p of z.players.values()) this.savePlayer(p); }
 
@@ -220,6 +226,7 @@ export class Game {
       case 'cineEnd': return Story.cineEnd(p);
       case 'donate': case 'fbuy': case 'wbuy': case 'dig': case 'enc': return World.message(this, p, m);
       case 'rift': case 'quell': case 'kreis': case 'attune': case 'title': return handleEndgame(this, p, m);
+      case 'home': return Home.message(this, p, m);
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': case 'trade': case 'qShare': case 'qShareAns': case 'inspect': return Social.message(this, p, m);
@@ -248,6 +255,7 @@ export class Game {
       p.send({ t: 'entered', char: p.char, charId: p.charId, init: p.zone.initFor(p) });
       p.buffsDirty = true;
       World.sendTo(p);
+      Home.sendTo(this, p);
       this.sysChat(`${p.name} ist wieder da.`);
       Social.onReconnect(this, p);
       break;
@@ -277,7 +285,7 @@ export class Game {
     const p = new Player(acc.id, charId, char, msg => this.send(s, msg));
     s.player = p;
     this.players.set(charId, p);
-    const z = this.zone(char.zone, kreisOf(char));
+    const z = Home.entry(this, p) ?? this.zone(char.zone, kreisOf(char)); // 0.7: wer auf einem Hof gespeichert wurde, erscheint auf dem eigenen
     const fresh = char.x === 0 && char.y === 0;
     const useStart = fresh || z.def.kind === 'dungeon';
     z.addPlayer(p, useStart ? z.map.start.x : char.x, useStart ? z.map.start.y : char.y);
@@ -285,6 +293,7 @@ export class Game {
     if (fresh) char.respawn = { zone: z.id, x: z.map.start.x, y: z.map.start.y };
     p.send({ t: 'entered', char, charId, init: z.initFor(p) });
     World.sendTo(p);
+    Home.onEnter(this, p);
     if (!char.flags.intro) { char.flags.intro = 1; this.story(p, 'intro'); }
     this.sysChat(`${p.name} betritt die Welt.`);
     Social.onEnter(this, p);
@@ -293,6 +302,11 @@ export class Game {
 
   transfer(p: Player, to: string, from: string, pos?: { x: number; y: number }) {
     if (!ZONES[to]) return;
+    if (to === HOME_ID) { // 0.7: „nach Hause“ ist die eigene Instanz; wer keinen Hof hat, landet in Quellhain
+      const hz = Home.zoneFor(this, p);
+      if (hz) return this.moveTo(p, hz, pos ?? hz.map.start);
+      to = 'gruenwald'; pos = undefined;
+    }
     const z = this.zone(to, this.worldKreis(p));
     this.moveTo(p, z, pos ?? z.map.entries[from] ?? z.map.start);
   }
@@ -339,7 +353,7 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ Infos
-  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0, title: titleName(p.char) }; }
+  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0, title: titleName(p.char), ...Home.info(p) }; }
   broadcastPlayerInfo(p: Player) { for (const q of p.zone.players.values()) if (q !== p) q.pev.push({ k: 'pl+', p: this.playerInfo(p) }); }
   story(p: Player, id: string) { const st = STORY[id]; if (st) p.send({ t: 'story', id, title: st.title, lines: st.lines }); }
   sysChat(s: string) { for (const p of this.players.values()) p.send({ t: 'chat', from: '', s, ch: 'sys' }); }
@@ -386,6 +400,7 @@ export class Game {
     else if (devEndgame(this, p, cmd, a)) { /* Endspiel-Befehle: server/src/endgame.ts */ }
     else if (World.dev(this, p, cmd, a)) { /* Lebendige Welt: server/src/world/index.ts */ }
     else if (Social.dev(this, p, cmd, a)) { /* Gemeinsam: server/src/social/index.ts */ }
+    else if (Home.dev(this, p, cmd, a)) { /* Zuhause: server/src/home/index.ts – /hof [stufe], /begleiter id|alle, /gewand, /trophaeen, /bestiarium [n] */ }
     else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /rissmod id [dungeon] [stufe], /quell n, /echo n, /kreis [n], /pruefung · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an · Gemeinsam: /zu name [dx] [dy]');
   }
 
@@ -429,6 +444,7 @@ export class Game {
     const u = ITEMS[it.base].use;
     if (!u || p.dead) return false;
     if (u.tmap || u.trophy) return World.useItem(this, p, it);
+    if (u.pet) return Home.useItem(this, p, it);
     if (u.learn || u.buff || u.cleanse) return useSpecial(this, p, it);
     if (this.now < p.potionReadyAt) { p.toast('Tränke sind noch nicht wieder bereit.', 'bad'); return false; }
     const hp = (u.hp ?? 0) + ((u.hpPct ?? 0) / 100) * p.stats.maxHp, mp = (u.mp ?? 0) + ((u.mpPct ?? 0) / 100) * p.stats.maxMp;
@@ -475,7 +491,7 @@ export class Game {
     p.checkCollectQuests();
   }
   private upgrade(p: Player, uid: string, npc: string) {
-    if (!this.nearNpc(p, npc) || !NPCS[npc]?.services?.includes('upgrade')) return;
+    if (!(npc === HOME_AT ? Home.atStation(p, 'forge') : this.nearNpc(p, npc) && NPCS[npc]?.services?.includes('upgrade'))) return; // 0.7: auch an der Esse auf dem Hof
     const it = this.findItem(p, uid);
     if (!it || !isGear(ITEMS[it.base])) return;
     if (it.up >= CFG.upgrade.max) { p.toast('Mehr geht nicht. Selbst Borin hat Grenzen.', 'bad'); return; }

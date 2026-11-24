@@ -9,6 +9,8 @@ import { store, togglePanel, useStore } from '../state/store';
 import { CFG, ELEMENT_NAME } from '../../../shared/src/config';
 import { CLASSES } from '../../../shared/src/data/classes';
 import { ITEMS, itemName } from '../../../shared/src/data/items';
+import { LOOKS } from '../../../shared/src/data/looks';
+import { PETS } from '../../../shared/src/data/pets';
 import { QUESTS } from '../../../shared/src/data/quests';
 import { KREIS_NAME } from '../../../shared/src/data/rifts';
 import { SETS } from '../../../shared/src/data/sets';
@@ -31,6 +33,7 @@ const kreisName = (k: number) => KREIS_NAME[k] ?? `Kreis ${k + 1}`;
 export function whereIs(m: PartyMember, short = false): string {
   if (m.away) return 'Platz wird freigehalten';
   if (!m.online) return 'Verbindung getrennt';
+  if (m.heim) return m.heim === m.name ? 'Auf dem eigenen Hof' : `Zu Besuch: Hof von ${m.heim}`;
   const zone = ZONES[m.zone]?.name ?? m.zone;
   if (m.rift) return short ? `Mana-Riss · Stufe ${m.rift}` : `Mana-Riss ${zone} · Stufe ${m.rift}`;
   const k = /#k(\d+)$/.exec(m.inst ?? '');
@@ -274,6 +277,9 @@ export function InspectWindow() {
             <li>Angriff {fmtNum(i.stats.power)} · Verteidigung {fmtNum(i.stats.def)}</li>
             <li>Krit {String(i.stats.crit).replace('.', ',')} %{i.stats.el !== 'phys' && <> · <span style={{ color: ELEMENT_CSS[i.stats.el] }}>{ELEMENT_NAME[i.stats.el]}</span></>}</li>
             {sets.map(([id, n]) => <li>Set: {SETS[id].name} ({n}/4)</li>)}
+            {i.pet && PETS[i.pet] && <li>Begleiter: {PETS[i.pet].name}</li>}
+            {i.look?.g && LOOKS[i.look.g] && <li>Gewand: {LOOKS[i.look.g].name}</li>}
+            {i.look?.w && LOOKS[i.look.w] && <li>Waffenglanz: {LOOKS[i.look.w].name}</li>}
           </ul>
         </div>
         <div class="insp-gear">

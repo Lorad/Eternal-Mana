@@ -14,6 +14,7 @@ import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
 import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, itemIconKey, modEntries, send, sfx } from './common';
 import { StationOptions } from './craft';
 import { KreisOption } from './endgame';
+import { HomeOption } from './home';
 import { kreisLevel } from '../../../shared/src/data/rifts';
 import { WorldOptions, worldGreeting } from './world';
 import { shopDiscount, shopPrice } from '../../../shared/src/data/factions';
@@ -84,6 +85,7 @@ function Dialog({ npc }: { npc: string }) {
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
           <StationOptions npc={npc} />
           <KreisOption npc={npc} />
+          <HomeOption npc={npc} />
           <WorldOptions npc={npc} />
           <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length && !topics.length}>Auf Wiedersehen</Opt>
         </div>
@@ -253,7 +255,7 @@ function Shop({ npc, char, zone, zoneLevel, back }: { npc: string; char: CharDat
 }
 
 // ------------------------------------------------------------------ Verbessern
-function Upgrade({ npc, char, back }: { npc: string; char: CharData; back: () => void }) {
+export function Upgrade({ npc, char, back }: { npc: string; char: CharData; back: () => void }) { // 0.7: auch an der Esse auf dem Hof (craft.tsx)
   const equipped = SLOTS.map(s => char.equip[s]).filter(Boolean) as ItemInstance[];
   const bag = char.inv.filter(i => ITEMS[i.base] && isGear(ITEMS[i.base]));
   const all = [...equipped, ...bag];

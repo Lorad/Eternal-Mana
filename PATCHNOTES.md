@@ -3,6 +3,27 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.7.0 – Zuhause
+_24.11.2026_
+
+### Der Hof am Waldrand
+- **Ein eigenes Zuhause:** Mirelda verkauft den Hof, sobald die Wurzelgruft erledigt ist. Hin geht es über den Wegweiser am Dorfrand von Quellhain oder von jedem Quellstein.
+- **Lagertruhe** für alle Charaktere deines Profils – Gegenstände, Stapel und Gold.
+- **Drei Ausbaustufen:** mehr Platz, dann Schmiede, Alchemie, Kochstelle und Verzauberung auf dem Hof, dann ein Bett, das „Ausgeruht“ macht (10 % mehr Erfahrung für 30 Minuten Spielzeit).
+- **Trophäen** von seltenen Monstern, Weltbossen, Hütern und großen Tagen lassen sich ausstellen – mit kleinem Bonus je Art.
+- Gruppenmitglieder können einander auf dem Hof besuchen.
+
+### Begleiter
+- **Acht Begleiter**, jeder aus einem anderen Winkel der Welt (Quest, Rezept, Ruf, Schatz, seltenes Monster, Weltboss, Sammlung, verborgenes Ende oder Prüfung der Sieben), jeder mit einer kleinen Eigenheit. Einer läuft mit.
+
+### Sammlung und Erscheinungen
+- Neues Fenster **Sammlung** (Taste **B**): Bestiarium mit Schwächen und Beute, Fundstücke, Rezepte, Trophäen, Begleiter, Erscheinungen – mit Meilensteinen, Titeln und zusätzlichen Lagerplätzen.
+- **Erscheinungen:** fünf Gewänder je Klasse und neun Farben Waffenglanz, anzulegen am Kleiderschrank auf dem Hof, sichtbar für Mitspieler.
+
+### Sonstiges
+- Alte Spielstände: Die Sammlung wird beim ersten Betreten nachgetragen.
+- Ein Neuer Kreis lässt Hof, Truhe, Begleiter, Sammlung und Erscheinungen unberührt.
+
 ## 0.6.0 – Lebendige Welt
 _24.11.2026_
 

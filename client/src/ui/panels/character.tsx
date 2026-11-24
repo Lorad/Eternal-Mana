@@ -2,6 +2,7 @@
 import { useStore } from '../../state/store';
 import { CFG, ELEMENTS, ELEMENT_NAME } from '../../../../shared/src/config';
 import { CLASSES } from '../../../../shared/src/data/classes';
+import { perksOf } from '../../../../shared/src/data/collection';
 import { SETS } from '../../../../shared/src/data/sets';
 import { ZONE_LIST } from '../../../../shared/src/data/zones';
 import { computeStats, countShards } from '../../../../shared/src/stats';
@@ -19,10 +20,11 @@ const ATTR_HELP: Record<AttrKey, string> = {
 export function CharacterPanel() {
   const char = useStore(s => s.char);
   const buffs = useStore(s => s.buffs);
+  const home = useStore(s => s.home);
   if (!char) return null;
   const cls = CLASSES[char.cls];
-  // inklusive laufender Buffs (Speise, Elixier, Kriegsschrei …), wie der Server rechnet
-  const d = computeStats(char, buffs.map(b => b.mods ?? {}));
+  // inklusive laufender Buffs (Speise, Elixier, Kriegsschrei …) und – 0.7 – Begleiter und ausgestellter Trophäen, wie der Server rechnet
+  const d = computeStats(char, [...buffs.map(b => b.mods ?? {}), ...(home ? [perksOf(home, char).mods] : [])]);
   const need = CFG.xpToNext(char.level);
   const maxed = char.level >= CFG.player.maxLevel;
   const shards = countShards(char);

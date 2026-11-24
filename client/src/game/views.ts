@@ -6,6 +6,9 @@ import type { MobInfo, ObjInfo, PlayerInfo } from '../../../shared/src/types';
 import { ENEMIES } from '../../../shared/src/data/enemies';
 import { BOSS_ANIMS, CHAR_ANIMS, MOB_ANIMS, animDone, bossFrame, charFrame, dirOf, mobFrame, type BossAnim, type CharAnim, type MobAnim } from './anim';
 import type { Fx, FxHandle } from './fxlib';
+import { outfitSheet } from '../../../shared/src/data/looks';
+import type { PetView } from './pets';
+import { ensureCharTexture } from './textures';
 
 export interface Buf { t: number; x: number; y: number }
 /** Schattenwurf: Drehung (rad), Längenfaktor, Deckkraft */
@@ -61,8 +64,24 @@ export class PlayerView {
   buf: Buf[] = []; x = 0; y = 0; facing = Math.PI / 2; hp = 1; maxHp = 1; flags = 0; flashUntil = 0;
   anim: CharAnim = 'idle'; animStart = 0; lockUntil = 0; alive = true;
   private status = new StatusFx(); private shield: FxHandle = null;
+  /** 0.7: Begleiter (verwaltet die Spielszene) · Gewand: Kennung, Sheet und – solange das Sheet fehlt – Farbton */
+  pet: PetView | null = null;
+  private outfit = ''; private sheet: string; private baseTint: number | undefined;
+  /**
+   * Gewand (0.7). Welches Sheet gilt – und der Rückfall auf das eingefärbte Grund-Sheet, solange `char_<klasse>_<variante>`
+   * fehlt oder noch lädt –, entscheidet allein `outfitSheet` (shared/src/data/looks.ts). Die Gewand-Sheets werden bei
+   * Bedarf nachgeladen (`ensureCharTexture`); sobald eines da ist, wird beim nächsten Bild neu entschieden.
+   */
+  setLook(g: string | undefined) {
+    if ((g ?? '') === this.outfit) return;
+    this.outfit = g ?? '';
+    const tm = this.ctx.scene.textures;
+    const o = outfitSheet(k => ensureCharTexture(tm, k, () => { if (this.alive) this.outfit = '\u0000'; }), this.info.cls, g);
+    this.baseTint = o.tint;
+    if (o.key !== this.sheet) { this.sheet = o.key; this.sprite.setTexture(o.key, '0'); this.shadow.setTexture(o.key, '0'); }
+  }
   constructor(private ctx: ViewCtx, public info: PlayerInfo, public self: boolean) {
-    const sc = ctx.scene, key = 'char_' + info.cls;
+    const sc = ctx.scene, key = (this.sheet = 'char_' + info.cls);
     this.blob = sc.add.image(0, 0, 'fx', 'shadow').setDepth(4).setAlpha(0.45);
     this.shadow = makeShadow(sc, key, '0', CHAR_ORIGIN_Y);
     this.sprite = sc.add.sprite(0, 0, key, '0').setOrigin(0.5, CHAR_ORIGIN_Y);
@@ -92,6 +111,7 @@ export class PlayerView {
     else if (this.flags & STATUS_BIT.burn) this.sprite.setTint(0xffc0a0);
     else if (this.flags & STATUS_BIT.poison) this.sprite.setTint(0xc0ffa0);
     else if (this.flags & STATUS_BIT.slow) this.sprite.setTint(0xb0d0ff);
+    else if (this.baseTint !== undefined) this.sprite.setTint(this.baseTint);
     else this.sprite.clearTint();
     this.status.update(this.ctx, dead ? 0 : this.flags, () => (this.alive ? { x: this.x, y: this.y } : null), 30);
     const sh = !!(this.flags & FLAG_SHIELD) && !dead;
@@ -106,7 +126,7 @@ export class PlayerView {
       }
     }
   }
-  destroy() { this.alive = false; this.sprite.destroy(); this.blob.destroy(); this.shadow.destroy(); this.label?.destroy(); this.bar?.destroy(); this.status.destroy(this.ctx); this.ctx.fx.stop(this.shield); }
+  destroy() { this.alive = false; this.sprite.destroy(); this.blob.destroy(); this.shadow.destroy(); this.label?.destroy(); this.bar?.destroy(); this.status.destroy(this.ctx); this.ctx.fx.stop(this.shield); this.pet?.destroy(); this.pet = null; }
 }
 
 export class MobView {

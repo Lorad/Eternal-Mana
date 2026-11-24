@@ -39,6 +39,11 @@ export class Player {
   story = { dlg: null as { npc: string; topic: string; node: string } | null, cineUntil: 0, cineAt: 0, zone: '', places: new Set<string>() };
   /** Zähler für die Legendäre Waffe des Kriegers (Treffer der Standardangriffe) */
   legendHits = 0;
+  /** 0.7 Zuhause (gesetzt von server/src/home): dauerhafte Werte aus Begleiter und Trophäen; Faktoren für Aufsammelradius, Ruf, Schatzkarten */
+  perkMods: Mods = {};
+  perk = { pickup: 1, rep: 1, maps: 1 };
+  /** Wird vor jedem Abgleich geänderter Charakterdaten gerufen (die Sammlung des Profils liest hier mit) */
+  static onDirty: ((p: Player, keys: Set<keyof CharData>) => void) | null = null;
 
   constructor(public accountId: number, public charId: number, public char: CharData, public send: (m: ServerMsg) => void) {
     this.stats = computeStats(char);
@@ -50,13 +55,14 @@ export class Player {
   get level() { return this.char.level; }
 
   recalc() {
-    this.stats = computeStats(this.char, this.buffs.map(b => b.mods));
+    this.stats = computeStats(this.char, [...this.buffs.map(b => b.mods), this.perkMods]);
     this.hp = Math.min(this.hp, this.stats.maxHp);
     this.mp = Math.min(this.mp, this.stats.maxMp);
   }
   sync(...keys: (keyof CharData)[]) { for (const k of keys) this.dirty.add(k); }
   flush() {
     if (this.dirty.size) {
+      Player.onDirty?.(this, this.dirty);
       const d: Partial<CharData> = {};
       for (const k of this.dirty) (d as any)[k] = this.char[k] ?? null; // null = Feld entfernt (z. B. Titel abgelegt) – `undefined` ginge im JSON verloren
       this.dirty.clear();

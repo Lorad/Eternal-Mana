@@ -1,6 +1,8 @@
 /** Gemeinsam (0.7): Gruppenverwaltung, Handel, Quest teilen, Gruppentruhe, Wertung in der Gruppe, Wiederverbindung. */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { sanitizeChar } from '../server/src/db';
+import { Db } from '../server/src/db';
+import { Home } from '../server/src/home';
 import type { Player } from '../server/src/player';
 import { Rift } from '../server/src/rift';
 import { Social } from '../server/src/social';
@@ -1119,5 +1121,144 @@ describe('Wiederverbindung', () => {
     expect(Rift.runOf(sim.game, a.p)).toBeUndefined();
     noGhosts();
     sim.clear();
+  });
+});
+
+// =====================================================================================================================
+describe('Zuhause, Gruppe und Handel', () => {
+  /** Gibt dem Profil einen Hof und stellt den Spieler hinein. */
+  const settle = (t: Tester) => { Home.dev(sim.game, t.p, 'hof', ['1']); expect(Home.owner(t.p.zone)?.acc).toBe(t.p.accountId); return t; };
+  /** Besucht den Hof eines Gruppenmitglieds (vom Wegweiser in Quellhain aus). */
+  function visit(v: Tester, owner: Tester) {
+    if (v.p.zone.id !== 'gruenwald' || Home.owner(v.p.zone)) sim.game.transfer(v.p, 'gruenwald', '');
+    const s = Home.signSpot()!;
+    v.p.x = s.x; v.p.y = s.y + 14;
+    v.send({ t: 'home', a: 'go', owner: owner.p.id });
+    expect(v.p.zone, 'Besuch: ' + v.toasts.at(-1)).toBe(owner.p.zone);
+  }
+  /** der Stand auf der Platte, wie ihn ein Neustart sähe */
+  function onDisk(t: Tester) {
+    const db = new Db(sim.dir);
+    try { return { c: db.loadChar(t.p.accountId, t.p.charId)!, h: db.loadHome(t.p.accountId) }; } finally { db.db.close(); }
+  }
+
+  it('gehandelt wird nur aus dem Rucksack: Lagertruhe und Truhengold sind unerreichbar; Begleiter-Töpfe darf man verschenken, Trophäen nicht', () => {
+    const [a, b] = [mk(), mk()];
+    const stored = gear();
+    const h = Home.of(sim.game, a.p);
+    h.owned = 1; h.stash.push(stored); h.gold = 500;
+    a.p.char.gold = 10;
+    a.give('pet_pilzling', 2);
+    expect(tradeBlock({ base: 'pet_pilzling' })).toBeNull();
+    openTrade(a, b);
+    a.send({ t: 'trade', a: 'add', uid: stored.uid });                     // liegt in der Truhe, nicht im Rucksack
+    a.send({ t: 'trade', a: 'gold', gold: 100 });                          // so viel hat nur die Truhe
+    expect(tv(a)!.me).toMatchObject({ items: [], gold: 0 });
+    expect(toasted(a, /So viel Gold hast du nicht/)).toBe(true);
+    a.send({ t: 'trade', a: 'add', uid: a.p.char.inv.find(i => i.base === 'pet_pilzling')!.uid, qty: 1 });
+    seal(a, b);
+    expect(last(b, 'trade')).toMatchObject({ done: 1 });
+    expect(h.stash.map(i => i.uid)).toEqual([stored.uid]); expect(h.gold).toBe(500);
+    expect(a.count('pet_pilzling')).toBe(1); expect(b.count('pet_pilzling')).toBe(1);
+    // der Beschenkte nimmt den Pilzling auf – er gehört danach SEINEM Profil
+    b.send({ t: 'use', uid: b.p.char.inv.find(i => i.base === 'pet_pilzling')!.uid });
+    expect(Home.of(sim.game, b.p).pets).toContain('pilzling');
+    expect(Home.of(sim.game, a.p).pets).not.toContain('pilzling');
+  });
+
+  it('ein Handel speichert Charaktere UND geänderten Profil-Stand in einer Transaktion – scheitert sie, bleibt der Vermerk für das nächste Speichern', () => {
+    const [a, b] = [mk(), mk()];
+    a.give('potion_hp1', 3);
+    sim.game.savePlayer(a.p); sim.game.savePlayer(b.p);
+    Home.unlockPet(sim.game, a.p, 'moosling');                             // ändert den Profil-Stand, ohne zu speichern
+    expect(onDisk(a).h.pets).not.toContain('moosling');
+    openTrade(a, b);
+    a.send({ t: 'trade', a: 'add', uid: a.p.char.inv[0].uid, qty: 2 });
+    // erster Versuch: das Speichern scheitert – nichts ist geschrieben, weder Charakter noch Hof
+    const real = sim.db.saveChars.bind(sim.db);
+    sim.db.saveChars = () => { throw new Error('Platte voll'); };
+    const err = console.error; console.error = () => {};
+    try { seal(a, b); } finally { sim.db.saveChars = real; console.error = err; }
+    expect(a.count('potion_hp1')).toBe(3);
+    expect(onDisk(a).h.pets).not.toContain('moosling');
+    // zweiter Versuch gelingt: beide Charaktere und a's Profil-Stand stehen gemeinsam auf der Platte
+    openTrade(a, b);
+    a.send({ t: 'trade', a: 'add', uid: a.p.char.inv[0].uid, qty: 2 });
+    seal(a, b);
+    expect(last(a, 'trade')).toMatchObject({ done: 1 });
+    const da = onDisk(a), dbb = onDisk(b);
+    expect(da.h.pets).toContain('moosling');
+    expect(da.c.inv.find(i => i.base === 'potion_hp1')?.qty ?? 1).toBe(1);
+    expect(dbb.c.inv.find(i => i.base === 'potion_hp1')?.qty).toBe(2);
+    expect(da.c.pet).toBe('moosling');
+  });
+
+  it('Besuch auf dem Hof eines Mitglieds: Gruppenrahmen zeigt ihn, Handeln geht; wer nicht mehr zur Gruppe des Besitzers gehört, steht wieder in Quellhain', () => {
+    const [a, b, c] = [mk(), mk(), mk()];
+    settle(a);
+    let party = group(a, b, c);
+    expect(Home.owner(a.p.zone)?.acc).toBe(a.p.accountId);                 // der Gastgeber bleibt beim Gruppenwechsel zu Hause
+    visit(b, a);
+    sim.step(1.1);
+    expect(partyOf(c).map(m => m.heim ?? null)).toEqual([a.p.name, a.p.name, null]);
+    expect(partyOf(c)[1].inst).toBe(a.p.zone.key);
+    // Handel auf dem Hof (gleiche Instanz) – und Ansehen zeigt den Begleiter des Gastgebers
+    b.p.x = a.p.x; b.p.y = a.p.y;
+    openTrade(a, b);
+    a.send({ t: 'trade', a: 'cancel' });
+    Home.unlockPet(sim.game, a.p, 'moosling');
+    b.send({ t: 'inspect', id: a.p.id });
+    expect(last(b, 'inspect')!.i).toMatchObject({ name: a.p.name, pet: 'moosling' });
+    // Führungswechsel: niemand muss gehen
+    a.send({ t: 'party', a: 'promote', id: c.p.id });
+    expect(party.leader).toBe(c.p);
+    expect(b.p.zone).toBe(a.p.zone);
+    // Entfernen: der Besucher steht wieder in Quellhain
+    c.send({ t: 'party', a: 'kick', id: b.p.id });
+    expect(b.p.party).toBeNull();
+    expect(b.p.zone.id).toBe('gruenwald'); expect(Home.owner(b.p.zone)).toBeUndefined();
+    expect(toasted(b, /Der Besuch ist vorbei/)).toBe(true);
+    expect(Home.owner(a.p.zone)?.acc).toBe(a.p.accountId);                 // der Besitzer bleibt
+    // der Besitzer verlässt die Gruppe: seine Gäste gehen
+    c.send({ t: 'party', a: 'invite', id: b.p.id }); b.send({ t: 'party', a: 'accept' });
+    visit(b, a); visit(c, a);
+    a.send({ t: 'party', a: 'leave' });
+    expect(b.p.zone.id).toBe('gruenwald'); expect(c.p.zone.id).toBe('gruenwald');
+    expect(Home.owner(b.p.zone)).toBeUndefined(); expect(Home.owner(c.p.zone)).toBeUndefined();
+    expect(b.p.party).toBe(c.p.party);                                     // die beiden bleiben eine Gruppe
+    // Auflösen: dasselbe
+    c.send({ t: 'party', a: 'disband' });
+    party = group(a, b);
+    visit(b, a);
+    a.send({ t: 'party', a: 'disband' });
+    expect(b.p.zone.id).toBe('gruenwald'); expect(Home.owner(b.p.zone)).toBeUndefined();
+    expect(Home.owner(a.p.zone)?.acc).toBe(a.p.accountId);
+    noGhosts();
+  });
+
+  it('der Gastgeber verliert die Verbindung: in der Schonfrist bleibt der Besuch, danach geht er – und die Rückkehr führt auf den eigenen Hof und in die Gruppe', () => {
+    const [a, b] = [mk(), mk()];
+    settle(a);
+    const party = group(a, b);
+    visit(b, a);
+    const hof = a.p.zone;
+    sim.drop(a);
+    sim.step(5);
+    expect(b.p.zone).toBe(hof);                                            // der Gastgeber steht noch da
+    sim.step(CFG.net.reconnectGraceMs / 1000);
+    expect(sim.game.players.has(a.p.charId)).toBe(false);
+    expect(party.seats.has(a.p.charId)).toBe(true);                        // sein Platz in der Gruppe bleibt …
+    expect(b.p.zone.id).toBe('gruenwald'); expect(Home.owner(b.p.zone)).toBeUndefined();   // … aber sein Hof ist ohne ihn kein Ort für Gäste
+    expect(b.p.party).toBe(party);
+    sim.reconnect(a);
+    expect(a.p.party).toBe(party);
+    expect(Home.owner(a.p.zone)?.acc).toBe(a.p.accountId);                 // gespeichert auf dem Hof, wieder auf dem Hof
+    // „Hinreisen“ zu jemandem, der auf einem Hof ist, führt nach Quellhain (dort steht der Wegweiser)
+    sim.travel(b, 'kristall');
+    const st = stone(b.p.zone);
+    b.p.x = st.x; b.p.y = st.y + 18; b.p.char.flags['t:gruenwald'] = 1;
+    b.send({ t: 'party', a: 'travel', id: a.p.id });
+    expect(b.p.zone.id).toBe('gruenwald'); expect(Home.owner(b.p.zone)).toBeUndefined();
+    noGhosts();
   });
 });

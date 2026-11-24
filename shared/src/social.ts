@@ -12,7 +12,9 @@ import type { CharData, ItemInstance } from './types';
 /**
  * Warum sich ein Gegenstand nicht handeln lässt (null = handelbar). Gebunden sind: Questgegenstände, Legendäre Waffen
  * (sie gehören zur Geschichte ihres Trägers), Trophäen und Rezeptrollen, die es nur für Ruf oder aus der Prüfung der Sieben gibt.
- * Alles andere – Ausrüstung, Setteile, Rohstoffe, Tränke, Speisen, Schatzkarten, gewöhnliche Rezeptrollen – ist handelbar.
+ * Alles andere – Ausrüstung, Setteile, Rohstoffe, Tränke, Speisen, Schatzkarten, gewöhnliche Rezeptrollen, Begleiter im Topf
+ * (zum Verschenken gedacht) – ist handelbar. Was dem Profil gehört (Lagertruhe, Begleiter, Erscheinungen, Sammlung), liegt
+ * nicht im Rucksack und kann deshalb gar nicht erst angeboten werden.
  */
 export function tradeBlock(it: Pick<ItemInstance, 'base'>): string | null {
   const b = ITEMS[it.base];
@@ -75,6 +77,7 @@ export const PARTY_RULES: [string, string][] = [
   ['Anführer', 'Lädt ein, entfernt, ernennt einen Nachfolger und öffnet Mana-Risse. Ist er länger getrennt oder gefallen, geht die Führung weiter.'],
   ['Mana-Risse', 'Der Riss gehört der Gruppe. Wer sie im laufenden Riss verlässt oder entfernt wird, steht wieder am Riss-Stein. Während eines Bosskampfs wird niemand entfernt.'],
   ['Neuer Kreis', 'Die Gruppe spielt in der Welt ihres niedrigsten Kreises. Ändert sich die Gruppe, wechselt ihr in die passende Welt.'],
+  ['Höfe', 'Am Wegweiser in Quellhain besuchst du die Höfe deiner Gruppe. Die Lagertruhe bleibt für Gäste zu. Wer nicht mehr zur Gruppe des Gastgebers gehört, steht wieder in Quellhain.'],
   ['Getrennt?', `Dein Charakter bleibt ${Math.round(CFG.net.reconnectGraceMs / 1000)} Sekunden stehen; dein Platz in der Gruppe bleibt ${Math.round(CFG.social.seatSec / 60)} Minuten frei.`],
   ['Gruppenchat', '„/p Text“ schreibt nur an deine Gruppe.'],
 ];

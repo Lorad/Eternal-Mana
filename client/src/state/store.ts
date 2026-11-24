@@ -1,9 +1,9 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, EncDialog, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
 import { bus } from './bus';
 
-export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf';
+export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf' | 'sammlung';
 export interface Toast { id: number; s: string; kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string; item?: ItemInstance }
 export interface ChatLine { id: number; from: string; s: string; ch: 'all' | 'party' | 'sys' }
 /** Sichtbarer Zustand einer laufenden Filmszene (gesteuert von game/cinematic.ts) */
@@ -84,6 +84,15 @@ export interface UiState {
   inspect: InspectInfo | null;
   /** kleines Menü zu einem anderen Spieler (Klick auf die Figur, den Gruppenrahmen oder die Online-Liste) */
   playerMenu: { id: number; name: string; cls: ClassId; level: number; near?: boolean } | null;
+  // ---- Zuhause (0.7)
+  /** Stand des Profils: Hof, Lagertruhe, Begleiter, Erscheinungen, Sammlung (der Server schickt geänderte Teile) */
+  home: HomeData | null;
+  /** man steht auf einem Hof: wem er gehört */
+  heim: ZoneInit['heim'] | null;
+  /** offenes Hof-Fenster: Reiter (lager, ausbau, trophaeen, schrank) oder 'weg' = Auswahl am Wegweiser; `slot` = angewählter Trophäenständer */
+  hof: { tab: string; slot?: number } | null;
+  /** Reiter, mit dem das Fenster „Sammlung“ aufgeht */
+  sammlungTab: string;
   saved: number;                   // Zeitstempel der letzten Speicherbestätigung
 }
 
@@ -96,6 +105,7 @@ const state: UiState = {
   rift: null, riftAt: 0, kreis: 0, endgame: null,
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0, world: null, worldAt: 0, enc: null, wshop: null,
   trade: null, tradeAt: 0, tradeReq: null, qOffers: [], inspect: null, playerMenu: null,
+  home: null, heim: null, hof: null, sammlungTab: 'uebersicht',
 };
 
 const listeners = new Set<() => void>();
@@ -142,7 +152,7 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 export function togglePanel(p: Panel) {
   if (state.screen !== 'game' || state.cine) return;
   if (state.trade) return; // erst den Handel beenden
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, inspect: null, playerMenu: null });
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null, inspect: null, playerMenu: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
@@ -155,6 +165,7 @@ export function closeTop(): boolean {
   if (state.trade) { bus.emit('ui:tradeCancel'); return true; }
   if (state.enc) { store.set({ enc: null }); return true; }
   if (state.wshop) { store.set({ wshop: null }); return true; }
+  if (state.hof) { store.set({ hof: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
   if (state.endgame) { store.set({ endgame: null }); return true; }
   if (state.dialog) { store.set({ dialog: null, dlgNode: null }); return true; }
@@ -164,5 +175,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.trade || state.inspect);
+  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.hof || state.trade || state.inspect);
 }

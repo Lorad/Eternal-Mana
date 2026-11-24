@@ -5,7 +5,7 @@
 import type { Element } from './types';
 
 export const CFG = {
-  version: '0.6.0',
+  version: '0.7.0',
   net: {
     defaultPort: 7777,
     tickRate: 20,            // Server-Simulationsschritte pro Sekunde (= Snapshot-Rate)
@@ -329,6 +329,26 @@ export const CFG = {
     routine: { speed: 30, segment: 48 },
     /** Echo-Fragmente (0.5) aus der Lebendigen Welt: nur bei Gegnern ab dieser Stufe (Welten der Neuen Kreise), sparsam */
     echo: { minLevel: 40, boss: 0.5, event: 0.12 },
+  },
+  /**
+   * Zuhause (0.7): Hof, Lagertruhe, Begleiter, Sammlung, Erscheinungen.
+   * Inhalte: shared/src/data/{home,pets,looks,collection}.ts · Logik: server/src/home/*
+   */
+  home: {
+    price: 400,                    // Gold für den Hof (bei Mirelda)
+    buyQuest: 'm_wurzel',          // ab dieser abgeschlossenen Hauptquest steht er zum Verkauf
+    /** Lagerplätze und Trophäenständer je Ausbaustufe 0..3 */
+    slots: [24, 48, 72, 96],
+    stands: [2, 3, 4, 8],
+    slotBonus: 12,                 // zusätzliche Lagerplätze je „Lager“-Meilenstein der Sammlung
+    goldCap: 9_999_999,
+    useRadius: 44,                 // so nah muss man an Truhe, Bett, Schrank oder Station stehen
+    /** „Ausgeruht“: Bonus und Dauer (Spielzeit) nach dem Schlafen im eigenen oder einem besuchten Hof ab Stufe 3 */
+    rest: { xpPct: 10, sec: 1800 },
+    /** Bonus je ausgestellter Trophäen-Art (höchstens einmal je Art, gilt für alle Charaktere des Profils) */
+    trophy: { jagd: { goldPct: 3 }, welt: { rep: 0.05 }, boss: { xpPct: 2 }, zeichen: { rest: 0.5 } },
+    /** Bestiarium: Siege, ab denen Schwächen und Resistenzen bekannt sind (gewöhnliche Gegner / benannte und Bosse) */
+    study: 8, studyNamed: 1,
   },
   world: {
     dayLengthSec: 720,     // ein voller Tag-Nacht-Zyklus

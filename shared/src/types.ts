@@ -96,6 +96,33 @@ export interface CharData {
   rep?: Record<string, number>;
   /** gewählter Titel (TITLES in data/rifts.ts; seit 0.6 auch die Titel der Fraktionen) */
   title?: string;
+  // ---- 0.7 Zuhause (optional). Hof, Lager, Sammlung und Freischaltungen gehören dem Profil: HomeData
+  /** aktiver Begleiter (PETS in data/pets.ts) */
+  pet?: string;
+  /** gewählte Erscheinung: `g` Gewand, `w` Waffenglanz (data/looks.ts) */
+  look?: { g?: string; w?: string };
+  /** „Ausgeruht“ gilt, bis `playtime` diesen Wert erreicht */
+  rest?: number;
+  /** Stand, bis zu dem dieser Charakter in die Sammlung des Profils eingetragen ist (fehlt = noch nie: Nachtrag beim Betreten) */
+  cv?: number;
+}
+
+/**
+ * Zuhause (0.7): Stand eines Profils – gehört allen seinen Charakteren gemeinsam (Tabelle `homes`, gespeichert in derselben
+ * Transaktion wie der Charakter). Regeln: shared/src/data/home.ts.
+ */
+export interface HomeData {
+  v: number;
+  /** Hof gekauft (0/1) und Ausbaustufe 0..3 */
+  owned: number; level: number;
+  /** Lagertruhe */
+  gold: number; stash: ItemInstance[];
+  /** je Trophäenständer die ausgestellte Trophäe ('' = leer) */
+  stands: string[];
+  /** freigeschaltete Begleiter und Erscheinungen */
+  pets: string[]; looks: string[];
+  /** Sammlung: Siege je Gegnerart · Gesehenes (`i:` Gegenstand, `f:` Fundstück, `r:` Rezept, `t:` Trophäe) · ausgezahlte Meilensteine */
+  kills: Record<string, number>; seen: Record<string, number>; ms: string[];
 }
 
 export interface Derived {
@@ -137,11 +164,12 @@ export type SnapPlayer = [number, number, number, number, number, number, number
 /** Gegner im Snapshot: [id, x, y, facingLeft(0/1), anim, hp, flags] */
 export type SnapMob = [number, number, number, number, number, number, number];
 
-export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number; /** Titel hinter dem Namen (0.5) */ title?: string }
+export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number; /** Titel hinter dem Namen (0.5) */ title?: string;
+  /** 0.7: aktiver Begleiter, Gewand und Waffenglanz */ pet?: string; g?: string; w?: string }
 export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string; /** Einfärbung (Boss-Echos, 0.5) */ tint?: number }
 export interface ObjInfo { id: number; type: string; x: number; y: number; state: number; tag?: string; props?: Record<string, any> }
 export interface DropInfo { id: number; x: number; y: number; kind: 'gold' | 'item'; icon: string; rarity: number; name: string }
-export interface ProjInfo { id: number; spr: string; x: number; y: number; vx: number; vy: number; el: Element; life: number; r: number; hostile: boolean }
+export interface ProjInfo { id: number; spr: string; x: number; y: number; vx: number; vy: number; el: Element; life: number; r: number; hostile: boolean; /** 0.7: Spieler-ID des Schützen (für seinen Waffenglanz) */ o?: number }
 export interface ZoneFx { id: number; kind: 'zone' | 'tele'; x: number; y: number; r: number; el: Element; dur: number; hostile: boolean; shape?: 'circle' | 'line'; x2?: number; y2?: number; w?: number }
 
 export type GameEvent =
@@ -173,6 +201,8 @@ export interface PartyMember {
   // ---- 0.7 (alles optional): führt die Gruppe an · gefallen · Kreis des Charakters · Welt-Instanz, in der er steht (gleicher Wert = ihr seht euch) ·
   //      Stufe des Mana-Risses, in dem er steckt · `away` = hält nur noch seinen Platz (Verbindung ganz verloren; `id` ist dann 0)
   lead?: 1; dead?: 1; kreis?: number; inst?: string; rift?: number; away?: 1;
+  /** steht auf einem Hof: Name des Besitzers */
+  heim?: string;
 }
 /** Einladung in eine Gruppe: `sec` = Restzeit, `kreis` = Kreis der Welt, in der die Gruppe danach spielt (nur wenn er sich für den Eingeladenen ändert) */
 export interface PartyInvite { from: number; name: string; sec?: number; kreis?: number; size?: number }
@@ -188,6 +218,8 @@ export interface InspectInfo {
   equip: Partial<Record<Slot, ItemInstance>>;
   stats: { maxHp: number; maxMp: number; power: number; def: number; crit: number; el: Element };
   sets: Record<string, number>;
+  /** aktiver Begleiter und gewählte Erscheinung (Zuhause) */
+  pet?: string; look?: { g?: string; w?: string };
 }
 
 /** Auszug der Charakterdaten für die Charakterauswahl */
@@ -257,6 +289,9 @@ export type ClientMsg =
   | { t: 'qShare'; id: string }
   | { t: 'qShareAns'; id: string; ok: boolean }
   | { t: 'inspect'; id: number }
+  // ---- Zuhause (0.7): eine Nachricht, `a` = Aktion. buy (bei Mirelda) · go (am Wegweiser; `owner` = Spieler-ID eines Gruppenmitglieds) · leave ·
+  //      put/take (`uid`, `n`) · gold (`n` > 0 einlagern, < 0 abheben) · sort · upgrade · trophy (`slot`, `id`) · pet (`id`) · look (`g`, `w`) · sleep
+  | { t: 'home'; a: string; id?: string; uid?: string; n?: number; slot?: number; owner?: number; g?: string; w?: string; npc?: string }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -275,6 +310,8 @@ export interface ZoneInit {
   rift?: RiftInfo;
   /** Kreis dieser Welt (0.5; fehlt = 0) */
   kreis?: number;
+  /** 0.7: diese Instanz ist ein Hof – wem er gehört und ob es der eigene ist */
+  heim?: { owner: string; own: boolean; level: number };
 }
 /** Zustand eines Mana-Risses für die Anzeige: `t` = bisher verstrichene Sekunden, `done` = abgeschlossen in so vielen Sekunden (`bonus` = unter der Richtzeit) */
 export interface RiftInfo {
@@ -335,6 +372,8 @@ export type ServerMsg =
   | { t: 'trade'; tr?: TradeView | null; req?: { from: number; name: string; sec: number } | null; done?: 1 }
   | { t: 'qOffer'; id: string; from: string; sec: number }
   | { t: 'inspect'; i: InspectInfo }
+  // ---- Zuhause (0.7): geänderte Teile des Profil-Stands (wie `char`); `note` = Hinweise der Sammlung (der Client zeigt sie wie Toasts)
+  | { t: 'home'; h: Partial<HomeData>; note?: { s: string; kind: 'info' | 'good' | 'story'; icon?: string }[] }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 

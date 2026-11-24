@@ -23,7 +23,8 @@ export interface ZoneDef {
   name: string;
   subtitle: string;
   biome: BiomeId;
-  kind: 'overworld' | 'dungeon';
+  /** `home` (0.7): der eigene Hof – je Besitzer eine Instanz, keine Gegner, steht nicht in ZONE_LIST (Weltkarte, Chronik, Weltsysteme) */
+  kind: 'overworld' | 'dungeon' | 'home';
   w: number; h: number;
   seed: number;
   level: [number, number];
@@ -305,7 +306,16 @@ export const ZONE_LIST: ZoneDef[] = [
   }),
 ];
 
-export const ZONES: Record<string, ZoneDef> = Object.fromEntries(ZONE_LIST.map(z => [z.id, z]));
+/**
+ * Zuhause (0.7): der eigene Hof am Waldrand. Bewusst NICHT in ZONE_LIST – er ist kein Gebiet der Weltkarte, trägt keine
+ * Chronik und keine Weltsysteme –, aber über ZONES und getMap erreichbar. Karte: shared/src/maps/homegen.ts.
+ */
+export const HOME_ZONE: ZoneDef = Z({
+  id: 'heim', name: 'Hof am Waldrand', subtitle: 'Vier Wände, ein Dach und endlich ein Haken für den Mantel', biome: 'gruenwald', kind: 'home', w: 44, h: 38, seed: 9101,
+  level: [1, 1], music: 'gruenwald', ambience: 'forest', weathers: [['clear', 7], ['rain', 1], ['leaves', 3]], dark: 0, indoor: false,
+  mobs: [], mapPos: [34, 58],
+});
+export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE };
 export const OVERWORLD_IDS = ZONE_LIST.filter(z => z.kind === 'overworld').map(z => z.id);
 /** Verbindungen für die Weltkarte */
 export const WORLD_LINKS: [string, string][] = [
