@@ -1,5 +1,5 @@
 // Koop-Durchlauf mit ZWEI echten Browsern (0.7): Gruppe bilden, ansehen, handeln, Quest teilen, gemeinsame Element-Reaktion,
-// Mana-Riss mit Verbindungsabriss und Wiederverbindung, Gruppentruhe, Weltereignis, Neuladen der Seite.
+// Mana-Riss mit Verbindungsabriss und Wiederverbindung, Gruppentruhe, Weltereignis, Neuladen der Seite, Besuch auf dem Hof.
 // Voraussetzung: Playwright und ein Server MIT Entwickler-Befehlen, am besten mit eigenem Datenordner:
 //   EM_DEV=1 EM_PORT=7793 EM_DATA=/tmp/em-coop npm start        (anderes Fenster)
 //   EM_URL=http://localhost:7793 node tests/e2e/coop.mjs
@@ -207,14 +207,27 @@ await step('Reaktion zu zweit: Feuer (A) und Wasser (B) auf denselben Gegner –
   await a.cmd('/elem fire 3'); await b.cmd('/elem water 3');
   await a.cmd('/rare borkenkoenig'); await b.cmd('/rare borkenkoenig');
   await a.wait(500);
-  await both(p => p.aim(0, -110));
-  // der Gegner steht über beiden; nach einigen Treffern reagieren Brennen und Wasser miteinander
-  await both(p => p.page.locator('.buff').first().waitFor({ timeout: 30000 }));
-  await a.wait(600);
+  await both(p => p.aim(0, -90));
+  // Der Gegner läuft auf einen der beiden zu – wohin, weiß der Test nicht. Beide halten die Angriffstaste und schwenken
+  // reihum; nach einigen Treffern reagieren Brennen und Wasser miteinander, und beide tragen „Einklang“.
+  const buffed = async () => (await a.page.locator('.buff').count()) > 0 && (await b.page.locator('.buff').count()) > 0;
+  for (let k = 0, t0 = Date.now(); Date.now() - t0 < 75000 && !(await buffed()); k++) {
+    const ang = (k % 8) * Math.PI / 4;
+    await both(p => p.page.mouse.move(640 + Math.cos(ang) * 90, 352 + Math.sin(ang) * 90));
+    await a.wait(500);
+  }
+  await both(p => p.page.locator('.buff').first().waitFor({ timeout: 3000 }));
+  await a.wait(300);
   await shots('13-reaktion');
-  await a.page.locator('.buff').first().hover();
-  await a.has('Einklang', 6000); await a.has(/gemeinsam/);
   await both(p => p.release());
+  // Der Tooltip nennt die Wirkung. Das Symbol wird bei jeder neuen Reaktion ersetzt – deshalb notfalls mehrmals zeigen.
+  let named = false;
+  for (let i = 0; i < 12 && !named; i++) {
+    await a.page.locator('.buff').first().dispatchEvent('mouseenter').catch(() => {});
+    named = await a.page.getByText(/gemeinsam „.+“ ausgelöst/).first().waitFor({ timeout: 1500 }).then(() => true, () => false);
+  }
+  if (!named) throw new Error('Der Tooltip der Wirkung „Einklang“ erschien nicht');
+  await a.has('Einklang', 3000);
   await a.cmd('/kill'); await a.wait(600);
 });
 await step('Mana-Riss zu zweit: die Anführerin öffnet, beide stehen in derselben Instanz', async () => {
@@ -266,7 +279,19 @@ await step('Seite neu laden: nach „Spielen“ steht B wieder im Spiel und in d
   await frame(b, a).waitFor({ timeout: 6000 });
   await a.wait(1500);
   await frame(a, b).getByText('Verbindung getrennt').waitFor({ state: 'hidden', timeout: 6000 });
-  await shots('19-neu-geladen');
+  await shots('18b-neu-geladen');
+});
+await step('Hof: Besuch über die Gruppe, der Gruppenrahmen nennt den Hof', async () => {
+  await a.cmd('/hof 1'); await a.loaded();                           // A bekommt einen Hof und steht darauf
+  await frame(b, a).getByText('Eigener Hof').waitFor({ timeout: 8000 });
+  await b.cmd('/obj hobj weg'); await b.wait(900);                   // B an den Wegweiser in Quellhain
+  await b.has('Zum Hof am Waldrand', 8000);
+  await b.page.keyboard.press('e');
+  await b.page.getByRole('button', { name: a.name + ' besuchen' }).click();
+  await b.loaded();
+  await frame(a, b).getByText(/Hof von/).waitFor({ timeout: 8000 });
+  await a.has(/besucht deinen Hof/, 3000).catch(() => {});           // (die Meldung ist nach wenigen Sekunden wieder weg)
+  await shots('19-hofbesuch');
 });
 await step('Anführerin ernennt, entfernt wird über das Gruppenfenster – am Ende ist jeder wieder allein', async () => {
   await frame(a, b).click();
@@ -279,8 +304,12 @@ await step('Anführerin ernennt, entfernt wird über das Gruppenfenster – am E
   await b.page.locator('.confirm').getByRole('button', { name: 'Entfernen' }).click();
   await a.has(/hat dich aus der Gruppe entfernt/);
   await a.page.locator('.party-frame').waitFor({ state: 'hidden', timeout: 5000 });
-  await b.has('Du bist allein unterwegs');
+  // B stand als Gast auf A's Hof: ohne gemeinsame Gruppe ist der Besuch vorbei, B steht wieder in Quellhain
+  await b.loaded();
+  await b.has('Du bist allein unterwegs', 30000);
   await b.esc();
+  await b.has('Grünwald', 8000);
+  await shots('21-allein');
 });
 await browser.close();
 const uniq = [...new Set(errors)];

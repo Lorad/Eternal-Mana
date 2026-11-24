@@ -33,7 +33,7 @@ const kreisName = (k: number) => KREIS_NAME[k] ?? `Kreis ${k + 1}`;
 export function whereIs(m: PartyMember, short = false): string {
   if (m.away) return 'Platz wird freigehalten';
   if (!m.online) return 'Verbindung getrennt';
-  if (m.heim) return m.heim === m.name ? 'Auf dem eigenen Hof' : `Zu Besuch: Hof von ${m.heim}`;
+  if (m.heim) return m.heim === m.name ? (short ? 'Eigener Hof' : 'Auf dem eigenen Hof') : short ? `Hof von ${m.heim}` : `Zu Besuch auf dem Hof von ${m.heim}`;
   const zone = ZONES[m.zone]?.name ?? m.zone;
   if (m.rift) return short ? `Mana-Riss · Stufe ${m.rift}` : `Mana-Riss ${zone} · Stufe ${m.rift}`;
   const k = /#k(\d+)$/.exec(m.inst ?? '');
