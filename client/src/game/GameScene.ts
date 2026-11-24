@@ -14,6 +14,7 @@ import { NPCS } from '../../../shared/src/data/npcs';
 import { npcMarker } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
+import { mobAffinity } from '../../../shared/src/elements';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
 import { T, TILE } from '../../../shared/src/maps/tiles';
 import { computeStats } from '../../../shared/src/stats';
@@ -103,6 +104,8 @@ export class GameScene extends Phaser.Scene {
   private moveLockUntil = 0; private stepAt = 0; private dustAt = 0; private stepDist = 0; private stepSide = 1;
   private timeOffset: number | null = null;
   private target: ObjView | PlayerView | null = null;
+  /** zuletzt getroffener Gegner (für die Zielanzeige mit Schwächen) */
+  private focusId = 0; private focusAt = 0;
   private hoverCheck = 0;
   private serverAnim: Anim = Anim.Idle;
   private aim = Math.PI / 2;
@@ -250,7 +253,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.centerOn(i.x, i.y);
     try { if (this.game.renderer.type === Phaser.WEBGL) { this.cameras.main.postFX.clear(); this.cameras.main.postFX.addVignette(0.5, 0.5, 0.92, def.indoor ? 0.42 : 0.26); } } catch { /* Canvas-Renderer: ohne Vignette */ }
     audio.setAmbience(def.ambience as AmbienceId);
-    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1 } }); audio.playMusic(def.boss === 'hohlkoenig' ? 'final_boss' : 'boss'); }
+    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1, ...this.bossAff(i.boss.el) } }); audio.playMusic(def.boss === 'hohlkoenig' ? 'final_boss' : 'boss'); }
     else audio.playMusic(def.music as MusicId);
     live.zone = i.zone;
     this.sentX = i.x; this.sentY = i.y;
@@ -385,6 +388,7 @@ export class GameScene extends Phaser.Scene {
       case 'node': img(o.x, o.y + 7, 'node_' + pr.kind); break;
       case 'shard': img(o.x, o.y + 4, 'shard_0', undefined, false); v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(0.5).setTint(0x70ffe8).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); v.light = [46, 0x70ffe8, 0.7]; break;
       case 'sign': img(o.x, o.y + 7, 'signpost'); break;
+      case 'cookfire': img(o.x, o.y + 7, this.cookLook(pr.look) + '_0'); v.light = [100, 0xffb060, 1]; v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.8).setTint(0xffa040).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); break;
     }
     this.applyObjState(v, true);
   }
@@ -584,7 +588,7 @@ export class GameScene extends Phaser.Scene {
           if (!e.pl) { this.hitStop(55); this.shake(0.007, 90); }
         } else this.fx.play(this.fx.pick(e.el === 'phys' ? 'hit' : 'hit_magic', 'hit'), hx, hy, { tint, fps: 22, depth: 9100, rot: Math.random() * 6.28 }, c);
         this.burst(this.sparks, e.c ? 8 : 3, hx, hy, tint);
-        if (mv && !mv.boss) this.tweens.add({ targets: mv.sprite, scaleX: mv.scale * 1.18, scaleY: mv.scale * 0.86, duration: 55, yoyo: true });
+        if (mv && !mv.boss) { this.tweens.add({ targets: mv.sprite, scaleX: mv.scale * 1.18, scaleY: mv.scale * 0.86, duration: 55, yoyo: true }); this.focusId = e.id; this.focusAt = nowP; }
         if (mine) {
           this.sfxAt('player_hurt'); this.shake(0.012); this.flash(this.me.x, this.me.y - 10, 80, 0xff4030, 0.7, 220);
           if (this.animClock >= this.me.lockUntil) this.me.play('hit', 180, true);
@@ -660,7 +664,7 @@ export class GameScene extends Phaser.Scene {
       case 'boss': {
         const cur = store.state.boss;
         const v = this.mobs.get(e.id);
-        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1 } });
+        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el) } });
         if (!cur) { audio.playMusic(this.map.def.boss === 'hohlkoenig' ? 'final_boss' : 'boss'); this.shake(0.02, 400); }
         if (v && (!cur || cur.phase !== e.phase || cur.el !== e.el)) {
           const tint = elTint(e.el);
@@ -778,6 +782,24 @@ export class GameScene extends Phaser.Scene {
         break;
       }
     }
+  }
+  /** Grafik der Kochstelle: die eigene Stations-Grafik, falls der Atlas sie schon enthält, sonst das Lagerfeuer der Zone. */
+  private cookLook(look?: string): string { return this.objTex.has('station_cook_0') ? 'station_cook' : this.objTex.has((look ?? 'campfire') + '_0') ? look ?? 'campfire' : 'campfire'; }
+  private bossAff(el: Element) { const a = mobAffinity(this.map.def.boss ?? '', true, el); return { weak: a.weak, resist: a.resist }; }
+  /** Zielanzeige: Gegner unter dem Mauszeiger, sonst der zuletzt getroffene in der Nähe. */
+  private updateTarget(now: number) {
+    let v: MobView | undefined;
+    if (store.state.inputMode === 'kbm' && !uiBlocksGame()) {
+      const p = this.worldPointer();
+      let bd = 1e9;
+      for (const m of this.mobs.values()) { if (m.boss || !m.seen) continue; const d = Math.hypot(m.x - p.x, m.y - m.top / 2 - p.y); if (d < Math.max(12, m.w * 0.45) && d < bd) { bd = d; v = m; } }
+    }
+    if (!v && now - this.focusAt < 4000) { const m = this.mobs.get(this.focusId); if (m && !m.boss && Math.hypot(m.x - this.me.x, m.y - this.me.y) < 320) v = m; }
+    const cur = store.state.target;
+    if (!v) { if (cur) store.set({ target: null }); return; }
+    if (cur && cur.id === v.info.id && cur.hp === v.hp && cur.maxHp === v.info.maxHp) return;
+    const a = cur && cur.id === v.info.id ? cur : mobAffinity(v.info.mob, false);
+    store.set({ target: { id: v.info.id, name: v.info.name ?? '', lvl: v.info.lvl, hp: v.hp, maxHp: v.info.maxHp, el: a.el, elite: !!v.info.elite, weak: a.weak, resist: a.resist } });
   }
   private playerNear(x: number, y: number): PlayerView | undefined {
     if (Math.hypot(this.me.x - x, this.me.y - y) < 6) return this.me;
@@ -899,6 +921,7 @@ export class GameScene extends Phaser.Scene {
     if (now - this.liveAt > 150) {
       this.liveAt = now;
       live.x = mx; live.y = my; live.fps = this.game.loop.actualFps;
+      this.updateTarget(now);
       live.players = [...this.players.values()].map(p => ({ x: p.x, y: p.y, name: p.info.name, party: this.inMyParty(p.info) }));
       live.mobs = [...this.mobs.values()].filter(m => m.seen && Math.hypot(m.x - mx, m.y - my) < 420).map(m => ({ x: m.x, y: m.y, boss: m.boss }));
       const c = st.char!;
@@ -923,7 +946,7 @@ export class GameScene extends Phaser.Scene {
     const me = this.me, st = store.state, c = st.char!;
     const stats = this.getStats();
     const dead = !!(me.flags & FLAG_DEAD) || !!st.dead;
-    const stunned = !!(me.flags & STATUS_BIT.stun);
+    const stunned = !!(me.flags & (STATUS_BIT.stun | STATUS_BIT.freeze));
     const blocked = uiBlocksGame();
     const cls = CLASSES[c.cls];
     let moving = false, slowGait = false;
@@ -944,7 +967,7 @@ export class GameScene extends Phaser.Scene {
         this.fx.play(this.fx.pick('dodge_trail'), me.x, me.y - 9, { rot: this.rollDir, tint: 0xffffff, alpha: 0.6, fps: 16, follow: () => (performance.now() < until ? { x: this.me.x - Math.cos(this.rollDir) * 10, y: this.me.y - 9 } : null) }, this.animClock);
       }
       let vx = 0, vy = 0;
-      let speed = stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
+      let speed = me.flags & STATUS_BIT.root ? 0 : stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
       if (now < this.rollUntil) { speed *= CFG.player.dodgeSpeedMul; vx = Math.cos(this.rollDir) * speed; vy = Math.sin(this.rollDir) * speed; }
       else if (ml > 0.1 && now >= this.moveLockUntil) { vx = mv.x * speed; vy = mv.y * speed; slowGait = ml < 0.6 || !!(me.flags & STATUS_BIT.slow); }
       if (vx || vy) {
@@ -1096,6 +1119,7 @@ export class GameScene extends Phaser.Scene {
         case 'stone': if (o.state) v.parts[0].setFrame(anim('quellstein', 150, 4)); break;
         case 'shard': if (!o.state) { v.parts[0].setFrame(anim('shard', 130, 4)); v.parts[0].y = o.y + 4 + Math.sin(now / 300) * 2; } break;
         case 'exit': if (o.props?.look === 'portal') v.parts[0].setFrame(anim('portal', 100, 4)); break;
+        case 'cookfire': v.parts[0].setFrame(anim(this.cookLook(o.props?.look), 110, 4)); break;
         case 'spikes': {
           const pr = o.props!;
           const ph = ((sn + pr.offset) % pr.period) / pr.period;
@@ -1129,6 +1153,7 @@ export class GameScene extends Phaser.Scene {
         case 'node': if (!o.state) text = `${o.props?.name ?? 'Rohstoff'} abbauen`; break;
         case 'sign': text = 'Lesen'; break;
         case 'board': text = 'Auftragsbrett ansehen'; break;
+        case 'cookfire': text = 'Am Feuer kochen'; break;
       }
       if (!text) continue;
       const reach = o.type === 'door' || o.type === 'bossdoor' ? d - 12 : d;
@@ -1155,6 +1180,7 @@ export class GameScene extends Phaser.Scene {
     if (o.type === 'npc') { store.set({ dialog: { npc: o.tag! }, panel: null, prompt: null }); return; }
     if (o.type === 'board') { store.set({ dialog: { npc: 'ayla' }, panel: null, prompt: null }); return; }
     if (o.type === 'sign') { store.set({ sign: o.props?.text ?? '', prompt: null }); return; }
+    if (o.type === 'cookfire') { store.set({ craft: { at: 'fire', station: 'cooking' }, panel: null, dialog: null, prompt: null }); return; }
     net.send({ t: 'interact', id: o.id });
     if (o.type === 'stone') this.time.delayedCall(250, () => store.set({ panel: 'map', nearStone: true }));
   }

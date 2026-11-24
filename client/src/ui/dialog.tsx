@@ -11,6 +11,7 @@ import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
 import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, modEntries, send, sfx } from './common';
+import { StationOptions } from './craft';
 import { Objectives, QUEST_TYPE, Rewards } from './panels/quests';
 
 type View =
@@ -67,6 +68,7 @@ function Dialog({ npc }: { npc: string }) {
           {def.shop && <Opt mark="◈" onClick={() => setView({ k: 'shop' })}>Handeln</Opt>}
           {def.services?.includes('upgrade') && <Opt mark="⚒" onClick={() => setView({ k: 'upgrade' })}>Ausrüstung verbessern</Opt>}
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
+          <StationOptions npc={npc} />
           <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length}>Auf Wiedersehen</Opt>
         </div>
       </>

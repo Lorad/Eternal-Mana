@@ -83,7 +83,10 @@ export const CFG = {
     burnTick: 0.12,   // Anteil des auslösenden Schadens je Sekunde
     poisonTick: 0.1,
     /** Chance, dass ein Elementartreffer seinen Zustand auslöst */
-    elemProc: { fire: 0.22, water: 0.25, earth: 0.1, wind: 0, light: 0.15, dark: 0.15, phys: 0 } as Record<Element, number>,
+    elemProc: { fire: 0.22, water: 0.25, earth: 0.1, wind: 0.18, light: 0.15, dark: 0.15, phys: 0 } as Record<Element, number>,
+    /** „Entblößt“ (Wind): Treffer gegen das Ziel sind um so viel wahrscheinlicher kritisch; Spieler erleiden stattdessen mehr Schaden */
+    exposeCrit: 0.15,
+    exposeDmgTaken: 1.1,
     partyXpRadius: 520,
     partyXpBonus: 0.1, // je weiterem Gruppenmitglied in Reichweite
   },
@@ -103,6 +106,65 @@ export const CFG = {
     elementChance: [0, 0.1, 0.25, 0.4, 0.6],
     dropLifetimeSec: 120,
     sellFactor: 0.25,
+    // ---- Handwerks-Rohstoffe (0.4); Tabellen: shared/src/data/materials.ts
+    monsterMatChance: 0.16,   // Monster-Rohstoff des Bioms je besiegtem Gegner
+    ingredientChance: 0.1,    // Zutat des Bioms je besiegtem Gegner
+    essenceChance: 0.07,      // Essenz im Element des Gegners
+    eliteMatMul: 2.5,         // Erwachte: Rohstoff-Chancen × diesen Wert …
+    eliteEssence: [2, 3],     // … und garantiert so viele Essenzen
+    aetherElite: 0.02,        // Ätherstaub: Erwachte (sehr selten)
+    aetherBoss: 0.15,         // Ätherstaub: Bosse (selten)
+    bossCoreRepeat: 0.3,      // Bosskern ab dem zweiten Sieg (der erste ist garantiert)
+    bossEssence: [4, 6],
+    nodeBonusChance: 0.35,    // Zutat des Bioms zusätzlich beim Abbauen
+    scrollElite: 0.05,        // Rezeptrolle von Erwachten
+    scrollChest: { wood: 0, silver: 0.08, gold: 0.25 } as Record<string, number>,
+    scrollBoss: 0.6,
+    setPieceBoss: 0.35,       // Setteil aus der Bosstruhe (beim ersten Öffnen garantiert)
+    setPieceChest: { wood: 0, silver: 0.06, gold: 0.15 } as Record<string, number>,
+  },
+  /** Handwerk (0.4). Rezepte: shared/src/data/recipes.ts */
+  craft: {
+    fireRadius: 60,           // so nah muss man an einem Lagerfeuer stehen
+    maxBatch: 10,
+    /** Seltenheit geschmiedeter Ausrüstung (Mindestseltenheit „Ungewöhnlich“) bzw. von Meisterstücken („Selten“) */
+    gearWeights: [0, 68, 26, 5, 1],
+    masterWeights: [0, 0, 72, 23, 5],
+    setWeights: [0, 0, 70, 25, 5],
+    gearGold: (tier: number) => 20 + 30 * tier * tier,
+    reforgeGold: (ilvl: number, rarity: number) => Math.floor((20 + ilvl * 6) * (1 + rarity)),
+    reforgeMats: 2,           // Erz der Stufe + ebenso viele Monster-Rohstoffe
+    /** Element einschmieden: Essenzen und Gold je Zielstufe 1..3; Stufe 3 braucht zusätzlich den Bosskern des Elements */
+    infuseEssences: [8, 14, 22],
+    infuseGold: (ilvl: number, level: number) => Math.floor((40 + ilvl * 10) * level * level),
+    /** Mehrschaden mit dem Waffenelement und Faktor auf die Zustandschance je Elementstufe 0..3 */
+    infuseDmg: [0, 0, 0.04, 0.08],
+    infuseProc: [1, 1, 1.3, 1.6],
+    foodSec: 900,
+    feastSec: 1200,
+    elixirSec: 300,
+    feastRadius: 170,
+    legendMinIlvl: 30,
+  },
+  /** Elemente (0.4): Resistenzen, Schwächen, Reaktionen. Tabellen: shared/src/elements.ts */
+  elements: {
+    weakMul: 1.25,            // ausdrückliche Schwäche eines Gegners (zusätzlich zum Kreislauf)
+    resistMul: 0.8,           // ausdrückliche Resistenz eines Gegners
+    resCap: 50,               // Obergrenze der Spieler-Resistenz in Prozent
+    reactCd: 3,               // s, bis dasselbe Ziel erneut reagieren kann
+    reactCdBoss: 5,
+    duoMul: 1.5,              // Reaktion aus den Elementen zweier Spieler
+    duoBuff: { powerPct: 8, dur: 6 },
+    freezeImmuneSec: 6,       // so lange kann ein Ziel nach „Eingefroren“/„Verwurzelt“ nicht erneut festgesetzt werden
+    eliteCcMul: 0.6,
+  },
+  /** Legendäre Waffen (0.4): Zahlen der Sonderwirkungen */
+  legend: {
+    krieger: { every: 4, mult: 1.2, radius: 52 },
+    magier: { reactMul: 2, reactCdCut: 1.5 },
+    waldlaeufer: { ricochet: 0.6, echo: 0.22, range: 110 },
+    paladin: { shield: 0.3, cap: 0.2, dur: 6 },
+    schattenjaeger: { mult: 2, radius: 48, cd: 1.5 },
   },
   upgrade: {
     max: 10,

@@ -84,6 +84,22 @@ Snapshots.
 - **Instanzen:** Jede Zone existiert einmal pro Server. Oberwelt-Gegner erscheinen nach 75 s neu; leere Dungeons werden
   nach 90 s verworfen und frisch erzeugt.
 
+## Handwerk und Elemente (0.4)
+
+- **Daten:** `shared/src/data/materials.ts` (Rohstoffe, Verbrauchsgüter, Legendäre Waffen, Beutetabellen),
+  `recipes.ts` (Stationen, Rezepte, Verzauberungen, Kochstellen), `sets.ts`; `shared/src/elements.ts` (Zustand je Element,
+  Schwächen/Resistenzen, Reaktionen); Zahlen in `CFG.loot`, `CFG.craft`, `CFG.elements`, `CFG.legend`.
+- **Regeln:** `shared/src/craft.ts` enthält Kosten, Prüfungen mit Ablehnungsgrund und das Erzeugen der Ergebnisse –
+  Server und Oberfläche benutzen dieselben Funktionen. `server/src/craft.ts` prüft zusätzlich die Nähe zur Station
+  (NPC oder Lagerfeuer) und führt aus; Nachrichten `craft`, `reforge`, `infuse`, `enchant`.
+- **Kampf:** `server/src/react.ts` (Reaktionen, Legendäre Wirkungen) und `server/src/loot.ts` (Rohstoff-Beute) hängen
+  über wenige Aufrufe in `zone.ts`/`boss.ts`. Zustände auf Gegnern merken sich Element und Urheber des Treffers –
+  daran erkennt der Server Reaktionen und die Zwei-Spieler-Synergie.
+- **Spielstand:** nur optionale Felder (`CharData.recipes`, `CharData.timed`, `ItemInstance.elv/ench/set`);
+  `sanitizeChar` bereinigt unbekannte Werte. Lagerfeuer sind Server-Objekte (`cookfire`), die Karten bleiben unverändert.
+- **Oberfläche:** `client/src/ui/craft.tsx` (Fenster), `itemextra.tsx` (Tooltip-Zusätze), `elements.tsx`
+  (Zielanzeige); der Einstieg im NPC-Gespräch ist eine Zeile (`<StationOptions>`).
+
 ## Client
 
 - **GameScene** (`client/src/game/`): malt den Boden einmalig in 512-px-Kacheln auf Canvas-Texturen, legt die animierte
@@ -128,4 +144,7 @@ Reines JavaScript ohne Abhängigkeiten, damit der Launcher auch vor dem ersten `
 - `tests/server.test.ts` – startet einen echten Serverprozess und spielt mit Bot-Clients über das Protokoll: Kampf,
   Schummelversuche, zwei Spieler mit Gruppe, Speichern über Neustart, Wiederverbindung, Quest/Handel/Verbesserung,
   Bosskampf, beschädigte Spielstände.
+- `tests/craft.test.ts`, `tests/elements.test.ts` – Handwerk und Elemente gegen ein echtes `Game` ohne Netzwerk
+  (`tests/helpers/sim.ts`: Nachrichten über `Game.onMessage`, Zeit von Hand, Zufall setzbar).
+- `scripts/balance-sim.ts` – Kampfsimulation für Vorher/Nachher-Vergleiche (`--ausbau` rechnet den Handwerks-Ausbau mit).
 - `tests/e2e/smoke.mjs` – Browser-Durchlauf mit Playwright: Menü → Charakter erstellen → Welt → bewegen → angreifen.

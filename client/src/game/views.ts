@@ -30,7 +30,7 @@ export function applyShadow(s: Phaser.GameObjects.Image, x: number, y: number, c
   s.setVisible(true).setPosition(x, y).setScale(flipX ? -scale : scale, -c.len * scale).setRotation(c.rot).setAlpha(c.alpha);
 }
 
-const STATUS_FX: [number, string, number][] = [[STATUS_BIT.stun, 'stun', -30], [STATUS_BIT.burn, 'burn', -8], [STATUS_BIT.poison, 'poison', -8], [STATUS_BIT.slow, 'frost', -6], [STATUS_BIT.mark, 'mark', -34], [STATUS_BIT.weak, 'weak', -34]];
+const STATUS_FX: [number, string, number][] = [[STATUS_BIT.freeze, 'frost', -6], [STATUS_BIT.stun, 'stun', -30], [STATUS_BIT.burn, 'burn', -8], [STATUS_BIT.poison, 'poison', -8], [STATUS_BIT.slow, 'frost', -6], [STATUS_BIT.mark, 'mark', -34], [STATUS_BIT.weak, 'weak', -34]];
 /** Zeigt den wichtigsten Zustand als animierten Effekt an der Figur. */
 class StatusFx {
   private cur = ''; private h: FxHandle = null;
@@ -137,11 +137,14 @@ export class MobView {
     applyShadow(this.shadow, px, py, this.dying ? { ...sc, alpha: 0 } : sc, !!this.left, this.scale);
     if (this.dying) { this.sprite.clearTint(); return; }
     if (now < this.flashUntil) this.sprite.setTintFill(0xffffff);
+    else if (this.flags & STATUS_BIT.freeze) this.sprite.setTint(0x88ccff);
     else if (this.flags & STATUS_BIT.stun) this.sprite.setTint(0xffffa0);
+    else if (this.flags & STATUS_BIT.root) this.sprite.setTint(0xc8a878);
     else if (this.flags & STATUS_BIT.burn) this.sprite.setTint(0xffb090);
     else if (this.flags & STATUS_BIT.poison) this.sprite.setTint(0xb0ff90);
     else if (this.flags & STATUS_BIT.slow) this.sprite.setTint(0xa0c8ff);
     else if (this.flags & STATUS_BIT.mark) this.sprite.setTint(0xe0a0ff);
+    else if (this.flags & STATUS_BIT.expose) this.sprite.setTint(0xb8ffd8);
     else if (this.flags & FLAG_ELITE) this.sprite.setTint(0xffecc8);
     else this.sprite.clearTint();
     this.sprite.setAlpha(this.flags & FLAG_INVULN && !this.boss ? 0.6 : 1);

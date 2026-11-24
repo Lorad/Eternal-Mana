@@ -12,7 +12,8 @@ export type ModKey =
   | 'str' | 'dex' | 'int' | 'vit' | 'hp' | 'mp' | 'power' | 'def'
   | 'powerPct' | 'defPct' | 'hpPct' | 'mpPct' | 'speedPct'
   | 'crit' | 'critDmg' | 'cdr' | 'lifesteal' | 'hpRegen' | 'mpRegen'
-  | 'elemPct' | 'healPct' | 'goldPct' | 'xpPct' | 'dodgeCdr';
+  | 'elemPct' | 'healPct' | 'goldPct' | 'xpPct' | 'dodgeCdr'
+  | 'resFire' | 'resWater' | 'resEarth' | 'resWind' | 'resLight' | 'resDark' | 'resAll';
 export type Mods = Partial<Record<ModKey, number>>;
 
 export const MOD_LABEL: Record<ModKey, string> = {
@@ -21,7 +22,11 @@ export const MOD_LABEL: Record<ModKey, string> = {
   crit: '% Krit-Chance', critDmg: '% Krit-Schaden', cdr: '% Abklingzeit-Reduktion', lifesteal: '% Lebensraub',
   hpRegen: 'Leben/s', mpRegen: 'Mana/s', elemPct: '% Elementarschaden', healPct: '% Heilung', goldPct: '% Goldfund', xpPct: '% Erfahrung',
   dodgeCdr: '% schnellere Ausweichrolle',
+  resFire: '% Feuerresistenz', resWater: '% Wasserresistenz', resEarth: '% Erdresistenz', resWind: '% Windresistenz',
+  resLight: '% Lichtresistenz', resDark: '% Dunkelresistenz', resAll: '% alle Resistenzen',
 };
+/** Resistenz-Modifikator je Element (0.4) */
+export const RES_KEY: Record<Exclude<Element, 'phys'>, ModKey> = { fire: 'resFire', water: 'resWater', earth: 'resEarth', wind: 'resWind', light: 'resLight', dark: 'resDark' };
 
 export interface ItemInstance {
   uid: string;
@@ -33,6 +38,10 @@ export interface ItemInstance {
   element?: Element;
   name?: string;       // Eigenname (Boss-Unikate)
   qty?: number;        // stapelbare Gegenstände
+  // ---- 0.4 (alle optional, alte Gegenstände haben sie nicht)
+  elv?: number;        // Elementstufe einer eingeschmiedeten Waffe 1..3 (fehlt = 1, wenn `element` gesetzt ist)
+  ench?: string;       // Verzauberung (ENCHANTS in data/recipes.ts)
+  set?: string;        // Rüstungsset (SETS in data/sets.ts)
 }
 
 export interface QuestState {
@@ -68,6 +77,11 @@ export interface CharData {
   playtime: number;
   kills: number;
   deaths: number;
+  // ---- 0.4 (optional: alte Spielstände haben diese Felder nicht)
+  /** gelernte Rezepte (zusätzlich zu den von Anfang an bekannten) */
+  recipes?: string[];
+  /** laufende Speise / laufendes Elixier: Platz → [Gegenstand, Restdauer in s] */
+  timed?: Record<string, [string, number]>;
 }
 
 export interface Derived {
@@ -81,12 +95,22 @@ export interface Derived {
   dodgeCd: number;
   attackElement: Element;
   attrs: Record<AttrKey, number>;
+  /** Elementarresistenzen in Prozent (gedeckelt, CFG.elements.resCap) */
+  res: Record<Element, number>;
+  /** Elementstufe der Waffe 0..3 */
+  elemLvl: number;
+  /** Klasse der angelegten Legendären Waffe (bestimmt deren Sonderwirkung) */
+  legend?: ClassId;
+  /** angelegte Teile je Set */
+  sets: Record<string, number>;
 }
 
-export type StatusId = 'burn' | 'poison' | 'slow' | 'stun' | 'weak' | 'mark';
-export const STATUS_BIT: Record<StatusId, number> = { burn: 1, poison: 2, slow: 4, stun: 8, weak: 16, mark: 32 };
+export type StatusId = 'burn' | 'poison' | 'slow' | 'stun' | 'weak' | 'mark' | 'expose' | 'root' | 'freeze';
+export const STATUS_BIT: Record<StatusId, number> = { burn: 1, poison: 2, slow: 4, stun: 8, weak: 16, mark: 32, expose: 4096, root: 8192, freeze: 16384 };
 export const FLAG_BUFF = 64, FLAG_SHIELD = 128, FLAG_ROLL = 256, FLAG_DEAD = 512, FLAG_ELITE = 1024, FLAG_INVULN = 2048;
-export const STATUS_NAME: Record<StatusId, string> = { burn: 'Brennen', poison: 'Gift', slow: 'Verlangsamt', stun: 'Betäubt', weak: 'Geschwächt', mark: 'Gezeichnet' };
+/** alle Zustands-Bits zusammen (für Masken im HUD) */
+export const STATUS_MASK = 63 | 4096 | 8192 | 16384;
+export const STATUS_NAME: Record<StatusId, string> = { burn: 'Brennen', poison: 'Gift', slow: 'Verlangsamt', stun: 'Betäubt', weak: 'Geschwächt', mark: 'Gezeichnet', expose: 'Entblößt', root: 'Verwurzelt', freeze: 'Eingefroren' };
 
 export interface StatusSpec { id: StatusId; dur: number; chance?: number }
 
@@ -154,6 +178,11 @@ export type ClientMsg =
   | { t: 'sell'; uid: string; qty?: number }
   | { t: 'buy'; npc: string; idx: number; qty?: number }
   | { t: 'upgrade'; uid: string; npc: string }
+  // Handwerk (0.4): `at` = NPC-ID der Station oder 'fire' (Lagerfeuer)
+  | { t: 'craft'; id: string; at: string; n?: number }
+  | { t: 'reforge'; uid: string; at: string }
+  | { t: 'infuse'; uid: string; el: Element; at: string }
+  | { t: 'enchant'; uid: string; id: string; at: string }
   | { t: 'attr'; a: AttrKey; n?: number }
   | { t: 'learn'; id: string }
   | { t: 'hotbar'; slots: (string | null)[] }
@@ -193,7 +222,7 @@ export type ServerMsg =
   | { t: 'pos'; x: number; y: number; e: number; dash?: 1 }
   | { t: 'char'; d: Partial<CharData> }
   | { t: 'cd'; id: string; cd: number }
-  | { t: 'buffs'; b: { id: string; name: string; dur: number; glyph: string }[] }
+  | { t: 'buffs'; b: { id: string; name: string; dur: number; glyph: string; icon?: string; desc?: string; mods?: Mods }[] }
   | { t: 'drop+'; d: DropInfo }
   | { t: 'drop-'; id: number; got?: 1 }
   | { t: 'toast'; s: string; kind?: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string }

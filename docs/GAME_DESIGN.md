@@ -97,6 +97,51 @@ Affixen, sechs Materialstufen. Bosse lassen benannte Elementarwaffen für die ei
 Ausrüstung bis +10 gegen Gold und den Rohstoff der passenden Stufe; ab +4 kann ein Versuch scheitern (Material weg,
 Gegenstand bleibt). Händler verkaufen Tränke und Grundausrüstung.
 
+## Handwerk (ab 0.4)
+
+Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohstoffe, Gold, Stufe und die richtige Station.
+
+- **Rohstoffe:** Je Gebiet ein Monster-Rohstoff (von allen Gegnern dort) und eine Zutat (Gegner und als Beifang an
+  Abbaustellen) zusätzlich zum vorhandenen Erz/Kraut; sechs **Element-Essenzen** (von Gegnern des Elements, Erwachte
+  garantiert mehrere); je Boss ein **Bosskern** (erster Sieg garantiert, danach 30 %); **Ätherstaub** (Bosse selten,
+  Erwachte sehr selten). Beute bleibt persönlich.
+- **Stationen:** Schmiede (Borin, Hedda, Rakhan, Pim), Alchemie (Sella, Pim), Kochstelle (Lagerfeuer in Dorf und Lagern,
+  Ayla, Jorund, Rakhan), Verzauberung (Fenwick, Liora). Im Schattenreich brennt kein Feuer.
+- **Schmiede:** Ausrüstung der eigenen Klasse auf der Materialstufe schmieden (Mindestseltenheit „Ungewöhnlich“,
+  Meisterstücke „Selten“), **umschmieden** (Affixe neu würfeln), **Element einschmieden** (Stufe 1–3 mit Essenzen; Stufe 3
+  braucht den Bosskern des Elements), Setteile mit Bosskern, Legendäre Waffen. Verbessern bis +10 bleibt wie bisher.
+- **Alchemie:** Tränke bis zur vierten Stufe, Läuterungstrank, **Elixiere** (eines gleichzeitig, 5 Minuten): Verteidigung,
+  Tempo, Krit, Angriff und je Element ein Schutzelixier.
+- **Kochen:** **Speisen** (eine gleichzeitig, 15 Minuten) aus den Zutaten der Gebiete; das **Quellhainer Festmahl** stärkt
+  auch Gruppenmitglieder in der Nähe. Speise und Elixier überstehen Tod und Abmelden.
+- **Verzauberung:** genau eine Rune je Ausrüstungsteil, bezahlt mit Essenzen (Angriff, Krit, Lebensraub, Leben,
+  Verteidigung, Mana, Resistenzen, Tempo, Abklingzeit …).
+- **Rezepte** sind von Anfang an bekannt oder werden über **Rezeptrollen** gelernt (Erwachte, Truhen, Bosse; später Quests
+  und Ruf): Meisterwaffen, Schutzelixiere, Festmahl.
+- **Rüstungssets** (sechs, je Dungeon eines): Kopf, Rüstung, Reif, Anhänger; Boni bei 2 und 4 Teilen. Schmuck aus den
+  Truhen des Dungeons (Bosstruhe: beim ersten Mal garantiert), Kopf und Rüstung mit Bosskern schmiedbar.
+- **Legendäre Waffen** (eine je Klasse, aus allen sechs Bosskernen und Ätherstaub, bei Borin oder Rakhan):
+  Krieger *Sechsklang* – jeder vierte Treffer entfesselt eine Schockwelle · Magier *Wogenruf* – Reaktionen treffen härter
+  und häufiger · Waldläufer *Echosehne* – kritische Treffer prallen ab · Paladin *Morgenwacht* – Heilungen legen Schilde ·
+  Schattenjäger *Zwielichtfänge* – gezeichnete Ziele detonieren.
+
+## Elemente (ab 0.4)
+
+- **Schwächen und Resistenzen:** Zusätzlich zum Kreislauf hat jeder Boss und fast jeder Gegner ausdrückliche Schwächen
+  (×1,25) und manche Resistenzen (×0,8, auch gegen physischen Schaden). Die Zielanzeige oben im Bild und die Bossleiste
+  zeigen beides. Spieler sammeln **Resistenzen** über Affixe, Runen, Sets und Elixiere (höchstens 50 %).
+- **Zustand je Element:** Feuer – Brennen · Wasser – Verlangsamt · Erde – Betäubt · Wind – Entblößt (Treffer öfter
+  kritisch) · Licht – Geschwächt (Ziel teilt weniger aus) · Dunkelheit – Gezeichnet. Dazu Gift, Verwurzelt, Eingefroren.
+- **Reaktionen:** Trägt ein Ziel den Zustand eines Elements und wird von einem zweiten getroffen, reagieren beide:
+  Feuersturm (Feuer+Wind), Frost (Wasser+Wind), Dampf (Feuer+Wasser), Schlamm (Erde+Wasser), Zwielicht (Licht+Dunkelheit),
+  Sandsturm (Erde+Wind), Fäulnis (Erde+Dunkelheit), Quellsegen (Wasser+Licht). Danach ist das Ziel 3 s (Bosse 5 s)
+  gesperrt; Bosse lassen sich nicht einfrieren oder festsetzen.
+- **Zusammenspiel:** Stammen die beiden Elemente von verschiedenen Spielern, wirkt die Reaktion 50 % stärker und beide
+  erhalten kurz „Einklang“ (+8 % Angriff).
+- **Spielstile:** Jede Klasse erreicht über Fähigkeiten und ein eingeschmiedetes Element mindestens zwei Reaktionen
+  (z. B. Krieger Feuersturm/Sandsturm, Magier Dampf/Frost/Feuersturm, Waldläufer Sandsturm/Frost, Paladin
+  Zwielicht/Quellsegen, Schattenjäger Fäulnis/Zwielicht).
+
 ## Balancing
 
 Alle Stellschrauben liegen zentral in `shared/src/config.ts` (Levelkurve, Gegnerformeln, Schadensminderung,

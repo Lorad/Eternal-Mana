@@ -1,6 +1,6 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, ItemInstance, PartyMember, ServerInfo } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, ItemInstance, Mods, PartyMember, ServerInfo } from '../../../shared/src/types';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help';
 export interface Toast { id: number; s: string; kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string; item?: ItemInstance }
@@ -25,10 +25,14 @@ export interface UiState {
   keys: number;                    // Schlüssel im aktuellen Dungeon
   /** Abklingzeiten: id → { until: performance.now()-Zeitpunkt, total: Sekunden }. Sonder-IDs: '_potion', '_dodge', '_attack' */
   cds: Record<string, { until: number; total: number }>;
-  buffs: { id: string; name: string; glyph: string; until: number }[];
+  buffs: { id: string; name: string; glyph: string; until: number; icon?: string; desc?: string; mods?: Mods }[];
   party: PartyMember[];
   invite: { from: number; name: string } | null;
-  boss: { id: number; name: string; hp: number; maxHp: number; phase: number; el: Element } | null;
+  boss: { id: number; name: string; hp: number; maxHp: number; phase: number; el: Element; weak?: Element[]; resist?: Element[] } | null;
+  /** Gegner, den man gerade bekämpft oder anvisiert – mit Schwächen und Resistenzen (0.4) */
+  target: { id: number; name: string; lvl: number; hp: number; maxHp: number; el: Element; elite: boolean; weak: Element[]; resist: Element[] } | null;
+  /** offenes Handwerksfenster: `at` = NPC-ID oder 'fire' (Lagerfeuer), `station` = Art der Station */
+  craft: { at: string; station: string } | null;
   toasts: Toast[];
   chat: ChatLine[];
   chatOpen: boolean;
@@ -51,7 +55,7 @@ const state: UiState = {
   screen: 'boot', bootProgress: 0, conn: 'offline', ping: 0, serverUrl: '', serverInfo: null, error: null,
   chars: [], online: [], char: null, charId: 0, myId: 0,
   me: { hp: 1, maxHp: 1, mp: 0, maxMp: 1, flags: 0 }, zone: '', keys: 0,
-  cds: {}, buffs: [], party: [], invite: null, boss: null, toasts: [], chat: [], chatOpen: false,
+  cds: {}, buffs: [], party: [], invite: null, boss: null, target: null, craft: null, toasts: [], chat: [], chatOpen: false,
   panel: null, dialog: null, sign: null, story: null, dead: null, prompt: null, nearStone: false,
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0,
 };
@@ -99,12 +103,13 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {
   if (state.screen !== 'game') return;
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null });
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
   if (state.story) { store.set({ story: null }); return true; }
   if (state.sign) { store.set({ sign: null }); return true; }
+  if (state.craft) { store.set({ craft: null }); return true; }
   if (state.dialog) { store.set({ dialog: null }); return true; }
   if (state.panel) { store.set({ panel: null }); return true; }
   if (state.chatOpen) { store.set({ chatOpen: false }); return true; }
@@ -112,5 +117,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.sign || state.story || state.chatOpen || state.dead);
+  return !!(state.panel || state.dialog || state.craft || state.sign || state.story || state.chatOpen || state.dead);
 }

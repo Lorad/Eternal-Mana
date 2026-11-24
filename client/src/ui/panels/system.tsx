@@ -81,7 +81,10 @@ export function HelpPanel() {
             <li><b>Brüchige Felsblockaden</b> lassen sich mit Angriffen zertrümmern. Dahinter liegen oft Truhen oder Abkürzungen.</li>
             <li><b>Quellsteine</b> heilen dich, setzen deinen Rückkehrpunkt und erlauben die Schnellreise über die Weltkarte.</li>
             <li><b>Beute ist für jeden Spieler einzeln.</b> Was du siehst, gehört dir.</li>
-            <li><b>Zustände:</b> Feuer entzündet, Wasser verlangsamt, Licht und Dunkelheit schwächen. Gezeichnete Gegner erleiden mehr Schaden.</li>
+            <li><b>Zustände:</b> Feuer entzündet, Wasser verlangsamt, Erde betäubt, Wind entblößt (mehr kritische Treffer), Licht schwächt, Dunkelheit zeichnet (mehr erlittener Schaden).</li>
+            <li><b>Reaktionen:</b> Trägt ein Gegner den Zustand eines Elements und trifft ihn ein zweites, reagieren beide – etwa Feuer + Wind zum Feuersturm oder Wasser + Wind zu Frost. Kommen die Elemente von zwei Spielern, wirkt es deutlich stärker.</li>
+            <li><b>Schwächen:</b> Oben im Bild steht, wogegen dein Ziel schwach ist und was es abwehrt. Beim Schmied lässt sich ein Element in die Waffe schmieden.</li>
+            <li><b>Handwerk:</b> Schmiede, Alchemistin, Lagerfeuer und Gelehrte verarbeiten Rohstoffe zu Ausrüstung, Tränken, Speisen und Runen. Es wirkt immer nur eine Speise und ein Elixier.</li>
             <li><b>Verbessern:</b> Schmiede werten Ausrüstung bis +{CFG.upgrade.max} auf. Scheitert ein Versuch, sind nur Gold und Material verloren.</li>
             <li><b>Niederlage:</b> Du erwachst am letzten Quellstein und verlierst {Math.round(CFG.player.deathGoldLoss * 100)} % deines Goldes. Verbündete können dich vorher aufhelfen.</li>
           </ul>

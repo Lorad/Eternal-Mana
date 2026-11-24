@@ -3,15 +3,17 @@ import { ITEMS } from '../../shared/src/data/items';
 import { QUESTS, QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../shared/src/data/quests';
 import { computeStats } from '../../shared/src/stats';
 import { Anim, FLAG_BUFF, FLAG_DEAD, FLAG_INVULN, FLAG_ROLL, FLAG_SHIELD, STATUS_BIT } from '../../shared/src/types';
-import type { CharData, Derived, GameEvent, ItemInstance, Mods, ServerMsg, StatusId } from '../../shared/src/types';
+import type { CharData, Derived, Element, GameEvent, ItemInstance, Mods, ServerMsg, StatusId } from '../../shared/src/types';
 import type { Party } from './game';
 import type { Zone } from './zone';
 
 let NEXT_ID = 1;
 export const nextId = () => NEXT_ID++;
 
-export interface Buff { id: string; name: string; glyph: string; until: number; mods: Mods; shield: number }
-export interface StatusState { until: number; dps: number }
+/** `icon`/`desc` für die Anzeige; `keep` = übersteht den Tod; `item` = Speise/Elixier, aus dem der Buff stammt (wird mitgespeichert) */
+export interface Buff { id: string; name: string; glyph: string; until: number; mods: Mods; shield: number; icon?: string; desc?: string; keep?: boolean; item?: string }
+/** `el`/`by`: Element und Urheber des Treffers, der den Zustand verhängt hat (Grundlage der Reaktionen) */
+export interface StatusState { until: number; dps: number; el?: Element; by?: Player }
 
 export class Player {
   id = nextId();
@@ -32,6 +34,8 @@ export class Player {
   pev: GameEvent[] = [];
   buffsDirty = false;
   enteredAt = 0;
+  /** Zähler für die Legendäre Waffe des Kriegers (Treffer der Standardangriffe) */
+  legendHits = 0;
 
   constructor(public accountId: number, public charId: number, public char: CharData, public send: (m: ServerMsg) => void) {
     this.stats = computeStats(char);
@@ -58,7 +62,7 @@ export class Player {
     if (this.buffsDirty) {
       this.buffsDirty = false;
       const now = this.zone.game.now;
-      this.send({ t: 'buffs', b: this.buffs.map(b => ({ id: b.id, name: b.name, glyph: b.glyph, dur: Math.max(0, b.until - now) })) });
+      this.send({ t: 'buffs', b: this.buffs.map(b => ({ id: b.id, name: b.name, glyph: b.glyph, dur: Math.max(0, b.until - now), icon: b.icon, desc: b.desc, mods: b.mods })) });
     }
   }
   toast(s: string, kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story' = 'info', icon?: string) { this.send({ t: 'toast', s, kind, icon }); }
@@ -80,9 +84,11 @@ export class Player {
     return this.moving && now - this.lastMoveMsg < 0.25 ? Anim.Move : Anim.Idle;
   }
   setAnim(a: Anim, dur: number) { this.anim = a; this.animUntil = this.zone.game.now + dur; }
-  stunned(now: number) { const s = this.statuses.get('stun'); return !!s && s.until > now; }
+  hasStatus(id: StatusId, now: number) { const s = this.statuses.get(id); return !!s && s.until > now; }
+  stunned(now: number) { return this.hasStatus('stun', now) || this.hasStatus('freeze', now); }
   speed(now: number): number {
     let s = this.stats.speed;
+    if (this.hasStatus('root', now)) return 0;
     const sl = this.statuses.get('slow');
     if (sl && sl.until > now) s *= CFG.combat.slowFactor;
     if (now < this.rollUntil + 0.12) s *= CFG.player.dodgeSpeedMul;
@@ -214,6 +220,10 @@ export class Player {
     const c = this.char;
     c.zone = this.zone.id; c.x = Math.round(this.x); c.y = Math.round(this.y);
     c.hp = Math.max(1, Math.round(this.hp)); c.mp = Math.round(this.mp);
+    // laufende Speise / laufendes Elixier mit Restdauer sichern
+    const now = this.zone.game.now, timed: Record<string, [string, number]> = {};
+    for (const b of this.buffs) if (b.item && b.until - now > 1) timed[b.id] = [b.item, Math.round(b.until - now)];
+    if (Object.keys(timed).length) c.timed = timed; else delete c.timed;
     return c;
   }
 }
