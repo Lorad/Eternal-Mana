@@ -381,6 +381,208 @@
    "rows": 1
   }
  },
+ "outfits": {
+  "char_krieger_frost": {
+   "file": "sprites/outfits/char_krieger_frost.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_krieger"
+  },
+  "char_krieger_glut": {
+   "file": "sprites/outfits/char_krieger_glut.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_krieger"
+  },
+  "char_krieger_gold": {
+   "file": "sprites/outfits/char_krieger_gold.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_krieger"
+  },
+  "char_krieger_schatten": {
+   "file": "sprites/outfits/char_krieger_schatten.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_krieger"
+  },
+  "char_krieger_wald": {
+   "file": "sprites/outfits/char_krieger_wald.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_krieger"
+  },
+  "char_magier_frost": {
+   "file": "sprites/outfits/char_magier_frost.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_magier"
+  },
+  "char_magier_glut": {
+   "file": "sprites/outfits/char_magier_glut.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_magier"
+  },
+  "char_magier_gold": {
+   "file": "sprites/outfits/char_magier_gold.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_magier"
+  },
+  "char_magier_schatten": {
+   "file": "sprites/outfits/char_magier_schatten.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_magier"
+  },
+  "char_magier_wald": {
+   "file": "sprites/outfits/char_magier_wald.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_magier"
+  },
+  "char_paladin_frost": {
+   "file": "sprites/outfits/char_paladin_frost.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_paladin"
+  },
+  "char_paladin_glut": {
+   "file": "sprites/outfits/char_paladin_glut.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_paladin"
+  },
+  "char_paladin_gold": {
+   "file": "sprites/outfits/char_paladin_gold.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_paladin"
+  },
+  "char_paladin_schatten": {
+   "file": "sprites/outfits/char_paladin_schatten.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_paladin"
+  },
+  "char_paladin_wald": {
+   "file": "sprites/outfits/char_paladin_wald.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_paladin"
+  },
+  "char_schattenjaeger_frost": {
+   "file": "sprites/outfits/char_schattenjaeger_frost.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_schattenjaeger"
+  },
+  "char_schattenjaeger_glut": {
+   "file": "sprites/outfits/char_schattenjaeger_glut.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_schattenjaeger"
+  },
+  "char_schattenjaeger_gold": {
+   "file": "sprites/outfits/char_schattenjaeger_gold.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_schattenjaeger"
+  },
+  "char_schattenjaeger_schatten": {
+   "file": "sprites/outfits/char_schattenjaeger_schatten.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_schattenjaeger"
+  },
+  "char_schattenjaeger_wald": {
+   "file": "sprites/outfits/char_schattenjaeger_wald.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_schattenjaeger"
+  },
+  "char_waldlaeufer_frost": {
+   "file": "sprites/outfits/char_waldlaeufer_frost.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_waldlaeufer"
+  },
+  "char_waldlaeufer_glut": {
+   "file": "sprites/outfits/char_waldlaeufer_glut.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_waldlaeufer"
+  },
+  "char_waldlaeufer_gold": {
+   "file": "sprites/outfits/char_waldlaeufer_gold.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_waldlaeufer"
+  },
+  "char_waldlaeufer_schatten": {
+   "file": "sprites/outfits/char_waldlaeufer_schatten.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_waldlaeufer"
+  },
+  "char_waldlaeufer_wald": {
+   "file": "sprites/outfits/char_waldlaeufer_wald.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3,
+   "base": "char_waldlaeufer"
+  }
+ },
  "atlases": {
   "obj": {
    "file": "atlases/obj.png",

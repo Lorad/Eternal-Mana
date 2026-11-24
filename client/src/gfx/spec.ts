@@ -28,6 +28,19 @@ export interface PaintableMap {
 // ---------------------------------------------------------------- Charaktere
 /** Spielbare Klassen → Sheet-Key `char_<id>` */
 export const CLASS_IDS = ['krieger', 'magier', 'waldlaeufer', 'paladin', 'schattenjaeger'] as const;
+/**
+ * Gewand-Varianten der Garderobe → Sheet-Key `char_<klasse>_<variante>` (z. B. `char_krieger_frost`), gleiches Layout wie
+ * die Klassen-Sheets. Die Varianten sind Umfärbungen von Kleidung und Rüstung (chars/outfits.ts); Haut, Haar und Waffe bleiben.
+ * Sie stehen im Manifest unter `outfits` und werden vom Client erst bei Bedarf geladen (runtime.ts → loadCharSheet).
+ */
+export const OUTFIT_IDS = [
+  'wald',      // Waldgrün und Rindenbraun, Blätterkragen
+  'glut',      // Glutrot und Kohlschwarz, glimmende Schnalle
+  'frost',     // Eisblau und Schneeweiß, Pelzkragen
+  'schatten',  // Violett und Schwarz, bleiche Schärpe
+  'gold',      // Weiß und Gold – das Prunkgewand
+] as const;
+export type OutfitId = (typeof OUTFIT_IDS)[number];
 /** NPC-Looks → Sheet-Key `npc_<id>` (gleiches Layout wie Klassen, Angriffs-Frames dürfen Idle wiederholen) */
 export const NPC_LOOKS = [
   'aelteste',      // Mirelda: alte Frau, grüne Robe, weißer Dutt, Stab

@@ -17,6 +17,7 @@ import { createCanvas, ImageData, loadImage, type Canvas } from '@napi-rs/canvas
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(root, 'client/public/assets');
@@ -44,7 +45,7 @@ const rel = (f: string) => path.relative(OUT, f).split(path.sep).join('/');
 fs.rmSync(OUT, { recursive: true, force: true });
 const t0 = performance.now();
 const bundle = gen.buildGfx();
-const manifest: any = { version: 2, generated: 'npm run assets', sheets: {}, atlases: {}, liquids: {}, overlays: {}, mobMeta: bundle.mobMeta, bossMeta: bundle.bossMeta };
+const manifest: any = { version: 2, generated: 'npm run assets', sheets: {}, outfits: {}, atlases: {}, liquids: {}, overlays: {}, mobMeta: bundle.mobMeta, bossMeta: bundle.bossMeta };
 const catalog: { group: string; rows: string[][] }[] = [];
 
 // ---------------------------------------------------------------- Spritesheets (Raster)
@@ -78,6 +79,49 @@ function exportSheets(group: string, sheets: Record<string, any>, fwOf: (key: st
 exportSheets('chars', bundle.chars, () => [spec.CHAR_FRAME_W, spec.CHAR_FRAME_H], spec.CHAR_COLS, 3, spec.CHAR_ANIMS, ['down', 'side', 'up']);
 exportSheets('mobs', bundle.mobs, k => { const m = bundle.mobMeta[k.replace(/^mob_/, '')]; return [m?.w ?? 0, m?.h ?? 0]; }, spec.MOB_FRAMES, 1, spec.MOB_ANIMS, ['']);
 exportSheets('bosses', bundle.bosses, k => { const m = bundle.bossMeta[k.replace(/^boss_/, '')]; return [m?.w ?? 0, m?.h ?? 0]; }, spec.BOSS_FRAMES, 1, spec.BOSS_ANIMS, ['']);
+
+// ---------------------------------------------------------------- Gewand-Varianten (Garderobe)
+// Gleiches Raster wie die Klassen-Sheets, aber eigener Manifest-Abschnitt `outfits`: Der Client lädt sie erst bei Bedarf
+// (runtime.ts → loadCharSheet). Nur PNG – Raster und Animations-Tags stehen in der JSON-Datei des Klassen-Sheets.
+// Als Paletten-PNG geschrieben (wenige Farben je Sheet), das halbiert die Dateigröße gegenüber RGBA.
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function pngChunk(type: string, data: Buffer): Buffer {
+  const body = Buffer.concat([Buffer.from(type, 'latin1'), data]), out = Buffer.alloc(body.length + 8);
+  let c = 0xffffffff;
+  for (const b of body) c = CRC[(c ^ b) & 255] ^ (c >>> 8);
+  out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE((c ^ 0xffffffff) >>> 0, body.length + 4);
+  return out;
+}
+/** Paletten-PNG (8 Bit, bis 256 Farben inkl. Alpha); null, wenn das Bild mehr Farben hat. */
+function pngIndexed(canvas: any): Buffer | null {
+  const w = canvas.width, h = canvas.height, px = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+  const pal = new Map<number, number>(), raw = Buffer.alloc((w + 1) * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4, a = px[i + 3], key = a === 0 ? 0 : ((px[i] << 24) | (px[i + 1] << 16) | (px[i + 2] << 8) | a) >>> 0;
+    let n = pal.get(key);
+    if (n === undefined) { n = pal.size; if (n > 255) return null; pal.set(key, n); }
+    raw[y * (w + 1) + 1 + x] = n;
+  }
+  const keys = [...pal.keys()], plte = Buffer.alloc(keys.length * 3), trns = Buffer.alloc(keys.length);
+  keys.forEach((k, n) => { plte[n * 3] = k >>> 24; plte[n * 3 + 1] = (k >>> 16) & 255; plte[n * 3 + 2] = (k >>> 8) & 255; trns[n] = k & 255; });
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 3;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), pngChunk('IHDR', ihdr), pngChunk('PLTE', plte), pngChunk('tRNS', trns), pngChunk('IDAT', zlib.deflateSync(raw, { level: 9 })), pngChunk('IEND', Buffer.alloc(0))]);
+}
+const outfits = gen.buildOutfits();
+{
+  const table: string[][] = [];
+  let bytes = 0;
+  for (const key of Object.keys(outfits).sort()) {
+    const s = outfits[key], file = path.join(OUT, 'sprites', 'outfits', key + '.png'), data = pngIndexed(s.canvas) ?? png(s.canvas);
+    write(file, data); bytes += data.length;
+    if (s.canvas.width !== spec.CHAR_FRAME_W * spec.CHAR_COLS || s.canvas.height !== spec.CHAR_FRAME_H * 3) console.warn(`  WARNUNG: ${key}: Sheet passt nicht zum Figurenraster`);
+    const base = key.slice(0, key.lastIndexOf('_'));
+    manifest.outfits[key] = { file: rel(file), fw: spec.CHAR_FRAME_W, fh: spec.CHAR_FRAME_H, cols: spec.CHAR_COLS, rows: 3, base };
+    table.push([`\`${key}\``, `\`${base}\``, `${spec.CHAR_FRAME_W}×${spec.CHAR_FRAME_H}`, `${spec.CHAR_COLS * 3}`, `${(data.length / 1024).toFixed(1)} kB`]);
+  }
+  catalog.push({ group: `Spritesheets: outfits (Garderobe; ${Object.keys(outfits).length} Sheets, ${(bytes / 1024).toFixed(0)} kB; werden erst bei Bedarf geladen, Raster und Animationen wie das Klassen-Sheet)`, rows: [['Sheet', 'Klasse', 'Frame', 'Frames', 'Größe'], ...table] });
+}
 
 // ---------------------------------------------------------------- Atlanten (TexturePacker-JSON-Hash)
 function exportAtlas(name: string, canvas: any, frames: Record<string, Rect>, describe: (n: string) => string) {
@@ -209,6 +253,7 @@ async function contact(name: string, items: { label: string; canvas: any; rect?:
 }
 const frameOf = (s: any, n: string) => ({ canvas: s.canvas, rect: s.frames[n] as Rect });
 await contact('chars', Object.keys(bundle.chars).sort().map(k => ({ label: k, ...frameOf(bundle.chars[k], '0') })), 3, 112, 140, 10, '#4c7a3c');
+await contact('outfits', spec.CLASS_IDS.flatMap((c: string) => [`char_${c}`, ...spec.OUTFIT_IDS.map((o: string) => `char_${c}_${o}`)]).map((k: string) => ({ label: k.replace('char_', ''), ...frameOf(outfits[k] ?? bundle.chars[k], '0') })), 3, 132, 140, 6, '#3c4a5c');
 await contact('mobs', Object.keys(bundle.mobs).sort().map(k => ({ label: k.replace('mob_', ''), ...frameOf(bundle.mobs[k], '0') })), 3, 150, 150, 9, '#3c4a5c');
 await contact('bosses', Object.keys(bundle.bosses).sort().map(k => ({ label: k.replace('boss_', ''), ...frameOf(bundle.bosses[k], '0') })), 2, 270, 280, 6, '#2a2636');
 {
@@ -232,5 +277,5 @@ await contact('bosses', Object.keys(bundle.bosses).sort().map(k => ({ label: k.r
 const legacy = [...objSource].filter(([, m]) => m === 'legacy').map(([n]) => n);
 const size = (dir: string): number => fs.readdirSync(dir, { withFileTypes: true }).reduce((a, e) => a + (e.isDirectory() ? size(path.join(dir, e.name)) : fs.statSync(path.join(dir, e.name)).size), 0);
 console.log(`Assets exportiert in ${((performance.now() - t0) / 1000).toFixed(1)} s → ${rel(OUT) || 'client/public/assets'} (${(size(OUT) / 1024).toFixed(0)} kB)`);
-console.log(`  ${Object.keys(manifest.sheets).length} Spritesheets, obj ${manifest.atlases.obj.frames} Frames, fx ${manifest.atlases.fx.frames} Frames, icons ${manifest.atlases.icons.frames}`);
+console.log(`  ${Object.keys(manifest.sheets).length} Spritesheets, ${Object.keys(manifest.outfits).length} Gewand-Sheets, obj ${manifest.atlases.obj.frames} Frames, fx ${manifest.atlases.fx.frames} Frames, icons ${manifest.atlases.icons.frames}`);
 if (legacy.length) console.log(`  Hinweis: ${legacy.length} Objekt-Frames stammen noch aus v1 (objects/legacy.ts): ${legacy.slice(0, 12).join(', ')}${legacy.length > 12 ? ' …' : ''}`);

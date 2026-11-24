@@ -1,6 +1,6 @@
 /**
  * Figuren-Vorschau: /preview-chars.html
- *   ?only=<teil>   nur Sheets, deren Key den Text enthält (mehrere mit Komma)
+ *   ?only=<teil>   nur Sheets, deren Key den Text enthält (mehrere mit Komma); mit ?only werden auch die Gewand-Varianten durchsucht (z. B. ?only=_frost oder ?only=krieger_)
  *   ?scale=4       Vergrößerung
  *   ?sec=strips|lineup|sil   nur ein Abschnitt (Standard: alle)
  *   ?anims=attack,heavy      nur diese Animationen in den Streifen;  ?row=0|1|2 nur eine Blickrichtung
@@ -9,7 +9,7 @@
  */
 import { buildCharSheet } from './chars';
 import { clipLog } from './chars/rig';
-import { CHAR_ANIMS, CHAR_COLS, CHAR_FOOT_Y, CHAR_FRAME_H as FH, CHAR_FRAME_W as FW, CLASS_IDS, NPC_LOOKS } from './spec';
+import { CHAR_ANIMS, CHAR_COLS, CHAR_FOOT_Y, CHAR_FRAME_H as FH, CHAR_FRAME_W as FW, CLASS_IDS, NPC_LOOKS, OUTFIT_IDS } from './spec';
 import type { Sheet } from './spec';
 
 const q = new URLSearchParams(location.search);
@@ -23,7 +23,9 @@ const report = document.getElementById('report')!;
 const BG = ['#6aa84a', '#23222c'].filter((_, i) => q.get('bg') === null || Number(q.get('bg')) === i);
 const ANIMS = Object.entries(CHAR_ANIMS);
 
-const keys = [...CLASS_IDS.map((c) => `char_${c}`), ...NPC_LOOKS.map((c) => `npc_${c}`)].filter((k) => !only.length || only.some((o) => k.includes(o)));
+// Gewand-Varianten (25 Sheets) nur auf Anfrage, damit die Standardseite schnell bleibt
+const outfitKeys = only.length ? CLASS_IDS.flatMap((c) => OUTFIT_IDS.map((o) => `char_${c}_${o}`)) : [];
+const keys = [...CLASS_IDS.map((c) => `char_${c}`), ...NPC_LOOKS.map((c) => `npc_${c}`), ...outfitKeys].filter((k) => !only.length || only.some((o) => k.includes(o)));
 const sheets: Record<string, Sheet> = {};
 const lines: string[] = [];
 const t0 = performance.now();
