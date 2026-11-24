@@ -100,6 +100,31 @@ Snapshots.
 - **Oberfläche:** `client/src/ui/craft.tsx` (Fenster), `itemextra.tsx` (Tooltip-Zusätze), `elements.tsx`
   (Zielanzeige); der Einstieg im NPC-Gespräch ist eine Zeile (`<StationOptions>`).
 
+## Lebendige Welt (0.6)
+
+- **Daten:** `shared/src/data/factions.ts` (sechs Fraktionen, Ränge, Vorräte, Spenden, Rufregeln), `events.ts` (Jahreszeiten,
+  Ereignisse, Ware der Fahrenden Händlerin, Begegnungen), `rares.ts` (seltene Monster, Weltbosse, Ereignisgegner – vorhandene
+  Sprites mit `tint`/`scale`), `routines.ts` (Tagesabläufe), `worlditems.ts` (Sternsplitter, Schatzkarten, Trophäen);
+  `shared/src/world.ts` (Grabstellen und Hinweise – deterministisch aus Karte und Charakter). Zahlen: `CFG.living`.
+- **Server:** `server/src/world/` – `index.ts` ist der einzige Einstieg für `Game`/`Zone` (Takt, Tod eines Gegners, Interaktion,
+  Wetterwahl, Abbaustellen, Nachrichten, Dev-Befehle); daneben `rep.ts`, `events.ts` (Rahmen: ansagen → laufen → Beiträge zählen
+  → jeden Beteiligten einmal persönlich belohnen → aufräumen; dazu Weltbosse und Händlerin), `rares.ts`, `encounters.ts`,
+  `treasure.ts`, `routines.ts`. Zustand hängt per WeakMap an `Game` bzw. `Zone` (`state.ts`).
+- **Kosten:** Zonen ohne Spieler werden nicht simuliert, Dungeons übersprungen. Im Spieltakt läuft einmal je Sekunde ein
+  Zeitvergleich je Weltboss und laufendem Ereignis (räumt Ereignisse verlassener Zonen ab). Betritt jemand eine leere Zone,
+  stehen die NPCs sofort am Platz ihrer Tageszeit.
+- **Spielstand:** `CharData.rep` (fehlt es, wird Ruf einmalig aus abgeschlossenen Quests nachgetragen), `CharData.title`;
+  alles Übrige in `flags`: `tk:<zone>` aktive Schatzkarte, `tm:<zone>` gehobene Schätze, `tr:<id>` Trophäe, `rk:`/`wb:` Siege,
+  `fu:`/`vu:` einmalige Käufe. Weltzeit (Jahreszeit) und Weltboss-Termine liegen in der Tabelle `meta`.
+- **Protokoll (nur Zusätze):** `world` (Jahreszeit, Ereignisse aller Zonen, persönliches Händlerangebot), `encdlg`
+  (Gesprächsknoten einer Begegnung), Ereignis `omv` (Objekt wandert – NPCs sind Objekte, ihr Ort ist der des Objekts, deshalb
+  folgen Nähe-Prüfungen, Questmarker und Karten von selbst); Client → Server: `donate`, `fbuy`, `wbuy`, `dig`, `enc`, `title`.
+  Objekte der Weltsysteme haben den Typ `wobj` (Frame, Beschriftung, Licht, Aufforderung in `props`).
+- **Oberfläche:** `client/src/ui/world.tsx` (Fenster „Ruf und Welt“, Ereignisanzeige, Vorräte/Spenden/Händlerin, Begegnungen);
+  Händlerpreise und Sperren kommen aus denselben Funktionen wie auf dem Server.
+- **Werkzeuge:** `scripts/world-income.ts` (Einkommen je Stunde vorher/nachher), `tests/e2e/welt.mjs` (Browser-Durchlauf),
+  Dev-Befehle `/event`, `/wboss`, `/rare`, `/season`, `/rep`, `/enc`, `/tmap`, `/welt aus|an`.
+
 ## Client
 
 - **GameScene** (`client/src/game/`): malt den Boden einmalig in 512-px-Kacheln auf Canvas-Texturen, legt die animierte
@@ -181,5 +206,7 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
   verborgenes Ende, Vaels Prüfung, alter Spielstand, dazu zwei Durchläufe (Hauptgeschichte Kapitel 7 bis Epilog; alle Nebenwege).
 - `tests/craft.test.ts`, `tests/elements.test.ts` – Handwerk und Elemente gegen ein echtes `Game` ohne Netzwerk
   (`tests/helpers/sim.ts`: Nachrichten über `Game.onMessage`, Zeit von Hand, Zufall setzbar).
+- `tests/world.test.ts` – Lebendige Welt: Ruf und Freischaltungen, jedes Ereignis von Ansage bis Aufräumen, Weltboss,
+  seltene Monster, Schatzkarten, Begegnungen, Tagesabläufe, Jahreszeiten, leere Zonen; ein Durchlauf gegen einen echten Server.
 - `scripts/balance-sim.ts` – Kampfsimulation für Vorher/Nachher-Vergleiche (`--ausbau` rechnet den Handwerks-Ausbau mit).
 - `tests/e2e/smoke.mjs` – Browser-Durchlauf mit Playwright: Menü → Charakter erstellen → Welt → bewegen → angreifen.

@@ -231,7 +231,7 @@ export const CFG = {
     },
     treasure: {
       spots: 24,                   // mögliche Grabstellen je Region
-      radius: 26,
+      radius: 34,                  // etwas größer als der Radius, in dem der Client „Hier graben“ anbietet
       gold: [12, 18],              // × Gold eines Gegners der Gebietsstufe
       rarity: [0, 0, 60, 32, 8],
       aether: 0.15, scroll: 0.2,

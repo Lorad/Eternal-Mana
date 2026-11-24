@@ -70,9 +70,19 @@ export interface ZoneWorld {
 }
 const games = new WeakMap<Game, GameWorld>();
 const zones = new WeakMap<Zone, ZoneWorld>();
+export const META_KEY = 'welt';
 export function gw(g: Game): GameWorld {
   let s = games.get(g);
-  if (!s) games.set(g, (s = { base: 0, season: 0, bossNext: {}, events: new Set(), nextId: 1, syncT: 0, dirty: false, loaded: false, auto: true }));
+  if (!s) {
+    games.set(g, (s = { base: 0, season: 0, bossNext: {}, events: new Set(), nextId: 1, syncT: 0, dirty: false, loaded: true, auto: true }));
+    // Weltzeit und Weltboss-Termine überdauern Neustarts (Tabelle `meta`); unlesbar oder leer: die Welt beginnt im Frühling
+    try {
+      const raw = JSON.parse(g.db.getMeta(META_KEY) ?? 'null');
+      if (raw && typeof raw.t === 'number' && isFinite(raw.t)) s.base = Math.max(0, raw.t);
+      if (raw && raw.boss && typeof raw.boss === 'object') for (const id in raw.boss) if (typeof raw.boss[id] === 'number' && isFinite(raw.boss[id])) s.bossNext[id] = raw.boss[id];
+    } catch { /* ohne Datenbank (Messläufe) oder mit kaputtem Eintrag: Standardwerte */ }
+    s.season = seasonAt(s.base + g.now).season;
+  }
   return s;
 }
 export function zw(z: Zone): ZoneWorld {

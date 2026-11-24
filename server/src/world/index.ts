@@ -22,24 +22,12 @@ import { bossKilled, eventInfo, eventInteract, eventMobDeath, finishEvent, sched
 import { rareDeath, spawnRare, tickRares } from './rares';
 import { addRep, donate, factionBuy, onQuestDone, setTitle } from './rep';
 import { snapRoutines, tickRoutines } from './routines';
-import { gw, ringSpot, seasonOf, worldTime, zw } from './state';
+import { META_KEY, gw, ringSpot, seasonOf, worldTime, zw } from './state';
 import { dig, readMap, useTrophy } from './treasure';
 
 const L = CFG.living;
-const META = 'welt';
 type WorldMsg = Extract<ClientMsg, { t: 'donate' | 'fbuy' | 'wbuy' | 'dig' | 'enc' | 'title' }>;
 
-function load(g: Game) {
-  const G = gw(g);
-  if (G.loaded) return;
-  G.loaded = true;
-  try {
-    const raw = JSON.parse(g.db.getMeta(META) ?? 'null');
-    if (raw && typeof raw.t === 'number' && isFinite(raw.t)) G.base = Math.max(0, raw.t);
-    if (raw && raw.boss && typeof raw.boss === 'object') for (const id in WORLD_BOSSES) if (typeof raw.boss[id] === 'number') G.bossNext[id] = raw.boss[id];
-  } catch { /* unlesbar: die Welt beginnt im Frühling */ }
-  G.season = seasonOf(g).season;
-}
 function infoFor(p: Player): WorldInfo {
   const g = p.zone.game, G = gw(g), s = seasonOf(g);
   return { season: s.season, sp: Math.round(s.sp * 100) / 100, ev: [...G.events].map(e => eventInfo(e, p)), trader: traderOffers(p.zone, p) };
@@ -51,7 +39,6 @@ export const World = {
   // ================================================================== Spieltakt (Game.tick)
   tickGame(g: Game, dt: number) {
     const G = gw(g);
-    load(g);
     if ((G.syncT += dt) < 1) return;
     const step = G.syncT; G.syncT = 0;
     const now = g.now, s = seasonOf(g).season;
@@ -74,7 +61,7 @@ export const World = {
   save(g: Game) {
     const G = gw(g);
     if (!G.loaded) return;
-    try { g.db.setMeta(META, JSON.stringify({ t: Math.round(worldTime(g)), boss: G.bossNext })); } catch (e) { console.error('[welt] Speichern fehlgeschlagen:', e); }
+    try { g.db.setMeta(META_KEY, JSON.stringify({ t: Math.round(worldTime(g)), boss: G.bossNext })); } catch (e) { console.error('[welt] Speichern fehlgeschlagen:', e); }
   },
 
   // ================================================================== Zonentakt (Zone.update – nur mit Spielern)
@@ -158,7 +145,6 @@ export const World = {
   season(g: Game): number { return seasonOf(g).season; },
   /** Springt an den Beginn einer Jahreszeit */
   setSeason(g: Game, n: number) {
-    load(g);
     const G = gw(g), len = L.season.lengthSec, year = len * 4, t = worldTime(g);
     G.base += ((((n % 4) + 4) % 4) * len - (t % year) + year) % year;
     G.syncT = 1; // beim nächsten Takt ansagen

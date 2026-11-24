@@ -4,6 +4,10 @@
  * Nichts wartet auf echte Zeit: Ereignisse, Monster, Begegnungen und Jahreszeiten werden erzwungen (`World.start…`),
  * die Uhr läuft von Hand (`sim.step`).
  */
+import { spawn, type ChildProcess } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sanitizeChar } from '../server/src/db';
 import { Game } from '../server/src/game';
@@ -29,6 +33,7 @@ import { newCharacter } from '../shared/src/stats';
 import type { GameEvent, ServerMsg, WorldInfo } from '../shared/src/types';
 import { Rng } from '../shared/src/util/rng';
 import { activeTreasure, cellFree, treasureSpots } from '../shared/src/world';
+import { Bot } from './helpers/bot';
 import { Sim, type Tester } from './helpers/sim';
 
 let sim: Sim;
@@ -1000,5 +1005,75 @@ describe('Leere Zonen kosten nichts', () => {
       expect(World.state.game(s.game).events.size).toBe(0);
     } finally { s.close(); }
   });
+});
+
+// =====================================================================================================================
+describe('Über das Netz (echter Serverprozess)', () => {
+  const PORT = 8200 + Math.floor(Math.random() * 150), URL = `ws://127.0.0.1:${PORT}/ws`;
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'em-welt-'));
+  let proc: ChildProcess;
+  async function startServer() {
+    proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', '--import', 'tsx', 'server/src/index.ts'], { env: { ...process.env, EM_PORT: String(PORT), EM_DATA: dataDir, EM_DEV: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    proc.stdout!.on('data', d => (out += d)); proc.stderr!.on('data', d => (out += d));
+    for (let i = 0; i < 100; i++) { if (out.includes('läuft')) return; await new Promise(r => setTimeout(r, 100)); }
+    throw new Error('Server startet nicht:\n' + out);
+  }
+  async function stopServer() { proc.kill('SIGINT'); await new Promise(r => proc.once('exit', r)); }
+  beforeAll(startServer, 30000);
+  afterAll(async () => { await stopServer(); fs.rmSync(dataDir, { recursive: true, force: true }); });
+  const lastWorld = (b: Bot) => (b.msgs.filter(m => m.t === 'world').at(-1) as Extract<ServerMsg, { t: 'world' }> | undefined)?.w;
+  const until = async (ok: () => boolean, ms = 6000) => { const t0 = Date.now(); while (!ok() && Date.now() - t0 < ms) await new Promise(r => setTimeout(r, 50)); return ok(); };
+
+  it('Weltzustand, Ereignis, Händlerin und wandernde NPCs kommen beim Client an; die Jahreszeit übersteht den Neustart', async () => {
+    const b = new Bot(URL, 'Netzwelt');
+    await b.connect();
+    await b.createAndEnter('krieger');
+    expect(await until(() => !!lastWorld(b))).toBe(true);                      // Weltzustand gleich beim Betreten
+    expect(lastWorld(b)).toMatchObject({ season: 0, ev: [] });
+    await b.dev('/welt aus'); await b.dev('/god'); await b.dev('/gold 5000');
+    await b.dev('/season 2');
+    expect(await until(() => lastWorld(b)?.season === 2)).toBe(true);
+    expect(b.msgs.some(m => m.t === 'chat' && m.ch === 'sys' && m.s.includes('Herbst'))).toBe(true);
+    // Ereignis: Ansage, Weltzustand, Objekt in der Welt
+    await b.dev('/event woge', 400);
+    expect(await until(() => lastWorld(b)?.ev.some(e => e.kind === 'woge' && e.zone === 'gruenwald') === true)).toBe(true);
+    expect(await until(() => !!b.obj('wobj'))).toBe(true);
+    expect(b.obj('wobj')!.props).toMatchObject({ frame: 'mana_surge', mark: 'event' });
+    // Händlerin löst die Woge ab (ein Ereignis je Zone): das Wogen-Objekt verschwindet, die Händlerin steht da und verkauft
+    await b.dev('/event haendler', 400);
+    expect(await until(() => !!b.obj('npc', 'vesna') && !!lastWorld(b)?.trader)).toBe(true);
+    expect([...b.objs.values()].some(o => o.props?.frame === 'mana_surge')).toBe(false);
+    const offers = lastWorld(b)!.trader!, i = offers.findIndex(o => o.item.base === STAR);
+    await b.gotoNpc('vesna');
+    const purse = b.char.gold;
+    b.send({ t: 'wbuy', idx: i, qty: 1 });
+    expect(await until(() => b.char.inv.some(it => it.base === STAR))).toBe(true);
+    expect(b.char.gold).toBe(purse - offers[i].price);
+    expect(await until(() => lastWorld(b)!.trader![i].left === offers[i].left - 1)).toBe(true);
+    // Abend: NPCs gehen los (Ereignis `omv`), der Bot folgt ihnen und kann weiter handeln
+    const sella = b.obj('npc', 'sella')!, home = { x: sella.x, y: sella.y };
+    await b.dev('/time 0.9', 300);
+    expect(await until(() => b.events.some(e => e.k === 'omv' && e.id === sella.id), 4000)).toBe(true);
+    await until(() => Math.hypot(sella.x - home.x, sella.y - home.y) > 90, 12000);
+    expect(Math.hypot(sella.x - home.x, sella.y - home.y)).toBeGreaterThan(90);
+    await b.gotoNpc('sella');
+    const gold = b.char.gold;
+    b.send({ t: 'buy', npc: 'sella', idx: 0, qty: 1 });
+    expect(await until(() => b.char.gold < gold)).toBe(true);
+    b.close();
+    // Neustart: Herbst bleibt Herbst
+    await stopServer();
+    await startServer();
+    const c = new Bot(URL, 'Netzwelt', b.token);
+    await c.connect();
+    const e = c.waitFor('entered');
+    c.send({ t: 'enter', id: c.chars[0].id });
+    await e;
+    expect(await until(() => !!lastWorld(c))).toBe(true);
+    expect(lastWorld(c)!.season).toBe(2);
+    expect(c.char.inv.some(it => it.base === STAR)).toBe(true);
+    c.close();
+  }, 60000);
 });
 void Rng;
