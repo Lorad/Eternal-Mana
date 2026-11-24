@@ -2,6 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { sanitizeChar } from '../server/src/db';
 import { ECHO_MECH } from '../server/src/echo';
+import { questPoints } from '../server/src/endgame';
 import { Rift, riftHome } from '../server/src/rift';
 import type { Zone } from '../server/src/zone';
 import { circleFree, lineClear } from '../shared/src/collision';
@@ -10,7 +11,7 @@ import { craftBlock, makeLegendary, makeSetPiece } from '../shared/src/craft';
 import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
 import { ITEMS, baseMods, equipLevel, generateGear, itemPrice, tierOf } from '../shared/src/data/items';
 import { ECHO_FRAG } from '../shared/src/data/materials';
-import { QUESTS, QUEST_LIST } from '../shared/src/data/quests';
+import { QUESTS, QUEST_LIST, questAvailable } from '../shared/src/data/quests';
 import { ENCHANT_LIST, LEARNABLE, RECIPES, RECIPE_LIST, scrollOf } from '../shared/src/data/recipes';
 import { ECHO_BOSS, ECHO_TINT, KREIS_QUEST, QUELL_MAX, QUELL_TRACKS, RIFT_DUNGEONS, RIFT_MOD_LIST, RIFT_UNLOCK_QUEST, TITLES, TRIAL_BOSSES, TRIAL_ID, TRIAL_RECIPE, attuneCap, attunePlan, counterOf, echoBossDef, kreisLevel, quellBonus, quellFree, riftMods, riftPar, riftRarity, riftRevives, riftUnlocked, seenEndings, trialUnlocked, type RiftModId } from '../shared/src/data/rifts';
 import { ZONES } from '../shared/src/data/zones';
@@ -1036,5 +1037,473 @@ describe('Prüfung der Sieben', () => {
     expect(t.p.char.title).toBe('sieben');
     expect(t.p.char.rift!.trial).toBe(1);
     sim.clear();
+  });
+});
+
+describe('Quellstufen', () => {
+  it('Erfahrung über Stufe 40 füllt Quellstufen; Punkte lassen sich auf Bahnen setzen und wirken genau wie angegeben', () => {
+    const t = sim.join('Quellkind', 'krieger', 39), c = t.p.char;
+    c.xp = CFG.xpToNext(39) - 10;
+    t.p.gainXp(30);
+    expect(c.level).toBe(40);
+    expect(c.quell?.lvl ?? 0).toBe(0);                         // bis Stufe 40 läuft alles wie bisher
+    const ap = c.attrPoints, sp = c.skillPoints;
+    const need = CFG.quell.xpToNext(0);
+    t.p.gainXp(need - 1);
+    expect(c.quell).toMatchObject({ lvl: 0, xp: need - 1 });
+    expect(quellFree(c)).toBe(0);
+    t.send({ t: 'quell', track: 'kraft' });
+    expect(c.quell!.pts.kraft).toBeUndefined();
+    expect(t.toasts.at(-1)).toMatch(/Kein freier Quellpunkt/);
+    t.p.gainXp(1);
+    expect(c.quell).toMatchObject({ lvl: 1, xp: 0 });
+    expect(c.level).toBe(40); expect(c.attrPoints).toBe(ap); expect(c.skillPoints).toBe(sp);
+    expect(quellFree(c)).toBe(1);
+    expect(CFG.quell.xpToNext(5)).toBeGreaterThan(need);       // jede Stufe kostet mehr
+    // Gegner geben nach Stufe 40 Quell-Erfahrung (mit Erfahrungsbonus)
+    t.p.addBuff({ id: 'xp', name: 'x', glyph: 'x', until: 1e9, mods: { xpPct: 50 }, shield: 0 });
+    t.p.gainXp(100);
+    expect(c.quell!.xp).toBe(150);
+    t.p.buffs = []; t.p.recalc();
+    // ein Punkt auf „Quellkraft“: Angriff steigt genau um den angegebenen Prozentwert
+    const kraft = QUELL_TRACKS.find(q => q.id === 'kraft')!;
+    const before = computeStats(c);
+    t.send({ t: 'quell', track: 'kraft' });
+    expect(c.quell!.pts.kraft).toBe(1);
+    expect(quellFree(c)).toBe(0);
+    const bare = { ...c, quell: undefined };
+    expect(computeStats(bare)).toEqual(before);
+    expect(t.p.stats).toEqual(computeStats(bare, [{ powerPct: quellBonus(kraft, 1) }]));
+    expect(t.p.stats.power).toBeGreaterThan(before.power);
+    expect(t.p.stats.maxHp).toBe(before.maxHp);
+    // unbekannte Bahn: nichts passiert
+    t.p.gainQuellXp(CFG.quell.xpToNext(1));
+    t.send({ t: 'quell', track: 'unsinn' });
+    expect(quellFree(c)).toBe(1);
+    // jede Bahn wirkt auf genau ihren Wert
+    for (let i = 0; i < 20; i++) t.p.gainQuellXp(CFG.quell.xpToNext(c.quell!.lvl));
+    for (const q of QUELL_TRACKS) {
+      const n0 = c.quell!.pts[q.id] ?? 0;
+      t.send({ t: 'quell', track: q.id }); t.send({ t: 'quell', track: q.id });
+      expect(c.quell!.pts[q.id]).toBe(n0 + 2);
+    }
+    const mods = Object.fromEntries(QUELL_TRACKS.map(q => [q.mod, quellBonus(q, c.quell!.pts[q.id])]));
+    expect(t.p.stats).toEqual(computeStats(bare, [mods]));
+    // übersteht Speichern und Laden
+    const saved = JSON.parse(JSON.stringify(c.quell));
+    sim.leave(t); sim.reenter(t);
+    expect(t.p.char.quell).toEqual(saved);
+    expect(t.p.stats.power).toBe(computeStats(t.p.char).power);
+    sim.clear();
+  });
+  it('Bahnen haben abnehmenden Zuwachs und eine Obergrenze; alle Quellstufen zusammen bleiben bescheiden', () => {
+    const cap = CFG.quell.trackCap;
+    for (const q of QUELL_TRACKS) {
+      expect(quellBonus(q, 0)).toBe(0);
+      expect(quellBonus(q, cap)).toBe(q.max);
+      expect(quellBonus(q, cap + 5)).toBe(q.max);
+      const first = quellBonus(q, 1), last = quellBonus(q, cap) - quellBonus(q, cap - 1);
+      expect(first).toBeGreaterThan(last * 2);                 // der erste Punkt bringt deutlich mehr als der letzte
+      for (let k = 1; k <= cap; k++) expect(quellBonus(q, k)).toBeGreaterThan(quellBonus(q, k - 1));
+    }
+    expect(QUELL_MAX).toBe(QUELL_TRACKS.length * cap);
+    const t = sim.join('Quellgreis', 'krieger', 40), c = t.p.char;
+    const base = computeStats(c);
+    t.p.gainQuellXp(1e12);                                     // weit mehr, als es Stufen gibt
+    expect(c.quell).toMatchObject({ lvl: QUELL_MAX, xp: 0 });
+    t.p.gainQuellXp(5000);
+    expect(c.quell!.xp).toBe(0);
+    for (const q of QUELL_TRACKS) {
+      for (let k = 0; k < cap; k++) t.send({ t: 'quell', track: q.id });
+      expect(c.quell!.pts[q.id]).toBe(cap);
+      t.send({ t: 'quell', track: q.id });
+      expect(c.quell!.pts[q.id]).toBe(cap);                    // voll ist voll
+    }
+    expect(quellFree(c)).toBe(0);
+    const full = t.p.stats;
+    // voll ausgebaut: höchstens +6 % Angriff, +8 % Leben und Verteidigung – ein Vorteil, kein Freifahrtschein
+    expect(full.power / base.power).toBeGreaterThan(1.04); expect(full.power / base.power).toBeLessThan(1.07);
+    expect(full.maxHp / base.maxHp).toBeLessThan(1.09);
+    expect(full.def / base.def).toBeLessThan(1.09);
+    expect(full.cdr - base.cdr).toBeLessThanOrEqual(5);
+    expect(full.res.fire).toBe(6);
+    sim.clear();
+  });
+});
+
+/** Charakter, der die ganze Geschichte abgeschlossen hat – mit allem, was ein Neuer Kreis behalten oder zurücksetzen muss. */
+function finished(name: string, ende = 1): Tester {
+  const t = sim.join(name, 'krieger', 40), c = t.p.char;
+  for (const q of QUEST_LIST) if (q.type === 'main') c.quests[q.id] = { s: 'done', p: [], n: 1 };
+  c.quests.s_splitter1 = { s: 'done', p: [], n: 1 };
+  c.quests.s_splitter2 = { s: 'active', p: [0] };
+  Object.assign(c.flags, { 'd:ende': ende, 'd:borin': 2, 'h:earth': 1, 'e:woge1': 1, 'v:heimkehr': 1, 'q:mirelda': 1, 'k:ende1': 1, ch: 11, 'b:dornenmutter': 3, 'b:vael': 1,
+    'c:gruenwald:5': 1, 't:gruenwald': 1, 't:frost': 1, 'l:brunnenbuch': 1, 's:gruenwald:shard0': 1, 'z:frost': 1, 'x:gruenwald:9': 1, 'u:dornenmutter': 1, 'sd:wurzelwacht': 1, intro: 1 });
+  c.gold = 4321; c.attrs.str += 30; c.attrPoints = 2; c.skillPoints = 1;
+  c.equip.weapon = makeLegendary(new Rng(3), 'krieger', 40);
+  t.give('seal_earth', 1); t.give('q_herzton', 1); t.give('mat_void', 9); t.give(ECHO_FRAG, 4);
+  c.recipes = ['c_fest'];
+  c.rift = { stufe: 9, seed: 4, best: { geode: [8, 300] } };
+  c.quell = { lvl: 5, xp: 123, pts: { kraft: 3, leben: 1 } };
+  t.p.recalc();
+  sim.gotoNpc(t, 'mirelda');
+  return t;
+}
+
+describe('Neuer Kreis', () => {
+  it('nur bei Mirelda und erst nach dem Epilog; setzt die Geschichte zurück und behält alles, was der Charakter kann und besitzt', () => {
+    const t = finished('Kreislauf'), c = t.p.char;
+    const keep = () => JSON.stringify([c.level, c.xp, c.gold, c.attrs, c.attrPoints, c.skillPoints, c.skills, c.hotbar, c.equip, c.recipes, c.rift, c.quell, c.inv.filter(i => ITEMS[i.base].kind !== 'quest'), c.kills, c.deaths]);
+    const kept = keep(), stats = JSON.stringify(t.p.stats);
+    // nicht ohne Epilog
+    c.quests[KREIS_QUEST] = { s: 'active', p: [0] };
+    t.send({ t: 'kreis' });
+    expect(c.kreis ?? 0).toBe(0);
+    expect(t.toasts.at(-1)).toMatch(/Nachklang/);
+    c.quests[KREIS_QUEST] = { s: 'done', p: [], n: 1 };
+    // nicht aus der Ferne
+    t.p.x += 400;
+    t.send({ t: 'kreis' });
+    expect(c.kreis ?? 0).toBe(0);
+    expect(t.toasts.at(-1)).toMatch(/Mirelda/);
+    sim.gotoNpc(t, 'mirelda');
+    expect(seenEndings(c)).toEqual([1]);
+    t.send({ t: 'kreis' });
+    expect(c.kreis).toBe(1);
+    // die Entscheidungen des abgeschlossenen Kreises sind festgehalten
+    expect(c.kreise).toEqual([{ ende: 1, dec: { ende: 1, borin: 2 } }]);
+    expect(seenEndings(c)).toEqual([1]);
+    // zurückgesetzt: alle Quests und der Story-Fortschritt
+    expect(c.quests).toEqual({});
+    for (const k of ['d:ende', 'd:borin', 'h:earth', 'e:woge1', 'v:heimkehr', 'q:mirelda', 'k:ende1', 'ch', 'b:dornenmutter', 'b:vael', 'c:gruenwald:5', 't:frost']) expect(c.flags[k], k).toBeUndefined();
+    // behalten: Chronik, Quellsplitter, Karte, Merker – und der Quellstein der Heimat
+    for (const k of ['l:brunnenbuch', 's:gruenwald:shard0', 'z:frost', 'x:gruenwald:9', 'u:dornenmutter', 'sd:wurzelwacht', 'intro', 't:gruenwald']) expect(c.flags[k], k).toBe(1);
+    expect(c.inv.some(i => ITEMS[i.base].kind === 'quest')).toBe(false);
+    expect(t.count('mat_void')).toBe(9); expect(t.count(ECHO_FRAG)).toBe(4);
+    expect(keep()).toBe(kept);
+    expect(JSON.stringify(t.p.stats)).toBe(stats);
+    expect(c.respawn.zone).toBe('gruenwald');
+    // die Mana-Risse bleiben offen, obwohl der Hohle König in diesem Kreis noch lebt
+    expect(c.quests[RIFT_UNLOCK_QUEST]).toBeUndefined();
+    expect(riftUnlocked(c)).toBe(true);
+    // die Geschichte beginnt von vorn: erste Hauptquest ist wieder zu haben, die Wege sind wieder versperrt
+    expect(questAvailable(c, QUESTS.m_erwachen)).toBe(true);
+    expect(questAvailable(c, QUESTS.m_borin)).toBe(false);
+    t.send({ t: 'qAccept', id: 'm_erwachen', npc: 'mirelda' });
+    expect(c.quests.m_erwachen?.s).toBe('active');
+    t.send({ t: 'teleport', zone: 'frost' });
+    expect(t.p.zone.id).toBe('gruenwald');
+    // die Welt des neuen Kreises: eigene Instanz mit höheren Stufen
+    const z = t.p.zone;
+    expect(z.kreis).toBe(1);
+    expect(z.key).toBe('gruenwald#k1');
+    expect(z).not.toBe(sim.zone('gruenwald'));
+    expect((t.msgs.filter(m => m.t === 'zone').at(-1) as any).init.kreis).toBe(1);
+    for (const m of z.mobs.values()) expect(m.lvl).toBeGreaterThanOrEqual(CFG.kreis.floor + CFG.kreis.levelPer);
+    expect(z.def.level).toEqual([kreisLevel(1, 1), kreisLevel(5, 1)]);
+    for (const m of sim.zone('gruenwald').mobs.values()) expect(m.lvl).toBeLessThanOrEqual(6);   // die Welt des ersten Durchgangs bleibt, wie sie war
+    // Truhen sind wieder verschlossen und geben Beute der neuen Stufe
+    const chest = [...z.objs.values()].find(o => o.type === 'chest' && o.props?.tier === 'silver' && o.props?.guard === undefined && !o.props?.sealed)!;
+    expect(z.objStateFor(chest, t.p)).toBe(0);
+    c.inv = c.inv.filter(i => !ITEMS[i.base].tier);
+    t.p.x = chest.x; t.p.y = chest.y + 10; t.send({ t: 'interact', id: chest.id });
+    const loot = c.inv.filter(i => ITEMS[i.base].tier && !i.set);
+    expect(loot.length).toBeGreaterThan(0);
+    for (const it of loot) expect(it.ilvl).toBeGreaterThanOrEqual(40);
+    // Quests geben ab jetzt Echo-Fragmente statt Attribut- und Fähigkeitspunkten
+    const frag = t.count(ECHO_FRAG), ap = c.attrPoints, sp = c.skillPoints;
+    questPoints(t.p, 1, 2);
+    expect(t.count(ECHO_FRAG)).toBe(frag + 3 * CFG.kreis.pointFragments);
+    expect([c.attrPoints, c.skillPoints]).toEqual([ap, sp]);
+    // übersteht Speichern und Laden – und man landet wieder in der Welt seines Kreises
+    const snap = JSON.stringify([c.kreis, c.kreise, c.rift, c.quell, c.flags]);
+    sim.leave(t); sim.reenter(t);
+    const d = t.p.char;
+    expect(JSON.stringify([d.kreis, d.kreise, d.rift, d.quell, d.flags])).toBe(snap);
+    expect(t.p.zone.kreis).toBe(1);
+    expect(t.p.zone.key).toBe('gruenwald#k1');
+    sim.clear();
+  });
+  it('im ersten Durchgang geben Quests weiterhin Punkte; weitere Kreise merken sich jedes Ende; nach dem dritten wird die Welt nicht mehr härter', () => {
+    const t = finished('Rundgang', 2), c = t.p.char;
+    const ap = c.attrPoints, sp = c.skillPoints, frag = t.count(ECHO_FRAG);
+    questPoints(t.p, 1, 2);
+    expect([c.attrPoints, c.skillPoints]).toEqual([ap + 2, sp + 1]);
+    expect(t.count(ECHO_FRAG)).toBe(frag);
+    const endings = [2, 3, 1, 3, 2];
+    for (let i = 0; i < endings.length; i++) {
+      for (const q of QUEST_LIST) if (q.type === 'main') c.quests[q.id] = { s: 'done', p: [], n: 1 };
+      c.flags['d:ende'] = endings[i];
+      sim.gotoNpc(t, 'mirelda');
+      t.send({ t: 'kreis' });
+      expect(c.kreis).toBe(Math.min(CFG.kreis.max, i + 1));
+      expect(c.kreise!.length).toBe(i + 1);
+      expect(c.kreise!.at(-1)!.ende).toBe(endings[i]);
+      expect(t.p.zone.kreis).toBe(c.kreis);
+    }
+    expect(c.kreis).toBe(CFG.kreis.max);
+    expect(seenEndings(c)).toEqual([1, 2, 3]);                 // alle drei Enden gesehen
+    // jeder Kreis hebt die Stufen weiter
+    expect(kreisLevel(3, 0)).toBe(3);
+    expect(kreisLevel(3, 1)).toBe(CFG.kreis.floor + CFG.kreis.levelPer);
+    expect(kreisLevel(40, 1)).toBe(40 + CFG.kreis.levelPer);
+    expect(kreisLevel(3, 3)).toBeGreaterThan(kreisLevel(3, 2));
+    expect(kreisLevel(3, 2)).toBeGreaterThan(kreisLevel(3, 1));
+    // Dungeon des Kreises: Boss auf der Stufe des Kreises, mit Belohnung, die dazu passt – und er zählt für die Geschichte
+    sim.travel(t, 'wurzelgruft');
+    const z = t.p.zone;
+    expect(z.kreis).toBe(3);
+    expect(z.rift).toBeNull();
+    expect(z.boss!.def.level).toBe(kreisLevel(BOSSES.dornenmutter.level, 3));
+    expect(z.boss!.def.name).toBe(BOSSES.dornenmutter.name);
+    expect(z.boss!.def.xp).toBeGreaterThan(BOSSES.dornenmutter.xp * 5);
+    t.p.god = true;
+    killBoss(t, z);
+    expect(c.flags['b:dornenmutter']).toBe(1);
+    expect(t.count('seal_earth')).toBe(1);
+    expect(sim.zone('wurzelgruft').boss!.def.level).toBe(BOSSES.dornenmutter.level);
+    sim.clear();
+  });
+  it('gemischte Gruppen spielen in der Welt des niedrigsten Kreises; die Welten der Kreise beeinflussen einander nicht', () => {
+    const mk = (name: string, k: number) => { const t = sim.join(name, 'krieger', 40); t.p.char.kreis = k; t.p.char.quests[RIFT_UNLOCK_QUEST] = { s: 'done', p: [], n: 1 }; sim.game.rehome(t.p); return t; };
+    const a = mk('Dritte', 2), b = mk('Erste', 0), c = mk('Zweite', 1);
+    const w0 = sim.zone('gruenwald'), w1 = sim.game.zone('gruenwald', 1), w2 = sim.game.zone('gruenwald', 2);
+    expect(new Set([w0, w1, w2]).size).toBe(3);
+    expect([a.p.zone, b.p.zone, c.p.zone]).toEqual([w2, w0, w1]);
+    expect(sim.game.worldKreis(a.p)).toBe(2);
+    // allein sieht jeder nur seine Welt
+    expect(w2.initFor(a.p).players).toEqual([]);
+    expect(w0.players.has(a.p.id)).toBe(false);
+    // dieselbe Karte, andere Stufen
+    const lv = (z: Zone) => [...z.mobs.values()].map(m => m.lvl);
+    const base = lv(w0);
+    expect(Math.max(...base)).toBeLessThanOrEqual(6);
+    expect(Math.min(...lv(w1))).toBe(kreisLevel(1, 1));
+    expect(Math.min(...lv(w2))).toBe(kreisLevel(1, 2));
+    // ein Kampf in der Welt des dritten Kreises ändert die anderen nicht
+    const n0 = w0.mobs.size, n1 = w1.mobs.size;
+    const victim = [...w2.mobs.values()][0];
+    w2.hitMob(victim, a.p, 1e9, 'phys');
+    expect(victim.dead).toBe(true);
+    expect(w0.mobs.size).toBe(n0); expect(w1.mobs.size).toBe(n1);
+    // Gruppe aus Kreis 2 und Kreis 0: beide spielen in Kreis 0 – niemand wird in eine zu schwere Welt gezogen
+    a.send({ t: 'party', a: 'invite', id: b.p.id });
+    b.send({ t: 'party', a: 'accept' });
+    expect(a.p.party).toBeTruthy();
+    expect(sim.game.worldKreis(a.p)).toBe(0);
+    expect(a.p.zone).toBe(w0); expect(b.p.zone).toBe(w0);
+    expect(w0.initFor(b.p).players.map(p => p.name)).toEqual([a.p.name]);
+    expect(lv(w0)).toEqual(base);                              // die Welt des Neulings bleibt unverändert
+    expect(a.p.char.kreis).toBe(2);                            // der eigene Kreis bleibt, wie er ist
+    // Zonenwechsel der Gruppe: wieder die Welt des niedrigsten Kreises
+    sim.travel(a, 'kristall'); sim.travel(b, 'kristall');
+    expect(a.p.zone).toBe(sim.zone('kristall')); expect(b.p.zone).toBe(a.p.zone);
+    expect(a.p.zone.kreis).toBe(0);
+    // ein drittes Mitglied aus Kreis 1 ändert daran nichts
+    a.send({ t: 'party', a: 'invite', id: c.p.id });
+    c.send({ t: 'party', a: 'accept' });
+    expect(c.p.zone).toBe(w0);
+    expect(sim.game.worldKreis(c.p)).toBe(0);
+    // b verlässt die Gruppe: a und c rücken gemeinsam in Kreis 1 (den niedrigsten der Verbliebenen), b bleibt in seiner Welt
+    b.send({ t: 'party', a: 'leave' });
+    expect(b.p.zone).toBe(sim.zone('kristall'));
+    expect(a.p.zone.kreis).toBe(1); expect(a.p.zone.id).toBe('kristall');
+    expect(c.p.zone).toBe(w1);
+    // die Gruppe löst sich auf: jeder steht wieder in seiner eigenen Welt
+    c.send({ t: 'party', a: 'leave' });
+    expect(a.p.party).toBeNull();
+    expect(a.p.zone.kreis).toBe(2);
+    expect(c.p.zone).toBe(w1);
+    // Tod und Wiederkehr führen in die eigene Welt
+    sim.travel(a, 'gruenwald');
+    a.p.zone.killPlayer(a.p, 'Test');
+    a.send({ t: 'respawn' });
+    expect(a.p.zone).toBe(w2);
+    // Mana-Risse hängen nicht vom Kreis ab, und der Rückweg führt in die eigene Welt
+    a.p.char.rift = { stufe: 1, seed: seedFor('geode', 1, ['finsternis']), best: {} };
+    const o = [...a.p.zone.objs.values()].find(x => x.type === 'riftstone')!;
+    a.p.x = o.x; a.p.y = o.y + 12;
+    a.send({ t: 'rift', a: 'start', dungeon: 'geode', stufe: 1 });
+    expect(a.p.zone.rift).toBeTruthy();
+    expect([...a.p.zone.mobs.values()].find(m => !m.boss)!.lvl).toBe(CFG.rift.mobLevel(1));
+    a.send({ t: 'rift', a: 'leave' });
+    expect(a.p.zone).toBe(w2);
+    // leere Welten höherer Kreise werden verworfen, die Grundwelt bleibt
+    sim.clear();
+    sim.step(CFG.world.dungeonResetSec + 1);
+    expect(sim.game.zones.has('gruenwald#k2')).toBe(false);
+    expect(sim.game.zones.has('gruenwald')).toBe(true);
+  });
+});
+
+describe('Echo-Fragmente im Handwerk', () => {
+  it('Angleichen hebt Legendäre Waffen, Setteile und Unikate schrittweise auf die Stufe des höchsten abgeschlossenen Risses', () => {
+    const t = hero('krieger', 12), c = t.p.char, A = CFG.rift.attune;
+    expect(attuneCap(c)).toBe(CFG.rift.ilvl(11));              // Stufe 11 ist abgeschlossen, 12 freigeschaltet
+    const leg = makeLegendary(new Rng(8), 'krieger', 40);
+    expect(leg.ilvl).toBe(40);
+    c.equip.weapon = leg; t.p.recalc();
+    const plan = attunePlan(c, leg)!;
+    expect(plan.to).toBe(40 + A.step);
+    expect(plan.mats).toEqual([[ECHO_FRAG, A.step * A.legendFrags], ['mat_aether', A.legendAether]]);
+    sim.gotoNpc(t, 'borin');
+    c.gold = 0;
+    const snap = () => JSON.stringify([c.gold, c.inv, c.equip]);
+    // ohne Gold, ohne Fragmente, nicht an der Schmiede: jeweils abgelehnt, nichts verändert
+    let s0 = snap();
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(snap()).toBe(s0); expect(t.toasts.at(-1)).toMatch(/Gold/);
+    c.gold = 1e6; s0 = snap();
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(snap()).toBe(s0); expect(t.toasts.at(-1)).toMatch(/Echo-Fragment/);
+    t.give(ECHO_FRAG, 100); t.give('mat_aether', 10); s0 = snap();
+    t.send({ t: 'attune', uid: leg.uid, at: 'sella' });         // Sella ist keine Schmiedin
+    expect(snap()).toBe(s0);
+    t.p.x += 500;
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(snap()).toBe(s0);
+    sim.gotoNpc(t, 'borin');
+    // jetzt gelingt es: genau die Kosten, Werte und Affixe steigen
+    const power = t.p.stats.power, aff = leg.affixes.map(a => a[1]), base = baseMods(leg).power!;
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(leg.ilvl).toBe(45);
+    expect(c.gold).toBe(1e6 - plan.gold);
+    expect(t.count(ECHO_FRAG)).toBe(100 - A.step * A.legendFrags);
+    expect(t.count('mat_aether')).toBe(10 - A.legendAether);
+    expect(baseMods(leg).power!).toBeGreaterThan(base);
+    leg.affixes.forEach((a, i) => expect(a[1]).toBeGreaterThanOrEqual(aff[i]));
+    expect(t.p.stats.power).toBeGreaterThan(power);
+    expect(ITEMS[leg.base].legend).toBe('krieger');            // bleibt dieselbe Waffe
+    // weiter bis zur Obergrenze des Charakters, dann ist Schluss
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(leg.ilvl).toBe(50);
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(leg.ilvl).toBe(51);
+    const frags = t.count(ECHO_FRAG);
+    t.send({ t: 'attune', uid: leg.uid, at: 'borin' });
+    expect(leg.ilvl).toBe(51);
+    expect(t.count(ECHO_FRAG)).toBe(frags);
+    expect(t.toasts.at(-1)).toMatch(/höhere Stufe/);
+    // Setteil: bleibt Teil seines Sets
+    const helm = makeSetPiece(new Rng(2), 'wurzelwacht', 'helm', 'krieger', 3), ring = makeSetPiece(new Rng(3), 'wurzelwacht', 'ring', 'krieger', 3);
+    c.equip.helm = helm; c.equip.acc1 = ring; t.p.recalc();
+    expect(t.p.stats.sets.wurzelwacht).toBe(2);
+    const il = helm.ilvl, baseId = helm.base;
+    t.send({ t: 'attune', uid: helm.uid, at: 'borin' });
+    expect(helm.ilvl).toBe(il + A.step);
+    expect(helm.base).toBe(baseId); expect(helm.set).toBe('wurzelwacht');
+    expect(t.p.stats.sets.wurzelwacht).toBe(2);
+    expect(t.count(ECHO_FRAG)).toBe(frags - A.step * A.frags);
+    // gewöhnliche Beute lässt sich nicht angleichen
+    const plainGear = generateGear(new Rng(4), 40, 3, 'krieger', 'armor');
+    c.inv.push(plainGear);
+    t.send({ t: 'attune', uid: plainGear.uid, at: 'borin' });
+    expect(plainGear.ilvl).toBe(40);
+    // ohne offene Mana-Risse gibt es nichts anzugleichen
+    const u = sim.join('Unwissend', 'krieger', 40);
+    u.p.char.equip.weapon = makeLegendary(new Rng(9), 'krieger', 40); u.p.char.gold = 1e6; u.give(ECHO_FRAG, 50); u.give('mat_aether', 5);
+    sim.gotoNpc(u, 'borin');
+    u.send({ t: 'attune', uid: u.p.char.equip.weapon.uid, at: 'borin' });
+    expect(u.p.char.equip.weapon.ilvl).toBe(40);
+    sim.clear();
+  });
+  it('Echo-Runen und Ätherstaub: Fragmente fließen in die stärksten Verzauberungen und lassen sich verdichten', () => {
+    const t = hero('krieger', 5), c = t.p.char;
+    c.gold = 1e6;
+    c.equip.weapon = generateGear(new Rng(6), 40, 2, 'krieger', 'weapon'); t.p.recalc();
+    const rune = ENCHANT_LIST.find(e => e.id === 'echo_macht')!;
+    for (const [b, k] of rune.cost) t.give(b, k);
+    sim.gotoNpc(t, 'fenwick');
+    const before = t.p.stats.power;
+    t.send({ t: 'enchant', uid: c.equip.weapon.uid, id: 'echo_macht', at: 'fenwick' });
+    expect(c.equip.weapon.ench).toBe('echo_macht');
+    expect(t.count(ECHO_FRAG)).toBe(0);
+    expect(t.p.stats.power).toBeGreaterThan(before * 1.07);
+    // stärker als jede Rune aus 0.3 für denselben Platz
+    for (const e of ENCHANT_LIST) if (!e.id.startsWith('echo_')) expect(e.mods.powerPct ?? 0).toBeLessThan(rune.mods.powerPct!);
+    // sechs Fragmente → ein Ätherstaub (Alchemie)
+    const r = RECIPES.a_aether;
+    t.give(ECHO_FRAG, r.inputs[0][1]);
+    sim.gotoNpc(t, 'sella');
+    t.send({ t: 'craft', id: 'a_aether', at: 'sella' });
+    expect(t.count('mat_aether')).toBe(1);
+    expect(t.count(ECHO_FRAG)).toBe(0);
+    sim.clear();
+  });
+});
+
+describe('Alte Spielstände (vor 0.5)', () => {
+  it('ein Stand ohne die neuen Felder lädt mit Standardwerten und kann sofort ins Endspiel', () => {
+    const t = sim.join('Veteranin', 'magier', 1);
+    const id = sim.db.listChars(t.s.account!.id)[0].id;
+    sim.leave(t);
+    const old: any = newCharacter('Veteranin', 'magier');
+    for (const k of ['rift', 'quell', 'kreis', 'kreise', 'title']) expect(k in old, k).toBe(false);   // neue Charaktere tragen die Felder nicht
+    old.level = 40; old.xp = 777; old.gold = 999;
+    old.quests = { m_koenig: { s: 'done', p: [], n: 1 }, m_epilog: { s: 'done', p: [], n: 1 } };
+    old.flags = { 'd:ende': 2, 'b:hohlkoenig': 1, intro: 1 };
+    old.equip.weapon = { uid: 'old-w', base: 'w_staff_6', rarity: 3, ilvl: 40, up: 4, affixes: [['int', 12]], element: 'dark', name: 'Zepter der Leere' };
+    sim.db.saveChar(id, old);
+    sim.reenter(t);
+    const c = t.p.char;
+    expect(c.level).toBe(40); expect(c.xp).toBe(777); expect(c.gold).toBe(999);
+    expect(c.equip.weapon).toMatchObject({ uid: 'old-w', ilvl: 40, up: 4, name: 'Zepter der Leere' });
+    expect(c.rift).toEqual({ stufe: 1, seed: 1, best: {} });
+    expect(c.quell).toEqual({ lvl: 0, xp: 0, pts: {} });
+    expect(c.kreis).toBe(0); expect(c.kreise).toEqual([]);
+    expect(c.title).toBeUndefined();
+    expect(t.p.zone.kreis).toBe(0);
+    expect(t.p.stats).toEqual(computeStats({ ...c, quell: undefined, rift: undefined }));   // die neuen Felder ändern keine Werte
+    // und es geht sofort los: Riss öffnen, Quell-Erfahrung sammeln, Neuen Kreis beginnen
+    expect(riftUnlocked(c)).toBe(true);
+    t.p.god = true;
+    toStone(t);
+    t.send({ t: 'rift', a: 'start', dungeon: 'thron', stufe: 1 });
+    expect(t.p.zone.rift).toBeTruthy();
+    const m = [...t.p.zone.mobs.values()].find(x => !x.boss)!;
+    t.p.zone.hitMob(m, t.p, 1e9, 'phys');
+    expect(c.quell!.xp).toBeGreaterThan(0);
+    expect(c.xp).toBe(777);
+    t.send({ t: 'rift', a: 'leave' });
+    sim.gotoNpc(t, 'mirelda');
+    t.send({ t: 'kreis' });
+    expect(c.kreis).toBe(1);
+    expect(c.kreise).toEqual([{ ende: 2, dec: { ende: 2 } }]);
+    sim.leave(t); sim.reenter(t);
+    expect(t.p.char.kreis).toBe(1);
+    sim.clear();
+  });
+  it('beschädigte Werte in den neuen Feldern werden begrenzt oder verworfen', () => {
+    const raw: any = newCharacter('Kaputt', 'krieger');
+    raw.level = 40;
+    raw.rift = { stufe: 999, seed: -5, best: { geode: [99, -1], quatsch: [1, 1], thron: 'x', archiv: [3, 250] }, trial: 'ja' };
+    raw.quell = { lvl: 500, xp: -3, pts: { kraft: 99, unsinn: 5, leben: 99, schutz: 99, fluss: 99, gleichmut: 99, fund: 99 } };
+    raw.kreis = 77; raw.kreise = [{ ende: 9, dec: { borin: 2, x: 'y' } }, null, 'unsinn'];
+    raw.title = 'sieben';
+    raw.inv.push({ uid: 'hoch', base: 'w_sword_6', rarity: 4, ilvl: 70, up: 0, affixes: [] }, { uid: 'zuhoch', base: 'w_sword_6', rarity: 4, ilvl: 5000, up: 0, affixes: [] });
+    const c = sanitizeChar(raw)!;
+    expect(c.rift).toEqual({ stufe: CFG.rift.maxStufe, seed: 1, best: { geode: [CFG.rift.maxStufe, 0], archiv: [3, 250] } });
+    expect(c.quell!.lvl).toBe(QUELL_MAX);
+    expect(c.quell!.xp).toBe(0);
+    for (const q of QUELL_TRACKS) expect(c.quell!.pts[q.id]).toBe(CFG.quell.trackCap);
+    expect(c.quell!.pts.unsinn).toBeUndefined();
+    expect(c.kreis).toBe(CFG.kreis.max);
+    expect(c.kreise).toEqual([{ ende: 3, dec: { borin: 2 } }]);
+    expect(c.title).toBeUndefined();                           // Titel ohne bestandene Prüfung
+    expect(c.inv.find(i => i.uid === 'hoch')!.ilvl).toBe(70);  // Beute aus hohen Rissen bleibt, wie sie ist
+    expect(c.inv.find(i => i.uid === 'zuhoch')!.ilvl).toBe(99);
+    expect(() => computeStats(c)).not.toThrow();
+    // mehr Punkte verteilt, als es Quellstufen gibt: der Überschuss verfällt
+    const cheat: any = newCharacter('Schummel', 'krieger');
+    cheat.quell = { lvl: 3, xp: 10, pts: { kraft: 10, leben: 10 } };
+    const s = sanitizeChar(cheat)!;
+    expect(Object.values(s.quell!.pts).reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(3);
+    // Müll statt Objekt
+    const junk: any = newCharacter('Muell', 'krieger');
+    junk.rift = 'ja'; junk.quell = 7; junk.kreis = 'drei'; junk.kreise = 'viele'; junk.title = 5;
+    const j = sanitizeChar(junk)!;
+    expect(j.rift).toEqual({ stufe: 1, seed: 1, best: {} });
+    expect(j.quell).toEqual({ lvl: 0, xp: 0, pts: {} });
+    expect(j.kreis).toBe(0); expect(j.kreise).toEqual([]); expect(j.title).toBeUndefined();
   });
 });
