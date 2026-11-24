@@ -89,6 +89,7 @@ console.log('Eternal Mana – Koop mit zwei Browsern gegen ' + url);
 await step('beide betreten die Welt und sehen einander', async () => {
   await both(enter);
   await both(async p => { await p.cmd('/lvl 12'); await p.cmd('/god'); await p.cmd('/welt aus'); await p.has('Lebendige Welt von selbst'); });
+  await a.cmd('/time 0.42');                                       // Vormittag: die Dorfbewohner stehen an ihren Plätzen, nicht mitten auf dem Dorfplatz
   await a.page.keyboard.press('p'); await a.wait(400);
   await a.has(b.name);                                             // Online-Liste
   await a.shot('01-online');
@@ -114,7 +115,7 @@ await step('Gruppenchat kommt nur bei der Gruppe an', async () => {
   await b.has('Hallo Gruppe'); await b.has('[Gruppe]');
 });
 await step('Interagieren neben einem Mitspieler öffnet sein Menü; Ansehen zeigt Klasse und Ausrüstung', async () => {
-  await b.cmd(`/zu ${a.name} 30 0`);                              // B steht 30 Weltpixel rechts neben A
+  await b.cmd(`/zu ${a.name} 22 0`);                              // B steht 22 Weltpixel rechts neben A
   await a.wait(900);
   await a.has('Gruppe · Handel · Ansehen', 6000);
   await shots('05-nebeneinander');
@@ -127,8 +128,8 @@ await step('Interagieren neben einem Mitspieler öffnet sein Menü; Ansehen zeig
   await a.esc();
 });
 await step('ein Klick auf die Figur des Mitspielers öffnet dasselbe Menü', async () => {
-  // B steht 30 Weltpixel rechts von A; bei zweifacher Vergrößerung sind das 60 Bildschirmpixel neben der Bildmitte
-  for (const [dx, dy] of [[60, -2], [60, -14], [60, 8], [54, -8], [66, -8]]) {
+  // B steht 22 Weltpixel rechts von A; bei zweifacher Vergrößerung sind das 44 Bildschirmpixel neben der Bildmitte
+  for (const [dx, dy] of [[44, -2], [44, -14], [44, 8], [38, -8], [50, -8]]) {
     await a.page.mouse.click(640 + dx, 360 + dy);
     try { await a.page.locator('.pmenu').waitFor({ timeout: 700 }); break; } catch { /* nächster Versuch */ }
   }

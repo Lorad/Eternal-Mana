@@ -37,11 +37,12 @@ async function runServer() {
 
   // ---- Messpunkte: Taktdauer (synchron um Game.tick) und Bytes je Nachricht (um Game.send)
   let measuring = false;
-  const ticks: number[] = [], snaps: number[] = [];
+  const ticks: number[] = [], cpu: number[] = [], snaps: number[] = [];
   let bytes = 0, msgs = 0, otherBytes = 0;
   const g = game as any;
   const tick0 = g.tick.bind(game);
-  g.tick = (dt: number) => { const t = performance.now(); tick0(dt); if (measuring) ticks.push(performance.now() - t); };
+  // Wanduhr UND verbrauchte Rechenzeit: Läuft auf dem Rechner noch anderes, ist die Rechenzeit die verlässlichere Zahl
+  g.tick = (dt: number) => { const t = performance.now(), c0 = process.cpuUsage(); tick0(dt); if (measuring) { ticks.push(performance.now() - t); const c = process.cpuUsage(c0); cpu.push((c.user + c.system) / 1000); } };
   const sizeOf = (m: any) => { const n = JSON.stringify(m).length; if (measuring) { bytes += n; msgs++; if (m.t === 's') snaps.push(n); else otherBytes += n; } };
   const send0 = game.send.bind(game);
   game.send = (s, m) => { sizeOf(m); send0(s, m); };
@@ -73,6 +74,7 @@ async function runServer() {
   const res = {
     bots: BOTS, sekunden: SECS, gruppen: !flag('solo'),
     takt_ms: { mittel: r2(avg(ticks)), p50: r2(q(ticks, 0.5)), p95: r2(q(ticks, 0.95)), p99: r2(q(ticks, 0.99)), max: r2(Math.max(0, ...ticks)), anzahl: ticks.length },
+    takt_cpu_ms: { mittel: r2(avg(cpu)), p95: r2(q(cpu, 0.95)), p99: r2(q(cpu, 0.99)) },
     snapshot_bytes: { mittel: Math.round(avg(snaps)), p95: q(snaps, 0.95), max: Math.max(0, ...snaps), anzahl: snaps.length },
     je_client_kB_s: r2(bytes / 1024 / SECS / BOTS), sonstige_kB_s: r2(otherBytes / 1024 / SECS / BOTS), nachrichten_s: Math.round(msgs / SECS),
     zonen: zones.map(z => `${z.key}: ${z.players.size} Spieler, ${[...z.mobs.values()].filter(m => m.awake).length} wache Gegner`),
@@ -80,6 +82,7 @@ async function runServer() {
   };
   console.log('\nLastprobe – ' + BOTS + ' Bots, ' + SECS + ' s' + (flag('solo') ? ', ohne Gruppen' : ', in Vierergruppen'));
   console.log(`  Server-Takt:   Mittel ${res.takt_ms.mittel} ms · p50 ${res.takt_ms.p50} · p95 ${res.takt_ms.p95} · p99 ${res.takt_ms.p99} · max ${res.takt_ms.max} ms  (Budget ${1000 / CFG.net.tickRate} ms, ${res.takt_ms.anzahl} Takte)`);
+  console.log(`  Rechenzeit:    Mittel ${res.takt_cpu_ms.mittel} ms · p95 ${res.takt_cpu_ms.p95} · p99 ${res.takt_cpu_ms.p99} ms je Takt`);
   console.log(`  Snapshot:      Mittel ${res.snapshot_bytes.mittel} B · p95 ${res.snapshot_bytes.p95} B · max ${res.snapshot_bytes.max} B`);
   console.log(`  Datenmenge:    ${res.je_client_kB_s} kB/s je Client (davon ${res.sonstige_kB_s} kB/s außerhalb der Snapshots), ${res.nachrichten_s} Nachrichten/s gesamt`);
   console.log('  ' + res.zonen.join('; '));

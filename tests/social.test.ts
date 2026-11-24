@@ -646,6 +646,16 @@ describe('Handel', () => {
     expect(total('potion_hp1')).toBe(10);
     expect(a.p.char.equip.weapon).toBe(worn);
     expect(a.p.char.inv.filter(i => i.uid.startsWith('bound_')).length).toBe(3);
+    // --- trägt der Empfänger schon ein Stück mit derselben uid, bekommt das getauschte eine neue: nie zwei gleiche uids in einem Inventar
+    const dup = gear(); a.p.addItem(dup); b.p.char.inv.push({ ...dup, affixes: [] });
+    openTrade(a, b);
+    a.send({ t: 'trade', a: 'add', uid: dup.uid });
+    seal(a, b);
+    expect(last(a, 'trade')).toMatchObject({ done: 1 });
+    const uidsB = b.p.char.inv.map(i => i.uid);
+    expect(new Set(uidsB).size).toBe(uidsB.length);
+    expect(b.p.char.inv.filter(i => i.base === dup.base).length).toBeGreaterThanOrEqual(2);
+    expect(a.p.char.inv.some(i => i.uid === dup.uid)).toBe(false);
     sim.clear();
   });
 
@@ -956,6 +966,30 @@ describe('Gruppenbelohnung und Wertung', () => {
     expect(b.p.char.flags['e:' + id]).toBe(1);                             // 460 px entfernt: über dem Umkreis des Echos, aber in Gruppenreichweite
     expect(c.p.char.flags['e:' + id]).toBeUndefined();
     sim.clear();
+  });
+
+  it('Weltereignis und Weltboss: das Gruppenmitglied in der Nähe wird mitbelohnt, der Fremde ohne Beitrag nicht', () => {
+    const [a, b, x] = [mk('krieger', 12), mk('magier', 12), mk('krieger', 12)];
+    group(a, b);
+    const { z, x: ax, y: ay } = sim.arena(a);
+    b.p.x = ax + 30; b.p.y = ay; x.p.x = ax - 30; x.p.y = ay;             // b und x stehen dabei, nur a kämpft
+    const kill = (mobs: Iterable<{ invuln: boolean }>) => { for (const m of [...mobs] as any[]) { m.invuln = false; z.hitMob(m, a.p, 1e9, 'phys'); } };
+    const ev = World.startEvent(z, 'woge', { x: ax + 50, y: ay })!;
+    expect(ev).toBeTruthy();
+    for (let wave = 1; wave <= 3; wave++) { sim.step(0.6); kill(ev.mobs); sim.step(3.5); }
+    expect(World.state.zone(z).event).toBeNull();
+    expect(toasted(a, /Mana-Woge abgeschlossen/)).toBe(true);
+    expect(toasted(b, /Mana-Woge abgeschlossen/)).toBe(true);
+    expect(toasted(x, /Mana-Woge abgeschlossen/)).toBe(false);
+    expect(b.p.char.gold).toBeGreaterThan(0); expect(x.p.char.gold).toBe(0);
+    const boss = World.startBoss(sim.game, 'moosgrimm', 'gruenwald', { x: ax + 60, y: ay })!;
+    z.hitMob(boss.bossMob!, a.p, 10, 'phys');
+    sim.step(0.6);
+    kill([boss.bossMob!]);
+    expect(a.p.char.flags['wb:moosgrimm']).toBe(1);
+    expect(b.p.char.flags['wb:moosgrimm']).toBe(1);
+    expect(x.p.char.flags['wb:moosgrimm']).toBeUndefined();
+    World.state.game(sim.game).bossWin.clear();
   });
 });
 

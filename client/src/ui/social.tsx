@@ -213,8 +213,10 @@ export function TradeWindow() {
           <div class="sec-title">Dein Rucksack <span class="pill">anklicken zum Anbieten</span></div>
           <div class="trade-inv scroll">
             {char.inv.map(it => {
-              const off = offered.get(it.uid) ?? 0, bound = !!tradeBlock(it);
-              return <ItemSlot key={it.uid} item={it} size="sm" char={char} dim={bound} selected={off > 0} onClick={() => add(it)} />;
+              // was schon im Angebot liegt, ist hervorgehoben; von Stapeln zeigt der Rucksack den Rest
+              const off = offered.get(it.uid) ?? 0, bound = !!tradeBlock(it), have = it.qty ?? 1;
+              const shown = off > 0 && have > off ? { ...it, qty: have - off } : it;
+              return <ItemSlot key={it.uid} item={shown} size="sm" char={char} dim={bound || off >= have} selected={off > 0} onClick={() => add(it)} />;
             })}
             {char.inv.length === 0 && <div class="note">Dein Rucksack ist leer.</div>}
           </div>

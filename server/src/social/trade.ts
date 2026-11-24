@@ -196,7 +196,11 @@ function commit(g: Game, tr: Trade) {
       moved.set(s, out);
     }
     for (const [s, o] of [[A, B], [B, A]] as const) {
-      for (const it of moved.get(o)!) if (!s.p.addItem(it)) throw new Error('Inventar voll trotz Prüfung');
+      for (const it of moved.get(o)!) {
+        // eine uid gibt es je Charakter nur einmal – trägt der Empfänger sie (aus welchem Grund auch immer) schon, bekommt das Stück eine neue
+        if (s.p.char.inv.some(i => i.uid === it.uid) || SLOTS.some(sl => s.p.char.equip[sl]?.uid === it.uid)) it.uid = newUid();
+        if (!s.p.addItem(it)) throw new Error('Inventar voll trotz Prüfung');
+      }
       s.p.char.gold += o.gold - s.gold;
       summary.push(`${o.p.name} → ${s.p.name}: ${[...moved.get(o)!.map(it => itemName(it) + ((it.qty ?? 1) > 1 ? ` ×${it.qty}` : '')), ...(o.gold ? [`${o.gold} Gold`] : [])].join(', ') || 'nichts'}`);
     }

@@ -162,7 +162,7 @@ function settle(g: Game, party: Party) {
 }
 /** Der Riss gehört der Gruppe: Wer sie verlässt, verliert den Zugang – und steht, wenn er gerade darin ist, wieder am Riss-Stein. */
 function leaveRifts(g: Game, p: Player, party: Party) {
-  for (const z of g.zones.values()) {
+  for (const z of [...g.zones.values()]) {
     const r = z.rift;
     if (!r || r.party !== party || r.done || r.failed) continue;
     r.members.delete(p.charId);
