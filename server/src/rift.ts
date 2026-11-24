@@ -41,8 +41,8 @@ export interface RiftRun {
   done: { sec: number; bonus: boolean } | null;
   failed: boolean; failAt: number;
   party: Party | null;
-  /** charIds aller, die diesen Riss betreten haben */
-  members: Set<number>;
+  /** charIds aller, die diesen Riss betreten haben – und derer, die er ohne Lebensfunken ausgestoßen hat (sie können nicht zurück) */
+  members: Set<number>; out: Set<number>;
   /** Echos dieses Risses (im gewöhnlichen Riss genau eines) und das wievielte gerade dran ist */
   bosses: string[]; bossIdx: number; nextBossAt: number;
   stormAt: number;
@@ -96,7 +96,7 @@ export const Rift = {
     const stone = nearStone(p);
     if (!stone) return reject(p, 'Dafür musst du am Riss-Stein in Quellhain stehen.');
     if (p.party && p.party.leader !== p) return reject(p, 'Nur wer die Gruppe anführt, öffnet den Riss.');
-    if (p.party && this.runOf(game, p.party)) return reject(p, 'Deine Gruppe hat bereits einen offenen Riss – folge ihr am Riss-Stein.');
+    if (p.party && this.runOf(game, p)) return reject(p, 'Deine Gruppe hat bereits einen offenen Riss – folge ihr am Riss-Stein.');
     const st = ensure(c), trial = dungeon === TRIAL_ID;
     if (trial) {
       if (!trialUnlocked(c)) return reject(p, `Die ${TRIAL_NAME} öffnet sich erst, wenn du Riss-Stufe ${R.trial.unlock} abgeschlossen hast.`);
@@ -112,7 +112,7 @@ export const Rift = {
       id: NEXT_RUN++, dungeon, stufe, trial, mods: new Set(mods), el,
       lvl: R.mobLevel(stufe), ilvl: R.ilvl(stufe), par: trial ? 0 : riftPar(dungeon, stufe),
       startAt: game.now, revives: trial ? R.trial.revives : riftRevives(group.length), done: null, failed: false, failAt: 0,
-      party: p.party, members: new Set(), bosses: trial ? [...TRIAL_BOSSES] : [ZONES[dungeon].boss!], bossIdx: 0, nextBossAt: 0,
+      party: p.party, members: new Set(), out: new Set(), bosses: trial ? [...TRIAL_BOSSES] : [ZONES[dungeon].boss!], bossIdx: 0, nextBossAt: 0,
       stormAt: game.now + R.sturm.every + 2, home: riftHome(),
     };
     const zone = new Zone(game, riftZoneDef(trial ? TRIAL_ZONE : dungeon, stufe), { key: 'rift:' + run.id, rift: run });
@@ -124,18 +124,23 @@ export const Rift = {
     }
     if (p.party) for (const q of p.party.members) if (!group.includes(q)) q.toast(`${p.name} hat einen Riss geöffnet (${title}). Am Riss-Stein kannst du folgen.`, 'info');
   },
-  /** Ein Gruppenmitglied folgt später in den offenen Riss seiner Gruppe. */
+  /** Zurück in einen offenen Riss: Gruppenmitglieder folgen ihrer Gruppe; wer seinen Riss versehentlich verlassen hat, kehrt um. */
   join(game: Game, p: Player) {
     if (p.dead || p.zone.rift) return;
     if (!riftUnlocked(p.char)) return reject(p, 'Der Riss-Stein schweigt. Erst wer den Hohlen König bezwungen hat, kann ihn wecken.');
     if (!nearStone(p)) return reject(p, 'Dafür musst du am Riss-Stein in Quellhain stehen.');
-    const zone = p.party ? this.runOf(game, p.party) : undefined;
-    if (!zone) return reject(p, 'Deine Gruppe hat gerade keinen offenen Riss.');
+    const zone = this.runOf(game, p);
+    if (!zone) return reject(p, 'Es steht gerade kein Riss für dich offen.');
+    if (zone.rift!.out.has(p.charId)) return reject(p, 'Dieser Riss hat dich ausgestoßen. Ohne Lebensfunken führt kein Weg zurück.');
     this.enter(game, p, zone);
   },
-  /** Die Instanz eines noch laufenden Risses dieser Gruppe */
-  runOf(game: Game, party: Party): Zone | undefined {
-    for (const z of game.zones.values()) if (z.rift && z.rift.party === party && !z.rift.done && !z.rift.failed && z.players.size) return z;
+  /** Die Instanz eines noch laufenden Risses, in den dieser Spieler gehört: der seiner Gruppe (solange jemand darin ist) oder einer, den er selbst betreten hatte. */
+  runOf(game: Game, p: Player): Zone | undefined {
+    for (const z of game.zones.values()) {
+      const r = z.rift;
+      if (!r || r.done || r.failed) continue;
+      if ((p.party && r.party === p.party && z.players.size) || r.members.has(p.charId)) return z;
+    }
     return undefined;
   },
   enter(game: Game, p: Player, zone: Zone) {
@@ -169,6 +174,7 @@ export const Rift = {
     const z = p.zone, run = z.rift!;
     if (!run.done && (run.failed || run.revives <= 0)) {
       p.toast('Kein Lebensfunke mehr – der Riss stößt dich aus.', 'bad');
+      run.out.add(p.charId);
       this.leave(game, p);
       return;
     }

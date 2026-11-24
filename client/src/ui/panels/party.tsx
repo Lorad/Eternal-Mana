@@ -20,11 +20,11 @@ export function PartyPanel() {
           <div class="sec-title">Deine Gruppe {inParty && <span class="pill">{party.length}</span>}</div>
           {!inParty ? <div class="card note">Du bist allein unterwegs. Lade rechts andere Spieler ein – gemeinsam geht alles leichter, und manche Aufträge sind nur für Gruppen.</div> : (
             <ul class="pp-list">
-              {party.map(m => (
+              {party.map((m, i) => (
                 <li class={cx('card', !m.online && 'offline')}>
                   <Face k={'char_' + m.cls} size={40} />
                   <div class="grow">
-                    <div class="row between"><b>{m.name}{m.charId === charId && <span class="note"> (du)</span>}</b><span class="note">Stufe {m.level} · {CLASSES[m.cls]?.name}</span></div>
+                    <div class="row between"><b>{m.name}{m.charId === charId && <span class="note"> (du)</span>}{i === 0 && <span class="note" title="Wer die Gruppe anführt, öffnet Mana-Risse"> · führt an</span>}</b><span class="note">Stufe {m.level} · {CLASSES[m.cls]?.name}</span></div>
                     <Bar kind="hp" v={m.hp} max={m.maxHp} class="thin" label={false} />
                     <div class="note">{m.online ? ZONES[m.zone]?.name ?? m.zone : 'Verbindung getrennt'}</div>
                   </div>

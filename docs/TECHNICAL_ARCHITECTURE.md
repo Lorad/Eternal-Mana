@@ -169,8 +169,49 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Grafik-Rückfall:** fehlende Sheets `boss_vael`/`boss_aetherion` (`client/src/game/views.ts`, `BOSS_FALLBACK`) und fehlende
   Objekt-Frames `hueterschrein_*`/`lore_*` (`GameScene.storyFrame`) werden durch vorhandene ersetzt.
 
+## Endspiel (0.5)
+
+- **Daten und Regeln:** `shared/src/data/rifts.ts` (Riss-Dungeons, zwölf Modifikatoren, Echo-Texte, Prüfung der Sieben,
+  Quellstufen-Bahnen, Kreis-Regeln, Angleichen) – reine Funktionen, die Server und Oberfläche gemeinsam benutzen.
+  Zahlen: `CFG.rift`, `CFG.quell`, `CFG.kreis`.
+- **Instanzen:** `Game.zones` ist weiterhin eine Karte von Schlüssel → `Zone`, der Schlüssel muss aber nicht mehr die
+  Zonen-ID sein. Die Welt des ersten Durchgangs liegt wie bisher unter der Zonen-ID; `Game.zone(id, kreis)` liefert für
+  höhere Kreise eine eigene Instanz (`<id>#k<n>`), Riss-Instanzen liegen unter `rift:<n>`. `Zone.id` bleibt immer die
+  Zonen-ID – Client, Karten und Flags merken von Instanzen nichts. Leere Dungeons, Riss- und Kreis-Instanzen werden nach
+  `CFG.world.dungeonResetSec` verworfen. `Game.moveTo(p, zone, pos)` ist der eine Weg in eine Instanz.
+- **Mana-Risse** (`server/src/rift.ts`): `Rift.start` prüft Riss-Stein, Freischaltung, Stufe und Anführer, erzeugt die
+  Instanz mit einem `RiftRun` (Stufe, Modifikatoren aus `riftMods(Zähler, Dungeon, Stufe)`, Lebensfunken, Richtzeit) und
+  setzt die Gruppe hinein. `Rift.setup` besetzt die Karte neu (Gegnerstufe, Horden, Erwachte, Element der Woche) und
+  stellt `zone.mod` ein – ein kleiner Satz neutraler Faktoren (`dmgTaken`, `cd`, `heal`, `mpRegen`, `mpGain`, `aggro`),
+  die zone.ts an den jeweiligen Stellen multipliziert. Weitere Haken: `onMobDeath` (Glutspur, Berstend, Fragmente),
+  `tick` (Wuchernd, Manasturm, nächstes Echo, Scheitern), `bossDown` (Fortschritt, Truhen), `openChest`, `respawn`.
+  Der Riss-Stein ist wie die Lagerfeuer ein reines Server-Objekt; die Karten bleiben unverändert.
+- **Boss-Echos** (`server/src/echo.ts`): `BossCtl` erhält im Riss eine abgeleitete `BossDef` (`echoBossDef`) und ruft
+  `ECHO_MECH[boss]` zu Kampfbeginn, bei Phasenwechseln und als zusätzliches Muster auf; `BossCtl.kit()` reicht dafür den
+  Werkzeugkasten nach außen. `BossCtl.finish` übergibt im Riss an `Rift.bossDown` – Echos geben weder Siegel noch
+  Bossflaggen noch Questfortschritt.
+- **Quellstufen, Neuer Kreis, Angleichen, Titel** (`server/src/endgame.ts`): Nachrichten `rift`, `quell`, `kreis`,
+  `attune`, `title`. Erfahrung auf Stufe 40 läuft in `Player.gainQuellXp`; die Boni rechnet `computeStats` über
+  `quellMods` ein. `startKreis` hält die Entscheidungen in `CharData.kreise` fest und setzt Quests sowie die Flags mit
+  den Präfixen aus `KREIS_RESET_PREFIX` zurück.
+- **Kreis der Welt:** `Game.worldKreis(p)` ist der eigene Kreis – in einer Gruppe der NIEDRIGSTE aller Mitglieder.
+  `transfer`, Betreten und Wiederkehr wählen danach die Instanz; ändert sich die Gruppe, setzt `Game.rehome` die
+  Betroffenen in die passende Welt. Eine Kreis-Instanz bekommt eine abgeleitete `ZoneDef` (`kreisZoneDef`) – Gegner,
+  Boss (`kreisBossDef`), Fallen, Truhen und Händlerangebot folgen daraus.
+- **Spielstand:** neue optionale Felder `rift`, `quell`, `kreis`, `kreise`, `title`; `sanitizeChar` setzt Standardwerte
+  und begrenzt beschädigte Werte. Gegenstandsstufen über 40 sind erlaubt (bis 99); `equipLevel` verlangt dafür Stufe 40.
+- **Oberfläche:** `client/src/ui/endgame.tsx` (Fenster mit drei Reitern, Riss-Anzeige im HUD, Reiter „Angleichen“ der
+  Schmiede, Einstieg bei Mirelda). `ZoneInit.rift` / Nachricht `rift` tragen den Zustand des Risses, `ZoneInit.kreis`
+  den Kreis der Welt.
+- **Entwickler-Befehle:** `/endspiel`, `/riss <stufe>`, `/risstein`, `/quell <n>`, `/echo <n>`, `/kreis [n]`, `/pruefung`.
+- **Simulation:** `npx tsx scripts/rift-sim.ts` vergleicht Riss-Stufen 1/10/20/30 für drei Ausrüstungsstände.
+
 ## Tests
 
+- `tests/endgame.test.ts` – Endspiel ohne Netzwerk (`tests/helpers/sim.ts`): Freischaltung, getrennte Instanzen,
+  Skalierung und Beutestufen, jeder der zwölf Modifikatoren, Zusatzmechaniken der Echos, Richtzeit, Stufenfreischaltung
+  und Obergrenze, Lebensfunken, Prüfung der Sieben, Quellstufen, Neuer Kreis (behalten/zurücksetzen, Speichern/Laden),
+  gemischte Gruppen, Angleichen und Echo-Runen, alte und beschädigte Spielstände.
 - `tests/shared.test.ts` – Karten (Erreichbarkeit aller Objekte, Schlüssel/Türen, Splitter), Datenintegrität
   (Quests ↔ NPCs ↔ Items ↔ Gegner), Elementregeln, Levelkurve, Balancing-Korridor, Beuteerzeugung.
 - `tests/server.test.ts` – startet einen echten Serverprozess und spielt mit Bot-Clients über das Protokoll: Kampf,

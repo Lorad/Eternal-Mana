@@ -202,6 +202,14 @@ describe('Riss-Stein und Freischaltung', () => {
     expect(t.p.zone.id).toBe('gruenwald');
     expect(t.p.zone.rift).toBeNull();
     expect(Math.hypot(t.p.x - riftHome().x, t.p.y - riftHome().y)).toBeLessThan(2);
+    // wer seinen Riss versehentlich verlassen hat, kann am Stein umkehren, solange die Instanz noch steht
+    t.send({ t: 'rift', a: 'join' });
+    expect(t.p.zone).toBe(z);
+    t.send({ t: 'rift', a: 'leave' });
+    sim.step(CFG.world.dungeonResetSec + 1);
+    t.send({ t: 'rift', a: 'join' });
+    expect(t.p.zone.rift).toBeNull();
+    expect(t.toasts.at(-1)).toMatch(/kein Riss/);
     sim.clear();
   });
 });
@@ -949,17 +957,34 @@ describe('Richtzeit, Stufen und Lebensfunken', () => {
     expect(a.p.dead).toBe(false);
     expect(a.toasts.at(-1)).toMatch(/Lebensfunke/);
     expect(b.p.zone).toBe(zg);
-    // der Sieg holt Gefallene zurück, und nach dem Abschluss kostet Wiederkehr nichts mehr
+    // … und kommt auch über den Riss-Stein nicht zurück (sonst wäre der Tod ohne Funken folgenlos)
     toStone(a); a.send({ t: 'rift', a: 'join' });
-    expect(a.p.zone).toBe(zg);
-    zg.killPlayer(a.p, 'Test');
-    killBoss(b, zg);
-    expect(a.p.dead).toBe(false);
-    expect(a.p.char.rift!.stufe).toBe(2);
-    zg.killPlayer(a.p, 'Test');
-    a.send({ t: 'respawn' });
-    expect(a.p.zone).toBe(zg);
-    expect(zg.rift!.revives).toBe(0);
+    expect(a.p.zone.rift).toBeNull();
+    expect(a.toasts.at(-1)).toMatch(/ausgestoßen/);
+    // wer lebend geht, darf dagegen umkehren – auch allein
+    b.send({ t: 'rift', a: 'leave' });
+    expect(b.p.zone.id).toBe('gruenwald');
+    b.send({ t: 'rift', a: 'join' });
+    expect(b.p.zone).toBe(zg);
+    sim.clear();
+    // der Sieg holt Gefallene zurück, und nach dem Abschluss kostet Wiederkehr nichts mehr
+    const c = hero(), d = hero('magier');
+    sim.party(c, d);
+    c.p.char.rift!.seed = seedFor('wurzelgruft', 1, ['finsternis']);
+    c.send({ t: 'rift', a: 'start', dungeon: 'wurzelgruft', stufe: 1 });
+    const zv = c.p.zone;
+    expect(d.p.zone).toBe(zv);
+    c.p.god = false;
+    zv.killPlayer(c.p, 'Test');
+    killBoss(d, zv);
+    expect(c.p.dead).toBe(false);
+    expect(c.p.char.rift!.stufe).toBe(2);
+    expect(d.p.char.rift!.stufe).toBe(2);
+    const sparks = zv.rift!.revives;
+    zv.killPlayer(c.p, 'Test');
+    c.send({ t: 'respawn' });
+    expect(c.p.zone).toBe(zv);
+    expect(zv.rift!.revives).toBe(sparks);
     sim.clear();
   });
 });

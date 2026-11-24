@@ -144,7 +144,7 @@ function RiftTab({ char, stone }: { char: CharData; stone: boolean }) {
         )}
         <div class="eg-actions">
           <Btn kind="primary" class="grow" disabled={!!why} onClick={() => { send({ t: 'rift', a: 'start', dungeon: sel, stufe: s }); store.set({ endgame: null }); }}>{why ?? (trial ? 'Prüfung beginnen' : 'Riss öffnen')}</Btn>
-          {stone && others > 0 && <Btn onClick={() => { send({ t: 'rift', a: 'join' }); store.set({ endgame: null }); }} title="Betritt den Riss, den deine Gruppe gerade offen hat">Der Gruppe folgen</Btn>}
+          {stone && <Btn onClick={() => { send({ t: 'rift', a: 'join' }); store.set({ endgame: null }); }} title="Zurück in den Riss, den deine Gruppe gerade offen hat – oder den du eben verlassen hast">{others > 0 ? 'Der Gruppe folgen' : 'Offenem Riss folgen'}</Btn>}
         </div>
         {others > 0 && <p class="note">Mitglieder deiner Gruppe, die am Riss-Stein stehen, kommen mit. Wer danach die Stufe abschließt, schaltet die nächste frei.</p>}
       </div>
