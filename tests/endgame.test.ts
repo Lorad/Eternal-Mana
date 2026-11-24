@@ -6,7 +6,7 @@ import { Rift, riftHome } from '../server/src/rift';
 import type { Zone } from '../server/src/zone';
 import { circleFree, lineClear } from '../shared/src/collision';
 import { CFG, ELEMENTS } from '../shared/src/config';
-import { makeLegendary, makeSetPiece } from '../shared/src/craft';
+import { craftBlock, makeLegendary, makeSetPiece } from '../shared/src/craft';
 import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
 import { ITEMS, baseMods, equipLevel, generateGear, itemPrice, tierOf } from '../shared/src/data/items';
 import { ECHO_FRAG } from '../shared/src/data/materials';
@@ -693,6 +693,348 @@ describe('Modifikatoren', () => {
     expect(z.mod).toMatchObject({ dmgTaken: CFG.rift.glas.dmgTaken, heal: CFG.rift.versiegt.heal });
     for (const m of z.mobs.values()) if (!m.boss) expect(m.cdMul).toBe(CFG.rift.hast.cd);
     expect(Rift.modNames(z.rift!).length).toBe(3);
+    sim.clear();
+  });
+});
+
+/** Stellt den Spieler in den Bossraum und wartet, bis der Kampf läuft. */
+function fight(t: Tester, z: Zone) {
+  const b = z.boss!, room = z.map.bossRoom!;
+  t.p.x = (room.cx + 0.5) * TILE; t.p.y = (room.cy + 3.5) * TILE;
+  for (let i = 0; i < 80 && !b.active; i++) sim.step(0.05);
+  expect(b.active, 'Bosskampf beginnt').toBe(true);
+  return b;
+}
+const summoned = (z: Zone, mob: string) => [...z.mobs.values()].filter(m => m.summoned && m.def.id === mob).length;
+/** Lässt ein Muster vollständig ablaufen (ohne Wartezeiten) und zählt, was es an Ankündigungen und Flächen hinterlässt. */
+function runPattern(z: Zone, gen: Generator<number, void, void>) {
+  const before = new Set(z.fx.keys()), projs = z.projs.size;
+  for (const _ of gen) void _;
+  const fresh = [...z.fx.values()].filter(f => !before.has(f.id) && f.hostile);
+  return { tele: fresh.filter(f => f.kind === 'tele'), pools: fresh.filter(f => f.kind === 'zone'), projs: z.projs.size - projs };
+}
+
+describe('Boss-Echos', () => {
+  it('Schlackenbrut (Ignarok) und Kronenschatten (Hohler König): Verstärkung von Beginn an, die das Original nicht hat', () => {
+    const t = hero(), z = plain(t, 'aschenschmiede', 3);
+    expect(summoned(z, 'glutimp')).toBe(0);
+    const b = fight(t, z);
+    expect(b.def.name).toBe(ECHO_BOSS.ignarok.name);
+    expect(summoned(z, 'glutimp')).toBe(2);
+    for (const m of z.mobs.values()) if (m.summoned) expect(m.lvl).toBe(b.def.level - 2);
+    // Phasenwechsel ruft weitere
+    b.mob.hp = b.mob.maxHp * 0.6;
+    sim.step(1.5);
+    expect(b.phase).toBe(2);
+    expect(summoned(z, 'glutimp')).toBeGreaterThanOrEqual(4);
+    t.send({ t: 'rift', a: 'leave' });
+    // das Original im Story-Dungeon ruft zu Beginn niemanden
+    const o = sim.join('Vergleich', 'krieger', 40); o.p.god = true;
+    sim.travel(o, 'aschenschmiede');
+    const zo = o.p.zone;
+    fight(o, zo);
+    expect(zo.boss!.def.name).toBe(BOSSES.ignarok.name);
+    expect(summoned(zo, 'glutimp')).toBe(0);
+    // Hohler König: Leerenbrut zu Beginn und der sich schließende Ring
+    const z2 = plain(t, 'thron', 3), b2 = fight(t, z2);
+    expect(summoned(z2, 'leerenbrut')).toBe(2);
+    const r = runPattern(z2, ECHO_MECH.hohlkoenig.pattern!(b2.kit()));
+    expect(r.tele.length).toBeGreaterThanOrEqual(24);
+    const radii = new Set(r.tele.map(f => Math.round(Math.hypot(f.x - b2.cx, f.y - b2.cy))));
+    expect(radii.size).toBe(3);                               // drei Ringe, von außen nach innen
+    sim.clear();
+  });
+  it('Dornensaat, Prismengitter und Spiegelschritt: zusätzliche Muster, die in der Rotation des Echos stehen', () => {
+    const t = hero();
+    // Dornenmutter: Ankündigungen werden zu Giftlachen
+    let z = plain(t, 'wurzelgruft', 2), b = fight(t, z);
+    let r = runPattern(z, ECHO_MECH.dornenmutter.pattern!(b.kit()));
+    expect(r.tele.length).toBe(4 + b.phase);
+    expect(r.pools.length).toBe(4 + b.phase);
+    for (const p of r.pools) expect(z.inRoom(b.room, p.x, p.y)).toBe(true);
+    // das Zusatzmuster ist Teil der Rotation: nach den gewöhnlichen Mustern kommt es an die Reihe
+    const own = (b as any).patterns().length;
+    (b as any).idx = own;
+    const before = hostile(z, 'zone').length;
+    for (const _ of (b as any).next() as Generator<number>) void _;
+    expect(hostile(z, 'zone').length).toBe(before + 4 + b.phase);
+    // … und im Story-Dungeon gibt es dieses Muster nicht
+    const o = sim.join('Zeugin', 'krieger', 40); o.p.god = true;
+    sim.travel(o, 'wurzelgruft');
+    const bo = fight(o, o.p.zone);
+    (bo as any).idx = (bo as any).patterns().length;
+    const zb = hostile(o.p.zone, 'zone').length;
+    for (const _ of (bo as any).next() as Generator<number>) void _;
+    expect(hostile(o.p.zone, 'zone').length).toBe(zb);
+    t.send({ t: 'rift', a: 'leave' });
+    // Kristallkoloss: waagrechte Lichtbahnen über die ganze Raumbreite, in zwei Wellen
+    z = plain(t, 'geode', 2); b = fight(t, z);
+    r = runPattern(z, ECHO_MECH.kristallkoloss.pattern!(b.kit()));
+    expect(r.tele.length).toBeGreaterThanOrEqual(4);
+    for (const f of r.tele) { expect(f.shape).toBe('line'); expect(f.y).toBe(f.y2); expect(Math.abs(f.x2! - f.x)).toBeGreaterThan((b.room.x1 - b.room.x0) * TILE); expect(f.el).toBe('light'); }
+    expect(new Set(r.tele.map(f => f.y)).size).toBe(r.tele.length);   // jede Reihe genau einmal
+    t.send({ t: 'rift', a: 'leave' });
+    // Ysolde: zwei Sprünge, an jedem verlassenen Ort ein Frostfeld, dazu Splitterringe
+    z = plain(t, 'gletscherdom', 2); b = fight(t, z);
+    const at = { x: b.mob.x, y: b.mob.y };
+    r = runPattern(z, ECHO_MECH.ysolde.pattern!(b.kit()));
+    expect(r.pools.length).toBe(2);
+    expect(Math.hypot(r.pools[0].x - at.x, r.pools[0].y - at.y)).toBeLessThan(2);
+    expect(Math.hypot(b.mob.x - at.x, b.mob.y - at.y)).toBeGreaterThan(1);
+    expect(r.projs).toBeGreaterThanOrEqual(20);
+    sim.clear();
+  });
+  it('Schnellschrift (Archivar): die Muster folgen um ein Viertel schneller aufeinander als im Original', () => {
+    const t = hero(), z = plain(t, 'archiv', 2), b = fight(t, z);
+    const o = sim.join('Leserin', 'krieger', 40); o.p.god = true;
+    sim.travel(o, 'archiv');
+    const bo = fight(o, o.p.zone);
+    (b as any).gen = null; (b as any).wait = 100; (bo as any).gen = null; (bo as any).wait = 100;
+    sim.step(2);
+    expect(100 - (bo as any).wait).toBeCloseTo(2, 1);
+    expect(100 - (b as any).wait).toBeCloseTo(2 * ECHO_MECH.archivar.speed!, 1);
+    expect(ECHO_MECH.archivar.speed).toBe(1.25);
+    sim.clear();
+  });
+});
+
+describe('Richtzeit, Stufen und Lebensfunken', () => {
+  it('unter der Richtzeit erscheint eine Bonustruhe; langsam zu sein beendet den Riss nicht', () => {
+    const t = hero();
+    let z = plain(t, 'wurzelgruft', 1);
+    sim.step(3);
+    expect(z.initFor(t.p).rift!.t).toBe(3);
+    killBoss(t, z);
+    expect(z.rift!.done!.bonus).toBe(true);
+    expect(z.rift!.done!.sec).toBeLessThan(riftPar('wurzelgruft', 1));
+    expect(lastRift(t)!.done).toEqual(z.rift!.done);
+    expect(riftChests(z).map(o => o.props!.rift).sort()).toEqual([1, 2]);
+    // Bonustruhe: mindestens episch, auf Riss-Stufe, dazu Fragmente
+    const bonus = riftChests(z).find(o => o.props!.rift === 2)!;
+    t.p.char.inv = [];
+    t.p.x = bonus.x; t.p.y = bonus.y + 10;
+    t.send({ t: 'interact', id: bonus.id });
+    const gear = t.p.char.inv.filter(i => ITEMS[i.base].tier);
+    expect(gear.length).toBe(CFG.rift.bonusGear);
+    for (const it of gear) { expect(it.rarity).toBeGreaterThanOrEqual(3); expect(it.ilvl).toBe(CFG.rift.ilvl(1)); }
+    expect(t.count(ECHO_FRAG)).toBe(CFG.rift.bonusFragments(1));
+    // die Uhr steht nach dem Abschluss
+    const sec = z.rift!.done!.sec;
+    sim.step(5);
+    expect(z.initFor(t.p).rift!.t).toBe(sec);
+    t.send({ t: 'rift', a: 'leave' });
+    // zu langsam: kein Scheitern, nur keine Bonustruhe – freigeschaltet wird trotzdem
+    z = plain(t, 'wurzelgruft', 2);
+    z.rift!.startAt -= riftPar('wurzelgruft', 2) + 30;
+    sim.step(1);
+    expect(z.rift!.failed).toBe(false);
+    expect(t.p.zone).toBe(z);
+    expect(z.initFor(t.p).rift!.t).toBeGreaterThan(riftPar('wurzelgruft', 2));
+    killBoss(t, z);
+    expect(z.rift!.done!.bonus).toBe(false);
+    expect(riftChests(z).map(o => o.props!.rift)).toEqual([1]);
+    expect(t.p.char.rift!.stufe).toBe(3);
+    sim.clear();
+  });
+  it('Stufe n schaltet n+1 frei – je Charakter, bis zur höchsten Stufe; Bestzeiten und Zähler werden geführt und gespeichert', () => {
+    const t = hero();
+    t.send({ t: 'rift', a: 'start', dungeon: 'geode', stufe: 2 });
+    expect(t.p.zone.rift).toBeNull();
+    expect(t.toasts.at(-1)).toMatch(/noch nicht freigeschaltet/);
+    let z = plain(t, 'geode', 1);
+    const seed = t.p.char.rift!.seed;
+    sim.step(20);
+    killBoss(t, z);
+    expect(t.p.char.rift!.stufe).toBe(2);
+    expect(t.p.char.rift!.seed).toBe(seed + 1);                // neue Modifikatoren für die nächsten Risse
+    expect(t.p.char.rift!.best.geode[0]).toBe(1);
+    const first = t.p.char.rift!.best.geode[1];
+    expect(first).toBeGreaterThanOrEqual(20);
+    sim.step(0.1);
+    expect(t.msgs.some(m => m.t === 'char' && (m.d as any).rift?.stufe === 2)).toBe(true);   // der Client erfährt den Fortschritt
+    t.send({ t: 'rift', a: 'leave' });
+    // dieselbe Stufe noch einmal: schaltet nichts weiter frei; eine langsamere Zeit ersetzt die Bestzeit nicht, eine schnellere schon
+    z = plain(t, 'geode', 1); sim.step(40); killBoss(t, z);
+    expect(t.p.char.rift!.stufe).toBe(2);
+    expect(t.p.char.rift!.best.geode).toEqual([1, first]);
+    t.send({ t: 'rift', a: 'leave' });
+    z = plain(t, 'geode', 1); sim.step(2); killBoss(t, z);
+    expect(t.p.char.rift!.best.geode[1]).toBeLessThan(first);
+    t.send({ t: 'rift', a: 'leave' });
+    // eine höhere Stufe zählt mehr als eine schnellere Zeit
+    z = plain(t, 'geode', 2); sim.step(60); killBoss(t, z);
+    expect(t.p.char.rift!.stufe).toBe(3);
+    expect(t.p.char.rift!.best.geode[0]).toBe(2);
+    expect(t.p.char.rift!.best.wurzelgruft).toBeUndefined();   // Bestzeiten je Dungeon
+    t.send({ t: 'rift', a: 'leave' });
+    // Obergrenze
+    const max = CFG.rift.maxStufe;
+    z = plain(t, 'geode', max); killBoss(t, z);
+    expect(t.p.char.rift!.stufe).toBe(max);
+    t.send({ t: 'rift', a: 'leave' });
+    t.send({ t: 'rift', a: 'start', dungeon: 'geode', stufe: max + 1 });
+    expect(t.p.zone.rift).toBeNull();
+    // übersteht Speichern und Laden
+    const saved = JSON.parse(JSON.stringify(t.p.char.rift));
+    sim.leave(t); sim.reenter(t);
+    expect(t.p.char.rift).toEqual(saved);
+    // in der Gruppe rückt jedes Mitglied auf die Stufe nach dem Abschluss vor – auch wer selbst erst weiter unten stand
+    t.p.god = true;
+    const b = hero('magier');
+    sim.party(t, b);
+    toStone(t); toStone(b);
+    t.p.char.rift!.seed = seedFor('archiv', 7, ['finsternis'], undefined, ['horde']);
+    t.send({ t: 'rift', a: 'start', dungeon: 'archiv', stufe: 7 });
+    z = t.p.zone;
+    expect(b.p.zone).toBe(z);
+    killBoss(t, z);
+    expect(t.p.char.rift!.stufe).toBe(max);                    // der Anführer stand schon höher
+    expect(b.p.char.rift!.stufe).toBe(8);
+    expect(b.p.char.rift!.best.archiv[0]).toBe(7);
+    sim.clear();
+  });
+  it('Lebensfunken: Wiederkehr kostet einen Funken; ohne Funken stößt der Riss aus, und fällt die ganze Gruppe, schließt er sich', () => {
+    const t = hero(), z = plain(t, 'wurzelgruft', 1);
+    clearMobs(z);
+    t.p.god = false;
+    t.p.x += 40;
+    for (let left = CFG.rift.revives - 1; left >= 0; left--) {
+      z.killPlayer(t.p, 'Test');
+      expect(t.p.dead).toBe(true);
+      sim.step(0.2);
+      expect(z.rift!.failed).toBe(false);                      // solange ein Funke bleibt, läuft der Riss
+      t.send({ t: 'respawn' });
+      expect(t.p.dead).toBe(false);
+      expect(t.p.zone).toBe(z);
+      expect(Math.hypot(t.p.x - z.map.start.x, t.p.y - z.map.start.y)).toBeLessThan(2);
+      expect(z.rift!.revives).toBe(left);
+      expect(lastRift(t)!.revives).toBe(left);
+    }
+    // kein Funke mehr: der nächste Tod beendet den Riss (allein = ganze Gruppe)
+    z.killPlayer(t.p, 'Test');
+    sim.step(0.2);
+    expect(z.rift!.failed).toBe(true);
+    expect(lastRift(t)!.failed).toBe(true);
+    sim.step(4.2);
+    expect(t.p.zone.id).toBe('gruenwald');
+    expect(t.p.dead).toBe(false);
+    expect(t.p.char.rift!.stufe).toBe(1);                      // nichts freigeschaltet
+    // Gruppe: ein Funke mehr je Mitglied; Aufhelfen durch Mitspieler kostet nichts
+    const a = hero(), b = hero('paladin');
+    sim.party(a, b);
+    a.p.char.rift!.seed = seedFor('wurzelgruft', 1, ['finsternis']);
+    a.send({ t: 'rift', a: 'start', dungeon: 'wurzelgruft', stufe: 1 });
+    const zg = a.p.zone;
+    expect(zg.rift!.revives).toBe(CFG.rift.revives + CFG.rift.revivesPerExtra);
+    clearMobs(zg);
+    a.p.god = false;
+    zg.killPlayer(a.p, 'Test');
+    b.p.x = a.p.x + 10; b.p.y = a.p.y;
+    b.send({ t: 'revive', id: a.p.id });
+    expect(a.p.dead).toBe(false);
+    expect(zg.rift!.revives).toBe(CFG.rift.revives + CFG.rift.revivesPerExtra);
+    // ohne Funken: der Gefallene wird ausgestoßen, die anderen kämpfen weiter
+    zg.rift!.revives = 0;
+    zg.killPlayer(a.p, 'Test');
+    sim.step(0.5);
+    expect(zg.rift!.failed).toBe(false);                       // b steht noch
+    a.send({ t: 'respawn' });
+    expect(a.p.zone.id).toBe('gruenwald');
+    expect(a.p.dead).toBe(false);
+    expect(a.toasts.at(-1)).toMatch(/Lebensfunke/);
+    expect(b.p.zone).toBe(zg);
+    // der Sieg holt Gefallene zurück, und nach dem Abschluss kostet Wiederkehr nichts mehr
+    toStone(a); a.send({ t: 'rift', a: 'join' });
+    expect(a.p.zone).toBe(zg);
+    zg.killPlayer(a.p, 'Test');
+    killBoss(b, zg);
+    expect(a.p.dead).toBe(false);
+    expect(a.p.char.rift!.stufe).toBe(2);
+    zg.killPlayer(a.p, 'Test');
+    a.send({ t: 'respawn' });
+    expect(a.p.zone).toBe(zg);
+    expect(zg.rift!.revives).toBe(0);
+    sim.clear();
+  });
+});
+
+describe('Prüfung der Sieben', () => {
+  it('öffnet sich ab hoher Riss-Stufe: sieben Echos nacheinander in einem Raum, Titel und einmaliges Rezept als Lohn', () => {
+    const t = hero('krieger', 10), T7 = CFG.rift.trial;
+    expect(trialUnlocked(t.p.char)).toBe(false);
+    t.send({ t: 'rift', a: 'start', dungeon: TRIAL_ID });
+    expect(t.p.zone.rift).toBeNull();
+    expect(t.toasts.at(-1)).toMatch(new RegExp('Riss-Stufe ' + T7.unlock));
+    t.send({ t: 'title', id: 'sieben' });
+    expect(t.p.char.title).toBeUndefined();                    // Titel muss verdient sein
+    t.p.char.rift!.stufe = T7.unlock + 1;
+    expect(trialUnlocked(t.p.char)).toBe(true);
+    t.send({ t: 'rift', a: 'start', dungeon: TRIAL_ID });
+    const z = t.p.zone, run = z.rift!;
+    expect(run.trial).toBe(true);
+    expect(z.id).toBe('wacht');
+    expect(run.mods.size).toBe(0);
+    expect(run.revives).toBe(T7.revives);
+    expect([...z.mobs.values()].filter(m => !m.boss).length).toBe(0);   // kein Weg, nur die Echos
+    expect(z.inRoom(z.map.bossRoom!, t.p.x, t.p.y)).toBe(true);
+    expect(lastInit(t).rift!.trial).toEqual([0, 7]);
+    for (let i = 0; i < TRIAL_BOSSES.length; i++) {
+      const b = z.boss!;
+      expect(b.def.id).toBe(TRIAL_BOSSES[i]);
+      expect(b.def.name).toBe(ECHO_BOSS[TRIAL_BOSSES[i]].name);
+      expect(b.mob.maxHp).toBe(Math.round(CFG.enemy.hp(b.def.level) * CFG.rift.echo.hpMul * T7.hpMul));
+      expect(b.mob.info().tint).toBe(ECHO_TINT);
+      fight(t, z);
+      if (b.def.id === 'vael') expect(summoned(z, 'wachschatten')).toBe(2);
+      b.mob.invuln = false;
+      z.hitMob(b.mob, t.p, 1e9, 'phys');
+      expect(b.mob.dead).toBe(true);                           // auch Vaels Echo vergeht – es ist nur ein Echo
+      if (i < TRIAL_BOSSES.length - 1) {
+        expect(run.done).toBeNull();
+        expect(lastRift(t)!.trial).toEqual([i + 1, 7]);
+        expect(riftChests(z).length).toBe(0);
+        sim.step(T7.pause + 0.2);
+        expect(z.boss).not.toBe(b);
+        expect(z.boss!.mob.dead).toBe(false);
+        expect(z.mobs.has(z.boss!.mob.id)).toBe(true);
+      }
+    }
+    expect(run.done).toBeTruthy();
+    expect(lastRift(t)!.trial).toEqual([7, 7]);
+    expect(t.p.char.flags['b:vael']).toBeUndefined();
+    expect(t.p.char.rift!.trial).toBe(1);
+    expect(t.p.char.rift!.best[TRIAL_ID][0]).toBe(T7.stufe);
+    expect(t.p.char.rift!.stufe).toBe(T7.unlock + 1);          // die Prüfung schaltet keine Stufen frei
+    // Titel steht hinter dem Namen
+    expect(t.p.char.title).toBe('sieben');
+    expect(sim.game.playerInfo(t.p).title).toBe(TITLES.sieben.name);
+    // Truhe: Rezept (nur beim ersten Mal), Fragmente, Ätherstaub, ein Setteil auf Riss-Stufe
+    const chest = riftChests(z);
+    expect(chest.length).toBe(1);
+    t.p.char.inv = [];
+    t.p.x = chest[0].x; t.p.y = chest[0].y + 10;
+    t.send({ t: 'interact', id: chest[0].id });
+    expect(t.count(scrollOf(TRIAL_RECIPE))).toBe(1);
+    expect(t.count(ECHO_FRAG)).toBe(T7.fragments);
+    expect(t.count('mat_aether')).toBe(T7.aether);
+    const piece = t.p.char.inv.find(i => i.set)!;
+    expect(piece.ilvl).toBe(CFG.rift.ilvl(T7.stufe));
+    t.send({ t: 'use', uid: t.p.char.inv.find(i => i.base === scrollOf(TRIAL_RECIPE))!.uid });
+    expect(t.p.char.recipes).toContain(TRIAL_RECIPE);
+    for (const [b, k] of RECIPES[TRIAL_RECIPE].inputs) t.give(b, k);
+    expect(craftBlock(t.p.char, RECIPES[TRIAL_RECIPE])).toBeNull();
+    // Titel ablegen und wieder führen; Unsinn wird ignoriert
+    t.send({ t: 'title', id: '' });
+    expect(t.p.char.title).toBeUndefined();
+    expect(sim.game.playerInfo(t.p).title).toBeUndefined();
+    t.send({ t: 'title', id: 'quatsch' });
+    expect(t.p.char.title).toBeUndefined();
+    t.send({ t: 'title', id: 'sieben' });
+    expect(t.p.char.title).toBe('sieben');
+    // übersteht Speichern und Laden
+    sim.leave(t); sim.reenter(t);
+    expect(t.p.char.title).toBe('sieben');
+    expect(t.p.char.rift!.trial).toBe(1);
     sim.clear();
   });
 });
