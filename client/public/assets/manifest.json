@@ -135,6 +135,13 @@
    "cols": 43,
    "rows": 3
   },
+  "npc_vael": {
+   "file": "sprites/chars/npc_vael.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
   "npc_wache": {
    "file": "sprites/chars/npc_wache.png",
    "fw": 32,

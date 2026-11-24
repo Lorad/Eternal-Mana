@@ -34,6 +34,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `npc_kraemer` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_nomade` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_schmied` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_vael` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_wache` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 
 ## Spritesheets: mobs

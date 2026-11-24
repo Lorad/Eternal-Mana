@@ -45,6 +45,7 @@ export const NPC_LOOKS = [
   'geist',         // Sen: halbtransparenter, bläulicher Wächtergeist
   'echo',          // Maelis: leuchtende, weiß-goldene Gestalt
   'kraemer',       // Pim: riesiger Rucksack, Schlapphut
+  'vael',          // Vael (und der Fremde am Brunnen): hager, Kapuze, indigoblauer Ordensmantel mit Goldborte, Laterne – wie boss_vael
 ] as const;
 
 /**
