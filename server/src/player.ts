@@ -149,6 +149,7 @@ export class Player {
       this.zone.ev({ k: 'fx', n: 'levelup', x: this.x, y: this.y });
       this.zone.ev({ k: 'txt', x: this.x, y: this.y - 26, s: `Stufe ${c.level}!`, col: '#ffe27a' });
       this.toast(`Stufe ${c.level} erreicht! +${CFG.player.attrPointsPerLevel} Attributspunkte, +1 Fähigkeitspunkt`, 'good');
+      if (c.level >= CFG.player.maxLevel) this.toast('Höchststufe erreicht. Erfahrung verfällt nicht: Sie füllt ab jetzt Quellstufen.', 'story');
       this.zone.game.broadcastPlayerInfo(this);
       this.sync('level', 'attrPoints', 'skillPoints');
     }

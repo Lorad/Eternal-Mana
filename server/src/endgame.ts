@@ -7,7 +7,7 @@ import { CFG } from '../../shared/src/config';
 import { ITEMS, generateGear, itemName, makeStack, rescaleItem } from '../../shared/src/data/items';
 import { AETHER, ECHO_FRAG } from '../../shared/src/data/materials';
 import { QUEST_LIST } from '../../shared/src/data/quests';
-import { KREIS_KEEP_FLAGS, KREIS_NAME, KREIS_NPC, KREIS_RESET_FLAGS, KREIS_RESET_PREFIX, QUELL_MAX, QUELL_TRACK, TRIAL_ID, attuneBlock, attunePlan, kreisBlock, kreisOf, nextKreis, ownedTitles, quellBonus, quellFree, riftUnlocked } from '../../shared/src/data/rifts';
+import { KREIS_KEEP_FLAGS, KREIS_NAME, KREIS_NPC, KREIS_QUEST, KREIS_RESET_FLAGS, KREIS_RESET_PREFIX, QUELL_MAX, RIFT_UNLOCK_QUEST, QUELL_TRACK, TRIAL_ID, attuneBlock, attunePlan, kreisBlock, kreisOf, nextKreis, ownedTitles, quellBonus, quellFree, riftUnlocked } from '../../shared/src/data/rifts';
 import { getMap } from '../../shared/src/maps/mapgen';
 import { MOD_LABEL, SLOTS } from '../../shared/src/types';
 import type { ClientMsg, ItemInstance } from '../../shared/src/types';
@@ -98,6 +98,12 @@ export function questPoints(p: Player, skillPoints = 0, attrPoints = 0) {
   if (kreisOf(c) > 0) { p.give(makeStack(ECHO_FRAG, (skillPoints + attrPoints) * CFG.kreis.pointFragments)); return; }
   if (skillPoints) { c.skillPoints += skillPoints; p.sync('skillPoints'); }
   if (attrPoints) { c.attrPoints += attrPoints; p.sync('attrPoints'); }
+}
+
+/** Hinweise, sobald eine Quest das Endspiel öffnet (Aufruf beim Abgeben). */
+export function questUnlocks(p: Player, questId: string) {
+  if (questId === RIFT_UNLOCK_QUEST && kreisOf(p.char) === 0) p.toast('Am Dorfrand von Quellhain ist ein Stein erwacht, der vorher nur ein Stein war: Der Riss-Stein öffnet nun Mana-Risse.', 'story');
+  if (questId === KREIS_QUEST) p.toast('Die Geschichte ist erzählt. Mirelda weiß, wie man sie noch einmal beginnt: Frag sie nach dem Neuen Kreis.', 'story');
 }
 
 // ------------------------------------------------------------------ Angleichen (Schmiede)

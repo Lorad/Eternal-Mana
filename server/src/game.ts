@@ -18,7 +18,7 @@ import type { AttrKey, ClientMsg, ItemInstance, PartyMember, PlayerInfo, ServerI
 import { SLOTS } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
-import { devEndgame, handleEndgame, questPoints } from './endgame';
+import { devEndgame, handleEndgame, questPoints, questUnlocks } from './endgame';
 import { Rift } from './rift';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
@@ -575,6 +575,7 @@ export class Game {
     p.pev.push({ k: 'sfx', n: 'quest_complete' });
     p.gainXp(r.xp);
     Story.onTurnIn(p, q);
+    questUnlocks(p, q.id);
     if (q.story) this.story(p, q.story);
     this.savePlayer(p);
   }

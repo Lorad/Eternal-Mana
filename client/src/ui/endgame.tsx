@@ -299,13 +299,14 @@ export function EndgamePill() {
   const show = useStore(s => endgameOpen(s.char));
   const free = useStore(s => (s.char ? quellFree(s.char) : 0));
   const lvl = useStore(s => s.char?.quell?.lvl ?? 0);
+  const capped = useStore(s => (s.char?.level ?? 1) >= CFG.player.maxLevel);
   const kreis = useStore(s => s.kreis);
   if (!show) return null;
   return (
     <div class="points-row">
       <button type="button" class={cx('points-pill eg-pill', free > 0 && 'has')} onClick={() => { sfx('ui_click'); openEndgame(free > 0 ? 'quell' : 'risse'); }}
         {...tipProps(() => <div class="tip-text"><b>Endspiel</b>Mana-Risse, Quellstufen und Neuer Kreis.{kreis > 0 && <div class="tip-sub">Du stehst in der Welt des Kreises: {KREIS_NAME[kreis]}</div>}</div>)}>
-        {free > 0 ? `＋${free} Quellpunkt${free > 1 ? 'e' : ''}` : `Quellstufe ${lvl}`}{kreis > 0 && <span class="eg-pill-k">{KREIS_NAME[kreis]}</span>}
+        {free > 0 ? `＋${free} Quellpunkt${free > 1 ? 'e' : ''}` : capped ? `Quellstufe ${lvl}` : 'Mana-Risse'}{kreis > 0 && <span class="eg-pill-k">{KREIS_NAME[kreis]}</span>}
       </button>
     </div>
   );
