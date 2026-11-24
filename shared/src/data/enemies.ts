@@ -1,5 +1,6 @@
 import type { Element, StatusSpec } from '../types';
 import { BOSS_UNIQUE } from './items';
+import { WORLD_ENEMIES } from './rares';
 
 export interface EnemyDef {
   id: string;
@@ -27,6 +28,8 @@ export interface EnemyDef {
   drops?: [string, number][];
   /** Darstellung (ab 0.3): Sprite eines anderen Gegners wiederverwenden und einfärben */
   sprite?: string; tint?: number;
+  /** 0.6: Größenfaktor der Darstellung; `named` = Name über dem Kopf und eigene Markierung auf der Minimap (seltene Monster, Weltbosse) */
+  scale?: number; named?: boolean;
   /** Ausdrückliche Schwächen/Resistenzen zusätzlich zum Elementkreislauf (0.4; Faktoren: CFG.elements) */
   weak?: Element[];
   resist?: Element[];
@@ -118,6 +121,8 @@ export const ENEMY_LIST: EnemyDef[] = [
   E({ id: 'vorbote', name: 'Vorbote der Stille', sprite: 'arkanauge', tint: 0xe8f0ff, element: 'wind', hpMul: 2, dmgMul: 1.3, defMul: 1.2, xpMul: 3, speed: 48, radius: 8, ai: 'ranged', flying: true, aggro: 220,
     atk: { range: 150, windup: 0.7, cd: 2.2, proj: { spr: 'lance', speed: 220, count: 3, spread: 26 }, mult: 1.1 }, weak: ['light'] }),
 ];
+// Lebendige Welt (0.6): seltene Monster, Weltbosse, Ereignisgegner – nur beschworen, in keiner Gebietsliste
+ENEMY_LIST.push(...WORLD_ENEMIES);
 export const ENEMIES: Record<string, EnemyDef> = Object.fromEntries(ENEMY_LIST.map(e => [e.id, e]));
 
 export interface BossDef {

@@ -21,6 +21,7 @@ import { chestExtras, nodeBonus, rollMaterials } from './loot';
 import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
 import { legendAttack, legendOnHit, legendShield, tryReaction } from './react';
+import { World } from './world';
 
 export interface Obj extends ObjInfo {
   looted?: Set<number>;
@@ -47,6 +48,8 @@ export class Mob {
   chargeHit = new Set<number>();
   boss: BossCtl | null = null;
   vuln = 1; invuln = false; hidden = false;
+  /** 0.6: lässt sich nicht festsetzen (seltene Monster, Weltbosse) */
+  tough = false;
   name: string;
   summoned = false;
   constructor(public def: EnemyDef, public lvl: number, x: number, y: number, public elite: boolean, public group: number, public spawnIdx: number) {
@@ -119,7 +122,7 @@ export class Zone {
     for (const f of cookFires(this.map)) this.objs.set(f.id, f);
     this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
     if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, BOSSES[def.boss], this.map.bossRoom);
-    this.weather = this.rng.weighted(def.weathers);
+    this.weather = this.rng.weighted(World.weathers(this));
     this.weatherUntil = game.now + this.rng.range(CFG.world.weatherMinSec, CFG.world.weatherMaxSec);
     this.emptySince = game.now;
   }
@@ -166,7 +169,7 @@ export class Zone {
       case 'shard': return p.char.flags[`s:${this.id}:${o.tag}`] ? 1 : 0;
       case 'stone': return p.char.flags[`t:${this.id}`] ? 1 : 0;
       case 'node': return (o.harvested!.get(p.charId) ?? 0) > this.game.now ? 1 : 0;
-      default: return Story.objState(o, p) ?? o.state;
+      default: return World.objState(o, p) ?? Story.objState(o, p) ?? o.state;
     }
   }
   objInfo(o: Obj, p: Player): ObjInfo { return { id: o.id, type: o.type, x: o.x, y: o.y, state: this.objStateFor(o, p), tag: o.tag, props: o.props }; }
@@ -193,6 +196,7 @@ export class Zone {
       p.char.flags[`z:${this.id}`] = 1; p.sync('flags');
       if (this.id === 'schatten') this.game.story(p, 'schatten');
     }
+    World.onJoin(this, p);
   }
   removePlayer(p: Player) {
     this.players.delete(p.id);
@@ -211,7 +215,7 @@ export class Zone {
     const now = this.game.now;
     const cc = s.id === 'freeze' || s.id === 'root';
     // Bosse lassen sich nicht festsetzen; alle anderen nicht pausenlos
-    if (m.boss) { if (s.id === 'stun' || cc) return; if (s.id === 'slow') dur *= 0.5; }
+    if (m.boss || m.tough) { if (s.id === 'stun' || cc) return; if (s.id === 'slow') dur *= 0.5; }
     if (cc) { if (now < m.ccImmuneUntil) return; if (m.elite) dur *= CFG.elements.eliteCcMul; m.ccImmuneUntil = now + dur + CFG.elements.freezeImmuneSec; }
     const dps = s.id === 'burn' ? srcDmg * CFG.combat.burnTick : s.id === 'poison' ? srcDmg * CFG.combat.poisonTick : 0;
     const old = m.statuses.get(s.id);
@@ -303,6 +307,7 @@ export class Zone {
     Story.onMobDeath(this, m);
     if (m.spawnIdx >= 0 && !this.map.dungeon) this.respawns.push({ idx: m.spawnIdx, at: this.game.now + CFG.enemy.respawnSec });
     const rec = this.recipients(m);
+    World.onMobDeath(this, m, rec);
     const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
     for (const p of rec) {
       p.char.kills++; p.sync('kills');
@@ -597,12 +602,12 @@ export class Zone {
         o.harvested!.set(p.charId, now + 150);
         const item = NODE_TYPES[o.props!.kind].item;
         p.give(makeStack(item, this.rng.int(1, 2)));
-        nodeBonus(this, p);
+        nodeBonus(this, p, World.onHarvest(this, p));
         p.pev.push({ k: 'obj', id: o.id, state: 1 }, { k: 'sfx', n: 'harvest' });
         break;
       }
       case 'exit': this.useExit(p, o); break;
-      default: Story.interact(this, p, o); // Chronik, Hüterschrein, Mana-Riss
+      default: if (!World.interact(this, p, o)) Story.interact(this, p, o); // Weltobjekte (0.6) · Chronik, Hüterschrein, Mana-Riss
     }
   }
   private checkPuzzle(p: Player) {
@@ -638,6 +643,7 @@ export class Zone {
     if (tier !== 'wood') p.give(makeStack(TIER_MATERIAL[tierOf(lvl) - 1], r.int(1, 3)));
     if (r.chance(0.6)) p.give(makeStack(lvl <= 8 ? 'potion_hp1' : lvl <= 20 ? 'potion_hp2' : 'potion_hp3', r.int(1, 2)));
     chestExtras(this, p, tier, !!pr.boss);
+    World.onChest(this, p, tier);
     if (tier === 'gold' && pr.boss) {
       const u = this.boss!.uniqueFor(p);
       if (u) p.give(u);
@@ -663,7 +669,7 @@ export class Zone {
   update(dt: number) {
     const now = this.game.now;
     if (now > this.weatherUntil) {
-      this.weather = this.rng.weighted(this.def.weathers);
+      this.weather = this.rng.weighted(World.weathers(this));
       this.weatherUntil = now + this.rng.range(CFG.world.weatherMinSec, CFG.world.weatherMaxSec);
       for (const p of this.players.values()) p.send({ t: 'env', weather: this.weather });
     }
@@ -675,6 +681,7 @@ export class Zone {
     this.updateFx(now);
     this.updateObjs(now);
     Story.tick(this, dt);
+    World.tickZone(this, dt);
     for (let i = this.respawns.length - 1; i >= 0; i--) {
       const r = this.respawns[i];
       if (now < r.at) continue;

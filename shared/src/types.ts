@@ -83,6 +83,11 @@ export interface CharData {
   recipes?: string[];
   /** laufende Speise / laufendes Elixier: Platz → [Gegenstand, Restdauer in s] */
   timed?: Record<string, [string, number]>;
+  // ---- 0.6 Lebendige Welt (optional)
+  /** Ruf je Fraktion (FACTIONS in data/factions.ts). Schätze und Trophäen stehen in `flags`: `tk:<zone>` aktive Schatzkarte, `tm:<zone>` gehobene Schätze, `tr:<id>` Trophäe */
+  rep?: Record<string, number>;
+  /** gewählter Fraktionstitel (Fraktions-ID) */
+  title?: string;
 }
 
 export interface Derived {
@@ -124,7 +129,7 @@ export type SnapPlayer = [number, number, number, number, number, number, number
 /** Gegner im Snapshot: [id, x, y, facingLeft(0/1), anim, hp, flags] */
 export type SnapMob = [number, number, number, number, number, number, number];
 
-export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number }
+export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number; title?: string }
 export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string }
 export interface ObjInfo { id: number; type: string; x: number; y: number; state: number; tag?: string; props?: Record<string, any> }
 export interface DropInfo { id: number; x: number; y: number; kind: 'gold' | 'item'; icon: string; rarity: number; name: string }
@@ -148,6 +153,8 @@ export type GameEvent =
   | { k: 'obj'; id: number; state: number; props?: Record<string, any> }
   | { k: 'obj+'; o: ObjInfo }
   | { k: 'obj-'; id: number }
+  /** 0.6: Objekt (NPC) wandert in `t` Sekunden nach x/y; t = 0 versetzt sofort */
+  | { k: 'omv'; id: number; x: number; y: number; t: number }
   | { k: 'pl+'; p: PlayerInfo }
   | { k: 'pl-'; id: number }
   | { k: 'boss'; id: number; name: string; phase: number; el: Element }
@@ -202,6 +209,13 @@ export type ClientMsg =
   | { t: 'dlgOpen'; npc: string; topic: string }
   | { t: 'dlgPick'; npc: string; topic: string; node: string; opt: number }
   | { t: 'cineEnd'; id: string }
+  // ---- Lebendige Welt (0.6): Spenden, Fraktionsvorräte, Fahrender Händler, Graben, Begegnungen, Titel
+  | { t: 'donate'; npc: string; item: string; n: number }
+  | { t: 'fbuy'; npc: string; idx: number; qty?: number }
+  | { t: 'wbuy'; idx: number; qty?: number }
+  | { t: 'dig' }
+  | { t: 'enc'; id: number; opt: number }
+  | { t: 'title'; id: string }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -217,6 +231,20 @@ export interface ZoneInit {
   you: number;       // eigene Entity-ID
   boss?: { id: number; name: string; phase: number; el: Element };
 }
+
+// ---- Lebendige Welt (0.6)
+/** Laufendes Weltereignis. `until` = Restsekunden beim Senden; `prog` = Fortschritt (bei Sammelereignissen der eigene) */
+export interface WorldEventInfo { id: number; kind: string; zone: string; name: string; x: number; y: number; until: number; goal?: string; prog?: [number, number]; boss?: 1 }
+/** Angebot des Fahrenden Händlers für genau diesen Spieler (Preis mit Nachlass, Restmenge) */
+export interface TraderOffer { item: ItemInstance; price: number; left: number }
+export interface WorldInfo {
+  /** Jahreszeit 0..3 (Frühling, Sommer, Herbst, Winter) und Fortschritt darin 0..1 */
+  season: number; sp: number;
+  ev: WorldEventInfo[];
+  trader?: TraderOffer[];
+}
+/** Gespräch einer Zufallsbegegnung: Der Server führt den Knoten, der Client zeigt nur an. */
+export interface EncDialog { id: number; who: string; look?: string; lines: string[]; opts: { s: string; off?: string }[] }
 
 export type ServerMsg =
   | { t: 'welcome'; account: number; name: string; chars: CharSummary[]; settings: string | null; server: ServerInfo }
@@ -243,6 +271,9 @@ export type ServerMsg =
   | { t: 'dlg'; npc: string; topic: string; node: string | null; err?: 1 }
   | { t: 'cine'; id: string }
   | { t: 'lore'; id: string; first?: 1 }
+  // ---- Lebendige Welt (0.6): Weltzustand (Jahreszeit, Ereignisse, Händlerangebot), Begegnungsgespräch (null = beendet)
+  | { t: 'world'; w: WorldInfo }
+  | { t: 'encdlg'; d: EncDialog | null }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 

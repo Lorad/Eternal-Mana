@@ -10,6 +10,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { ITEMS } from '../../shared/src/data/items';
+import { FACTIONS, backfillRep } from '../../shared/src/data/factions';
+import { QUESTS } from '../../shared/src/data/quests';
 import { ENCHANTS, RECIPES } from '../../shared/src/data/recipes';
 import { SETS } from '../../shared/src/data/sets';
 import { ZONES } from '../../shared/src/data/zones';
@@ -51,6 +53,10 @@ export function sanitizeChar(raw: any): CharData | null {
   }
   if (!c.quests || typeof c.quests !== 'object') c.quests = {};
   if (!c.flags || typeof c.flags !== 'object') c.flags = {};
+  // 0.6: Ruf je Fraktion. Fehlt das Feld (Spielstand von vor 0.6), wird er aus den bereits abgeschlossenen Quests nachgetragen.
+  if (c.rep === undefined || c.rep === null || typeof c.rep !== 'object') c.rep = backfillRep(c, QUESTS);
+  else { const rep: Record<string, number> = {}; for (const f in FACTIONS) { const v = num((c.rep as any)[f], 0, 0, 1e7); if (v > 0) rep[f] = Math.floor(v); } c.rep = rep; }
+  if (c.title !== undefined && (typeof c.title !== 'string' || (c.title && !FACTIONS[c.title]))) delete c.title;
   if (!ZONES[c.zone]) { c.zone = 'gruenwald'; c.x = 0; c.y = 0; }
   if (!c.respawn || !ZONES[c.respawn.zone]) c.respawn = { zone: 'gruenwald', x: 0, y: 0 };
   const d = computeStats(c);
@@ -167,6 +173,10 @@ export class Db {
       this.db.exec('COMMIT');
     } catch (e) { this.db.exec('ROLLBACK'); throw e; }
   }
+
+  /** Kleine Server-Werte, die Neustarts überdauern (0.6: Weltzeit, Weltboss-Termine) */
+  getMeta(key: string): string | null { const r = this.db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as any; return r ? String(r.value) : null; }
+  setMeta(key: string, value: string) { this.db.prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value); }
 
   listBackups(): string[] {
     return fs.readdirSync(this.backupDir).filter(f => f.endsWith('.db')).sort().reverse();

@@ -20,6 +20,8 @@ import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
 import { Story } from './story';
+import { World } from './world';
+import { shopPrice, titleOf } from '../../shared/src/data/factions';
 import { Zone } from './zone';
 
 export interface Session {
@@ -89,12 +91,13 @@ export class Game {
     if ((T.party += dt) >= 1) { T.party = 0; const done = new Set<Party>(); for (const p of this.players.values()) if (p.party && !done.has(p.party)) { done.add(p.party); this.sendParty(p.party); } }
     if ((T.online += dt) >= 4) { T.online = 0; this.sendOnline(); }
     if ((T.env += dt) >= 15) { T.env = 0; const tod = this.tod(); for (const p of this.players.values()) if (!p.linkdead) p.send({ t: 'env', tod }); }
+    World.tickGame(this, dt);
     if ((T.backup += dt) >= CFG.save.backupEveryMin * 60) { T.backup = 0; if (this.players.size) { try { this.db.backup(); } catch (e) { console.error('[backup]', e); } } }
   }
 
   // ------------------------------------------------------------------ Speichern
   savePlayer(p: Player) { try { this.db.saveChar(p.charId, p.snapshotChar()); } catch (e) { console.error('[save] Fehler bei', p.name, e); } }
-  saveAll() { for (const p of this.players.values()) this.savePlayer(p); }
+  saveAll() { for (const p of this.players.values()) this.savePlayer(p); World.save(this); }
   saveZonePlayers(z: Zone) { for (const p of z.players.values()) this.savePlayer(p); }
 
   // ------------------------------------------------------------------ Verbindungen
@@ -174,6 +177,7 @@ export class Game {
       case 'dlgOpen': return Story.dlgOpen(this, p, String(m.npc), String(m.topic));
       case 'dlgPick': return Story.dlgPick(this, p, m);
       case 'cineEnd': return Story.cineEnd(p);
+      case 'donate': case 'fbuy': case 'wbuy': case 'dig': case 'enc': case 'title': return World.message(this, p, m);
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': return this.partyMsg(p, m.a, m.id);
@@ -201,6 +205,7 @@ export class Game {
       p.epoch++;
       p.send({ t: 'entered', char: p.char, charId: p.charId, init: p.zone.initFor(p) });
       p.buffsDirty = true;
+      World.sendTo(p);
       this.sysChat(`${p.name} ist wieder da.`);
       break;
     }
@@ -236,6 +241,7 @@ export class Game {
     restoreTimed(p);
     if (fresh) char.respawn = { zone: z.id, x: z.map.start.x, y: z.map.start.y };
     p.send({ t: 'entered', char, charId, init: z.initFor(p) });
+    World.sendTo(p);
     if (!char.flags.intro) { char.flags.intro = 1; this.story(p, 'intro'); }
     this.sysChat(`${p.name} betritt die Welt.`);
     this.sendOnline();
@@ -249,6 +255,7 @@ export class Game {
     p.statuses.clear();
     z.addPlayer(p, e.x, e.y);
     p.send({ t: 'zone', init: z.initFor(p) });
+    World.sendTo(p);
     this.savePlayer(p);
   }
   private teleport(p: Player, zoneId: string) {
@@ -294,7 +301,7 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ Infos
-  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0 }; }
+  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0, title: titleOf(p.char) }; }
   broadcastPlayerInfo(p: Player) { for (const q of p.zone.players.values()) if (q !== p) q.pev.push({ k: 'pl+', p: this.playerInfo(p) }); }
   story(p: Player, id: string) { const st = STORY[id]; if (st) p.send({ t: 'story', id, title: st.title, lines: st.lines }); }
   sysChat(s: string) { for (const p of this.players.values()) p.send({ t: 'chat', from: '', s, ch: 'sys' }); }
@@ -338,7 +345,8 @@ export class Game {
     else if (cmd === 'goto') { p.x = +a[0]; p.y = +a[1]; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
     else if (Story.dev(this, p, cmd, a)) { /* Story-Befehle */ }
     else if (devCraft(this, p, cmd, a)) { /* Handwerks-Befehle: server/src/craft.ts */ }
-    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag');
+    else if (World.dev(this, p, cmd, a)) { /* Lebendige Welt: server/src/world/index.ts */ }
+    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an');
   }
 
   // ------------------------------------------------------------------ Gruppen
@@ -421,6 +429,7 @@ export class Game {
   private consume(p: Player, it: ItemInstance): boolean {
     const u = ITEMS[it.base].use;
     if (!u || p.dead) return false;
+    if (u.tmap || u.trophy) return World.useItem(this, p, it);
     if (u.learn || u.buff || u.cleanse) return useSpecial(this, p, it);
     if (this.now < p.potionReadyAt) { p.toast('Tränke sind noch nicht wieder bereit.', 'bad'); return false; }
     const hp = (u.hp ?? 0) + ((u.hpPct ?? 0) / 100) * p.stats.maxHp, mp = (u.mp ?? 0) + ((u.mpPct ?? 0) / 100) * p.stats.maxMp;
@@ -458,7 +467,7 @@ export class Game {
     qty = Math.max(1, Math.min(20, Math.floor(qty)));
     const b = ITEMS[e.item.base];
     if (!b.stack) qty = 1;
-    const price = itemPrice(e.item) * qty;
+    const price = shopPrice(p.char, p.zone.id, e.item) * qty; // 0.6: Nachlass nach Ruf bei der Fraktion der Region
     if (p.char.gold < price) { p.toast('Nicht genug Gold.', 'bad'); return; }
     const it: ItemInstance = { ...e.item, affixes: e.item.affixes.map(a => [...a] as typeof a), uid: newUid(), qty: b.stack ? qty : undefined };
     if (!p.addItem(it)) { p.toast('Inventar voll.', 'bad'); return; }
@@ -544,6 +553,7 @@ export class Game {
     p.pev.push({ k: 'sfx', n: 'quest_complete' });
     p.gainXp(r.xp);
     Story.onTurnIn(p, q);
+    World.onQuestDone(p, q);
     if (q.story) this.story(p, q.story);
     this.savePlayer(p);
   }

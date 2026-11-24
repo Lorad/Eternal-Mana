@@ -61,6 +61,8 @@ export interface RecipeDef {
   cls?: ClassId;
   /** nur bei diesen NPCs herstellbar */
   npcs?: string[];
+  /** 0.6: Rolle stammt nur aus der Lebendigen Welt (`ruf` = Fraktionshändler, `welt` = Ereignisse, seltene Monster, Fahrende Händlerin) – nie aus der allgemeinen Beute */
+  src?: 'ruf' | 'welt';
 }
 export const CAT_NAME: Record<string, string> = {
   weapon: 'Waffen', armor: 'Rüstung', acc: 'Schmuck', set: 'Sets', special: 'Meisterstücke', potion: 'Tränke', elixir: 'Elixiere', food: 'Speisen',
@@ -126,6 +128,20 @@ item('c_feigen', 'cooking', 'food', 'food_feigen', 2, 21, 0, [[FIG, 3], [BERRY, 
 item('c_tee', 'cooking', 'food', 'food_tee', 2, 26, 0, [[BLOOM, 3], [LICHEN, 1]]);
 item('c_fest', 'cooking', 'food', 'food_fest', 1, 21, 0, [[BERRY, 2], [CAP, 2], [PEPPER, 2], [LICHEN, 2], [FIG, 2]], 'learn');
 
+// ------------------------------------------------------------------ Lebendige Welt (0.6): Sternsplitter- und Fraktionsrezepte
+const STAR = 'mat_star';
+const world = (id: string, station: StationId, cat: string, out: string, qty: number, level: number, gold: number, inputs: [string, number][], src: 'ruf' | 'welt') =>
+  R.push({ id, station, name: '', cat, inputs, gold, level, out: { k: 'item', item: out, qty }, unlock: 'learn', src });
+world('a_stern', 'alchemy', 'elixir', 'elx_stern', 1, 10, 40, [[STAR, 2], [ESSENCE.light, 2], ['mat_herb', 2]], 'welt');
+world('c_stern', 'cooking', 'food', 'food_stern', 2, 10, 0, [[STAR, 2], [BERRY, 3], [FIG, 1]], 'welt');
+world('a_aether', 'alchemy', 'potion', AETHER, 1, 25, 300, [[STAR, 12], [ESSENCE.light, 4], [ESSENCE.dark, 4]], 'welt');
+world('c_kresse', 'cooking', 'food', 'food_kresse', 2, 4, 0, [['mat_herb', 4], [BERRY, 2]], 'ruf');
+world('a_grube', 'alchemy', 'elixir', 'elx_grube', 1, 9, 35, [['mm_glimmer', 3], [CAP, 2], [ESSENCE.light, 1]], 'ruf');
+world('c_fladen', 'cooking', 'food', 'food_fladen', 2, 13, 0, [[PEPPER, 3], ['mm_ashclaw', 1], [BERRY, 1]], 'ruf');
+world('c_wette', 'cooking', 'food', 'food_wette', 2, 18, 0, [[LICHEN, 3], ['mm_fang', 1], [PEPPER, 1]], 'ruf');
+world('a_gelehrt', 'alchemy', 'elixir', 'elx_gelehrt', 1, 23, 70, [[FIG, 3], ['mat_rune', 2], [ESSENCE.wind, 2]], 'ruf');
+world('a_laterne', 'alchemy', 'elixir', 'elx_laterne', 1, 28, 90, [[BLOOM, 3], [STAR, 1], [ESSENCE.light, 2]], 'ruf');
+
 export const RECIPE_LIST: RecipeDef[] = R;
 export const RECIPES: Record<string, RecipeDef> = Object.fromEntries(R.map(r => [r.id, r]));
 /** Gegenstands-ID der Rezeptrolle eines lernbaren Rezepts */
@@ -160,6 +176,10 @@ export const ENCHANT_LIST: EnchantDef[] = [
   { id: 'eile', name: 'Rune der Eile', slots: ['accessory'], mods: { speedPct: 3 }, cost: [[E.wind, 6]], gold: 150, level: 5 },
   { id: 'weitsicht', name: 'Rune der Weitsicht', slots: ['accessory'], mods: { cdr: 3 }, cost: [[E.light, 5], [E.water, 3]], gold: 250, level: 10 },
   { id: 'glueck', name: 'Rune des Glücks', slots: ['accessory'], mods: { goldPct: 8, xpPct: 4 }, cost: [[E.earth, 4], [E.light, 4]], gold: 200, level: 6 },
+  // 0.6: Sternsplitter – vom Himmel gefallen, in Ausrüstung gefasst
+  { id: 'sternlicht', name: 'Rune des Sternenlichts', slots: ['weapon'], mods: { crit: 3, elemPct: 6 }, cost: [['mat_star', 6], [E.light, 4]], gold: 450, level: 14 },
+  { id: 'nachtwache', name: 'Rune der Nachtwache', slots: ARMOR, mods: { resAll: 3, hpRegen: 1 }, cost: [['mat_star', 5], [E.dark, 3]], gold: 350, level: 12 },
+  { id: 'wanderer', name: 'Rune des Wanderers', slots: ['accessory'], mods: { speedPct: 2, xpPct: 5 }, cost: [['mat_star', 4], [E.wind, 4]], gold: 300, level: 10 },
   { id: 'harmonie', name: 'Rune der Harmonie', slots: ['accessory'], mods: { resAll: 4 }, cost: (Object.values(E) as string[]).map(e => [e, 2] as [string, number]), gold: 600, level: 20 },
 ];
 export const ENCHANTS: Record<string, EnchantDef> = Object.fromEntries(ENCHANT_LIST.map(e => [e.id, e]));

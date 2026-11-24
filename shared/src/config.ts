@@ -174,6 +174,80 @@ export const CFG = {
     mats: (up: number) => 1 + Math.floor(up / 2),
   },
   respecGold: (level: number) => 50 * level,
+  /**
+   * Lebendige Welt (0.6): Ruf, Ereignisse, Weltbosse, seltene Monster, Schätze, Begegnungen, Tagesabläufe, Jahreszeiten.
+   * Inhalte: shared/src/data/{factions,events,rares,routines,worlditems}.ts · Logik: server/src/world/*
+   */
+  living: {
+    rep: {
+      /** Rufpunkte, ab denen Rang 1..5 gilt */
+      ranks: [0, 250, 800, 2000, 4200],
+      /** Preisnachlass bei den Händlern der Region je Rang 1..5 */
+      discount: [0, 0.04, 0.08, 0.12, 0.16],
+      quest: { main: 120, side: 80, repeat: 35, group: 60 } as Record<string, number>,
+      /** so viele Abschlüsse einer wiederholbaren Quest zählen beim Nachtragen für alte Spielstände */
+      backfillRepeats: 8,
+      /** Ruf je Beitragsstufe eines Ereignisses: –, Bronze, Silber, Gold */
+      event: [0, 25, 40, 60],
+      rare: 50, worldBoss: 120, encounter: 25, treasure: 30, trader: 10,
+      /** Ruf je gespendetem Rohstoff (Erz/Kraut, Zutat, Monster-Rohstoff) */
+      donate: { node: 2, ingredient: 2, monster: 3 },
+      donateMax: 50,
+    },
+    season: { lengthSec: 1200 },   // vier Jahreszeiten = 80 Minuten
+    events: {
+      firstDelay: [240, 420],      // s nach dem ersten Besucher einer Zone
+      gap: [420, 720],             // s zwischen zwei Ereignissen derselben Zone
+      minPlayerDist: 320,          // so weit entfernt von allen Spielern beginnt ein Ereignis
+      arriveSec: 300,              // so lange wartet ein Ereignis auf die ersten Teilnehmer
+      fightSec: 240,               // Zeitlimit, sobald es läuft
+      abandonSec: 90,              // leere Zone: Ereignis wird aufgeräumt
+      nearRadius: 420,             // Umkreis, in dem Gruppenmitglieder und Helfer mitzählen
+      /** Beitragsstufen: Anteil am fairen Anteil (1/Teilnehmer), ab dem Silber bzw. Gold gilt */
+      tiers: [0.2, 0.6],
+      /** Belohnung je Stufe (Bronze, Silber, Gold) als Faktor */
+      tierMul: [0.5, 0.75, 1],
+      gold: 12, xp: 10,            // × Gold/XP eines Gegners der Gebietsstufe
+      mapChance: 0.1, scrollChance: 0.06,
+      stars: { everySec: 5, lifeSec: 150, durSec: 170, bonusAt: 5 },
+      trader: { durSec: 330 },
+    },
+    boss: {
+      respawn: [2400, 3600],       // s zwischen zwei Auftritten desselben Weltbosses
+      firstDelay: [600, 1200],
+      despawnSec: 900,
+      hpPerPlayer: 0.7,            // zusätzliches Leben je weiterem Teilnehmer
+      radius: 520,
+      gold: 40, xp: 30,
+      aether: 0.35, scroll: 0.3, map: 0.25,
+      essences: [4, 6],
+      rarity: [0, 0, 55, 35, 10],
+    },
+    rare: {
+      respawn: [600, 1200], firstDelay: [150, 480], despawnSec: 900,
+      spawnDist: 260,              // nicht vor den Augen der Spieler erscheinen
+      hintDist: 300,
+      mats: [3, 5], essences: [2, 3], scroll: 0.25, map: 0.15, trophyRepeat: 0.25, gold: 10,
+    },
+    treasure: {
+      spots: 24,                   // mögliche Grabstellen je Region
+      radius: 26,
+      gold: [30, 45],              // × Gold eines Gegners der Gebietsstufe
+      rarity: [0, 0, 60, 32, 8],
+      aether: 0.15, scroll: 0.2,
+      eliteChance: 0.02,
+      chest: { wood: 0, silver: 0.05, gold: 0.12 } as Record<string, number>,
+    },
+    encounter: {
+      minRoad: 600,                // px auf Wegen, bevor wieder etwas passieren kann
+      cooldown: [300, 540],
+      chance: 0.5,                 // je Prüfung (alle 2 s), sobald alles andere stimmt
+      lifeSec: 240,
+      gold: 6, xp: 4,
+      mapChance: 0.08,
+    },
+    routine: { speed: 30, segment: 48 },
+  },
   world: {
     dayLengthSec: 720,     // ein voller Tag-Nacht-Zyklus
     weatherMinSec: 90,

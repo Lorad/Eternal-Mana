@@ -17,7 +17,7 @@ const essenceOf = (el: Element): string | undefined => (ESSENCE as Record<string
 /** Eine Rezeptrolle, die der Spieler noch nicht kennt und nicht schon bei sich trägt (passend zur Stufe des Gebiets). */
 export function pickScroll(z: Zone, p: Player, prefer?: string): string | null {
   const maxLvl = z.def.level[1] + 4;
-  const open = LEARNABLE.filter(r => !knowsRecipe(p.char, r) && !p.countItem(scrollOf(r.id)) && r.level <= maxLvl && (!r.cls || r.cls === p.char.cls));
+  const open = LEARNABLE.filter(r => !r.src && !knowsRecipe(p.char, r) && !p.countItem(scrollOf(r.id)) && r.level <= maxLvl && (!r.cls || r.cls === p.char.cls));
   if (!open.length) return null;
   if (prefer && open.some(r => r.id === prefer)) return scrollOf(prefer);
   return scrollOf(z.rng.pick(open).id);
@@ -82,7 +82,7 @@ export function chestExtras(z: Zone, p: Player, tier: string, boss: boolean) {
 }
 
 /** Zutat des Bioms als Beifang beim Abbauen einer Rohstoffstelle. */
-export function nodeBonus(z: Zone, p: Player) {
+export function nodeBonus(z: Zone, p: Player, mul = 1) {
   const bio = BIOME_MATS[z.def.biome];
-  if (bio && z.rng.chance(CFG.loot.nodeBonusChance)) p.give(makeStack(bio.ingredient));
+  if (bio && z.rng.chance(CFG.loot.nodeBonusChance * mul)) p.give(makeStack(bio.ingredient));
 }

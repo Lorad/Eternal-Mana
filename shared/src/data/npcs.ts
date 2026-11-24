@@ -3,6 +3,7 @@ import { Rng, strHash } from '../util/rng';
 import type { Cond } from './cond';
 import { generateGear, makeStack } from './items';
 import { NPCS_AKT2, TALK_AKT2 } from './npcs_akt2';
+import { NPCS_WELT } from './npcs_welt';
 
 export type { Cond };
 export interface NpcDef {
@@ -72,6 +73,7 @@ export const NPC_LIST: NpcDef[] = [
 ];
 // Akt II (0.3): neue Figuren; zusätzliche Kontextzeilen stehen vor den bisherigen (erste passende gewinnt)
 NPC_LIST.push(...NPCS_AKT2);
+NPC_LIST.push(...NPCS_WELT); // Lebendige Welt (0.6): stehen nur zeitweise in der Welt
 for (const n of NPC_LIST) if (TALK_AKT2[n.id]) n.talk = [...TALK_AKT2[n.id], ...(n.talk ?? [])];
 export const NPCS: Record<string, NpcDef> = Object.fromEntries(NPC_LIST.map(n => [n.id, n]));
 
