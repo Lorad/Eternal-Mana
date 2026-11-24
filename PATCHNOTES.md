@@ -27,7 +27,7 @@ _24.11.2026_
 ### Sonstiges
 - Der Charakterbogen zeigt Resistenzen und rechnet laufende Stärkungen mit ein.
 - Alte Spielstände funktionieren unverändert.
-- Neue Gegenstände tragen vorerst vorhandene Symbole; eigene folgen.
+- Alle neuen Gegenstände haben eigene Symbole; die sechs Essenzen unterscheiden sich in Farbe und Form.
 
 ## 0.2.1 – Launcher, Kamera und Licht
 _22.11.2026_

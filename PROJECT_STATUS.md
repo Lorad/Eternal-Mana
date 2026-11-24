@@ -18,7 +18,6 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 
 ### Offene Punkte aus 0.3
 
-- Eigene Symbole für die 50 neuen Gegenstände fehlen noch (vorerst vorhandene Symbole; alle sechs Essenzen teilen sich eines).
 - Lagerfeuer, Brunnen und Esse fehlen als Deko in den erzeugten Karten (`addDecor` lehnt Wegfelder ab); die Kochstellen
   setzt deshalb der Server als Objekte.
 - Nicht im Spiel zu zweit erprobt: Reaktionen und Handwerk über echte Verbindungen (nur in Tests ohne Netzwerk).
