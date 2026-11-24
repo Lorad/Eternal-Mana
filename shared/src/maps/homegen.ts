@@ -48,7 +48,7 @@ export function genHome(def: ZoneDef): GameMap {
     const border = 3.2 + noise2(x, y, 6, seed + 9) * 3;
     let t: number = T.GROUND;
     if (d < border && !inYard(x, y)) t = T.WALL;
-    else if (!inYard(x, y) && fbm2(x, y, 9, seed + 3) > 0.56) t = T.GROUND2;
+    else if (x >= 34 && y >= 11 && y <= 23 && fbm2(x, y, 9, seed + 3) > 0.36) t = T.GROUND2; // ein kleines Kornfeld östlich des Zauns
     tiles[I(x, y)] = t;
   }
   for (let y = HOUSE.y + 1; y < h - 1; y++) for (const x of Y.gate) tiles[I(x, y)] = T.PATH;
@@ -79,8 +79,8 @@ export function genHome(def: ZoneDef): GameMap {
     obj('hobj', tx * TILE + (wc * TILE) / 2, ty * TILE + TILE / 2, kind, idx === undefined ? { kind } : { kind, idx });
   }
   // der Wegweiser zurück nach Quellhain steht vor dem Tor
-  block(24, 30);
-  obj('hobj', 24 * TILE + TILE / 2, 30 * TILE + TILE / 2, 'tor', { kind: 'tor' });
+  block(24, 29);
+  obj('hobj', 24 * TILE + TILE / 2, 29 * TILE + TILE / 2, 'tor', { kind: 'tor' });
 
   // Kleinkram, der einen Hof zum Hof macht
   put('rug', 14, 18, false, 2);
@@ -88,6 +88,7 @@ export function genHome(def: ZoneDef): GameMap {
   put('woodpile', 12, 11, true, 2);
   put('barrel', 30, 17); put('crate', 31, 20); put('sacks', 30, 20);
   put('bench', 16, 20, true, 2);
+  put('well', 16, 25, true, 2);
   put('birdhouse', 13, 14); put('beehive', 31, 11);
   put('bush_flower', 12, 26); put('bush_flower', 31, 26);
   put('scarecrow', 37, 16);
@@ -109,7 +110,7 @@ export function genHome(def: ZoneDef): GameMap {
   for (let i = 0; i < tiles.length; i++) if (tiles[i] === T.WALL) solid[i] = 2;
 
   const gx = ((Y.gate[0] + Y.gate[1] + 1) / 2) * TILE;
-  const start = { x: gx, y: 30 * TILE + TILE / 2 };
+  const start = { x: gx, y: 29 * TILE + TILE / 2 };
   return {
     id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: false, seed, decor, objects, spawns: [], rooms: [],
     start, entries: { gruenwald: start }, safe: [{ x: (w * TILE) / 2, y: (h * TILE) / 2, r: w * TILE }],

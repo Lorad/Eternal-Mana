@@ -13,7 +13,6 @@ import { PanelHost } from './panels';
 import { CineOverlay, LoreOverlay } from './story';
 import { EncounterDialog, WorldShop } from './world';
 import { HofWindow } from './home';
-import './styles/home.css';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -23,6 +22,7 @@ import './styles/panels.css';
 import './styles/craft.css';
 import './styles/endgame.css';
 import './styles/world.css';
+import './styles/home.css';
 
 /** Berechnet den Maßstab: Die Oberfläche ist für rund 1280×720 entworfen und skaliert mit dem Fenster. */
 function computeScale() {
