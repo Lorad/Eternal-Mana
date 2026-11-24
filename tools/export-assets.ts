@@ -32,7 +32,10 @@ const { objSource } = await import('../client/src/gfx/objects/index');
 const { ZONE_LIST } = await import('../shared/src/data/zones');
 const { getMap } = await import('../shared/src/maps/mapgen');
 const { SKILL_LIST } = await import('../shared/src/data/skills');
-
+const { ITEMS } = await import('../shared/src/data/items');
+const { FACTION_LIST } = await import('../shared/src/data/factions');
+const { traderGoods } = await import('../shared/src/data/events');
+const { REGIONS } = await import('../shared/src/data/worlditems');
 type Rect = { x: number; y: number; w: number; h: number };
 const png = (c: any): Buffer => (c as Canvas).toBuffer('image/png');
 const write = (file: string, data: Buffer | string) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, data); };
@@ -98,6 +101,23 @@ const objUse = (n: string) => {
 exportAtlas('obj', bundle.obj.canvas, bundle.obj.frames, objUse);
 exportAtlas('fx', bundle.fx.canvas, bundle.fx.frames, n => (/^(slash|thrust|smash|claw|bite|hit|block)/.test(n) ? 'Kampf: Waffenspur/Treffer' : /^(bolt|arrow|dagger|lance|spore|orb)/.test(n) ? 'Geschoss' : /^explosion/.test(n) ? 'Explosion' : /^(leaf|petal|snow|rain|ash|ember|mote|drip|heat|void_mote|godray)/.test(n) ? 'Wetter/Umgebung' : /^(exclaim|question|bubble|target|arrow_marker|status)/.test(n) ? 'Weltmarker' : 'Effekt'));
 
+// Prüfung: jedes Icon eines Gegenstands existiert im Atlas (sonst zeigt das Spiel den Ersatz-Edelstein), und die
+// Namen in UNIQUE_ICONS passen zu den benannten Schmuckstücken der Fraktionen und der fahrenden Händlerin.
+function checkItemIcons() {
+  const known = new Set<string>(spec.ITEM_ICONS as readonly string[]);
+  const missing = Object.values(ITEMS as Record<string, { id: string; icon: string }>).filter(b => !known.has(b.icon)).map(b => `${b.id} → ${b.icon}`);
+  if (missing.length) console.warn('  WARNUNG: Gegenstände ohne Icon im Atlas: ' + missing.join(', '));
+  const names = new Set<string>();
+  for (const f of FACTION_LIST) for (const o of f.stock) if (o.unique) names.add(o.unique.name);
+  for (const z of REGIONS) { const g = traderGoods(z); for (const o of [...g.fixed, ...g.pool]) if (o.unique) names.add(o.unique.name); }
+  const uq: Record<string, string> = spec.UNIQUE_ICONS;
+  for (const n of names) if (!uq[n]) console.warn(`  WARNUNG: benanntes Schmuckstück ohne eigenes Icon (UNIQUE_ICONS in gfx/spec.ts): ${n}`);
+  for (const n of Object.keys(uq)) {
+    if (!names.has(n)) console.warn(`  WARNUNG: UNIQUE_ICONS nennt ein unbekanntes Schmuckstück: ${n}`);
+    if (!known.has(uq[n])) console.warn(`  WARNUNG: UNIQUE_ICONS verweist auf ein fehlendes Icon: ${uq[n]}`);
+  }
+}
+
 // Icons: alle Gegenstands-Icons und jede Skill-Glyphe in jeder Elementfarbe
 {
   const keys: [string, string | undefined][] = spec.ITEM_ICONS.map((n: string) => [`item_${n}`, undefined] as [string, undefined]);
@@ -116,7 +136,7 @@ exportAtlas('fx', bundle.fx.canvas, bundle.fx.frames, n => (/^(slash|thrust|smas
     frames[el ? `${k}_${el}` : k] = { x, y, w: S, h: S };
   }
   exportAtlas('icons', cv, frames, n => (n.startsWith('item_') ? 'Gegenstands-Icon (Inventar, Händler, Beute)' : 'Fähigkeiten-Icon in Elementfarbe (Skilltree, Leiste)'));
-  void SKILL_LIST;
+  void SKILL_LIST; checkItemIcons();
 }
 
 // ---------------------------------------------------------------- Flüssigkeiten & Overlays

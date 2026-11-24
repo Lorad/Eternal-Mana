@@ -248,7 +248,29 @@ export const ITEM_ICONS = [
   'food_beeren', 'food_pilz', 'food_spiess', 'food_eintopf', 'food_feigen', 'food_tee', 'food_fest',
   'leg_krieger', 'leg_magier', 'leg_waldlaeufer', 'leg_paladin', 'leg_schattenjaeger',
   'recipe', 'buff_einklang', 'buff_morgenwacht',
+  // Endspiel & Lebendige Welt (icons_world.ts). Trophäen beginnen mit `tro_`, Schatzkarten mit `tmap_`,
+  // benannte Schmuckstücke (Unikate ohne eigenen ItemBase, siehe UNIQUE_ICONS) mit `uq_`.
+  'mat_echo', 'mat_star',
+  'tro_borkenkoenig', 'tro_fliegenhut', 'tro_tante_echo', 'tro_guenther', 'tro_meister_russ', 'tro_glucke',
+  'tro_altvater_reif', 'tro_nordlicht', 'tro_quill', 'tro_sockel', 'tro_stunde', 'tro_hohlprinz',
+  'tro_moosgrimm', 'tro_aschenmaul', 'tro_niemand',
+  'tmap_gruenwald', 'tmap_kristall', 'tmap_glut', 'tmap_frost', 'tmap_ruinen', 'tmap_schatten',
+  'elx_stern', 'elx_gelehrt', 'elx_laterne', 'elx_grube', 'elx_sieben',
+  'food_stern', 'food_kresse', 'food_fladen', 'food_wette',
+  'uq_brunnenmuenze', 'uq_schichtmarke', 'uq_feuerstein', 'uq_wettschein', 'uq_fundnummer', 'uq_docht',
+  'uq_kompass', 'uq_pfennig',
 ] as const;
+
+/**
+ * Icon-Key (ohne `item_`) für benannte Schmuckstücke, die nur als Gegenstandsinstanz mit Eigennamen existieren
+ * (Fraktions-Unikate in shared/src/data/factions.ts, Unikate der fahrenden Händlerin in shared/src/data/events.ts).
+ * Schlüssel = `ItemInstance.name`. Fehlt ein Eintrag, gilt das Icon des Basisgegenstands.
+ */
+export const UNIQUE_ICONS: Record<string, string> = {
+  'Brunnenmünze': 'uq_brunnenmuenze', 'Schichtmarke': 'uq_schichtmarke', 'Feuerstein der Sippe': 'uq_feuerstein',
+  'Ingas Wettschein': 'uq_wettschein', 'Fundnummer 4 471': 'uq_fundnummer', 'Docht vom Letzten Licht': 'uq_docht',
+  'Kompass der Umwege': 'uq_kompass', 'Vesnas Glückspfennig': 'uq_pfennig',
+};
 
 /** Skill-Glyphen 24x24. Icon = Glyphe (hell) auf elementfarbenem Hintergrund mit Rahmen. */
 export const SKILL_GLYPHS = [
