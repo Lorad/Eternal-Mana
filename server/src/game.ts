@@ -8,13 +8,13 @@ import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { ITEMS, TIER_MATERIAL, canEquip, equipLevel, generateGear, isGear, itemName, itemPrice, makeStack, newUid, sellPrice, slotOf, tierOf } from '../../shared/src/data/items';
 import { NPCS, shopStock } from '../../shared/src/data/npcs';
-import { QUESTS, STORY, questAvailable, questComplete } from '../../shared/src/data/quests';
+import { QUESTS, STORY, questAvailable, questComplete, type QuestDef } from '../../shared/src/data/quests';
 import { kreisLevel, kreisOf, titleName } from '../../shared/src/data/rifts';
 import { SKILLS } from '../../shared/src/data/skills';
 import { ZONES } from '../../shared/src/data/zones';
 import { getMap } from '../../shared/src/maps/mapgen';
 import { newCharacter } from '../../shared/src/stats';
-import type { AttrKey, ClientMsg, ItemInstance, PartyMember, PlayerInfo, ServerInfo, ServerMsg, Slot } from '../../shared/src/types';
+import type { AttrKey, ClientMsg, ItemInstance, PlayerInfo, ServerInfo, ServerMsg, Slot } from '../../shared/src/types';
 import { SLOTS } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
@@ -22,6 +22,7 @@ import { devEndgame, handleEndgame, questPoints, questUnlocks } from './endgame'
 import { Rift } from './rift';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
+import { Social } from './social';
 import { Story } from './story';
 import { World } from './world';
 import { shopPrice } from '../../shared/src/data/factions';
@@ -37,8 +38,13 @@ export class Party {
   static next = 1;
   id = Party.next++;
   members = new Set<Player>();
-  /** Anführer ist, wer am längsten dabei ist (0.5: öffnet Mana-Risse) */
-  get leader(): Player | undefined { return this.members.values().next().value; }
+  /** 0.7: ausdrücklich bestimmter Anführer (Gründer, Ernennung, Nachfolge) – Regeln: server/src/social/party.ts */
+  lead: Player | null = null;
+  /** 0.7: freigehaltene Plätze für Mitglieder, deren Verbindung ganz abgerissen ist (charId → Auszug, Frist) */
+  seats = new Map<number, { charId: number; name: string; cls: Player['char']['cls']; level: number; kreis: number; until: number }>();
+  leadDeadSince = 0;
+  /** Anführer (0.5: öffnet Mana-Risse): der bestimmte – sonst, wer am längsten dabei ist */
+  get leader(): Player | undefined { return this.lead && this.members.has(this.lead) ? this.lead : this.members.values().next().value; }
 }
 
 const DEV = !!process.env.EM_DEV;
@@ -49,10 +55,9 @@ export class Game {
   sessions = new Set<Session>();
   /** charId → Spieler in der Welt (auch kurzzeitig getrennte) */
   players = new Map<number, Player>();
-  private invites = new Map<number, Player>();
   private rng = new Rng(Date.now() & 0xffffff);
   private last = performance.now();
-  private timers = { save: 0, party: 0, online: 0, env: 0, backup: 0 };
+  private timers = { save: 0, online: 0, env: 0, backup: 0 };
   private timer: NodeJS.Timeout | null = null;
 
   constructor(public db: Db, public info: ServerInfo) {}
@@ -90,13 +95,14 @@ export class Game {
    */
   worldKreis(p: Player): number {
     let k = kreisOf(p.char);
-    if (p.party) for (const q of p.party.members) k = Math.min(k, kreisOf(q.char));
+    if (p.party) { for (const q of p.party.members) k = Math.min(k, kreisOf(q.char)); for (const s of p.party.seats.values()) k = Math.min(k, s.kreis); }
     return k;
   }
   /** Setzt einen Spieler in eine bestimmte Instanz (Zonenwechsel, Riss, Wiederkehr im Dungeon). */
   moveTo(p: Player, z: Zone, pos: { x: number; y: number }) {
     p.zone.removePlayer(p);
     p.statuses.clear();
+    Social.onZoneChange(this, p);
     z.addPlayer(p, pos.x, pos.y);
     p.send({ t: 'zone', init: z.initFor(p) });
     World.sendTo(p);
@@ -118,10 +124,10 @@ export class Game {
       else if ((z.def.kind === 'dungeon' || z.key !== z.id) && this.now - z.emptySince > CFG.world.dungeonResetSec) this.zones.delete(id);
     }
     // getrennte Spieler nach Schonfrist entfernen
-    for (const p of this.players.values()) if (p.linkdead && this.now - p.linkdeadAt > CFG.net.reconnectGraceMs / 1000) this.removePlayer(p);
+    for (const p of this.players.values()) if (p.linkdead && this.now - p.linkdeadAt > CFG.net.reconnectGraceMs / 1000) this.removePlayer(p, true);
     const T = this.timers;
     if ((T.save += dt) >= CFG.save.autosaveSec) { T.save = 0; this.saveAll(); }
-    if ((T.party += dt) >= 1) { T.party = 0; const done = new Set<Party>(); for (const p of this.players.values()) if (p.party && !done.has(p.party)) { done.add(p.party); this.sendParty(p.party); } }
+    Social.tick(this, dt); // 0.7: Gruppenstand, Einladungen, Handel, geteilte Quests
     if ((T.online += dt) >= 4) { T.online = 0; this.sendOnline(); }
     if ((T.env += dt) >= 15) { T.env = 0; const tod = this.tod(); for (const p of this.players.values()) if (!p.linkdead) p.send({ t: 'env', tod }); }
     World.tickGame(this, dt);
@@ -147,13 +153,15 @@ export class Game {
       this.savePlayer(p);
       p.linkdead = true; p.linkdeadAt = this.now; p.send = () => {};
       this.sysChat(`${p.name} hat die Verbindung verloren.`);
+      Social.onDisconnect(this, p);
     }
   }
-  private removePlayer(p: Player) {
+  /** `keepSeat`: Die Verbindung ist abgerissen (nicht: freiwillig gegangen) – der Platz in der Gruppe bleibt eine Weile frei. */
+  private removePlayer(p: Player, keepSeat = false) {
     this.savePlayer(p);
     p.zone.removePlayer(p);
     this.players.delete(p.charId);
-    this.leaveParty(p);
+    Social.onRemove(this, p, keepSeat);
   }
 
   onMessage(s: Session, raw: string) {
@@ -214,7 +222,7 @@ export class Game {
       case 'rift': case 'quell': case 'kreis': case 'attune': case 'title': return handleEndgame(this, p, m);
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
-      case 'party': return this.partyMsg(p, m.a, m.id);
+      case 'party': case 'trade': case 'qShare': case 'qShareAns': case 'inspect': return Social.message(this, p, m);
       case 'save': this.savePlayer(p); p.send({ t: 'saved' }); return;
       case 'sortInv': {
         const order = ['weapon', 'helm', 'armor', 'accessory', 'consumable', 'material', 'quest'];
@@ -241,6 +249,7 @@ export class Game {
       p.buffsDirty = true;
       World.sendTo(p);
       this.sysChat(`${p.name} ist wieder da.`);
+      Social.onReconnect(this, p);
       break;
     }
     this.sendOnline();
@@ -278,6 +287,7 @@ export class Game {
     World.sendTo(p);
     if (!char.flags.intro) { char.flags.intro = 1; this.story(p, 'intro'); }
     this.sysChat(`${p.name} betritt die Welt.`);
+    Social.onEnter(this, p);
     this.sendOnline();
   }
 
@@ -286,7 +296,7 @@ export class Game {
     const z = this.zone(to, this.worldKreis(p));
     this.moveTo(p, z, pos ?? z.map.entries[from] ?? z.map.start);
   }
-  private teleport(p: Player, zoneId: string) {
+  teleport(p: Player, zoneId: string) {
     if (p.dead || !ZONES[zoneId] || !p.char.flags[`t:${zoneId}`]) return;
     const near = [...p.zone.objs.values()].some(o => o.type === 'stone' && Math.hypot(o.x - p.x, o.y - p.y) < 70);
     if (!near) { p.toast('Du musst an einem Quellstein stehen, um zu reisen.', 'bad'); return; }
@@ -377,50 +387,6 @@ export class Game {
     else if (World.dev(this, p, cmd, a)) { /* Lebendige Welt: server/src/world/index.ts */ }
     else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /rissmod id [dungeon] [stufe], /quell n, /echo n, /kreis [n], /pruefung · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an');
   }
-
-  // ------------------------------------------------------------------ Gruppen
-  private partyMsg(p: Player, a: string, id?: number) {
-    if (a === 'invite') {
-      const t = [...this.players.values()].find(q => q.id === id);
-      if (!t || t === p || t.linkdead) return;
-      if (t.party && t.party === p.party) return;
-      if (t.party) { p.toast(`${t.name} ist bereits in einer Gruppe.`, 'bad'); return; }
-      if (p.party && p.party.members.size >= 4) { p.toast('Die Gruppe ist voll (max. 4).', 'bad'); return; }
-      this.invites.set(t.id, p);
-      t.send({ t: 'party', members: t.party ? this.partyMembers(t.party) : [], invite: { from: p.id, name: p.name } });
-      p.toast(`Einladung an ${t.name} gesendet.`);
-    } else if (a === 'accept') {
-      const from = this.invites.get(p.id);
-      this.invites.delete(p.id);
-      if (!from || !this.players.has(from.charId) || p.party) return;
-      if (!from.party) { from.party = new Party(); from.party.members.add(from); }
-      if (from.party.members.size >= 4) return;
-      from.party.members.add(p); p.party = from.party;
-      for (const q of p.party.members) { q.toast(`${p.name} ist der Gruppe beigetreten.`, 'good'); this.broadcastPlayerInfo(q); }
-      this.sendParty(p.party);
-      for (const q of [...p.party.members]) this.rehome(q); // 0.5: die Gruppe spielt in der Welt ihres niedrigsten Kreises
-    } else if (a === 'decline') {
-      const from = this.invites.get(p.id);
-      this.invites.delete(p.id);
-      from?.toast(`${p.name} hat abgelehnt.`);
-    } else if (a === 'leave') this.leaveParty(p);
-  }
-  private leaveParty(p: Player) {
-    const party = p.party;
-    if (!party) return;
-    party.members.delete(p); p.party = null;
-    const rest = [...party.members];
-    p.send({ t: 'party', members: [] });
-    for (const q of party.members) q.toast(`${p.name} hat die Gruppe verlassen.`);
-    if (party.members.size === 1) { const last = [...party.members][0]; last.party = null; last.send({ t: 'party', members: [] }); party.members.clear(); if (this.players.has(last.charId)) this.broadcastPlayerInfo(last); }
-    else this.sendParty(party);
-    if (this.players.has(p.charId)) this.broadcastPlayerInfo(p);
-    for (const q of [p, ...rest]) this.rehome(q);
-  }
-  private partyMembers(party: Party): PartyMember[] {
-    return [...party.members].map(q => ({ id: q.id, charId: q.charId, name: q.name, cls: q.char.cls, level: q.level, hp: Math.max(0, Math.round(q.hp)), maxHp: q.stats.maxHp, zone: q.zone.id, online: !q.linkdead }));
-  }
-  private sendParty(party: Party) { const members = this.partyMembers(party); for (const q of party.members) q.send({ t: 'party', members }); }
 
   // ------------------------------------------------------------------ Charakteraktionen
   nearNpc(p: Player, npc: string): boolean {
@@ -562,6 +528,11 @@ export class Game {
   private qAccept(p: Player, id: string, npc: string) {
     const q = QUESTS[id];
     if (!q || q.giver !== npc || !this.nearNpc(p, npc) || !questAvailable(p.char, q)) return;
+    this.acceptQuest(p, q);
+  }
+  /** Nimmt eine Quest an. Die Berechtigung prüft der Aufrufer (Auftraggeber in der Nähe – oder eine geteilte Quest, 0.7). */
+  acceptQuest(p: Player, q: QuestDef) {
+    const id = q.id;
     p.char.quests[id] = { s: 'active', p: q.objectives.map(() => 0), n: p.char.quests[id]?.n };
     p.sync('quests');
     p.toast(`Quest angenommen: ${q.name}`, 'quest');

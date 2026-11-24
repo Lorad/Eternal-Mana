@@ -16,6 +16,7 @@ import { ECHO_MECH, type EchoMech } from './echo';
 import { bossLoot } from './loot';
 import type { Player } from './player';
 import { Rift } from './rift';
+import { Social } from './social';
 import { Story } from './story';
 import { Mob, type Zone } from './zone';
 
@@ -170,9 +171,11 @@ export class BossCtl {
       for (const o of [...z.objs.values()]) if (o.dynamic && o.type === 'chest') { z.objs.delete(o.id); z.ev({ k: 'obj-', id: o.id }); }
       z.addDynamicObj('chest', this.cx + 5 * TILE, this.cy + 3 * TILE, { tier: 'gold', boss: true });
       if (![...z.objs.values()].some(o => o.dynamic && o.type === 'exit')) z.addDynamicObj('exit', this.cx - 5 * TILE, this.cy + 3 * TILE, { to: z.def.parent, look: 'portal', label: ZONES[z.def.parent!].name, r: 13 });
+      Social.groupChest(z, this.cx + 5 * TILE, this.cy + 5 * TILE); // 0.7: Gruppentruhe, wenn mindestens zwei aus einer Gruppe dabei waren
     } else {
       z.addDynamicObj('chest', this.cx, this.cy - 3 * TILE, { tier: 'gold', boss: true });
       z.addDynamicObj('exit', this.cx, this.cy + 3 * TILE, { to: z.def.parent, look: 'portal', label: ZONES[z.def.parent!].name, r: 13 });
+      Social.groupChest(z, this.cx - 3 * TILE, this.cy - 3 * TILE);
     }
     z.game.saveZonePlayers(z);
   }

@@ -23,6 +23,7 @@ import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
 import { legendAttack, legendOnHit, legendShield, tryReaction } from './react';
 import { Rift, riftStones, type RiftRun } from './rift';
+import { Social } from './social';
 import { World } from './world';
 
 export interface Obj extends ObjInfo {
@@ -657,8 +658,10 @@ export class Zone {
     const pr = o.props!;
     if (pr.sealed) { p.toast('Ein Siegel hält die Truhe verschlossen. Löse das Rätsel dieses Raums.', 'bad'); return; }
     if (pr.guard !== undefined && [...this.mobs.values()].some(m => m.group === pr.guard && !m.dead)) { p.toast('Die Truhe wird bewacht!', 'bad'); return; }
+    if (pr.group && !Social.mayOpenChest(this, p, o)) return; // 0.7: Gruppentruhe – nur für die, die dabei waren
     if (o.looted) o.looted.add(p.charId); else { p.char.flags[`c:${this.id}:${pr.sid}`] = 1; p.sync('flags'); }
     p.pev.push({ k: 'obj', id: o.id, state: 1 }, { k: 'sfx', n: 'chest_open' });
+    if (pr.group) { Social.chestLoot(this, p); return; }
     if (this.rift && pr.rift) { Rift.openChest(this, p, pr.rift); return; }
     const r = this.rng, tier: string = pr.tier, lvl = Math.min(this.def.level[1] + (tier === 'gold' ? 2 : 0), this.ilvlCap);
     const mul = tier === 'wood' ? 1 : tier === 'silver' ? 2.5 : 6;

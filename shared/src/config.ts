@@ -234,6 +234,26 @@ export const CFG = {
     bossXp: 40, bossGold: 60, // Boss-Belohnung mindestens: Gegner-EP/-Gold seiner Stufe × Faktor
     pointFragments: 1,        // ab dem 1. Kreis geben Quests statt Attribut-/Fähigkeitspunkten Echo-Fragmente
   },
+  /** Gemeinsam (0.7): Gruppe, Handel, Quest teilen, Gruppentruhe. Regeln: shared/src/social.ts · Logik: server/src/social/* */
+  social: {
+    partyMax: 4,
+    inviteSec: 30,            // so lange bleibt eine Einladung offen
+    inviteCooldownSec: 8,     // nach Ablehnung oder Verfall: Pause, bevor derselbe Spieler dieselbe Person erneut einladen kann
+    deadLeaderSec: 30,        // bleibt der Anführer so lange gefallen, geht die Führung an ein lebendes Mitglied
+    seatSec: 300,             // wer die Verbindung ganz verliert, behält seinen Platz in der Gruppe so lange
+    tradeRadius: 110,         // px – beide Handelspartner müssen so nah beieinander stehen
+    tradeRequestSec: 20,      // so lange bleibt eine Handelsanfrage offen
+    tradeRequestCooldownSec: 4,
+    tradeSlots: 8,            // verschiedene Gegenstände je Seite
+    tradeLockDelaySec: 1.5,   // nach jeder Änderung am Angebot: so lange kann niemand sperren (Schutz vor schnellem Umtauschen)
+    tradeOpsPerSec: 20,
+    goldCap: 999_999_999,     // mehr Gold nimmt ein Charakter im Handel nicht an
+    shareSec: 30,             // so lange bleibt eine geteilte Quest zur Annahme offen
+    shareCooldownSec: 4,
+    inspectCooldownSec: 0.5,
+    /** Gruppentruhe nach einem Dungeon- oder Riss-Boss: erscheint, wenn mindestens `min` Mitglieder derselben Gruppe dabei waren; Inhalt für jeden persönlich */
+    groupChest: { min: 2, gold: [5, 8] as [number, number], gearMinRarity: 1, mats: [1, 2] as [number, number], potions: 2, fragments: 1 },
+  },
   /**
    * Lebendige Welt (0.6): Ruf, Ereignisse, Weltbosse, seltene Monster, Schätze, Begegnungen, Tagesabläufe, Jahreszeiten.
    * Inhalte: shared/src/data/{factions,events,rares,routines,worlditems}.ts · Logik: server/src/world/*

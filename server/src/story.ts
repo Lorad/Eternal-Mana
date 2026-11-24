@@ -164,7 +164,9 @@ export const Story = {
       zone.ev({ k: 'fx', n: 'shard', x: e.x, y: e.y });
       const shrine = e.obj?.type === 'shrine';
       for (const p of zone.players.values()) {
-        if (!e.who.has(p) && Math.hypot(p.x - e.x, p.y - e.y) > 420) continue;
+        // Beteiligte, Umstehende – und (0.7, wie bei der Kill-Wertung) Gruppenmitglieder von Beteiligten im Gruppenradius
+        const d = Math.hypot(p.x - e.x, p.y - e.y);
+        if (!e.who.has(p) && d > 420 && !(p.party && d <= CFG.combat.partyXpRadius && [...e.who].some(h => h.party === p.party))) continue;
         const first = !p.char.flags[`e:${id}`];
         setFlag(p, `e:${id}`);
         if (e.obj) p.pev.push({ k: 'obj', id: e.obj.id, state: 1 });

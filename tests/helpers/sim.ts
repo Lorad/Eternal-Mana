@@ -24,6 +24,8 @@ export interface Tester {
   send(m: ClientMsg): void;
   count(base: string): number;
   give(base: string, n?: number): void;
+  /** Profil-Schlüssel (für die Wiederverbindung, 0.7) */
+  token: string;
 }
 
 export class Sim {
@@ -39,7 +41,8 @@ export class Sim {
     const ws = { readyState: 1, send: (raw: string) => { const m = JSON.parse(raw) as ServerMsg; msgs.push(m); if (m.t === 'toast') toasts.push(m.s); }, close() {} };
     const s = this.game.onConnect(ws as any);
     const send = (m: ClientMsg) => this.game.onMessage(s, JSON.stringify(m));
-    send({ t: 'hello', token: `sim_${name}_${this.n++}`.padEnd(20, 'x'), name, v: 'test' });
+    const token = `sim_${name}_${this.n++}`.padEnd(20, 'x');
+    send({ t: 'hello', token, name, v: 'test' });
     send({ t: 'charCreate', slot: 0, name, cls });
     const chars = (msgs.filter(m => m.t === 'chars').at(-1) as Extract<ServerMsg, { t: 'chars' }>).chars;
     send({ t: 'enter', id: chars[0].id });
@@ -47,7 +50,7 @@ export class Sim {
     if (!p) throw new Error('Betreten fehlgeschlagen: ' + JSON.stringify(msgs.at(-1)));
     if (level > 1) { p.char.level = level; p.recalc(); p.hp = p.stats.maxHp; p.mp = p.stats.maxMp; }
     const t: Tester = {
-      s, p, msgs, toasts, send,
+      s, p, msgs, toasts, send, token,
       // `t.p` wechselt beim erneuten Betreten – deshalb immer über `t` zugreifen
       count: base => t.p.countItem(base),
       give: (base, n = 1) => { t.p.addItem(makeStack(base, n)); },
@@ -64,6 +67,19 @@ export class Sim {
     const chars = this.db.listChars(t.s.account!.id);
     t.send({ t: 'enter', id: chars[0].id });
     t.p = t.s.player!;
+    return t;
+  }
+  /** 0.7: Die Verbindung reißt ab – der Charakter bleibt (unverwundbar) in der Welt, bis die Schonfrist um ist. */
+  drop(t: Tester) { this.game.onClose(t.s); }
+  /** 0.7: Dasselbe Profil meldet sich über eine neue Verbindung an. Steht der Charakter noch in der Welt, hängt der Server ihn an; sonst wird er neu geladen. */
+  reconnect(t: Tester): Tester {
+    const ws = { readyState: 1, send: (raw: string) => { const m = JSON.parse(raw) as ServerMsg; t.msgs.push(m); if (m.t === 'toast') t.toasts.push(m.s); }, close() {} };
+    const s = this.game.onConnect(ws as any);
+    t.s = s;
+    t.send = (m: ClientMsg) => this.game.onMessage(s, JSON.stringify(m));
+    t.send({ t: 'hello', token: t.token, name: t.p.name, v: 'test' });
+    if (!s.player) t.send({ t: 'enter', id: this.db.listChars(s.account!.id)[0].id });
+    t.p = s.player!;
     return t;
   }
   zone(id: string): Zone { return this.game.zone(id); }

@@ -175,19 +175,24 @@ export class Db {
     try { return sanitizeChar(JSON.parse(row.data)); } catch { return null; }
   }
 
-  saveChar(id: number, c: CharData) {
-    const data = JSON.stringify(c);
-    const sum = sha(data);
+  saveChar(id: number, c: CharData) { this.saveChars([[id, c]]); }
+  /** Speichert mehrere Charaktere in EINER Transaktion – entweder alle oder keinen (0.7: beide Seiten eines Handels). */
+  saveChars(list: [number, CharData][]) {
     const now = Date.now();
+    const snaps: number[] = [];
     this.db.exec('BEGIN');
     try {
-      this.db.prepare('UPDATE characters SET level = ?, zone = ?, playtime = ?, data = ?, checksum = ?, updated = ? WHERE id = ?').run(c.level, c.zone, c.playtime, data, sum, now, id);
-      if (now - (this.lastSnapshot.get(id) ?? 0) > 5 * 60_000) {
-        this.lastSnapshot.set(id, now);
-        this.db.prepare('INSERT INTO char_snapshots (char_id, ts, data, checksum) VALUES (?,?,?,?)').run(id, now, data, sum);
-        this.db.prepare('DELETE FROM char_snapshots WHERE char_id = ? AND id NOT IN (SELECT id FROM char_snapshots WHERE char_id = ? ORDER BY ts DESC LIMIT ?)').run(id, id, CFG.save.charSnapshotsKept);
+      for (const [id, c] of list) {
+        const data = JSON.stringify(c), sum = sha(data);
+        this.db.prepare('UPDATE characters SET level = ?, zone = ?, playtime = ?, data = ?, checksum = ?, updated = ? WHERE id = ?').run(c.level, c.zone, c.playtime, data, sum, now, id);
+        if (now - (this.lastSnapshot.get(id) ?? 0) > 5 * 60_000) {
+          snaps.push(id);
+          this.db.prepare('INSERT INTO char_snapshots (char_id, ts, data, checksum) VALUES (?,?,?,?)').run(id, now, data, sum);
+          this.db.prepare('DELETE FROM char_snapshots WHERE char_id = ? AND id NOT IN (SELECT id FROM char_snapshots WHERE char_id = ? ORDER BY ts DESC LIMIT ?)').run(id, id, CFG.save.charSnapshotsKept);
+        }
       }
       this.db.exec('COMMIT');
+      for (const id of snaps) this.lastSnapshot.set(id, now);
     } catch (e) { this.db.exec('ROLLBACK'); throw e; }
   }
 

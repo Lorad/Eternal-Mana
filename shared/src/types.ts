@@ -168,7 +168,27 @@ export type GameEvent =
   | { k: 'boss'; id: number; name: string; phase: number; el: Element }
   | { k: 'bossend'; id: number; won: boolean };
 
-export interface PartyMember { id: number; charId: number; name: string; cls: ClassId; level: number; hp: number; maxHp: number; zone: string; online: boolean }
+export interface PartyMember {
+  id: number; charId: number; name: string; cls: ClassId; level: number; hp: number; maxHp: number; zone: string; online: boolean;
+  // ---- 0.7 (alles optional): führt die Gruppe an · gefallen · Kreis des Charakters · Welt-Instanz, in der er steht (gleicher Wert = ihr seht euch) ·
+  //      Stufe des Mana-Risses, in dem er steckt · `away` = hält nur noch seinen Platz (Verbindung ganz verloren; `id` ist dann 0)
+  lead?: 1; dead?: 1; kreis?: number; inst?: string; rift?: number; away?: 1;
+}
+/** Einladung in eine Gruppe: `sec` = Restzeit, `kreis` = Kreis der Welt, in der die Gruppe danach spielt (nur wenn er sich für den Eingeladenen ändert) */
+export interface PartyInvite { from: number; name: string; sec?: number; kreis?: number; size?: number }
+
+// ---- Gemeinsam (0.7): Handel und Ansehen
+/** Eine Seite eines Handels: angebotene Gegenstände (Kopien, `qty` = angebotene Menge), Gold, gesperrt, bestätigt */
+export interface TradeSide { items: ItemInstance[]; gold: number; locked: boolean; ok: boolean }
+/** Zustand eines laufenden Handels aus Sicht eines Teilnehmers. `wait` = Sekunden, bis nach einer Änderung wieder gesperrt werden kann; `full` = wem der Platz fehlt */
+export interface TradeView { with: { id: number; name: string; cls: ClassId; level: number }; me: TradeSide; them: TradeSide; wait: number; full?: 'me' | 'them' }
+/** Ein anderer Spieler zum Ansehen (nur lesen) */
+export interface InspectInfo {
+  id: number; name: string; cls: ClassId; level: number; title?: string; kreis: number; quell: number; riftStufe: number;
+  equip: Partial<Record<Slot, ItemInstance>>;
+  stats: { maxHp: number; maxMp: number; power: number; def: number; crit: number; el: Element };
+  sets: Record<string, number>;
+}
 
 /** Auszug der Charakterdaten für die Charakterauswahl */
 export interface CharSummary { id: number; slot: number; name: string; cls: ClassId; level: number; zone: string; playtime: number }
@@ -209,7 +229,8 @@ export type ClientMsg =
   | { t: 'talk'; npc: string }
   | { t: 'teleport'; zone: string }
   | { t: 'chat'; s: string }
-  | { t: 'party'; a: 'invite' | 'accept' | 'decline' | 'leave'; id?: number }
+  // 0.7: promote/kick (nur Anführer; `id` = Spieler, bei Mitgliedern ohne Verbindung `char` = Charakter-ID), disband, travel (zum Quellstein beim Mitglied)
+  | { t: 'party'; a: 'invite' | 'accept' | 'decline' | 'leave' | 'promote' | 'kick' | 'disband' | 'travel'; id?: number; char?: number }
   | { t: 'save' }
   | { t: 'settings'; data: string }
   | { t: 'sortInv' }
@@ -230,6 +251,12 @@ export type ClientMsg =
   | { t: 'dig' }
   | { t: 'enc'; id: number; opt: number }
   | { t: 'title'; id: string }
+  // ---- Gemeinsam (0.7): Handel (anfragen/annehmen, Gegenstand mit Menge legen/nehmen, Gold, sperren, bestätigen, abbrechen),
+  //      aktive Quest der Gruppe anbieten / ein Angebot beantworten, Spieler ansehen
+  | { t: 'trade'; a: 'request' | 'accept' | 'decline' | 'add' | 'remove' | 'gold' | 'lock' | 'unlock' | 'confirm' | 'cancel'; id?: number; uid?: string; qty?: number; gold?: number }
+  | { t: 'qShare'; id: string }
+  | { t: 'qShareAns'; id: string; ok: boolean }
+  | { t: 'inspect'; id: number }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -288,7 +315,7 @@ export type ServerMsg =
   | { t: 'toast'; s: string; kind?: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string }
   | { t: 'loot'; item: ItemInstance }
   | { t: 'chat'; from: string; s: string; ch: 'all' | 'party' | 'sys' }
-  | { t: 'party'; members: PartyMember[]; invite?: { from: number; name: string } }
+  | { t: 'party'; members: PartyMember[]; invite?: PartyInvite | null } // invite: null = Einladung erloschen
   | { t: 'dead'; by: string }
   | { t: 'story'; id: string; lines: string[]; title?: string }
   | { t: 'env'; weather?: string; tod?: number }
@@ -303,6 +330,11 @@ export type ServerMsg =
   // ---- Lebendige Welt (0.6): Weltzustand (Jahreszeit, Ereignisse, Händlerangebot), Begegnungsgespräch (null = beendet)
   | { t: 'world'; w: WorldInfo }
   | { t: 'encdlg'; d: EncDialog | null }
+  // ---- Gemeinsam (0.7): Handel (tr = laufender Handel oder null; req = offene Anfrage an mich oder null; done = getauscht),
+  //      angebotene Quest (sec = 0: Angebot erloschen), Antwort auf „Spieler ansehen“
+  | { t: 'trade'; tr?: TradeView | null; req?: { from: number; name: string; sec: number } | null; done?: 1 }
+  | { t: 'qOffer'; id: string; from: string; sec: number }
+  | { t: 'inspect'; i: InspectInfo }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 

@@ -24,6 +24,7 @@ import type { Game, Party } from './game';
 import { knowsRecipe } from '../../shared/src/craft';
 import { pickScroll } from './loot';
 import { nextId, type Player } from './player';
+import { Social } from './social';
 import { Mob, Zone, type Obj } from './zone';
 
 export interface RiftRun {
@@ -331,6 +332,7 @@ export const Rift = {
     }
     zone.addDynamicObj('chest', boss.cx, boss.cy - 3 * TILE, { tier: 'gold', rift: 1 });
     if (bonus) zone.addDynamicObj('chest', boss.cx + 3 * TILE, boss.cy - 3 * TILE, { tier: 'gold', rift: 2, bonus: true });
+    Social.groupChest(zone, boss.cx - 3 * TILE, boss.cy - 3 * TILE); // 0.7: Gruppentruhe, wenn mindestens zwei aus einer Gruppe dabei waren
     // das Portal zurück wird bewusst betreten (nicht versehentlich, bevor die Truhe geöffnet ist)
     zone.addDynamicObj('exit', boss.cx, boss.cy + 3 * TILE, { to: run.home.zone, look: 'portal', label: 'Quellhain', manual: true, verb: 'Riss verlassen', r: 0 });
     this.broadcast(zone);
