@@ -5,6 +5,7 @@
  *
  * Erzeugt:
  *   client/public/assets/sprites/{chars,mobs,bosses}/<key>.png + .json   Spritesheets im Aseprite-JSON-Format (frames + frameTags)
+ *   client/public/assets/sprites/outfits/char_<klasse>_<variante>.png     Gewand-Varianten der Klassen (Paletten-PNG; der Client lädt sie bei Bedarf)
  *   client/public/assets/atlases/{obj,fx,icons}.png + .json               Atlanten im TexturePacker-JSON-Hash-Format (Phaser: load.atlas)
  *   client/public/assets/liquids/<biom>.png, overlays/<name>.png          animierte Flüssigkeiten (Streifen) und Overlay-Texturen
  *   client/public/assets/manifest.json                                    Inhaltsverzeichnis, das der Client beim Start lädt
@@ -37,6 +38,7 @@ const { ITEMS } = await import('../shared/src/data/items');
 const { FACTION_LIST } = await import('../shared/src/data/factions');
 const { traderGoods } = await import('../shared/src/data/events');
 const { REGIONS } = await import('../shared/src/data/worlditems');
+
 type Rect = { x: number; y: number; w: number; h: number };
 const png = (c: any): Buffer => (c as Canvas).toBuffer('image/png');
 const write = (file: string, data: Buffer | string) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, data); };
