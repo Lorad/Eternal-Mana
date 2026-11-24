@@ -15,6 +15,9 @@ export const LORE: Record<string, string> = {
   'schatten:mitte': 'Hier ist alles, was die Quelle je vergessen hat. Es ist mehr, als du dachtest.',
   'schatten:westen': 'Ein Spielzeug liegt im Staub. Wenn du blinzelst, liegt es woanders.',
   'schatten:osten': 'Eine Stimme, ganz nah: „Er wollte nie König sein. Er wollte nur nicht allein zurückbleiben.“',
+  'quellgrund:becken': 'Das Wasser in den Becken steigt und fällt, ganz langsam. Ein Zug, während du dreimal atmest.',
+  'quellgrund:grotte': 'Im Fels: die Rillen von tausend Seilen. Hier hingen einmal sehr viele Eimer.',
+  'quellgrund:mitte': 'Ein Kreis aus sieben flachen Steinen, blank gesessen. Auf sechs davon liegt Staub. Auf dem siebten nicht.',
 };
 export const DUNGEON_SIGNS: Record<string, string> = {
   wurzelgruft: 'Eingeritzt in die Rinde: „Die Mutter schläft unten. Weck sie nicht mit Feuer – weck sie gar nicht.“',
@@ -23,4 +26,6 @@ export const DUNGEON_SIGNS: Record<string, string> = {
   gletscherdom: 'In Eis gewebt: „Ordnung ist Gnade. Stillstand ist Frieden. – Y.“',
   archiv: 'Hausordnung: „§1 Ruhe. §2 Keine Ausleihe. §3 Besucher werden archiviert.“',
   thron: 'Kein Schild. Nur ein Gefühl, dass du erwartet wirst.',
+  wacht: 'In den Stein geritzt, sehr ordentlich: „Besucher werden gebeten, leise zu sein. Es schläft jemand. – V.“',
+  herz: 'Kein Schild. Nur Wasser, das die Wand hinaufläuft und dabei vier Töne summt.',
 };

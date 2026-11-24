@@ -27,7 +27,7 @@ function trigger(a: Action) {
   const st = store.state;
   if (a === 'menu') { if (!closeTop() && st.screen === 'game') togglePanel('menu'); return; }
   if (st.screen !== 'game') return;
-  if (a === 'chat') { if (!st.chatOpen) store.set({ chatOpen: true }); return; }
+  if (a === 'chat') { if (!st.chatOpen && !(st.cine || st.story || st.lore || st.dialog || st.sign)) store.set({ chatOpen: true }); return; } // Enter bestätigt in Gesprächen und Filmszenen, statt den Chat zu öffnen
   const panel = PANEL_ACTIONS[a];
   if (panel) { togglePanel(panel); audio.playSfx(store.state.panel ? 'ui_open' : 'ui_close'); return; }
   pressedNow.add(a);

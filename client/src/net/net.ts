@@ -70,11 +70,11 @@ function handle(m: ServerMsg) {
     case 'chars': store.set({ chars: m.chars, error: null }); if (st.screen === 'game' || st.screen === 'loading') { store.set({ screen: 'chars', char: null, panel: null, dialog: null, boss: null, dead: null }); bus.emit('net:left'); } break;
     case 'entered':
       resumed = true; resumeChar = m.charId;
-      store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null });
+      store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
-      store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, sign: null, keys: 0 });
+      store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0 });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
@@ -89,6 +89,10 @@ function handle(m: ServerMsg) {
     case 'party': store.set({ party: m.members, invite: m.invite ?? (m.members.length ? null : st.invite) }); break;
     case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null, craft: null }); break;
     case 'story': store.set({ story: { title: m.title ?? '', lines: m.lines } }); break;
+    // ---- Story (ab 0.3)
+    case 'dlg': store.set({ dlgNode: m.node ? { npc: m.npc, topic: m.topic, node: m.node, seq: (st.dlgNode?.seq ?? 0) + 1 } : null }); break;
+    case 'cine': bus.emit('cine:play', m.id); break;
+    case 'lore': store.set({ lore: { id: m.id, first: !!m.first }, sign: null, prompt: null }); break;
     case 'env': store.set({ ...(m.weather !== undefined ? { weather: m.weather } : {}), ...(m.tod !== undefined ? { tod: m.tod } : {}) }); bus.emit('net:env'); break;
     case 'online': store.set({ online: m.players }); break;
     case 'saved': store.set({ saved: Date.now() }); pushToast('Spielstand gespeichert.', 'good'); break;

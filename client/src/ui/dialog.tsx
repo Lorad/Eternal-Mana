@@ -5,7 +5,8 @@ import { store, useStore } from '../state/store';
 import { CFG, RARITY_COLOR } from '../../../shared/src/config';
 import { ITEMS, TIER_MATERIAL, baseMods, isGear, itemName, itemPrice, sellPrice, tierOf } from '../../../shared/src/data/items';
 import { NPCS, shopStock } from '../../../shared/src/data/npcs';
-import { QUEST_LIST, condOk, questAvailable, questComplete } from '../../../shared/src/data/quests';
+import { TOPIC, topicsOf } from '../../../shared/src/data/dialoge';
+import { QUEST_LIST, condOk, questAvailable, questComplete, questText } from '../../../shared/src/data/quests';
 import type { QuestDef } from '../../../shared/src/data/quests';
 import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
@@ -42,19 +43,25 @@ function Dialog({ npc }: { npc: string }) {
   const zone = useStore(s => s.zone);
   const [view, setView] = useState<View>({ k: 'main' });
   const [greet] = useState(() => def.greet[Math.floor(Math.random() * def.greet.length)] ?? '…');
-  useEffect(() => { send({ t: 'talk', npc }); sfx('dialog_blip'); return () => hideTip(); }, []);
+  const dn = useStore(s => s.dlgNode);
+  useEffect(() => { store.set({ dlgNode: null }); send({ t: 'talk', npc }); sfx('dialog_blip'); return () => hideTip(); }, []);
   if (!char) return null;
-  const close = () => { sfx('ui_close'); store.set({ dialog: null }); };
+  const close = () => { sfx('ui_close'); store.set({ dialog: null, dlgNode: null }); };
   const main = () => setView({ k: 'main' });
 
   const turnIns = QUEST_LIST.filter(q => (q.turnIn ?? q.giver) === npc && questComplete(char, q));
   const offers = QUEST_LIST.filter(q => q.giver === npc && questAvailable(char, q));
   const running = QUEST_LIST.filter(q => char.quests[q.id]?.s === 'active' && ((q.turnIn ?? q.giver) === npc || q.giver === npc) && !questComplete(char, q));
   const line = def.talk?.find(t => condOk(char, t.if))?.text ?? greet;
+  // Gesprächsthemen (Dialogbäume, ab 0.3): Der Server bestätigt jeden Knoten; `dn` ist der aktuell gültige.
+  const topics = topicsOf(npc).filter(t => condOk(char, t.if));
+  const talking = dn && dn.npc === npc && TOPIC[dn.topic]?.nodes[dn.node] ? dn : null;
   const wide = view.k === 'shop' || view.k === 'upgrade';
 
   let body: ComponentChildren;
-  if (view.k === 'main') {
+  if (talking) {
+    body = <TopicTalk key={talking.topic + talking.node + talking.seq} npc={npc} topic={talking.topic} node={talking.node} char={char} />;
+  } else if (view.k === 'main') {
     body = (
       <>
         <Speech>{line}</Speech>
@@ -65,11 +72,12 @@ function Dialog({ npc }: { npc: string }) {
             return <Opt mark="!" kind="offer" disabled={low} onClick={() => setView({ k: 'quest', id: q.id, mode: 'offer', page: 0 })}>{q.name} <small>{low ? `Empfohlen ab Stufe ${q.level - 3}` : `${QUEST_TYPE[q.type]} · Stufe ${q.level}`}</small></Opt>;
           })}
           {running.map(q => <Opt mark="…" kind="progress" onClick={() => setView({ k: 'quest', id: q.id, mode: 'progress', page: 0 })}>{q.name} <small>läuft</small></Opt>)}
+          {topics.map(t => { const hot = !!t.hot && condOk(char, t.hot); return <Opt mark={hot ? '!' : '❝'} kind={hot ? 'offer' : undefined} onClick={() => send({ t: 'dlgOpen', npc, topic: t.id })}>{t.label}</Opt>; })}
           {def.shop && <Opt mark="◈" onClick={() => setView({ k: 'shop' })}>Handeln</Opt>}
           {def.services?.includes('upgrade') && <Opt mark="⚒" onClick={() => setView({ k: 'upgrade' })}>Ausrüstung verbessern</Opt>}
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
           <StationOptions npc={npc} />
-          <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length}>Auf Wiedersehen</Opt>
+          <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length && !topics.length}>Auf Wiedersehen</Opt>
         </div>
       </>
     );
@@ -113,9 +121,33 @@ function Opt(p: { mark: string; kind?: string; onClick: () => void; children: Co
   );
 }
 
+// ------------------------------------------------------------------ Gesprächsthema (Dialogbaum, ab 0.3)
+function TopicTalk({ npc, topic, node, char }: { npc: string; topic: string; node: string; char: CharData }) {
+  const t = TOPIC[topic], n = t.nodes[node];
+  const [page, setPage] = useState(0);
+  const last = page >= n.lines.length - 1;
+  const who = n.who ?? NPCS[npc].name;
+  const opts = (n.opts ?? []).map((o, i) => ({ o, i })).filter(x => condOk(char, x.o.if));
+  const end = () => store.set({ dlgNode: null });
+  return (
+    <>
+      <div class="dlg-qhead"><span class="opt-mark">❝</span><b class="dlg-topic">{t.label}</b>{n.lines.length > 1 && <span class="dlg-page">{page + 1} / {n.lines.length}</span>}</div>
+      <div class={cx('speech', !who && 'narr')}><p><span key={page} class="speech-line">{n.lines[Math.min(page, n.lines.length - 1)]}</span></p></div>
+      {!last && <div class="row end dlg-actions"><Btn kind="primary" autofocus onClick={() => { sfx('dialog_blip'); setPage(p => p + 1); }} sound={null}>Weiter</Btn></div>}
+      {last && (
+        <div class="dlg-options">
+          {opts.map(({ o, i }, k) => <Opt mark={o.fx?.decide ? '!' : o.to ? '›' : '×'} kind={o.fx?.decide ? 'offer' : !o.to && !o.fx ? 'bye' : undefined} autofocus={k === 0} onClick={() => send({ t: 'dlgPick', npc, topic, node, opt: i })}>{o.s}</Opt>)}
+          {opts.length === 0 && <Opt mark="×" kind="bye" autofocus onClick={end}>Zurück</Opt>}
+        </div>
+      )}
+    </>
+  );
+}
+
 // ------------------------------------------------------------------ Quests im Gespräch
 function QuestTalk({ q, mode, npc, char, back }: { q: QuestDef; mode: 'offer' | 'turnin' | 'progress'; npc: string; char: CharData; back: () => void }) {
-  const lines = mode === 'offer' ? q.offer : mode === 'turnin' ? q.done : [q.progress];
+  const txt = questText(char, q);
+  const lines = mode === 'offer' ? txt.offer : mode === 'turnin' ? txt.done : [txt.progress];
   const [page, setPage] = useState(0);
   const last = page >= lines.length - 1;
   const next = () => { sfx('dialog_blip'); setPage(p => p + 1); };
@@ -130,7 +162,7 @@ function QuestTalk({ q, mode, npc, char, back }: { q: QuestDef; mode: 'offer' | 
         <div class="dlg-qinfo">
           {mode === 'offer' && <p class="qp-sum">{q.summary}</p>}
           {mode !== 'turnin' && <div><div class="sec-title">Ziele</div><Objectives q={q} char={char} /></div>}
-          <div><div class="sec-title">Belohnung</div><Rewards q={q} /></div>
+          <div><div class="sec-title">Belohnung</div><Rewards q={q} char={char} /></div>
         </div>
       )}
       <div class="row end dlg-actions">

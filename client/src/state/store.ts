@@ -1,10 +1,13 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
 import type { CharData, CharSummary, ClassId, Element, ItemInstance, Mods, PartyMember, ServerInfo } from '../../../shared/src/types';
+import { bus } from './bus';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help';
 export interface Toast { id: number; s: string; kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string; item?: ItemInstance }
 export interface ChatLine { id: number; from: string; s: string; ch: 'all' | 'party' | 'sys' }
+/** Sichtbarer Zustand einer laufenden Filmszene (gesteuert von game/cinematic.ts) */
+export interface CineView { id: string; bars: boolean; title: { s: string; sub?: string } | null; line: { who?: string; s: string } | null; fade: number; fadeMs: number }
 
 export interface UiState {
   /** boot = Grafik wird erzeugt · menu = Hauptmenü · chars = Charakterauswahl · loading = Zone lädt · game = im Spiel */
@@ -41,6 +44,13 @@ export interface UiState {
   dialog: { npc: string } | null;
   sign: string | null;             // Text eines Schildes / einer Inschrift
   story: { title: string; lines: string[] } | null;
+  // ---- Story (ab 0.3)
+  /** laufendes Gesprächsthema: vom Server bestätigter Knoten (seq zählt Wechsel, damit gleiche Knoten neu beginnen) */
+  dlgNode: { npc: string; topic: string; node: string; seq: number } | null;
+  /** laufende Filmszene */
+  cine: CineView | null;
+  /** geöffnetes Chronik-Dokument */
+  lore: { id: string; first: boolean } | null;
   dead: { by: string } | null;
   /** Interaktionshinweis über dem HUD, z. B. "Truhe öffnen" */
   prompt: string | null;
@@ -56,7 +66,7 @@ const state: UiState = {
   chars: [], online: [], char: null, charId: 0, myId: 0,
   me: { hp: 1, maxHp: 1, mp: 0, maxMp: 1, flags: 0 }, zone: '', keys: 0,
   cds: {}, buffs: [], party: [], invite: null, boss: null, target: null, craft: null, toasts: [], chat: [], chatOpen: false,
-  panel: null, dialog: null, sign: null, story: null, dead: null, prompt: null, nearStone: false,
+  panel: null, dialog: null, sign: null, story: null, dlgNode: null, cine: null, lore: null, dead: null, prompt: null, nearStone: false,
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0,
 };
 
@@ -102,20 +112,22 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 }
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {
-  if (state.screen !== 'game') return;
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null });
+  if (state.screen !== 'game' || state.cine) return;
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
+  if (state.cine) { bus.emit('cine:skip'); return true; }
+  if (state.lore) { store.set({ lore: null }); return true; }
   if (state.story) { store.set({ story: null }); return true; }
   if (state.sign) { store.set({ sign: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
-  if (state.dialog) { store.set({ dialog: null }); return true; }
+  if (state.dialog) { store.set({ dialog: null, dlgNode: null }); return true; }
   if (state.panel) { store.set({ panel: null }); return true; }
   if (state.chatOpen) { store.set({ chatOpen: false }); return true; }
   return false;
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.sign || state.story || state.chatOpen || state.dead);
+  return !!(state.panel || state.dialog || state.craft || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore);
 }

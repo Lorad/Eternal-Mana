@@ -1,6 +1,6 @@
 import { CFG } from '../../shared/src/config';
 import { ITEMS } from '../../shared/src/data/items';
-import { QUESTS, QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../shared/src/data/quests';
+import { DERIVED_OBJECTIVES, QUESTS, QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../shared/src/data/quests';
 import { computeStats } from '../../shared/src/stats';
 import { Anim, FLAG_BUFF, FLAG_DEAD, FLAG_INVULN, FLAG_ROLL, FLAG_SHIELD, STATUS_BIT } from '../../shared/src/types';
 import type { CharData, Derived, Element, GameEvent, ItemInstance, Mods, ServerMsg, StatusId } from '../../shared/src/types';
@@ -34,6 +34,8 @@ export class Player {
   pev: GameEvent[] = [];
   buffsDirty = false;
   enteredAt = 0;
+  /** Story (0.3): laufendes Gespräch, Schutzfrist während einer Filmszene, zuletzt betretene Orte */
+  story = { dlg: null as { npc: string; topic: string; node: string } | null, cineUntil: 0, cineAt: 0, zone: '', places: new Set<string>() };
   /** Zähler für die Legendäre Waffe des Kriegers (Treffer der Standardangriffe) */
   legendHits = 0;
 
@@ -194,7 +196,7 @@ export class Player {
       if (this.char.quests[id].s !== 'active') continue;
       const q = QUESTS[id];
       q?.objectives.forEach((o, i) => {
-        if (o.t !== 'collect' && o.t !== 'shards') return;
+        if (!DERIVED_OBJECTIVES.has(o.t)) return;
         const key = id + ':' + i, v = objectiveProgress(this.char, q, i);
         if (v !== (this.lastCollect.get(key) ?? 0)) { if (v > (this.lastCollect.get(key) ?? 0)) this.announceProgress(id, i); this.lastCollect.set(key, v); }
       });

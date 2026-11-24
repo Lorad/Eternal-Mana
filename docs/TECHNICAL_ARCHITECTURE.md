@@ -137,6 +137,38 @@ Reines JavaScript ohne Abhängigkeiten, damit der Launcher auch vor dem ersten `
 - Der Spielserver läuft als unsichtbarer Kindprozess; gestoppt wird er über `/api/stop`. Der Launcher-Prozess endet, sobald
   sein Fenster geschlossen ist und kein von ihm gestarteter Server mehr läuft.
 
+## Story-Engine (ab 0.3)
+
+Die Geschichte ist Daten plus eine kleine, serverseitig geprüfte Engine. Inhalte liegen in `shared/src/data/`:
+`quests_akt2.ts` (Akt II), `dialoge.ts` (Dialogbäume), `chronik.ts` (Schriftstücke), `story.ts` (Kapitel, Entscheidungen,
+Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts` (Figuren, Kontextzeilen), `cond.ts` (Bedingungen).
+
+- **Zustand nur in `CharData.flags`** (keine neuen Felder, alte Spielstände laden unverändert): `d:<id>` Entscheidung (Wert = Option),
+  `l:<id>` Chronik-Dokument, `h:<element>` Hüter-Erinnerung, `e:<id>` Echo bestanden, `v:<ort>` Ort besucht, `q:<name>`
+  Gesprächsfortschritt, `k:<id>` Filmszene gesehen, `ch` höchstes gezeigtes Kapitel. `Cond`/`condOk` fragen Quests, Flags und
+  Entscheidungen ab und steuern Questangebote, Dialogzeilen, Optionen, Filmszenen-Schritte und die Sichtbarkeit von Weltobjekten.
+- **Dialogbäume:** Themen je NPC mit Knoten und Optionen. Der Client sendet `dlgOpen` / `dlgPick`; der Server
+  (`server/src/story.ts`) führt je Spieler den aktuellen Knoten und prüft Nähe zum (für diesen Spieler sichtbaren) NPC, Knoten,
+  Optionsindex und Bedingung, bevor er Wirkungen anwendet (Entscheidung, Flag, Quest starten, Gegenstand geben/nehmen,
+  Filmszene, Hüter-Erinnerung, Boss erneut fordern). Antwort: `dlg` mit dem neuen Knoten oder `err`.
+- **Neue Questziele** (alle aus Flags abgeleitet): `lore`, `lorecount`, `visit`, `decide`, `echo`, `flag`, `memories`.
+  Verborgene Quests (`hidden`) werden nie angeboten, sondern durch Fundstück, Ort oder Dialog ausgelöst. `alt` liefert
+  Textvarianten, `bonus` Zusatzbelohnungen je nach Entscheidung, `cine` eine Filmszene beim Abschluss.
+- **Story-Objekte in der Welt** (`shared/src/maps/storygen.ts`): Chronik-Dokumente, Hüterschreine, Mana-Risse, Story-NPCs und
+  -Ausgänge werden NACH der gesamten übrigen Kartengenerierung mit eigenem Zufall angehängt – Gelände und bisherige Objekt-IDs
+  bleiben identisch. Nur Schreine sind solide (und stehen nur auf Zellen mit acht freien Nachbarn). `props.when` macht ein
+  Objekt je Charakter sichtbar; der Server lehnt Interaktionen mit unsichtbaren Objekten ab.
+- **Echo-Begegnungen:** Ein Riss oder Schrein beschwört eine Gegnerwelle; sind alle besiegt, erhalten Beteiligte und Umstehende
+  das Flag. Verwaiste Echos lösen sich auf.
+- **Filmszenen:** Schrittfolgen als Daten (Balken, Titel, Textzeile mit Sprecher, Kamerafahrt, Blende, Blitz, Wackeln, Klang).
+  Der Server schickt `cine` und schützt den Zuschauer (Unverwundbarkeit), bis `cineEnd` kommt, er angreift/läuft oder die Frist
+  abläuft; die Welt läuft weiter. Der Sequenzer `client/src/game/cinematic.ts` ist überspringbar und reiht Szenen ein.
+- **Story-Bosse** (`BossDef.spared`): Vael und Aetherion sterben nicht. Unter dem Schwellwert endet der Kampf als Sieg, der Boss
+  bleibt in seiner Ruhepose im Raum (`Anim.Dead` = Schlussbild der Sterbe-Animation) und greift nur an, wer die Prüfung noch
+  nicht bestanden hat oder sie per Dialog erneut fordert. Ein unsichtbarer „Anker“-NPC davor trägt die Gespräche.
+- **Grafik-Rückfall:** fehlende Sheets `boss_vael`/`boss_aetherion` (`client/src/game/views.ts`, `BOSS_FALLBACK`) und fehlende
+  Objekt-Frames `hueterschrein_*`/`lore_*` (`GameScene.storyFrame`) werden durch vorhandene ersetzt.
+
 ## Tests
 
 - `tests/shared.test.ts` – Karten (Erreichbarkeit aller Objekte, Schlüssel/Türen, Splitter), Datenintegrität
@@ -144,6 +176,9 @@ Reines JavaScript ohne Abhängigkeiten, damit der Launcher auch vor dem ersten `
 - `tests/server.test.ts` – startet einen echten Serverprozess und spielt mit Bot-Clients über das Protokoll: Kampf,
   Schummelversuche, zwei Spieler mit Gruppe, Speichern über Neustart, Wiederverbindung, Quest/Handel/Verbesserung,
   Bosskampf, beschädigte Spielstände.
+- `tests/story.test.ts` – Konsistenz aller Story-Daten (jede Kennung existiert, jeder Auftraggeber steht in der Welt, jedes Ziel
+  ist erfüllbar) und die Story-Engine gegen einen echten Server: Kapitelbeginn, abgelehnte Dialogauswahl, Chronik, Entscheidungen,
+  verborgenes Ende, Vaels Prüfung, alter Spielstand, dazu zwei Durchläufe (Hauptgeschichte Kapitel 7 bis Epilog; alle Nebenwege).
 - `tests/craft.test.ts`, `tests/elements.test.ts` – Handwerk und Elemente gegen ein echtes `Game` ohne Netzwerk
   (`tests/helpers/sim.ts`: Nachrichten über `Game.onMessage`, Zeit von Hand, Zufall setzbar).
 - `scripts/balance-sim.ts` – Kampfsimulation für Vorher/Nachher-Vergleiche (`--ausbau` rechnet den Handwerks-Ausbau mit).

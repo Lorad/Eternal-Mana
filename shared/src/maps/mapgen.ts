@@ -5,6 +5,7 @@
 import { DUNGEON_SIGNS, LORE } from '../data/lore';
 import { NODE_TYPES, ZONES, type Poi, type ZoneDef } from '../data/zones';
 import { Rng, fbm2, hash2, noise2 } from '../util/rng';
+import { placeStory } from './storygen';
 import { T, TILE, isWalkableTile, type BiomeId } from './tiles';
 
 export interface DecorSpawn { f: string; x: number; y: number }
@@ -512,7 +513,9 @@ function genOverworld(def: ZoneDef): GameMap {
     spawnGroup(c);
   }
 
-  return { id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: false, seed, decor, objects, spawns, rooms: [], start, entries, safe, labels };
+  const map: GameMap = { id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: false, seed, decor, objects, spawns, rooms: [], start, entries, safe, labels };
+  placeStory(map); // 0.3: Chronik, Schreine, Story-NPCs – nach allem anderen, damit bisherige Objekt-IDs stabil bleiben
+  return map;
 }
 
 // =====================================================================================================================
@@ -817,7 +820,9 @@ function genDungeon(def: ZoneDef): GameMap {
 
   finishSolid(tiles, solid);
   const entries: GameMap['entries'] = { [def.parent!]: start };
-  return { id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: true, seed, decor, objects, spawns, rooms, start, entries, safe: [], bossRoom, labels: [] };
+  const map: GameMap = { id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: true, seed, decor, objects, spawns, rooms, start, entries, safe: [], bossRoom, labels: [] };
+  placeStory(map); // 0.3: Chronik und Story-NPCs (siehe storygen.ts)
+  return map;
 }
 
 /** Zellen, die ein Objekt in geschlossenem Zustand blockiert. */

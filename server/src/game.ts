@@ -19,6 +19,7 @@ import { Rng } from '../../shared/src/util/rng';
 import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
+import { Story } from './story';
 import { Zone } from './zone';
 
 export interface Session {
@@ -142,6 +143,8 @@ export class Game {
     }
     if (!p) return;
     const z = p.zone;
+    // Wer kämpft oder läuft, schaut nicht zu: Der Schutz der Filmszene endet (kurze Karenz für Eingaben, die noch unterwegs waren)
+    if (p.story.cineUntil > this.now && this.now - p.story.cineAt > 1.5 && (m.t === 'atk' || m.t === 'skill' || m.t === 'dodge' || (m.t === 'm' && m.mv))) Story.cineEnd(p);
     switch (m.t) {
       case 'leave': this.removePlayer(p); s.player = null; this.send(s, { t: 'chars', chars: this.db.listChars(s.account.id) }); return;
       case 'm': return this.move(p, m);
@@ -168,6 +171,9 @@ export class Game {
       case 'qTurnIn': return this.qTurnIn(p, m.id, m.npc);
       case 'qAbandon': { const q = QUESTS[m.id]; if (q && q.type !== 'main' && p.char.quests[m.id]?.s === 'active') { delete p.char.quests[m.id]; p.sync('quests'); } return; }
       case 'talk': if (this.nearNpc(p, m.npc)) p.questEvent({ t: 'talk', npc: m.npc }); return;
+      case 'dlgOpen': return Story.dlgOpen(this, p, String(m.npc), String(m.topic));
+      case 'dlgPick': return Story.dlgPick(this, p, m);
+      case 'cineEnd': return Story.cineEnd(p);
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': return this.partyMsg(p, m.a, m.id);
@@ -330,8 +336,9 @@ export class Game {
     else if (cmd === 'boss') { const r = p.zone.map.bossRoom; if (r) { p.x = (r.cx) * 16; p.y = (r.y1 - 1) * 16; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); } }
     else if (cmd === 'kill') { for (const m of [...p.zone.mobs.values()]) if (Math.hypot(m.x - p.x, m.y - p.y) < 300 && !m.invuln) p.zone.hitMob(m, p, 1e7, 'phys'); }
     else if (cmd === 'goto') { p.x = +a[0]; p.y = +a[1]; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
+    else if (Story.dev(this, p, cmd, a)) { /* Story-Befehle */ }
     else if (devCraft(this, p, cmd, a)) { /* Handwerks-Befehle: server/src/craft.ts */ }
-    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s');
+    else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag');
   }
 
   // ------------------------------------------------------------------ Gruppen
@@ -379,7 +386,7 @@ export class Game {
   nearNpc(p: Player, npc: string): boolean {
     for (const o of p.zone.objs.values()) {
       if (Math.hypot(o.x - p.x, o.y - p.y) > 80) continue;
-      if (o.type === 'npc' && o.tag === npc) return true;
+      if (o.type === 'npc' && o.tag === npc && Story.visible(p, o)) return true;
       if (o.type === 'board' && npc === 'ayla') return true;
     }
     return false;
@@ -519,6 +526,7 @@ export class Game {
     p.toast(`Quest angenommen: ${q.name}`, 'quest');
     p.pev.push({ k: 'sfx', n: 'quest_accept' });
     p.checkCollectQuests();
+    Story.onAccept(p, q);
   }
   private qTurnIn(p: Player, id: string, npc: string) {
     const q = QUESTS[id], c = p.char;
@@ -535,6 +543,7 @@ export class Game {
     p.toast(`Quest abgeschlossen: ${q.name}`, 'quest');
     p.pev.push({ k: 'sfx', n: 'quest_complete' });
     p.gainXp(r.xp);
+    Story.onTurnIn(p, q);
     if (q.story) this.story(p, q.story);
     this.savePlayer(p);
   }

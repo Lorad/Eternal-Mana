@@ -9,6 +9,7 @@ import { NpcDialog } from './dialog';
 import { Hud } from './hud';
 import { DeathOverlay, SignOverlay, StoryOverlay } from './overlays';
 import { PanelHost } from './panels';
+import { CineOverlay, LoreOverlay } from './story';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -38,6 +39,8 @@ function Root() {
   const hasCraft = useStore(s => !!s.craft);
   const hasSign = useStore(s => s.sign !== null);
   const hasStory = useStore(s => !!s.story);
+  const hasCine = useStore(s => !!s.cine);
+  const hasLore = useStore(s => !!s.lore);
   const dead = useStore(s => !!s.dead);
   const s = computeScale();
 
@@ -51,7 +54,7 @@ function Root() {
 
   const narrow = uiScale.w < 860, short = uiScale.h < 600;
   return (
-    <div ref={ref} class={cx('em-root', narrow && 'is-narrow', short && 'is-short', uiScale.w < uiScale.h && 'is-portrait')}
+    <div ref={ref} class={cx('em-root', narrow && 'is-narrow', short && 'is-short', uiScale.w < uiScale.h && 'is-portrait', hasCine && 'is-cine')}
       style={{ width: uiScale.w + 'px', height: uiScale.h + 'px', transform: `scale(${s})` }}>
       {screen === 'boot' && <BootScreen />}
       {screen === 'menu' && <MainMenu />}
@@ -65,6 +68,8 @@ function Root() {
       {screen === 'game' && hasSign && <SignOverlay />}
       {screen === 'game' && dead && <DeathOverlay />}
       {hasStory && screen === 'game' && <StoryOverlay />}
+      {hasLore && screen === 'game' && !dead && <LoreOverlay />}
+      {hasCine && screen === 'game' && <CineOverlay />}
       <TooltipLayer root={() => ref.current} />
     </div>
   );

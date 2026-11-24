@@ -13,6 +13,7 @@ import { CLASSES } from '../../../shared/src/data/classes';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { npcMarker } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
+import { ECHOES, objVisible, type CineStep } from '../../../shared/src/data/story';
 import { ZONES } from '../../../shared/src/data/zones';
 import { mobAffinity } from '../../../shared/src/elements';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
@@ -253,7 +254,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.centerOn(i.x, i.y);
     try { if (this.game.renderer.type === Phaser.WEBGL) { this.cameras.main.postFX.clear(); this.cameras.main.postFX.addVignette(0.5, 0.5, 0.92, def.indoor ? 0.42 : 0.26); } } catch { /* Canvas-Renderer: ohne Vignette */ }
     audio.setAmbience(def.ambience as AmbienceId);
-    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1, ...this.bossAff(i.boss.el) } }); audio.playMusic(def.boss === 'hohlkoenig' ? 'final_boss' : 'boss'); }
+    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1, ...this.bossAff(i.boss.el) } }); audio.playMusic(this.bossMusic()); }
     else audio.playMusic(def.music as MusicId);
     live.zone = i.zone;
     this.sentX = i.x; this.sentY = i.y;
@@ -262,6 +263,38 @@ export class GameScene extends Phaser.Scene {
     store.set({ screen: 'game', keys: 0 });
     bus.emit('game:ready');
     this.cameras.main.fadeIn(350, 7, 8, 13);
+  }
+
+  private bossMusic(): MusicId { return this.map.def.boss === 'hohlkoenig' || this.map.def.boss === 'aetherion' ? 'final_boss' : 'boss'; }
+
+  // ------------------------------------------------------------------ Filmszenen (0.3): Kamera und Effekte, gesteuert von cinematic.ts
+  cinePan(s: Extract<CineStep, { k: 'pan' }>) {
+    if (!this.ready) return;
+    const cam = this.cameras.main, ms = s.ms ?? 800;
+    let x = this.me.x, y = this.me.y;
+    if (s.to === 'me') { cam.startFollow(this.me.sprite, true, 0.14, 0.14, 0, 10); return; }
+    if (s.to === 'boss') { const b = [...this.mobs.values()].find(m => m.boss); if (!b) return; x = b.x; y = b.y - 20; }
+    else {
+      let best: ObjView | null = null, bd = 1e9;
+      for (const v of this.objs.values()) {
+        if ((s.type && v.o.type !== s.type) || (s.tag && v.o.tag !== s.tag)) continue;
+        const d = Math.hypot(v.o.x - this.me.x, v.o.y - this.me.y);
+        if (d < bd) { bd = d; best = v; }
+      }
+      if (!best || bd > 700) return;
+      x = best.o.x; y = best.o.y - 12;
+    }
+    cam.stopFollow();
+    cam.pan(x + (s.dx ?? 0), y + (s.dy ?? 0), ms, 'Sine.easeInOut', true);
+  }
+  cineFlash(color: number, ms: number) { if (this.ready) this.cameras.main.flash(ms, (color >> 16) & 255, (color >> 8) & 255, color & 255); }
+  cineShake(i: number, ms: number) { if (this.ready && settings.screenShake) this.cameras.main.shake(ms, i); }
+  /** Ende (oder Abbruch) einer Filmszene: Kamera zurück zur Figur, Musik der Zone, keine aufgestauten Eingaben. */
+  cineEnd() {
+    if (!this.ready) return;
+    this.cameras.main.startFollow(this.me.sprite, true, 0.14, 0.14, 0, 10);
+    audio.playMusic(store.state.boss ? this.bossMusic() : (this.map.def.music as MusicId));
+    input.clearPressed();
   }
 
   // ------------------------------------------------------------------ Licht & Schatten
@@ -307,7 +340,7 @@ export class GameScene extends Phaser.Scene {
     const out: LightSrc[] = this.staticLights.slice();
     const dim = this.map.def.indoor || this.isDay() < 0.6;
     if (dim) { out.push({ x: this.me.x, y: this.me.y - 10, r: 92, color: 0xffeccc, i: 0.85 }); for (const p of this.players.values()) out.push({ x: p.x, y: p.y - 10, r: 86, color: 0xffeccc, i: 0.8 }); }
-    for (const v of this.objs.values()) if (v.light) out.push({ x: v.o.x, y: v.o.y - 10, r: v.light[0], color: v.light[1], i: v.light[2], flicker: 0.05 });
+    for (const v of this.objs.values()) if (v.light && !v.hidden) out.push({ x: v.o.x, y: v.o.y - 10, r: v.light[0], color: v.light[1], i: v.light[2], flicker: 0.05 });
     for (const v of this.projs.values()) if (v.p.spr !== 'arrow' && v.p.spr !== 'dagger' && v.p.spr !== 'rock') out.push({ x: v.x, y: v.y, r: 34, color: v.tint, i: 0.8 });
     for (const v of this.zfx.values()) if (v.z.r < 150 && (v.z.kind === 'zone' || !v.z.hostile)) out.push({ x: v.z.x, y: v.z.y, r: Math.min(96, v.z.r + 20), color: ELEMENT_COLOR[v.z.el], i: 0.6 });
     for (const m of this.mobs.values()) if (m.boss) out.push({ x: m.x, y: m.y - 24, r: 130, color: lerpC(ELEMENT_COLOR[store.state.boss?.el ?? 'phys'], 0xffffff, 0.5), i: 0.75 });
@@ -357,6 +390,32 @@ export class GameScene extends Phaser.Scene {
         v.parts.push(s, this.add.image(o.x, o.y + 6, 'fx', 'shadow').setDepth(4).setAlpha(0.45));
         v.label = this.text(o.x, o.y - 30, def?.name ?? '', '#ffe9a8').setOrigin(0.5, 1);
         v.marker = this.add.image(o.x, o.y - 50, 'fx', 'exclaim').setDepth(9401).setVisible(false);
+        // 0.3: eingefärbte Looks (Vael, Kelda …); „Anker“ sind unsichtbare Gesprächspunkte vor einem Story-Boss
+        if (def?.tint !== undefined) s.setTint(def.tint);
+        if (def?.alpha !== undefined) s.setAlpha(def.alpha);
+        if (pr.anchor) { for (const p of v.parts) p.setAlpha(0); sh.setData('off', true).setVisible(false); v.label.setY(o.y - 8); v.marker.setY(o.y - 26); }
+        break;
+      }
+      // ---- Story-Objekte (0.3) – Frames der Kunst-Pipeline mit Rückfall, siehe storyFrame()
+      case 'lore': {
+        const s = img(o.x, o.y + 7, this.storyFrame('lore_' + (pr.look ?? 'scroll')), undefined, false);
+        v.glow = this.add.image(o.x, o.y - 4, 'fx', 'glow').setScale(0.45).setTint(0xffe9a0).setAlpha(0.45).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1);
+        if (!this.objTex.has('lore_' + (pr.look ?? 'scroll'))) s.setScale(0.8);
+        break;
+      }
+      case 'shrine': {
+        const tint = ELEMENT_COLOR[(o.tag === 'heart' ? 'light' : o.tag) as Element] ?? 0xffffff;
+        img(o.x, o.y + 8, this.storyFrame('hueterschrein_0'));
+        v.glow = this.add.image(o.x, o.y - 12, 'fx', 'glow').setScale(0.9).setTint(tint).setAlpha(0.3).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1);
+        v.light = [70, tint, 0.6];
+        break;
+      }
+      case 'rift': {
+        const tint = o.tag!.startsWith('albtraum') || o.tag === 'stille1' ? 0xc8b0ff : 0x70ffe8;
+        img(o.x, o.y + 8, this.objTex.has('void_rift_0') ? 'void_rift_0' : 'portal_0', undefined, false).setTint(tint);
+        v.glow = this.add.image(o.x, o.y - 10, 'fx', 'glow').setScale(0.8).setTint(tint).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1);
+        v.light = [80, tint, 0.8];
+        v.label = this.text(o.x, o.y - 34, ECHOES[o.tag!]?.name ?? '', '#bfe9ff', 7).setOrigin(0.5, 1);
         break;
       }
       case 'chest': img(o.x, o.y + 7, 'chest_wood_closed'); break;
@@ -377,7 +436,8 @@ export class GameScene extends Phaser.Scene {
         else if (look === 'stairs_down') img(o.x, o.y + 12, 'stairs_down', 4);
         else if (look === 'stairs_up') img(o.x, o.y + 12, 'stairs_up', 4);
         else if (look === 'portal') { img(o.x, o.y + 10, 'portal_0', undefined, false).setTint(tint); v.light = [90, tint, 0.9]; v.glow = this.add.image(o.x, o.y - 14, 'fx', 'glow').setTint(tint).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }
-        const arrow = look === 'edge' ? ({ n: '▲ ', s: '▼ ', e: '', w: '◀ ' } as any)[pr.dir] + pr.label + (pr.dir === 'e' ? ' ▶' : '') : pr.label;
+        else if (look === 'well') { v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.9).setTint(0x70ffe8).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 40); v.light = [70, 0x70ffe8, 0.7]; }
+        const arrow = look === 'edge' ? ({ n: '▲ ', s: '▼ ', e: '', w: '◀ ' } as any)[pr.dir] + pr.label + (pr.dir === 'e' ? ' ▶' : '') : look === 'well' ? '▼ ' + pr.label : pr.label;
         let lx = o.x, ly = o.y - (look === 'edge' ? 2 : look === 'portal' ? 52 : 40);
         if (look === 'edge') { if (pr.dir === 'n') ly = o.y + 22; if (pr.dir === 's') ly = o.y - 18; if (pr.dir === 'e') lx = o.x - 30; if (pr.dir === 'w') lx = o.x + 30; }
         v.label = this.text(lx, ly, arrow ?? '', '#bfe9ff').setOrigin(0.5, 1);
@@ -391,6 +451,30 @@ export class GameScene extends Phaser.Scene {
       case 'cookfire': img(o.x, o.y + 7, this.cookLook(pr.look) + '_0'); v.light = [100, 0xffb060, 1]; v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.8).setTint(0xffa040).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); break;
     }
     this.applyObjState(v, true);
+    this.applyObjVisible(v);
+  }
+  /**
+   * 0.3 – EINZIGE Stelle für den Rückfall der Story-Objektgrafik: Solange die Frames der Kunst-Pipeline
+   * (`hueterschrein_0..3`, `lore_book|tablet|scroll|stone`) im Objekt-Atlas fehlen, wird ein vorhandener Frame benutzt.
+   */
+  private storyFrame(name: string): string {
+    if (this.objTex.has(name)) return name;
+    const fallback: Record<string, string> = { lore_book: 'd_table', lore_tablet: 'rune_stone_0', lore_scroll: 'signpost', lore_stone: 'grave' };
+    const f = name.startsWith('hueterschrein') ? 'shrine' : fallback[name] ?? 'signpost';
+    return this.objTex.has(f) ? f : 'signpost';
+  }
+  /** Story-Objekte mit Bedingung (`props.when`) und geschlossene Risse existieren für diesen Charakter nicht. */
+  private applyObjVisible(v: ObjView) {
+    const o = v.o;
+    const hidden = !objVisible(store.state.char, o) || (o.type === 'rift' && o.state === 1);
+    if (hidden === v.hidden) return;
+    v.hidden = hidden;
+    for (const p of v.parts) p.setVisible(!hidden);
+    for (const s of v.shadows) s.setData('off', hidden || !!o.props?.anchor).setVisible(false);
+    v.label?.setVisible(!hidden);
+    v.glow?.setVisible(!hidden);
+    if (hidden) v.marker?.setVisible(false);
+    else this.markerChar = null; // Questmarker neu bestimmen
   }
   private applyObjState(v: ObjView, initial = false) {
     const o = v.o, pr = o.props ?? {}, s0 = v.parts[0];
@@ -418,6 +502,13 @@ export class GameScene extends Phaser.Scene {
       case 'stone': v.light = o.state ? [80, 0x70ffe8, 0.85] : null; v.glow?.setVisible(!!o.state); if (!o.state) s0.setFrame('quellstein_off'); break;
       case 'node': s0.setFrame(o.state ? 'node_empty' : 'node_' + pr.kind); break;
       case 'shard': s0.setVisible(!o.state); v.glow?.setVisible(!o.state); if (o.state) v.light = null; break;
+      // ---- Story-Objekte (0.3)
+      case 'lore': v.glow?.setAlpha(o.state ? 0.12 : 0.45); if (o.state && !initial) { this.burst(this.stars, 10, o.x, o.y - 6, 0xffe9a0); this.flash(o.x, o.y - 6, 70, 0xffe9a0, 0.8, 400); } break;
+      case 'shrine':
+        v.glow?.setAlpha(o.state === 2 ? 0.55 : o.state === 1 ? 0.45 : 0.25);
+        if (!initial && o.state) { this.fx.play(this.fx.pick('pillar'), o.x, o.y + 8, { originY: 1, tint: v.light?.[1] ?? 0xffffff, add: true, fps: 12, depth: o.y + 2 }, this.animClock); this.burst(this.stars, 16, o.x, o.y - 10, v.light?.[1] ?? 0xffffff); }
+        break;
+      case 'rift': if (!initial && o.state) { this.ring(o.x, o.y - 8, 44, 0x70ffe8, 500); this.burst(this.stars, 14, o.x, o.y - 8, 0x70ffe8); v.light = null; } if (!initial) this.applyObjVisible(v); break;
     }
   }
   private addDrop(d: DropInfo) {
@@ -466,10 +557,12 @@ export class GameScene extends Phaser.Scene {
     for (const s of m.m) {
       const v = this.mobs.get(s[0]);
       if (!v) continue;
+      const first = !v.seen;
       if (!v.seen || Math.hypot(s[1] - v.x, s[2] - v.y) > 120) { v.x = s[1]; v.y = s[2]; v.buf = []; v.seen = true; }
       v.buf.push({ t: m.n, x: s[1], y: s[2] }); if (v.buf.length > 8) v.buf.shift();
       v.left = s[3]; v.hp = s[5]; v.flags = s[6];
       const a = s[4];
+      if (a === Anim.Dead) { v.rest(first); continue; } // verschonter Story-Boss in Ruhepose (0.3)
       v.play(a === Anim.Move ? 'move' : a === Anim.Windup ? 'windup' : a === Anim.Attack ? 'attack' : a === Anim.Hurt ? 'hit' : a === Anim.Special ? 'special' : 'idle');
     }
     if (m.ev) for (const e of m.ev) this.onEvent(e);
@@ -665,7 +758,7 @@ export class GameScene extends Phaser.Scene {
         const cur = store.state.boss;
         const v = this.mobs.get(e.id);
         store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el) } });
-        if (!cur) { audio.playMusic(this.map.def.boss === 'hohlkoenig' ? 'final_boss' : 'boss'); this.shake(0.02, 400); }
+        if (!cur) { audio.playMusic(this.bossMusic()); this.shake(0.02, 400); }
         if (v && (!cur || cur.phase !== e.phase || cur.el !== e.el)) {
           const tint = elTint(e.el);
           this.fx.play(this.fx.pick('shockwave'), v.x, v.y, { tint, add: true, depth: 3, fps: 14, scale: 1.4 }, c);
@@ -925,7 +1018,7 @@ export class GameScene extends Phaser.Scene {
       live.players = [...this.players.values()].map(p => ({ x: p.x, y: p.y, name: p.info.name, party: this.inMyParty(p.info) }));
       live.mobs = [...this.mobs.values()].filter(m => m.seen && Math.hypot(m.x - mx, m.y - my) < 420).map(m => ({ x: m.x, y: m.y, boss: m.boss }));
       const c = st.char!;
-      live.objs = [...this.objs.values()].filter(v => ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board'].includes(v.o.type)).map(v => ({ x: v.o.x, y: v.o.y, type: v.o.type, state: v.o.state, mark: v.o.type === 'npc' ? npcMarker(c, v.o.tag!) : null, label: v.o.props?.label }));
+      live.objs = [...this.objs.values()].filter(v => !v.hidden && !v.o.props?.anchor && ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board'].includes(v.o.type)).map(v => ({ x: v.o.x, y: v.o.y, type: v.o.type, state: v.o.state, mark: v.o.type === 'npc' ? npcMarker(c, v.o.tag!) : null, label: v.o.props?.label }));
     }
   }
 
@@ -1098,8 +1191,13 @@ export class GameScene extends Phaser.Scene {
     const anim = (name: string, period: number, fallback: number) => `${name}_${Math.floor(now / period) % (this.countFrames(name) || fallback)}`;
     for (const v of this.objs.values()) {
       const o = v.o;
+      if (refreshMarks && (o.props?.when || o.type === 'rift')) this.applyObjVisible(v);
+      if (v.hidden) continue;
       for (const s of v.shadows) if (!s.getData('off')) applyShadow(s, s.getData('x'), s.getData('y'), this.shadowAt(s.getData('x'), s.getData('y')));
       switch (o.type) {
+        case 'shrine': if (this.countFrames('hueterschrein') > 1) v.parts[0].setFrame(anim('hueterschrein', o.state ? 140 : 260, 4)); if (v.glow && o.state === 1) v.glow.setAlpha(0.35 + 0.2 * Math.sin(now / 220)); break;
+        case 'rift': if (this.countFrames('void_rift') > 1) v.parts[0].setFrame(anim('void_rift', 120, 4)); v.parts[0].y = o.y + 8 + Math.sin(now / 260) * 2; break;
+        case 'lore': if (!o.state && v.glow) v.glow.setAlpha(0.35 + 0.15 * Math.sin(now / 300 + o.id)); break;
         case 'npc': {
           const s = v.parts[0] as Phaser.GameObjects.Sprite;
           const d = Math.hypot(this.me.x - o.x, this.me.y - o.y);
@@ -1138,6 +1236,7 @@ export class GameScene extends Phaser.Scene {
     let best: ObjView | PlayerView | null = null, bd = CFG.player.interactRadius, prompt: string | null = null, nearStone = false;
     for (const v of this.objs.values()) {
       const o = v.o;
+      if (v.hidden) continue;
       const d = Math.hypot(o.x - me.x, o.y - me.y);
       if (o.type === 'stone' && d < 60) nearStone = true;
       let text: string | null = null;
@@ -1153,10 +1252,15 @@ export class GameScene extends Phaser.Scene {
         case 'node': if (!o.state) text = `${o.props?.name ?? 'Rohstoff'} abbauen`; break;
         case 'sign': text = 'Lesen'; break;
         case 'board': text = 'Auftragsbrett ansehen'; break;
+        // ---- Story-Objekte (0.3)
+        case 'lore': text = o.state ? 'Erneut lesen' : 'Lesen'; break;
+        case 'shrine': text = o.state === 2 ? 'Erinnerung erneut ansehen' : 'Hüterschrein berühren'; break;
+        case 'rift': text = `${ECHOES[o.tag!]?.name ?? 'Riss'} berühren`; break;
+        case 'exit': if (o.props?.manual) text = `Hinabsteigen: ${o.props.label ?? ''}`; break;
         case 'cookfire': text = 'Am Feuer kochen'; break;
       }
       if (!text) continue;
-      const reach = o.type === 'door' || o.type === 'bossdoor' ? d - 12 : d;
+      const reach = o.type === 'door' || o.type === 'bossdoor' || o.type === 'shrine' || o.props?.manual ? d - 12 : d;
       if (reach < bd) { bd = reach; best = v; prompt = text; }
     }
     for (const p of this.players.values()) if (p.flags & FLAG_DEAD) {

@@ -14,6 +14,7 @@ import { Anim } from '../../shared/src/types';
 import type { Element, ItemInstance, StatusSpec } from '../../shared/src/types';
 import { bossLoot } from './loot';
 import type { Player } from './player';
+import { Story } from './story';
 import { Mob, type Zone } from './zone';
 
 type Gen = Generator<number, void, void>;
@@ -32,6 +33,10 @@ export class BossCtl {
   cx: number; cy: number;
   private rot = 0;
   private elemIdx = 0;
+  /** Story-Bosse (spared): erneuter Kampf auf Wunsch eines Spielers */
+  private forced = false;
+  /** hat sich in dieser Instanz ergeben und verharrt in seiner Ruhepose (Vael kniet, Aetherion ist ruhiges Licht) */
+  private yielded = false;
 
   constructor(public zone: Zone, public def: BossDef, public room: Room) {
     this.cx = ((room.x0 + room.x1 + 1) / 2) * TILE;
@@ -52,12 +57,13 @@ export class BossCtl {
   private target(): Player | null { const l = this.players(); return l.length ? this.zone.rng.pick(l) : null; }
   private say(s: string) { for (const p of this.zone.players.values()) p.send({ t: 'chat', from: this.def.name, s, ch: 'sys' }); }
   private anim(a: Anim, dur: number) { this.mob.anim = a; this.animUntil = this.now + dur; }
-  private announce() { this.zone.ev({ k: 'boss', id: this.mob.id, name: this.def.name, phase: this.phase, el: this.mob.element }); }
+  private announce() { this.zone.ev({ k: 'boss', id: this.mob.id, name: this.def.fightName ?? this.def.name, phase: this.phase, el: this.mob.element }); }
   private doors(state: number) { for (const o of this.zone.objs.values()) if (o.type === 'bossdoor' && o.state !== state) this.zone.setObjState(o, state); }
 
   private start() {
     const n = Math.max(1, this.players().length);
     this.active = true; this.phase = 1; this.idx = 0; this.gen = null; this.wait = 1.6; this.emptyT = 0;
+    this.yielded = false; this.mob.anim = Anim.Idle;
     this.mob.invuln = false;
     this.mob.maxHp = Math.round(this.baseHp * (1 + CFG.enemy.bossHpPerExtraPlayer * (n - 1)));
     this.mob.hp = this.mob.maxHp;
@@ -67,9 +73,10 @@ export class BossCtl {
     this.announce();
     this.zone.ev({ k: 'sfx', n: 'boss_roar' });
     for (const p of this.zone.players.values()) p.toast(this.def.intro, 'story');
+    if (this.def.awaken) for (const p of this.players()) Story.playCine(p, this.def.awaken, true);
   }
   private reset() {
-    this.active = false; this.gen = null; this.phase = 1;
+    this.active = false; this.gen = null; this.phase = 1; this.forced = false;
     this.zone.clearHostile();
     for (const m of [...this.zone.mobs.values()]) if (m.summoned) { m.dead = true; this.zone.mobs.delete(m.id); this.zone.ev({ k: 'mob-', id: m.id }); }
     const m = this.mob;
@@ -87,15 +94,49 @@ export class BossCtl {
     return generateBossUnique(this.zone.rng, this.def.id, p.char.cls, this.zone.rng.chance(first ? 0.15 : 0.1));
   }
 
-  onDeath() {
+  // ---- Story-Bosse (0.3): werden verschont und stehen danach friedlich im Raum
+  /** Tödlicher Treffer auf einen Boss, der sich ergibt: Er bleibt am Leben; update() beendet den Kampf. */
+  spare(): boolean {
+    if (this.def.spared === undefined) return false;
+    this.mob.hp = 1;
+    return true;
+  }
+  /** Ein Spieler fordert den (bereits bestandenen) Kampf erneut heraus. */
+  challenge() { this.forced = true; }
+  /** Beginnt der Kampf, wenn jemand den Raum betritt? Verschonte Bosse greifen nur an, wer die Prüfung noch nicht bestanden hat. */
+  private shouldStart(): boolean {
+    const inRoom = this.zone.alivePlayers().filter(p => this.zone.inRoom(this.room, p.x, p.y, 1.5));
+    if (!inRoom.length) return false;
+    return this.def.spared === undefined || this.forced || inRoom.some(p => !p.char.flags[`b:${this.def.id}`]);
+  }
+  private surrender() {
+    const m = this.mob;
+    this.say(this.def.outro ?? '…');
+    this.finish(true);
+    this.moveTo(this.cx, this.cy - 8);
+    // Ruhepose halten: Anim.Dead zeigt das Schlussbild der Sterbe-Animation (der Boss wird NICHT entfernt)
+    m.hp = m.maxHp = this.baseHp; m.invuln = true; m.vuln = 1; m.statuses.clear(); m.hitters.clear(); m.anim = Anim.Dead; m.element = this.def.element;
+    this.forced = false; this.phase = 1; this.yielded = true;
+  }
+  /** Ruht der Boss? Nach dem Aufgeben – oder (calm) wenn alle Anwesenden die Prüfung längst bestanden haben. */
+  private resting(): boolean {
+    if (this.yielded) return true;
+    if (!this.def.calm || !this.zone.players.size) return false;
+    for (const p of this.zone.players.values()) if (!p.char.flags[`b:${this.def.id}`]) return false;
+    return true;
+  }
+
+  onDeath() { this.finish(false); }
+  private finish(spared: boolean) {
     const z = this.zone, d = this.def;
     this.active = false; this.gen = null;
     z.clearHostile();
     for (const m of [...z.mobs.values()]) if (m.summoned) z.killMob(m);
     this.doors(1);
     z.ev({ k: 'bossend', id: this.mob.id, won: true });
-    z.ev({ k: 'sfx', n: 'boss_die' });
-    z.ev({ k: 'fx', n: 'bossdeath', x: this.mob.x, y: this.mob.y, el: d.element });
+    z.ev({ k: 'sfx', n: spared ? 'puzzle_solved' : 'boss_die' });
+    if (spared) z.ev({ k: 'fx', n: 'shard', x: this.mob.x, y: this.mob.y });
+    else z.ev({ k: 'fx', n: 'bossdeath', x: this.mob.x, y: this.mob.y, el: d.element });
     const all = [...z.players.values()];
     for (const p of all) {
       if (p.dead) { p.dead = false; p.hp = Math.round(p.stats.maxHp * 0.5); p.send({ t: 'toast', s: 'Der Sieg deiner Gruppe reißt dich zurück ins Leben.', kind: 'good' }); }
@@ -109,10 +150,17 @@ export class BossCtl {
       const party = p.party ? [...p.party.members].filter(q => q.zone === z).length : 1;
       p.questEvent({ t: 'boss', boss: d.id, party });
       if (first && STORY[d.seal]) z.game.story(p, d.seal);
-      p.toast(`${d.name} wurde besiegt!`, 'good');
+      p.toast(spared ? (d.fightName ? `${d.fightName} ist vorüber.` : `${d.name} ergibt sich – Prüfung bestanden!`) : `${d.name} wurde besiegt!`, 'good');
     }
-    z.addDynamicObj('chest', this.cx, this.cy - 3 * TILE, { tier: 'gold', boss: true });
-    z.addDynamicObj('exit', this.cx, this.cy + 3 * TILE, { to: z.def.parent, look: 'portal', label: ZONES[z.def.parent!].name, r: 13 });
+    if (spared) {
+      // Der Boss bleibt in der Raummitte stehen: Truhe und Ausgang seitlich; alte Belohnungstruhen eines früheren Kampfes verschwinden
+      for (const o of [...z.objs.values()]) if (o.dynamic && o.type === 'chest') { z.objs.delete(o.id); z.ev({ k: 'obj-', id: o.id }); }
+      z.addDynamicObj('chest', this.cx + 5 * TILE, this.cy + 3 * TILE, { tier: 'gold', boss: true });
+      if (![...z.objs.values()].some(o => o.dynamic && o.type === 'exit')) z.addDynamicObj('exit', this.cx - 5 * TILE, this.cy + 3 * TILE, { to: z.def.parent, look: 'portal', label: ZONES[z.def.parent!].name, r: 13 });
+    } else {
+      z.addDynamicObj('chest', this.cx, this.cy - 3 * TILE, { tier: 'gold', boss: true });
+      z.addDynamicObj('exit', this.cx, this.cy + 3 * TILE, { to: z.def.parent, look: 'portal', label: ZONES[z.def.parent!].name, r: 13 });
+    }
     z.game.saveZonePlayers(z);
   }
 
@@ -121,12 +169,14 @@ export class BossCtl {
     if (m.dead) return;
     const pl = this.players();
     if (!this.active) {
-      if (this.zone.alivePlayers().some(p => this.zone.inRoom(this.room, p.x, p.y, 1.5))) this.start();
+      if (this.shouldStart()) this.start();
+      else if (this.def.spared !== undefined) m.anim = this.resting() ? Anim.Dead : Anim.Idle;
       return;
     }
     if (!pl.length) { this.emptyT += dt; if (this.emptyT > 2.5) this.reset(); return; }
     this.emptyT = 0;
     const frac = m.hp / m.maxHp;
+    if (this.def.spared !== undefined && frac <= this.def.spared) { this.surrender(); return; }
     const ph = frac <= 0.33 ? 3 : frac <= 0.66 ? 2 : 1;
     if (ph > this.phase) {
       this.phase = ph; this.gen = this.phaseChange(); this.wait = 0;
@@ -248,6 +298,14 @@ export class BossCtl {
       if (this.phase === 2) { this.say('„Sechs Siegel? Ich habe sie GEGOSSEN. Sieh, was sie hüten sollten!“'); }
       else { this.say('„Maelis … ich höre dich nicht mehr. Wenn du gehst, soll NICHTS bleiben!“'); m.element = 'dark'; this.summon('leerenbrut', 3); this.announce(); }
     }
+    if (d === 'vael') {
+      this.say(this.phase === 2 ? '„Ihr haltet stand. Gut. Dann schließe ich jetzt die Türen.“' : '„Verzeiht. Ab hier habe ich tausend Jahre Übung.“');
+      if (this.phase === 3) this.summon('wachschatten', 2);
+    }
+    if (d === 'aetherion') {
+      if (this.phase === 2) this.say('*Die Asche fällt nach oben. Dann hält die ganze Höhle den Atem an: die Große Stille.*');
+      else { this.say('*Sieben Risse aus Licht. Du siehst, was es jede Nacht sieht: den Augenblick, in dem das Herz bricht.*'); this.summon('erinnerter', 2); }
+    }
     this.radial(16, 90, this.zone.rng.range(0, 1), 'orb', 0.8);
     yield 0.8;
   }
@@ -267,6 +325,9 @@ export class BossCtl {
       case 'ignarok': return p === 1 ? [this.igBreath, this.igPools] : p === 2 ? [this.igBurrow, this.igBreath, this.igMeteors] : [this.igRings, this.igBurrow, this.igMeteors, this.igBreath];
       case 'ysolde': return p === 1 ? [this.ysFans, this.ysBlizzard, this.ysBlink] : p === 2 ? [this.ysLances, this.ysFans, this.ysBlink, this.ysBlizzard] : [this.ysZero, this.ysLances, this.ysBlink, this.ysFans];
       case 'archivar': return p === 1 ? [this.arCross, this.arOrbs, this.arGrid] : p === 2 ? [this.arSpiral, this.arCross, this.arGrid] : [this.arZero, this.arSpiral, this.arCross, this.arOrbs];
+      case 'vael': return p === 1 ? [this.vlLantern, this.vlWatch, this.vlRing] : p === 2 ? [this.vlDoors, this.vlLantern, this.vlRing, this.vlWatch] : [this.vlVigil, this.vlSpiral, this.vlDoors, this.vlWatch];
+      // Aetherion: der Albtraum durchläuft alle sechs Elemente – Erde/Feuer (der Krieg), Wasser/Wind (die Stille), Licht/Dunkelheit (die Teilung)
+      case 'aetherion': return p === 1 ? [this.aeEarth, this.aeFire, this.aeChorus] : p === 2 ? [this.aeWater, this.aeWind, this.aeChorus, this.aeFire] : [this.aeLight, this.aeDark, this.aeChorus, this.aeWater, this.aeEarth];
       default: return p === 1 ? [this.hkDash, this.hkArcs] : p === 2 ? [this.hkElement, this.hkDash, this.hkElement] : [this.hkZero, this.hkSpiral, this.hkDash, this.hkElement];
     }
   }
@@ -527,4 +588,140 @@ export class BossCtl {
     yield 2.6;
     this.summon('leerenbrut', 2);
   }
+
+  // ---- Vael, Hüter der Dunkelheit (Prüfung – er ergibt sich, siehe yield)
+  private *vlLantern(): Gen {
+    for (let k = 0; k < 3; k++) {
+      const t = this.target(); if (!t) return;
+      this.anim(Anim.Windup, 0.4); yield 0.4;
+      this.anim(Anim.Attack, 0.3);
+      this.aimed(t, 5 + this.phase, 64, 135, 'orb', 0.85, { id: 'mark', dur: 4, chance: 0.4 });
+      this.zone.ev({ k: 'sfx', n: 'cast_dark', x: this.mob.x, y: this.mob.y });
+      yield 0.5;
+    }
+  }
+  private *vlWatch(): Gen {
+    for (let k = 0; k < 1 + this.phase; k++) {
+      const t = this.target(); if (!t) return;
+      yield* this.dashLine(t, 200, 26, this.phase === 3 ? 0.5 : 0.65, 1.5);
+      yield 0.25;
+    }
+  }
+  /** Laternenkreis: ein Ring aus Einschlägen um jeden Spieler mit einer Lücke, dann schließt sich die Mitte. */
+  private *vlRing(): Gen {
+    this.anim(Anim.Special, 2);
+    const spots = this.players().map(p => [p.x, p.y] as const);
+    for (const [x, y] of spots) {
+      const gap = this.zone.rng.int(0, 7);
+      for (let i = 0; i < 8; i++) {
+        if (i === gap || i === (gap + 1) % 8) continue;
+        const a = (i / 8) * Math.PI * 2;
+        this.tele(x + Math.cos(a) * 44, y + Math.sin(a) * 44, 19, 1.0, 1.2, { id: 'slow', dur: 1.5, chance: 0.5 });
+      }
+      this.tele(x, y, 30, 1.7, 1.5, { id: 'mark', dur: 4 });
+    }
+    yield 1.9;
+  }
+  /** Türen schließen: senkrechte Lichtbalken, erst die geraden, dann die ungeraden Bahnen. */
+  private *vlDoors(): Gen {
+    this.anim(Anim.Special, 2.6);
+    const r = this.room, y0 = r.y0 * TILE, y1 = (r.y1 + 1) * TILE;
+    for (let par = 0; par < 2; par++) {
+      for (let tx = r.x0 + 1, i = 0; tx <= r.x1; tx += 2, i++) if (i % 2 === par) this.beam((tx + 0.5) * TILE, y0, (tx + 0.5) * TILE, y1, TILE * 1.7, 1.0, 1.4);
+      yield 1.15;
+    }
+    yield 0.3;
+  }
+  private *vlSpiral(): Gen { this.anim(Anim.Special, 2.6); yield* this.spiral(40, 0.29, 0.06, 110, 'orb', 0.75, 3); }
+  private *vlVigil(): Gen {
+    this.moveTo(this.cx, this.cy - 8);
+    this.say('„Die Wacht endet nie.“ – Sucht das Laternenlicht!');
+    this.anim(Anim.Special, 2.4);
+    this.nuke(2.4, 2.6, 2);
+    yield 2.7;
+  }
+
+  // ---- Aetherion: die Große Stille (der Albtraum des Alten Krieges; endet, ohne dass das Wesen stirbt)
+  private elem(el: Element) { if (this.mob.element !== el) { this.mob.element = el; this.announce(); } }
+  /** Erde – Marschtritt: Reihen von Einschlägen ziehen durch den Raum, jede mit einer Lücke. */
+  private *aeEarth(): Gen {
+    this.elem('earth');
+    this.say('*Marschtritt. Sieben Heere, die es nie gab, ziehen durch den Raum.*');
+    this.anim(Anim.Special, 2.6);
+    const r = this.room, cols = Math.floor((r.x1 - r.x0) / 2);
+    for (let k = 0; k < 3 + this.phase; k++) {
+      const ty = r.y0 + 1 + ((k * 3) % Math.max(1, r.y1 - r.y0 - 1)), gap = this.zone.rng.int(1, cols - 1);
+      for (let i = 0; i <= cols; i++) if (Math.abs(i - gap) > 1) this.tele((r.x0 + 0.5 + i * 2) * TILE, (ty + 0.5) * TILE, 17, 0.9, 1.2, { id: 'stun', dur: 0.5, chance: 0.4 });
+      yield 0.55;
+    }
+    yield 0.6;
+  }
+  /** Feuer – Brandpfeile: Einschläge auf die Spieler, danach brennende Lachen. */
+  private *aeFire(): Gen {
+    this.elem('fire');
+    this.say('*Brandpfeile. Jemand hat einmal Felder angezündet, damit der Nachbar nichts erntet.*');
+    this.anim(Anim.Special, 2.2);
+    const spots: (readonly [number, number])[] = [];
+    for (let k = 0; k < 6 + this.phase * 2; k++) {
+      const t = this.target(); if (!t) return;
+      const x = t.x + this.zone.rng.range(-34, 34), y = t.y + this.zone.rng.range(-34, 34);
+      this.tele(x, y, 26, 0.95, 1.25, { id: 'burn', dur: 3, chance: 0.6 });
+      if (k % 3 === 0) spots.push([x, y]);
+      yield 0.2;
+    }
+    yield 0.8;
+    for (const [x, y] of spots) this.pool(x, y, 26, 5, 0.4, { id: 'burn', dur: 2, chance: 0.5 });
+    yield 0.4;
+  }
+  /** Wasser – die Flut: Ringe mit wandernder Lücke. */
+  private *aeWater(): Gen {
+    this.elem('water');
+    this.say('*Die Flut. Brunnen, die überlaufen, weil unten jemand weint.*');
+    this.anim(Anim.Special, 2.6);
+    let gap = this.zone.rng.range(0, 6.28);
+    for (let k = 0; k < 4; k++) { this.radial(26, 88, 0, 'shard', 0.85, gap, 0.44); gap += 0.95; yield 0.6; }
+    yield 0.3;
+  }
+  /** Wind – die Stille holt Atem: ein sich drehendes Kreuz aus Schneisen. */
+  private *aeWind(): Gen {
+    this.elem('wind');
+    this.say('*Es wird still. Die Luft selbst zieht sich zurück.*');
+    const m = this.mob;
+    this.anim(Anim.Special, 2.8);
+    let a = this.zone.rng.range(0, 1.5);
+    for (let k = 0; k < 4 + this.phase; k++) {
+      for (let j = 0; j < 2; j++) { const b = a + (j * Math.PI) / 2; this.beam(m.x - Math.cos(b) * 270, m.y - Math.sin(b) * 270, m.x + Math.cos(b) * 270, m.y + Math.sin(b) * 270, 18, 0.7, 1.4); }
+      a += 0.4;
+      yield 0.55;
+    }
+    yield 0.5;
+  }
+  /** Licht – sieben Klingen: sieben Schnitte durch die Raummitte, wie damals durch das Herz. */
+  private *aeLight(): Gen {
+    this.elem('light');
+    this.say('*Sieben Klingen aus Licht. Eine für jeden, der in jener Nacht dabeistand.*');
+    this.moveTo(this.cx, this.cy - 8);
+    this.anim(Anim.Special, 3);
+    let off = this.zone.rng.range(0, 1);
+    for (let k = 0; k < 2; k++) {
+      for (let j = 0; j < 7; j++) { const b = off + (j * Math.PI) / 7; this.beam(this.cx - Math.cos(b) * 280, this.cy - Math.sin(b) * 280, this.cx + Math.cos(b) * 280, this.cy + Math.sin(b) * 280, 13, 1.0, 1.5); }
+      off += Math.PI / 14;
+      yield 1.2;
+    }
+    const t = this.target();
+    if (t) this.aimed(t, 9, 100, 170, 'lance', 0.9, { id: 'weak', dur: 3, chance: 0.5 });
+    yield 0.6;
+  }
+  /** Dunkelheit – das Vergessen: raumweiter Schlag; sicher ist nur, wer im Licht steht. */
+  private *aeDark(): Gen {
+    this.elem('dark');
+    this.moveTo(this.cx, this.cy - 8);
+    this.say('„NICHT … NOCH … EINMAL.“ – In die Lichtkreise!');
+    this.anim(Anim.Special, 2.4);
+    this.nuke(2.4, 2.8, 2);
+    yield 2.7;
+    this.summon('erinnerter', 2);
+  }
+  /** Der Chor: eine Spirale im Element des Augenblicks. */
+  private *aeChorus(): Gen { this.anim(Anim.Special, 2.6); yield* this.spiral(36, 0.33, 0.06, 105, 'orb', 0.75, 1 + this.phase); }
 }
