@@ -6,6 +6,7 @@ import { useStore } from '../state/store';
 import { TooltipLayer, clamp, cx, hideTip, uiScale } from './common';
 import { CraftWindow } from './craft';
 import { NpcDialog } from './dialog';
+import { EndgameWindow } from './endgame';
 import { Hud } from './hud';
 import { DeathOverlay, SignOverlay, StoryOverlay } from './overlays';
 import { PanelHost } from './panels';
@@ -18,6 +19,7 @@ import './styles/screens.css';
 import './styles/hud.css';
 import './styles/panels.css';
 import './styles/craft.css';
+import './styles/endgame.css';
 import './styles/world.css';
 
 /** Berechnet den Maßstab: Die Oberfläche ist für rund 1280×720 entworfen und skaliert mit dem Fenster. */
@@ -39,6 +41,7 @@ function Root() {
   const panel = useStore(s => s.panel);
   const hasDialog = useStore(s => !!s.dialog);
   const hasCraft = useStore(s => !!s.craft);
+  const hasEndgame = useStore(s => !!s.endgame);
   const hasSign = useStore(s => s.sign !== null);
   const hasStory = useStore(s => !!s.story);
   const hasCine = useStore(s => !!s.cine);
@@ -54,7 +57,7 @@ function Root() {
     const off = onSettingsChange(f);
     return () => { window.removeEventListener('resize', f); off(); };
   }, []);
-  useLayoutEffect(() => { hideTip(); }, [screen, panel, hasDialog, hasCraft]);
+  useLayoutEffect(() => { hideTip(); }, [screen, panel, hasDialog, hasCraft, hasEndgame]);
 
   const narrow = uiScale.w < 860, short = uiScale.h < 600;
   return (
@@ -69,6 +72,7 @@ function Root() {
       {screen !== 'game' && panel === 'settings' && <SettingsPanel />}
       {screen === 'game' && hasDialog && !dead && <NpcDialog />}
       {screen === 'game' && hasCraft && !dead && <CraftWindow />}
+      {screen === 'game' && hasEndgame && !dead && <EndgameWindow />}
       {screen === 'game' && hasWshop && !dead && <WorldShop />}
       {screen === 'game' && hasEnc && !dead && <EncounterDialog />}
       {screen === 'game' && hasSign && <SignOverlay />}

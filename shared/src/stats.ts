@@ -1,6 +1,7 @@
 import { CFG, ELEMENTS } from './config';
 import { CLASSES } from './data/classes';
 import { ITEMS, itemMods } from './data/items';
+import { quellMods } from './data/rifts';
 import { setCounts, setMods } from './data/sets';
 import { SKILLS } from './data/skills';
 import type { AttrKey, CharData, Derived, Element, Mods } from './types';
@@ -25,6 +26,7 @@ export function computeStats(c: CharData, buffs?: Mods[]): Derived {
   const sets = setCounts(c);
   for (const b of setMods(sets)) addMods(m, b);
   for (const id in c.skills) { const sk = SKILLS[id]; if (sk?.passive) addMods(m, sk.passive, c.skills[id]); }
+  addMods(m, quellMods(c)); // 0.5: Quellstufen
   if (buffs) for (const b of buffs) addMods(m, b);
   const attrs: Record<AttrKey, number> = {
     str: c.attrs.str + (m.str ?? 0), dex: c.attrs.dex + (m.dex ?? 0),

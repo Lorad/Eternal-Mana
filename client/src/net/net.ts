@@ -70,11 +70,13 @@ function handle(m: ServerMsg) {
     case 'chars': store.set({ chars: m.chars, error: null }); if (st.screen === 'game' || st.screen === 'loading') { store.set({ screen: 'chars', char: null, panel: null, dialog: null, boss: null, dead: null }); bus.emit('net:left'); } break;
     case 'entered':
       resumed = true; resumeChar = m.charId;
-      store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null });
+      store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null,
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
-      store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0, enc: null, wshop: null });
+      store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0,
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
@@ -87,12 +89,13 @@ function handle(m: ServerMsg) {
     case 'loot': pushToast(itemName(m.item) + ((m.item.qty ?? 1) > 1 ? ` ×${m.item.qty}` : ''), 'loot', undefined, m.item); break;
     case 'chat': pushChat(m.from, m.s, m.ch); break;
     case 'party': store.set({ party: m.members, invite: m.invite ?? (m.members.length ? null : st.invite) }); break;
-    case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null, craft: null }); break;
+    case 'dead': store.set({ dead: { by: m.by }, panel: null, dialog: null, craft: null, endgame: null }); break;
     case 'story': store.set({ story: { title: m.title ?? '', lines: m.lines } }); break;
     // ---- Story (ab 0.3)
     case 'dlg': store.set({ dlgNode: m.node ? { npc: m.npc, topic: m.topic, node: m.node, seq: (st.dlgNode?.seq ?? 0) + 1 } : null }); break;
     case 'cine': bus.emit('cine:play', m.id); break;
     case 'lore': store.set({ lore: { id: m.id, first: !!m.first }, sign: null, prompt: null }); break;
+    case 'rift': store.set({ rift: m.r, riftAt: performance.now() }); break; // Endspiel (0.5)
     // ---- Lebendige Welt (0.6)
     case 'world': store.set({ world: m.w, worldAt: performance.now(), ...(st.wshop?.kind === 'trader' && !m.w.trader ? { wshop: null } : {}) }); break;
     case 'encdlg': store.set(m.d ? { enc: m.d, dialog: null, panel: null, prompt: null } : { enc: null }); break;

@@ -39,6 +39,8 @@ export const ELEMENT_CORE: Record<El, string> = {
 };
 export const ALL_CORES = Object.values(BOSS_CORE);
 export const AETHER = 'mat_aether';
+/** Echo-Fragment (0.5): aus Mana-Rissen; zum Angleichen, für Echo-Runen und Ätherstaub */
+export const ECHO_FRAG = 'mat_echo';
 
 const mat = (id: string, name: string, icon: string, price: number, desc: string): ItemBase => ({ id, name, kind: 'material', icon, stack: true, price, desc });
 const use = (id: string, name: string, icon: string, price: number, desc: string, u: NonNullable<ItemBase['use']>): ItemBase => ({ id, name, kind: 'consumable', icon, stack: true, price, desc, use: u });
@@ -72,6 +74,7 @@ export const CRAFT_ITEMS: ItemBase[] = [
   mat('core_archivar', 'Stiller Kern', 'mat_core_archivar', 640, 'Der letzte Eintrag des Archivars. Man hört darin, wie jemand Luft holt und nichts sagt.'),
   mat('core_hohlkoenig', 'Hohler Kern', 'mat_core_hohlkoenig', 900, 'Was vom Hohlen König blieb. Er ist leichter, als er sein dürfte.'),
   mat('mat_aether', 'Ätherstaub', 'mat_aether', 400, 'Staub aus reinem Mana, wie er nur bei den mächtigsten Geschöpfen zurückbleibt. Borin fasst ihn nur mit der Zange an.'),
+  mat('mat_echo', 'Echo-Fragment', 'shard', 180, 'Ein Splitter aus einem Mana-Riss. Hält man ihn ans Ohr, hört man einen Kampf, der längst vorbei ist. Borin gleicht damit besondere Stücke an, Fenwick ritzt Echo-Runen hinein.'),
   // ---- Tränke
   use('potion_hp4', 'Quellheiltrank', 'potion_hp4', 240, 'Stellt 1100 Leben wieder her.', { hp: 1100 }),
   use('potion_mp4', 'Quellmanatrank', 'potion_mp4', 220, 'Stellt 480 Mana wieder her.', { mp: 480 }),
@@ -82,6 +85,7 @@ export const CRAFT_ITEMS: ItemBase[] = [
   elixir('elx_crit', 'Elixier des Falkenauges', 110, 'Elixier (5 Minuten): schärft den Blick. Es kann immer nur ein Elixier wirken.', { crit: 6 }),
   elixir('elx_power', 'Elixier der Glut', 130, 'Elixier (5 Minuten): schürt die Kraft. Es kann immer nur ein Elixier wirken.', { powerPct: 6 }),
   ...EL.map(e => elixir('elx_res_' + e, 'Elixier des ' + EL_SCHUTZ[e], 120, 'Elixier (5 Minuten): schützt vor Schaden ' + EL_GEN[e] + '. Es kann immer nur ein Elixier wirken.', { [RES[e]]: 20 })),
+  elixir('elx_sieben', 'Elixier der Sieben', 320, 'Elixier (5 Minuten): sieben Stimmen in einer Flasche. Es kann immer nur ein Elixier wirken.', { powerPct: 6, resAll: 10 }),
   // ---- Speisen (eine gleichzeitig, 15 Minuten)
   food('food_beeren', 'Beerengrütze', 20, 'Speise (15 Minuten). Macht satt und zäh. Es kann immer nur eine Speise wirken.', { hpPct: 5, hpRegen: 1 }),
   food('food_pilz', 'Leuchtpilzpfanne', 34, 'Speise (15 Minuten). Klärt den Kopf. Es kann immer nur eine Speise wirken.', { mpPct: 8, mpRegen: 0.8 }),

@@ -109,6 +109,9 @@ export function tierOf(ilvl: number): number { return Math.max(1, Math.min(6, 1 
 let uidCounter = 0;
 export function newUid(): string { return Date.now().toString(36) + (uidCounter++).toString(36) + Math.floor(Math.random() * 1296).toString(36); }
 
+/** Mindeststufe zum Anlegen. Beute aus dem Endspiel (0.5) liegt über der alten Obergrenze – sie verlangt die Höchststufe. */
+export function equipLevel(ilvl: number): number { return Math.max(1, Math.min(CFG.player.maxLevel, ilvl - 2)); }
+
 export function isGear(b: ItemBase): boolean { return b.kind === 'weapon' || b.kind === 'helm' || b.kind === 'armor' || b.kind === 'accessory'; }
 
 export function slotOf(b: ItemBase): Slot | null {
@@ -221,6 +224,17 @@ export function rollAffixes(rng: Rng, ilvl: number, rarity: number, cls: ClassId
     out.push([a.k, val]);
   }
   return out;
+}
+
+/** Hebt (oder senkt) die Gegenstandsstufe: Grundwerte folgen der Stufe von selbst, die Affixe werden im Verhältnis ihrer Formel mitgezogen (0.5, Angleichen). */
+export function rescaleItem(it: ItemInstance, ilvl: number): void {
+  for (const a of it.affixes) {
+    const def = AFFIXES.find(d => d.k === a[0]);
+    if (!def) continue;
+    const r = def.round ?? 1, f = def.v(ilvl) / def.v(it.ilvl);
+    a[1] = Math.max(1 / r, Math.round(a[1] * f * r) / r);
+  }
+  it.ilvl = ilvl;
 }
 
 /** Erzeugt ein zufälliges, zur Klasse passendes Ausrüstungsteil. `acc` legt die Art des Schmuckstücks fest. */

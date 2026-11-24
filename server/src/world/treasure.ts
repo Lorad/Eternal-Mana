@@ -48,7 +48,7 @@ export function dig(p: Player): boolean {
   // Belohnung
   const r = z.rng, lvl = z.def.level[1], bio = BIOME_MATS[z.def.biome], tier = Math.max(0, REGIONS.indexOf(z.id as any));
   p.gainGold(CFG.enemy.gold(lvl) * r.range(T.gold[0], T.gold[1]) * (1 + p.stats.goldPct / 100));
-  p.give(generateGear(r, Math.min(CFG.player.maxLevel, lvl + 1), Math.max(2, rollRarity(r, T.rarity)), p.char.cls));
+  p.give(generateGear(r, Math.min(z.ilvlCap, lvl + 1), Math.max(2, rollRarity(r, T.rarity)), p.char.cls)); // in Welten der Neuen Kreise auch über Stufe 40
   if (bio) { p.give(makeStack(bio.monster, r.int(3, 5))); p.give(makeStack(bio.ingredient, r.int(2, 4))); }
   p.give(makeStack(TIER_ORE[tier], r.int(2, 4)));
   p.give(makeStack(r.pick(Object.values(ESSENCE)), r.int(2, 3)));

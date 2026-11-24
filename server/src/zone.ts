@@ -8,6 +8,7 @@ import { BOSSES, ENEMIES, type EnemyDef } from '../../shared/src/data/enemies';
 import { ITEMS, TIER_MATERIAL, generateGear, itemName, makeStack, rollRarity, tierOf } from '../../shared/src/data/items';
 import { SKILLS, skillCd, skillMp, type Effect } from '../../shared/src/data/skills';
 import { ELEM_STATUS, affinityMul, resistFactor } from '../../shared/src/elements';
+import { kreisBossDef, kreisLevel, kreisZoneDef } from '../../shared/src/data/rifts';
 import { NODE_TYPES, ZONES, type ZoneDef } from '../../shared/src/data/zones';
 import { getMap, type GameMap, type MobSpawn } from '../../shared/src/maps/mapgen';
 import { T, TILE } from '../../shared/src/maps/tiles';
@@ -21,6 +22,7 @@ import { chestExtras, nodeBonus, rollMaterials } from './loot';
 import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
 import { legendAttack, legendOnHit, legendShield, tryReaction } from './react';
+import { Rift, riftStones, type RiftRun } from './rift';
 import { World } from './world';
 
 export interface Obj extends ObjInfo {
@@ -52,6 +54,8 @@ export class Mob {
   tough = false; ownScale = false;
   name: string;
   summoned = false;
+  /** 0.5 (Mana-Risse): Faktor auf die Angriffspause, eigene Schwächen/Resistenzen statt derer der Art, Einfärbung */
+  cdMul = 1; weakO?: Element[]; resistO?: Element[]; tint?: number;
   constructor(public def: EnemyDef, public lvl: number, x: number, y: number, public elite: boolean, public group: number, public spawnIdx: number) {
     this.x = this.hx = x; this.y = this.hy = y;
     this.maxHp = Math.round(CFG.enemy.hp(lvl) * def.hpMul * (elite ? CFG.enemy.eliteHpMul : 1));
@@ -62,7 +66,7 @@ export class Mob {
     this.name = (elite ? 'Erwachter ' : '') + def.name;
   }
   info(): MobInfo {
-    return { id: this.id, mob: this.def.id, lvl: this.lvl, maxHp: this.maxHp, hp: this.hp, x: Math.round(this.x), y: Math.round(this.y), elite: this.elite || undefined, boss: this.boss ? true : undefined, name: this.name };
+    return { id: this.id, mob: this.def.id, lvl: this.lvl, maxHp: this.maxHp, hp: this.hp, x: Math.round(this.x), y: Math.round(this.y), elite: this.elite || undefined, boss: this.boss ? true : undefined, name: this.name, tint: this.tint };
   }
   flags(now: number): number {
     let f = this.elite ? FLAG_ELITE : 0;
@@ -107,11 +111,28 @@ export class Zone {
   private flowAt = 0;
   private puzzle: { chest: Obj; kind: string; order?: number[]; bits?: number[]; count?: number; time?: number; progress: number; solved: boolean } | null = null;
   private secretFound = false;
+  // ---- 0.5 Endspiel: Instanzen. `key` = Schlüssel in Game.zones (weicht bei Riss- und Kreis-Instanzen von `id` ab)
+  key: string;
+  /** Neuer Kreis dieser Welt (0 = erster Durchgang): hebt Gegner-, Boss- und Beutestufen */
+  kreis = 0;
+  /** laufender Mana-Riss, falls diese Instanz einer ist (server/src/rift.ts) */
+  rift: RiftRun | null = null;
+  /** wohin ein Charakter gespeichert wird, der diese Instanz nicht wieder betreten kann (Riss) */
+  home: { zone: string; x: number; y: number } | null = null;
+  /** höchste Gegenstandsstufe aus Truhen */
+  ilvlCap = CFG.player.maxLevel;
+  /** Kampfregeln, die Riss-Modifikatoren verändern (neutral = 1) */
+  mod = { dmgTaken: 1, cd: 1, heal: 1, mpRegen: 1, mpGain: 1, aggro: 1 };
 
-  constructor(public game: Game, public def: ZoneDef) {
+  constructor(public game: Game, public def: ZoneDef, opt: { key?: string; kreis?: number; rift?: RiftRun } = {}) {
     this.id = def.id;
+    this.key = opt.key ?? def.id;
+    this.kreis = opt.kreis ?? 0;
+    this.rift = opt.rift ?? null;
+    if (this.kreis > 0) { this.def = def = kreisZoneDef(def, this.kreis); this.ilvlCap = 99; }
     this.map = getMap(def.id);
     for (const o of this.map.objects) {
+      if (this.rift && (o.type === 'npc' || o.type === 'shrine' || o.type === 'rift')) continue; // im Riss gibt es keine Geschichte
       const obj: Obj = { id: nextId(), type: o.type, x: o.x, y: o.y, state: 0, tag: o.tag, props: o.props ? { ...o.props, sid: o.id } : { sid: o.id } };
       if (obj.type === 'chest' && this.map.dungeon) obj.looted = new Set();
       if (obj.type === 'node') obj.harvested = new Map();
@@ -120,8 +141,10 @@ export class Zone {
       this.setBlock(obj, true);
     }
     for (const f of cookFires(this.map)) this.objs.set(f.id, f);
-    this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
-    if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, BOSSES[def.boss], this.map.bossRoom);
+    for (const f of riftStones(this.map)) this.objs.set(f.id, f);
+    if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
+    if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);
+    if (this.rift) Rift.setup(this);
     this.weather = this.rng.weighted(World.weathers(this));
     this.weatherUntil = game.now + this.rng.range(CFG.world.weatherMinSec, CFG.world.weatherMaxSec);
     this.emptySince = game.now;
@@ -149,13 +172,14 @@ export class Zone {
 
   private spawnFrom(s: MobSpawn, idx: number): Mob {
     const elite = !!s.elite || this.rng.chance(CFG.enemy.eliteChance);
-    const m = new Mob(ENEMIES[s.mob], s.lvl, s.x, s.y, elite, s.group, idx);
+    const m = new Mob(ENEMIES[s.mob], kreisLevel(s.lvl, this.kreis), s.x, s.y, elite, s.group, idx);
     this.mobs.set(m.id, m);
     return m;
   }
   spawnMob(mobId: string, lvl: number, x: number, y: number, summoned = true): Mob {
     const m = new Mob(ENEMIES[mobId], lvl, x, y, false, -1, -1);
     m.summoned = summoned; m.awake = true;
+    if (this.rift) Rift.tune(this, m);
     this.mobs.set(m.id, m);
     this.ev({ k: 'mob+', m: m.info() });
     this.ev({ k: 'fx', n: 'spawn', x, y, el: m.element });
@@ -183,6 +207,7 @@ export class Zone {
       zones: [...this.fx.values()].map(z => this.fxInfo(z)),
       weather: this.weather, tod: this.game.tod(),
       boss: this.boss?.active ? { id: this.boss.mob.id, name: this.boss.def.name, phase: this.boss.phase, el: this.boss.mob.element } : undefined,
+      rift: this.rift ? Rift.info(this) : undefined, kreis: this.kreis || undefined,
     };
   }
   addPlayer(p: Player, x: number, y: number) {
@@ -230,7 +255,7 @@ export class Zone {
     let crit = false;
     if (src && !o.dot && !o.extra && this.rng.chance(src.stats.crit + (o.crit ?? 0) + (m.has('expose', now) ? CFG.combat.exposeCrit : 0))) { crit = true; dmg *= src.stats.critDmg; }
     const adef = m.boss?.def ?? m.def;
-    dmg *= affinityMul(el, { element: m.element, weak: adef.weak, resist: adef.resist });
+    dmg *= affinityMul(el, { element: m.element, weak: m.weakO ?? adef.weak, resist: m.resistO ?? adef.resist });
     if (el !== 'phys' && src) dmg *= (1 + src.stats.elemPct / 100) * (el === src.stats.attackElement ? 1 + CFG.craft.infuseDmg[src.stats.elemLvl] : 1);
     if (m.has('mark', now)) dmg *= CFG.combat.markDmgTaken;
     if (src && src.statuses.get('weak') && src.statuses.get('weak')!.until > now) dmg *= CFG.combat.weakDmgDealt;
@@ -266,7 +291,7 @@ export class Zone {
     if (now < p.iframesUntil) { if (now < p.rollUntil) this.ev({ k: 'txt', x: p.x, y: p.y - 20, s: 'Ausgewichen', col: '#bfe9ff' }); return 0; }
     let dmg = raw * (1 + this.rng.range(-CFG.combat.variance, CFG.combat.variance));
     dmg *= 1 - CFG.combat.mitigation(p.stats.def, lvl);
-    dmg *= resistFactor(p.stats.res[el] ?? 0);
+    dmg *= resistFactor(p.stats.res[el] ?? 0) * this.mod.dmgTaken;
     if (p.statuses.get('mark') && p.statuses.get('mark')!.until > now) dmg *= CFG.combat.markDmgTaken;
     if (p.hasStatus('expose', now)) dmg *= CFG.combat.exposeDmgTaken;
     dmg = Math.max(1, Math.round(dmg));
@@ -305,6 +330,7 @@ export class Zone {
     this.ev({ k: 'mob-', id: m.id, died: 1 });
     if (m.boss) { m.boss.onDeath(); return; }
     Story.onMobDeath(this, m);
+    if (this.rift) Rift.onMobDeath(this, m);
     if (m.spawnIdx >= 0 && !this.map.dungeon) this.respawns.push({ idx: m.spawnIdx, at: this.game.now + CFG.enemy.respawnSec });
     const rec = this.recipients(m);
     World.onMobDeath(this, m, rec);
@@ -332,7 +358,7 @@ export class Zone {
       this.dropGoldFor(p, g, ...at());
     }
     if (r.chance(m.elite ? L.eliteGearChance : L.gearChance)) {
-      const it = generateGear(r, m.lvl + (m.elite ? 1 : 0), rollRarity(r, m.elite ? L.eliteRarityWeights : L.rarityWeights), p.char.cls);
+      const it = generateGear(r, this.rift ? this.rift.ilvl : m.lvl + (m.elite ? 1 : 0), rollRarity(r, m.elite ? L.eliteRarityWeights : L.rarityWeights), p.char.cls);
       this.dropItemFor(p, it, ...at());
     }
     if (r.chance(L.potionChance)) {
@@ -417,11 +443,11 @@ export class Zone {
     if (atk.kind === 'arc') {
       const range = atk.range * (fin ? 1.3 : 1);
       const dealt = this.arcHit(p, ang, range, atk.arc! + (fin ? 40 : 0), raw, el, { kb: fin ? 80 : 25 });
-      if (dealt > 0) { p.mp = Math.min(p.stats.maxMp, p.mp + atk.mpGain); legendAttack(this, p, el); }
+      if (dealt > 0) { p.mp = Math.min(p.stats.maxMp, p.mp + atk.mpGain * this.mod.mpGain); legendAttack(this, p, el); }
       this.ev({ k: 'atk', id: p.id, ang, kind: cls.weapon, el, combo: p.combo, range });
     } else {
       this.spawnProj({ x: p.x + Math.cos(ang) * 8, y: p.y - 6 + Math.sin(ang) * 8, vx: Math.cos(ang) * atk.speed!, vy: Math.sin(ang) * atk.speed!, life: atk.range / atk.speed!, r: 4,
-        hostile: false, owner: p, lvl: p.level, raw, el, pierce: 0, mpGain: atk.mpGain, by: p.name }, atk.sprite!);
+        hostile: false, owner: p, lvl: p.level, raw, el, pierce: 0, mpGain: atk.mpGain * this.mod.mpGain, by: p.name }, atk.sprite!);
       this.ev({ k: 'atk', id: p.id, ang, kind: cls.weapon, el, combo: 0 });
     }
   }
@@ -444,7 +470,7 @@ export class Zone {
     const cost = skillMp(sk, rank);
     if (p.mp < cost) { p.toast('Nicht genug Mana.', 'bad'); return; }
     p.mp -= cost;
-    const cd = skillCd(sk, rank, p.stats.cdr);
+    const cd = skillCd(sk, rank, p.stats.cdr) * this.mod.cd;
     p.cds.set(id, now + cd);
     p.send({ t: 'cd', id, cd });
     p.facing = ang;
@@ -633,7 +659,8 @@ export class Zone {
     if (pr.guard !== undefined && [...this.mobs.values()].some(m => m.group === pr.guard && !m.dead)) { p.toast('Die Truhe wird bewacht!', 'bad'); return; }
     if (o.looted) o.looted.add(p.charId); else { p.char.flags[`c:${this.id}:${pr.sid}`] = 1; p.sync('flags'); }
     p.pev.push({ k: 'obj', id: o.id, state: 1 }, { k: 'sfx', n: 'chest_open' });
-    const r = this.rng, tier: string = pr.tier, lvl = Math.min(this.def.level[1] + (tier === 'gold' ? 2 : 0), CFG.player.maxLevel);
+    if (this.rift && pr.rift) { Rift.openChest(this, p, pr.rift); return; }
+    const r = this.rng, tier: string = pr.tier, lvl = Math.min(this.def.level[1] + (tier === 'gold' ? 2 : 0), this.ilvlCap);
     const mul = tier === 'wood' ? 1 : tier === 'silver' ? 2.5 : 6;
     p.gainGold(CFG.enemy.gold(lvl) * r.range(4, 7) * mul * (1 + p.stats.goldPct / 100));
     const w = CFG.loot.chestRarityWeights[tier];
@@ -662,6 +689,7 @@ export class Zone {
       if (now - p.msgAt > 3) { p.msgAt = now; p.toast(pr.reqMsg ?? 'Der Weg ist versperrt.', 'bad'); }
       return;
     }
+    if (this.rift) { Rift.leave(this.game, p); return; }
     this.game.transfer(p, pr.to, this.id);
   }
 
@@ -681,6 +709,7 @@ export class Zone {
     this.updateFx(now);
     this.updateObjs(now);
     Story.tick(this, dt);
+    if (this.rift) Rift.tick(this, dt);
     World.tickZone(this, dt);
     for (let i = this.respawns.length - 1; i >= 0; i--) {
       const r = this.respawns[i];
@@ -700,8 +729,8 @@ export class Zone {
       if (p.dead) continue;
       // Regeneration
       const ooc = now - p.lastHurtAt > CFG.player.outOfCombatRegenDelay;
-      p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.hpRegen * (ooc ? 4 : 1) * dt);
-      p.mp = Math.min(p.stats.maxMp, p.mp + p.stats.mpRegen * dt);
+      p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.hpRegen * (ooc ? 4 : 1) * this.mod.heal * dt);
+      p.mp = Math.min(p.stats.maxMp, p.mp + p.stats.mpRegen * this.mod.mpRegen * dt);
       // Zustände
       for (const [id, st] of p.statuses) {
         if (st.until <= now) { p.statuses.delete(id); continue; }
@@ -841,7 +870,7 @@ export class Zone {
     const hurt = now < m.hurtUntil;
     switch (m.state) {
       case 'idle': {
-        const t = this.nearestPlayer(m.x, m.y, def.aggro);
+        const t = this.nearestPlayer(m.x, m.y, def.aggro * this.mod.aggro);
         if (t && !this.map.safe.some(s => Math.hypot(t.x - s.x, t.y - s.y) < s.r - 60) && lineClear(this.solidFly, m.x, m.y, t.x, t.y)) {
           m.target = t; m.state = 'chase';
           // Rudel alarmieren
@@ -906,7 +935,7 @@ export class Zone {
         m.t -= dt;
         if (m.t > 0) break;
         m.anim = Anim.Attack;
-        m.cdUntil = now + atk.cd;
+        m.cdUntil = now + atk.cd * m.cdMul;
         m.state = 'recover'; m.t = 0.35;
         const raw = m.dmg * (atk.mult ?? 1);
         if (def.ai === 'charge') { m.state = 'charge'; m.t = Math.min(0.6, (atk.range + 50) / (m.speed * 4.2)); m.chargeHit.clear(); break; }

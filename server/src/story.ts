@@ -14,9 +14,11 @@ import { ITEMS, generateGear, makeStack } from '../../shared/src/data/items';
 import { NPCS } from '../../shared/src/data/npcs';
 import { QUESTS, QUEST_LIST, questChapter, questStartable, type QuestDef } from '../../shared/src/data/quests';
 import { CINES, DECISIONS, ECHOES, MEMORY_NAMES, PLACES, SHRINES, cineSeconds, objVisible, type DlgFx, type EchoDef } from '../../shared/src/data/story';
+import { kreisLevel, kreisOf } from '../../shared/src/data/rifts';
 import { ZONES } from '../../shared/src/data/zones';
 import { TILE } from '../../shared/src/maps/tiles';
 import type { ClientMsg } from '../../shared/src/types';
+import { questPoints } from './endgame';
 import type { Game } from './game';
 import type { Player } from './player';
 import { Mob, type Obj, type Zone } from './zone';
@@ -120,7 +122,7 @@ export const Story = {
     const running = st.echoes.get(id);
     if (running) { running.who.add(p); p.toast('Das Echo ist bereits erwacht.', 'bad'); return; }
     const [lo, hi] = def.lvl ?? [28, 38];
-    const lvl = Math.max(lo, Math.min(hi, p.level));
+    const lvl = kreisLevel(Math.max(lo, Math.min(hi, p.level)), zone.kreis);
     const e: ActiveEcho = { def, x: o.x, y: o.y, mobs: new Set(), who: new Set([p]), aloneSince: 0, obj: o };
     const spawn = (mobId: string, elite: boolean, k: number, n: number) => {
       const d = ENEMIES[mobId];
@@ -311,9 +313,8 @@ export const Story = {
       if (!condOk(c, b.if)) continue;
       if (b.gold) p.gainGold(b.gold);
       for (const [base, n] of b.items ?? []) p.give(makeStack(base, n));
-      if (b.gear !== undefined) p.give(generateGear(p.zone.rng, Math.min(CFG.player.maxLevel, q.level + 1), b.gear, c.cls));
-      if (b.skillPoints) { c.skillPoints += b.skillPoints; p.sync('skillPoints'); }
-      if (b.attrPoints) { c.attrPoints += b.attrPoints; p.sync('attrPoints'); }
+      if (b.gear !== undefined) p.give(generateGear(p.zone.rng, kreisLevel(Math.min(CFG.player.maxLevel, q.level + 1), kreisOf(c)), b.gear, c.cls));
+      questPoints(p, b.skillPoints, b.attrPoints); // 0.5: ab dem zweiten Kreis Echo-Fragmente statt Punkten
       if (b.xp) p.gainXp(b.xp);
       p.toast(b.note, 'story');
     }

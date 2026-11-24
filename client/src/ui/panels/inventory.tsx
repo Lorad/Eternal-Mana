@@ -2,7 +2,7 @@
 import { useState } from 'preact/hooks';
 import { useStore } from '../../state/store';
 import { CLASSES } from '../../../../shared/src/data/classes';
-import { ITEMS, canEquip, isGear, itemName } from '../../../../shared/src/data/items';
+import { ITEMS, canEquip, equipLevel, isGear, itemName } from '../../../../shared/src/data/items';
 import { SLOTS, SLOT_NAME } from '../../../../shared/src/types';
 import type { ItemInstance, Slot } from '../../../../shared/src/types';
 import { Btn, Confirm, Gold, INV_SIZE, ItemDetails, ItemSlot, Portrait, SLOT_ICON, Window, closePanel, cx, send, sfx } from '../common';
@@ -22,7 +22,7 @@ export function InventoryPanel() {
     const b = ITEMS[it.base];
     if (!b) return;
     if (slot) { if (full) sfx('ui_error'); send({ t: 'unequip', slot }); return; }
-    if (isGear(b)) { if (!canEquip(char.cls, b) || it.ilvl > char.level + 2) sfx('ui_error'); send({ t: 'equip', uid: it.uid }); }
+    if (isGear(b)) { if (!canEquip(char.cls, b) || char.level < equipLevel(it.ilvl)) sfx('ui_error'); send({ t: 'equip', uid: it.uid }); }
     else if (b.kind === 'consumable') send({ t: 'use', uid: it.uid });
   };
   const cells: (ItemInstance | null)[] = [...char.inv];
@@ -73,7 +73,7 @@ export function InventoryPanel() {
               <ItemDetails item={item} char={char} equipped={!!eqSlot} />
               <div class="inv-actions">
                 {eqSlot && <Btn kind="primary" disabled={full} title={full ? 'Inventar voll' : undefined} onClick={() => primary(item, eqSlot)}>Ablegen</Btn>}
-                {!eqSlot && isGear(base) && <Btn kind="primary" disabled={!canEquip(char.cls, base) || item.ilvl > char.level + 2} onClick={() => primary(item)} sound="ui_equip">Ausrüsten</Btn>}
+                {!eqSlot && isGear(base) && <Btn kind="primary" disabled={!canEquip(char.cls, base) || char.level < equipLevel(item.ilvl)} onClick={() => primary(item)} sound="ui_equip">Ausrüsten</Btn>}
                 {!eqSlot && base.kind === 'accessory' && char.equip.acc1 && char.equip.acc2 && <Btn onClick={() => send({ t: 'equip', uid: item.uid, slot: 'acc2' })} sound="ui_equip">In Platz 2</Btn>}
                 {!eqSlot && base.kind === 'consumable' && <Btn kind="primary" onClick={() => primary(item)}>Benutzen</Btn>}
                 {!eqSlot && base.kind !== 'quest' && <Btn kind="danger" onClick={() => setDrop(item)}>Wegwerfen</Btn>}

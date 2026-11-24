@@ -50,7 +50,7 @@ export const TROPHIES: [string, string, string, string][] = [
 export const TROPHY_IDS = TROPHIES.map(t => t[0]);
 
 export const WORLD_ITEMS: ItemBase[] = [
-  { id: STAR, name: 'Sternsplitter', kind: 'material', icon: 'shard', stack: true, price: 24, desc: 'Vom Himmel gefallen und noch kühl. Fenwick sagt, er klingt wie ein A. Die Quellsplitter klingen wie Fis. Er ist seitdem unruhig.' },
+  { id: STAR, name: 'Sternsplitter', kind: 'material', icon: 'gem', stack: true, price: 24, desc: 'Vom Himmel gefallen und noch kühl. Fenwick sagt, er klingt wie ein A. Die Quellsplitter klingen wie Fis. Er ist seitdem unruhig.' },
   ...REGIONS.map((z, i): ItemBase => ({ id: mapOf(z), name: 'Schatzkarte: ' + REGION_GEN[z], kind: 'consumable', icon: 'scroll', stack: true, price: 80 + i * 60,
     desc: MAP_DESC[z] + ' Benutzen, um die Stelle zu markieren – gegraben wird vor Ort.', use: { tmap: z } })),
   ...TROPHIES.map(([id, name, icon, desc]): ItemBase => ({ id: trophyOf(id), name: 'Trophäe: ' + name, kind: 'consumable', icon, stack: true, price: 160,

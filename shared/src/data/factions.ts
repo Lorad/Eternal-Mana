@@ -10,6 +10,7 @@ import { ITEMS, itemPrice, makeStack } from './items';
 import { BIOME_MATS, ESSENCE, TIER_ORE } from './materials';
 import type { QuestDef } from './quests';
 import { scrollOf } from './recipes';
+import { TITLES, TITLE_SOURCES } from './rifts';
 import { REGIONS, mapOf, type RegionId } from './worlditems';
 import { ZONES } from './zones';
 
@@ -128,9 +129,9 @@ export const FACTION_LIST: FactionDef[] = [
     desc: 'Lioras Grabung: sechs Mitglieder, ein Maultier, ein Geist auf der Lohnliste und die feste Überzeugung, dass man alles beschriften kann.',
     donate: donate('ruinen'),
     stock: stock('ruinen', 'wind', [300, 1100, 520], [
-      { item: scrollOf('a_gelehrt'), rank: 3, price: 520 }, { item: scrollOf('a_aether'), rank: 4, price: 900 },
+      { item: scrollOf('a_gelehrt'), rank: 3, price: 520 }, { item: scrollOf('a_sternaether'), rank: 4, price: 900 },
       { item: 'c_charm_5', rank: 5, price: 3600, unique: { name: 'Fundnummer 4 471', acc: 'charm', affixes: [['cdr', 5], ['xpPct', 8], ['resWind', 12]] } }]),
-    perks: perks('Verlorene Ruinen', 'Rezepte: Meisterstück der Runenwaffe, Tinte der Gesellschaft · Windessenzen', 'Rezept: Ätherstaub verdichten · Schatzkarten · Titel „Achter Sockel“', 'Fundnummer 4 471 – ein Talisman mit eigenem Eintrag im Katalog'),
+    perks: perks('Verlorene Ruinen', 'Rezepte: Meisterstück der Runenwaffe, Tinte der Gesellschaft · Windessenzen', 'Rezept: Ätherstaub aus Sternsplittern · Schatzkarten · Titel „Achter Sockel“', 'Fundnummer 4 471 – ein Talisman mit eigenem Eintrag im Katalog'),
     lines: {
       liora: [[2, 'Du bist katalogisiert! Fundnummer 4 471: „Besucher, hilfsbereit, tritt nichts kaputt“. Das ist die höchste Kategorie.'],
         [3, 'Ich habe dich in der Danksagung erwähnt! Seite neun. Zwischen dem Maultier und dem Mann, der die Schaufeln geliehen hat.'],
@@ -246,10 +247,7 @@ export function repLine(c: CharData, npc: string): string | undefined {
   }
   return undefined;
 }
-/** Titel, die der Charakter tragen darf: Fraktions-ID → Titel */
-export function titlesOf(c: CharData): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const f of FACTION_LIST) if (rankIn(c, f.id) >= 4) out[f.id] = f.title;
-  return out;
-}
-export function titleOf(c: CharData): string | undefined { return c.title && titlesOf(c)[c.title] ? FACTIONS[c.title].title : undefined; }
+// Fraktionstitel gehören zu den Titeln des Spiels (TITLES, 0.5): ab Rang 4 darf man ihn führen; Kennung = Fraktions-ID
+export const TITLE_RANK = 4;
+for (const f of FACTION_LIST) TITLES[f.id] = { name: f.title, desc: `Rang „${RANK_NAMES[TITLE_RANK - 1]}“ erreicht: ${f.name}.` };
+TITLE_SOURCES.push(c => FACTION_LIST.filter(f => rankIn(c, f.id) >= TITLE_RANK).map(f => f.id));

@@ -8,6 +8,7 @@ import { isNight } from '../../../shared/src/data/events';
 import { makeStack } from '../../../shared/src/data/items';
 import { BIOME_MATS, ESSENCE } from '../../../shared/src/data/materials';
 import { RARE_BY_MOB, RARE_LIST, type RareDef } from '../../../shared/src/data/rares';
+import { kreisLevel } from '../../../shared/src/data/rifts';
 import { STAR, mapOf } from '../../../shared/src/data/worlditems';
 import { TILE } from '../../../shared/src/maps/tiles';
 import type { Element } from '../../../shared/src/types';
@@ -47,7 +48,7 @@ export function spawnRare(z: Zone, id: string, force = false): Mob | null {
     const c = poi && freeNear(z.map, poi.x + dx, poi.y + dy, 6);
     if (!c) continue;
     if (!force && [...z.players.values()].some(p => Math.hypot(p.x - c.x, p.y - c.y) < R.spawnDist)) continue;
-    const m = spawnMob(z, def.mob, def.lvl, c.x, c.y, { summoned: false });
+    const m = spawnMob(z, def.mob, kreisLevel(def.lvl, z.kreis), c.x, c.y, { summoned: false }); // im Neuen Kreis wachsen sie mit
     m.tough = true; m.awake = false;
     s.mob = m; s.spawnedAt = now; s.st = { at: now, lastHp: m.hp, lastHit: now }; s.hinted.clear();
     return m;

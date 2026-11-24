@@ -1,6 +1,7 @@
 import { CFG } from '../../shared/src/config';
 import { ITEMS } from '../../shared/src/data/items';
 import { DERIVED_OBJECTIVES, QUESTS, QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../shared/src/data/quests';
+import { QUELL_MAX } from '../../shared/src/data/rifts';
 import { computeStats } from '../../shared/src/stats';
 import { Anim, FLAG_BUFF, FLAG_DEAD, FLAG_INVULN, FLAG_ROLL, FLAG_SHIELD, STATUS_BIT } from '../../shared/src/types';
 import type { CharData, Derived, Element, GameEvent, ItemInstance, Mods, ServerMsg, StatusId } from '../../shared/src/types';
@@ -57,7 +58,7 @@ export class Player {
   flush() {
     if (this.dirty.size) {
       const d: Partial<CharData> = {};
-      for (const k of this.dirty) (d as any)[k] = this.char[k];
+      for (const k of this.dirty) (d as any)[k] = this.char[k] ?? null; // null = Feld entfernt (z. B. Titel abgelegt) – `undefined` ginge im JSON verloren
       this.dirty.clear();
       this.send({ t: 'char', d });
     }
@@ -132,7 +133,7 @@ export class Player {
   gainGold(n: number) { this.char.gold += Math.max(0, Math.round(n)); this.sync('gold'); }
   gainXp(n: number) {
     const c = this.char;
-    if (c.level >= CFG.player.maxLevel) return;
+    if (c.level >= CFG.player.maxLevel) { this.gainQuellXp(Math.max(1, Math.round(n * (1 + this.stats.xpPct / 100)))); return; }
     c.xp += Math.max(1, Math.round(n * (1 + this.stats.xpPct / 100)));
     let leveled = false;
     while (c.level < CFG.player.maxLevel && c.xp >= CFG.xpToNext(c.level)) {
@@ -148,13 +149,30 @@ export class Player {
       this.zone.ev({ k: 'fx', n: 'levelup', x: this.x, y: this.y });
       this.zone.ev({ k: 'txt', x: this.x, y: this.y - 26, s: `Stufe ${c.level}!`, col: '#ffe27a' });
       this.toast(`Stufe ${c.level} erreicht! +${CFG.player.attrPointsPerLevel} Attributspunkte, +1 Fähigkeitspunkt`, 'good');
+      if (c.level >= CFG.player.maxLevel) this.toast('Höchststufe erreicht. Erfahrung verfällt nicht: Sie füllt ab jetzt Quellstufen.', 'story');
       this.zone.game.broadcastPlayerInfo(this);
       this.sync('level', 'attrPoints', 'skillPoints');
     }
     this.sync('xp');
   }
+  /** 0.5: Erfahrung über die Höchststufe hinaus füllt Quellstufen – jede gibt einen Quellpunkt (verteilen: server/src/endgame.ts). */
+  gainQuellXp(n: number) {
+    const q = (this.char.quell ??= { lvl: 0, xp: 0, pts: {} });
+    if (q.lvl >= QUELL_MAX) return;
+    q.xp += n;
+    let up = 0;
+    while (q.lvl < QUELL_MAX && q.xp >= CFG.quell.xpToNext(q.lvl)) { q.xp -= CFG.quell.xpToNext(q.lvl); q.lvl++; up++; }
+    if (q.lvl >= QUELL_MAX) q.xp = 0;
+    if (up) {
+      this.zone.ev({ k: 'fx', n: 'levelup', x: this.x, y: this.y });
+      this.zone.ev({ k: 'txt', x: this.x, y: this.y - 26, s: `Quellstufe ${q.lvl}!`, col: '#8fdcff' });
+      this.toast(`Quellstufe ${q.lvl} erreicht! +${up} Quellpunkt${up > 1 ? 'e' : ''}`, 'good');
+    }
+    this.sync('quell');
+  }
   heal(n: number, show = true) {
     if (this.dead || n <= 0) return;
+    n *= this.zone.mod.heal; // 0.5: Riss-Modifikator „Versiegt“
     const before = this.hp;
     this.hp = Math.min(this.stats.maxHp, this.hp + n);
     const got = Math.round(this.hp - before);
@@ -220,7 +238,8 @@ export class Player {
 
   snapshotChar(): CharData {
     const c = this.char;
-    c.zone = this.zone.id; c.x = Math.round(this.x); c.y = Math.round(this.y);
+    const home = this.zone.home; // Riss-Instanzen lassen sich nicht wieder betreten: gespeichert wird der Platz am Riss-Stein
+    c.zone = home ? home.zone : this.zone.id; c.x = Math.round(home ? home.x : this.x); c.y = Math.round(home ? home.y : this.y);
     c.hp = Math.max(1, Math.round(this.hp)); c.mp = Math.round(this.mp);
     // laufende Speise / laufendes Elixier mit Restdauer sichern
     const now = this.zone.game.now, timed: Record<string, [string, number]> = {};

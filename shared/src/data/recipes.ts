@@ -5,7 +5,7 @@
  */
 import { CFG } from '../config';
 import type { ClassId, Element, Mods } from '../types';
-import { AETHER, ALL_CORES, BOSS_CORE, ESSENCE, TIER_INGREDIENT, TIER_MONSTER, TIER_ORE } from './materials';
+import { AETHER, ALL_CORES, BOSS_CORE, ECHO_FRAG, ESSENCE, TIER_INGREDIENT, TIER_MONSTER, TIER_ORE } from './materials';
 import { SET_LIST, setPieceName, type SetPiece } from './sets';
 
 export type StationId = 'forge' | 'alchemy' | 'cooking' | 'enchant';
@@ -61,6 +61,8 @@ export interface RecipeDef {
   cls?: ClassId;
   /** nur bei diesen NPCs herstellbar */
   npcs?: string[];
+  /** Rezeptrolle gibt es nur als besondere Belohnung (nie als Zufallsfund) */
+  exclusive?: boolean;
   /** 0.6: Rolle stammt nur aus der Lebendigen Welt (`ruf` = Fraktionshändler, `welt` = Ereignisse, seltene Monster, Fahrende Händlerin) – nie aus der allgemeinen Beute */
   src?: 'ruf' | 'welt';
 }
@@ -119,6 +121,11 @@ const RES_ING: Record<string, string> = { earth: BERRY, wind: BERRY, light: CAP,
 for (const el of ['fire', 'water', 'earth', 'wind', 'light', 'dark'] as const)
   item('a_res_' + el, 'alchemy', 'elixir', 'elx_res_' + el, 1, RES_LEVEL[el], 30, [[ESSENCE[el], 3], [RES_ING[el], 2]], 'learn');
 
+// Endspiel (0.5): Echo-Fragmente zu Ätherstaub verdichten; das Elixier der Sieben (Rezept nur aus der Prüfung der Sieben)
+item('a_aether', 'alchemy', 'potion', AETHER, 1, 30, 400, [[ECHO_FRAG, 6]]);
+item('a_sieben', 'alchemy', 'elixir', 'elx_sieben', 1, 40, 150, [[ECHO_FRAG, 1], ...(['fire', 'water', 'earth', 'wind', 'light', 'dark'] as const).map(el => [ESSENCE[el], 1] as [string, number])], 'learn');
+R[R.length - 1].exclusive = true;
+
 // ------------------------------------------------------------------ Kochen
 item('c_beeren', 'cooking', 'food', 'food_beeren', 2, 1, 0, [[BERRY, 3], ['mat_herb', 1]]);
 item('c_pilz', 'cooking', 'food', 'food_pilz', 2, 6, 0, [[CAP, 3], [BERRY, 1]]);
@@ -134,7 +141,8 @@ const world = (id: string, station: StationId, cat: string, out: string, qty: nu
   R.push({ id, station, name: '', cat, inputs, gold, level, out: { k: 'item', item: out, qty }, unlock: 'learn', src });
 world('a_stern', 'alchemy', 'elixir', 'elx_stern', 1, 10, 40, [[STAR, 2], [ESSENCE.light, 2], ['mat_herb', 2]], 'welt');
 world('c_stern', 'cooking', 'food', 'food_stern', 2, 10, 0, [[STAR, 2], [BERRY, 3], [FIG, 1]], 'welt');
-world('a_aether', 'alchemy', 'potion', AETHER, 1, 25, 300, [[STAR, 12], [ESSENCE.light, 4], [ESSENCE.dark, 4]], 'welt');
+// (nicht zu verwechseln mit `a_aether` aus 0.5: Ätherstaub aus Echo-Fragmenten)
+R.push({ id: 'a_sternaether', station: 'alchemy', name: 'Ätherstaub aus Sternsplittern', cat: 'potion', inputs: [[STAR, 12], [ESSENCE.light, 4], [ESSENCE.dark, 4]], gold: 300, level: 25, out: { k: 'item', item: AETHER, qty: 1 }, unlock: 'learn', src: 'welt' });
 world('c_kresse', 'cooking', 'food', 'food_kresse', 2, 4, 0, [['mat_herb', 4], [BERRY, 2]], 'ruf');
 world('a_grube', 'alchemy', 'elixir', 'elx_grube', 1, 9, 35, [['mm_glimmer', 3], [CAP, 2], [ESSENCE.light, 1]], 'ruf');
 world('c_fladen', 'cooking', 'food', 'food_fladen', 2, 13, 0, [[PEPPER, 3], ['mm_ashclaw', 1], [BERRY, 1]], 'ruf');
@@ -181,6 +189,11 @@ export const ENCHANT_LIST: EnchantDef[] = [
   { id: 'nachtwache', name: 'Rune der Nachtwache', slots: ARMOR, mods: { resAll: 3, hpRegen: 1 }, cost: [['mat_star', 5], [E.dark, 3]], gold: 350, level: 12 },
   { id: 'wanderer', name: 'Rune des Wanderers', slots: ['accessory'], mods: { speedPct: 2, xpPct: 5 }, cost: [['mat_star', 4], [E.wind, 4]], gold: 300, level: 10 },
   { id: 'harmonie', name: 'Rune der Harmonie', slots: ['accessory'], mods: { resAll: 4 }, cost: (Object.values(E) as string[]).map(e => [e, 2] as [string, number]), gold: 600, level: 20 },
+  // Echo-Runen (0.5): die stärksten Runen – brauchen Echo-Fragmente und Ätherstaub aus den Mana-Rissen
+  { id: 'echo_macht', name: 'Echo-Rune der Macht', slots: ['weapon'], mods: { powerPct: 8, elemPct: 6 }, cost: [[ECHO_FRAG, 12], [AETHER, 2], [E.fire, 10]], gold: 4000, level: 40 },
+  { id: 'echo_schaerfe', name: 'Echo-Rune der Schärfe', slots: ['weapon'], mods: { crit: 6, critDmg: 14 }, cost: [[ECHO_FRAG, 12], [AETHER, 2], [E.wind, 10]], gold: 4000, level: 40 },
+  { id: 'echo_wacht', name: 'Echo-Rune der Wacht', slots: ARMOR, mods: { hpPct: 7, defPct: 6 }, cost: [[ECHO_FRAG, 8], [AETHER, 1], [E.earth, 10]], gold: 2500, level: 40 },
+  { id: 'echo_einklang', name: 'Echo-Rune des Einklangs', slots: ['accessory'], mods: { resAll: 7, cdr: 3 }, cost: [[ECHO_FRAG, 8], [AETHER, 1], [E.light, 6], [E.dark, 6]], gold: 2500, level: 40 },
 ];
 export const ENCHANTS: Record<string, EnchantDef> = Object.fromEntries(ENCHANT_LIST.map(e => [e.id, e]));
 export type InfuseElement = Exclude<Element, 'phys'>;

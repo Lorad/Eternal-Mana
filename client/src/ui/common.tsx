@@ -9,7 +9,7 @@ import { onSettingsChange, settings } from '../state/settings';
 import { store } from '../state/store';
 import { CFG, ELEMENT_NAME, RARITY_COLOR, RARITY_NAME } from '../../../shared/src/config';
 import { CLASSES } from '../../../shared/src/data/classes';
-import { ITEMS, baseMods, canEquip, isGear, itemMods, itemName, sellPrice, slotOf } from '../../../shared/src/data/items';
+import { ITEMS, baseMods, canEquip, equipLevel, isGear, itemMods, itemName, sellPrice, slotOf } from '../../../shared/src/data/items';
 import type { ItemBase } from '../../../shared/src/data/items';
 import { MOD_LABEL } from '../../../shared/src/types';
 import type { CharData, ClientMsg, Element, ItemInstance, ModKey, Mods, Slot } from '../../../shared/src/types';
@@ -255,7 +255,7 @@ export function ItemDetails({ item: it, char, equipped, price, compare = true }:
   const base = gear ? modEntries(baseMods(it)) : [];
   const cls = classesFor(b);
   const usable = !char || !gear || canEquip(char.cls, b);
-  const lvlReq = gear ? Math.max(1, it.ilvl - 2) : 0;
+  const lvlReq = gear ? equipLevel(it.ilvl) : 0;
   const other = compare && char && gear && !equipped && usable ? compareTarget(char, it) : null;
   const deltas = other ? modDeltas(itemMods(it), itemMods(other)) : [];
   const sell = sellPrice(it);

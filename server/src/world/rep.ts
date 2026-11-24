@@ -3,7 +3,7 @@
  * Alles wird hier geprüft – Nähe zum Ansprechpartner, Rang, Gold, Besitz. Regeln und Zahlen: shared/src/data/factions.ts.
  */
 import { CFG } from '../../../shared/src/config';
-import { FACTIONS, RANK_NAMES, factionOfNpc, factionOfZone, factionStock, questRep, rankOf, repOf, titlesOf } from '../../../shared/src/data/factions';
+import { FACTIONS, RANK_NAMES, TITLE_RANK, factionOfNpc, factionOfZone, factionStock, questRep, rankOf, repOf } from '../../../shared/src/data/factions';
 import { ITEMS, newUid } from '../../../shared/src/data/items';
 import type { QuestDef } from '../../../shared/src/data/quests';
 import type { ItemInstance } from '../../../shared/src/types';
@@ -24,7 +24,8 @@ export function addRep(p: Player, faction: string, n: number, quiet = false) {
   if (r1 > r0) {
     p.toast(`${f.name}: Rang „${RANK_NAMES[r1 - 1]}“ erreicht. ${f.perks[r1 - 1]}`, 'story');
     p.pev.push({ k: 'sfx', n: 'quest_complete' });
-    if (r1 >= 4 && r0 < 4 && !p.char.title) { p.char.title = f.id; p.sync('title'); p.zone.game.broadcastPlayerInfo(p); }
+    // den ersten Titel trägt man gleich (wählen: Fenster „Ruf und Welt“ oder das Endspiel-Fenster)
+    if (r1 >= TITLE_RANK && r0 < TITLE_RANK && !p.char.title) { p.char.title = f.id; p.sync('title'); p.zone.game.broadcastPlayerInfo(p); }
   }
 }
 /** Ruf bei der Fraktion der Zone, in der etwas geschah */
@@ -72,13 +73,4 @@ export function factionBuy(g: Game, p: Player, npc: string, idx: number, qty: nu
   p.send({ t: 'loot', item: it });
   p.pev.push({ k: 'sfx', n: 'buy' });
   p.checkCollectQuests();
-}
-
-/** Fraktionstitel wählen ('' = keinen tragen) */
-export function setTitle(g: Game, p: Player, id: string) {
-  id = String(id ?? '');
-  if (id && !titlesOf(p.char)[id]) return reject(p, 'Diesen Titel hast du dir noch nicht verdient.');
-  p.char.title = id; // '' = keiner (als leerer Wert gespeichert, damit der Client die Änderung sieht)
-  p.sync('title');
-  g.broadcastPlayerInfo(p);
 }

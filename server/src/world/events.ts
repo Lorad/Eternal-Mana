@@ -9,21 +9,23 @@ import { knowsRecipe } from '../../../shared/src/craft';
 import { EVENTS, TRADER_SLOTS, eventPool, isNight, isRegion, traderGoods, type EventDef, type EventKind } from '../../../shared/src/data/events';
 import { discounted, shopDiscount } from '../../../shared/src/data/factions';
 import { ITEMS, generateGear, makeStack, newUid, rollRarity } from '../../../shared/src/data/items';
-import { AETHER, BIOME_MATS, ESSENCE } from '../../../shared/src/data/materials';
+import { AETHER, BIOME_MATS, ECHO_FRAG, ESSENCE } from '../../../shared/src/data/materials';
 import { TRADER_NPC } from '../../../shared/src/data/npcs_welt';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { WORLD_BOSSES, type WorldBossDef } from '../../../shared/src/data/rares';
 import { LEARNABLE, scrollOf } from '../../../shared/src/data/recipes';
 import { STAR, mapOf, trophyOf } from '../../../shared/src/data/worlditems';
+import { ZONES } from '../../../shared/src/data/zones';
+import { getMap } from '../../../shared/src/maps/mapgen';
 import type { Element, ItemInstance, ModKey, TraderOffer, WorldEventInfo } from '../../../shared/src/types';
 import { Rng, strHash } from '../../../shared/src/util/rng';
 import type { Game } from '../game';
 import type { Player } from '../player';
 import type { Mob, Obj, Zone } from '../zone';
 import { addRep, addZoneRep } from './rep';
-import { addObj, alive, eventSites, gw, placeName, playersNear, removeMob, removeObj, ringSpot, rnd, seasonOf, spawnMob, worldTime, zoneLevel, zw, type ActiveEvent, type TraderState } from './state';
+import { addObj, alive, eventSites, gw, mapSites, placeName, placeOf, playersNear, removeMob, removeObj, ringSpot, rnd, seasonOf, spawnMob, worldOf, worldTime, zoneLevel, zw, type ActiveEvent, type BossWindow, type TraderState } from './state';
 
-const E = CFG.living.events, B = CFG.living.boss;
+const L = CFG.living, E = L.events, B = L.boss;
 const TIER_NAME = ['', 'Bronze', 'Silber', 'Gold'];
 const essenceOf = (el: Element): string | undefined => (ESSENCE as Record<string, string>)[el];
 
@@ -35,7 +37,7 @@ function tellZone(z: Zone, s: string, kind: 'story' | 'info' | 'good' = 'story')
 /** Eine Rezeptrolle der Welt (auch die nur hier erhältlichen), die der Spieler noch nicht kennt und nicht bei sich trägt */
 export function worldScroll(z: Zone, p: Player): string | null {
   const max = z.def.level[1] + 6;
-  const open = LEARNABLE.filter(r => r.src !== 'ruf' && !knowsRecipe(p.char, r) && !p.countItem(scrollOf(r.id)) && r.level <= max && (!r.cls || r.cls === p.char.cls));
+  const open = LEARNABLE.filter(r => r.src !== 'ruf' && !r.exclusive && !knowsRecipe(p.char, r) && !p.countItem(scrollOf(r.id)) && r.level <= max && (!r.cls || r.cls === p.char.cls));
   return open.length ? scrollOf(z.rng.pick(open).id) : null;
 }
 /** Trophäe: beim ersten Mal sicher, danach mit `repeat`. Wer sie schon in der Sammlung oder im Rucksack hat, bekommt beim ersten Mal keine zweite. */
@@ -353,6 +355,7 @@ function payout(ev: ActiveEvent) {
       addZoneRep(p, z.id, CFG.living.rep.event[tier] * Math.max(0.5, ev.def.mul));
       if (tier >= 2 && z.rng.chance(E.mapChance)) p.give(makeStack(mapOf(z.id)));
       if (tier >= 2 && z.rng.chance(E.scrollChance)) { const s = worldScroll(z, p); if (s) p.give(makeStack(s)); }
+      if (tier >= 2 && hi >= L.echo.minLevel && z.rng.chance(L.echo.event)) p.give(makeStack(ECHO_FRAG)); // Welten der Neuen Kreise
     }
     kind.reward?.(ev, p, tier);
     if (k > 0) p.toast(`${ev.def.name} abgeschlossen – dein Beitrag: ${TIER_NAME[tier]}.`, 'good');
@@ -459,26 +462,53 @@ export function traderBuy(p: Player, idx: number, qty: number): boolean {
 // =====================================================================================================================
 //  Weltbosse
 // =====================================================================================================================
-/** Lässt einen Weltboss auftreten und sagt ihn auf dem ganzen Server an. */
-export function startBoss(g: Game, def: WorldBossDef, zoneId?: string, at?: { x: number; y: number }): ActiveEvent | null {
-  const z = g.zone(zoneId && (def.zones as string[]).includes(zoneId) ? zoneId : def.zones[Math.floor(Math.random() * def.zones.length)]);
-  const zs = zw(z), now = g.now;
-  if (zs.boss) return null;
-  const sites = eventSites(z, 0), site = at ?? (sites.length ? z.rng.pick(sites) : null);
+/** Welt-Instanzen einer Region (jeder Neue Kreis hat seine eigene; Mana-Risse zählen nie dazu) */
+const worldsOf = (g: Game, zoneId: string) => [...g.zones.values()].filter(z => z.id === zoneId && !z.rift);
+/**
+ * Öffnet den Auftritt eines Weltbosses und sagt ihn auf dem ganzen Server an. Der Auftritt gilt für die Region in jeder
+ * Welt (Kreis); in einer Instanz steht der Boss, sobald dort jemand ist (`spawnBossIn`).
+ */
+export function openBossWindow(g: Game, def: WorldBossDef, zoneId?: string, at?: { x: number; y: number }): BossWindow | null {
+  const G = gw(g);
+  if (G.bossWin.has(def.id)) return null;
+  // bevorzugt dort, wo gerade jemand ist
+  const busy = def.zones.filter(id => worldsOf(g, id).some(z => z.players.size));
+  const zid = zoneId && (def.zones as string[]).includes(zoneId) ? zoneId : (busy.length ? busy : def.zones)[Math.floor(Math.random() * (busy.length || def.zones.length))];
+  const sites = mapSites(getMap(zid)), site = at ?? sites[Math.floor(Math.random() * sites.length)];
   if (!site) return null;
+  const win: BossWindow = { def, zoneId: zid, site: { x: Math.round(site.x), y: Math.round(site.y) }, until: g.now + B.despawnSec, done: new Set(), kills: 0, infoId: G.nextId++ };
+  G.bossWin.set(def.id, win);
+  G.bossNext[def.id] = worldTime(g) + B.respawn[0] + Math.random() * (B.respawn[1] - B.respawn[0]);
+  G.dirty = true;
+  g.sysChat(`${def.announce} ${ZONES[zid].name}, ${placeOf(getMap(zid), win.site.x, win.site.y)}.`);
+  for (const p of g.players.values()) p.toast(`Weltboss: ${def.name} – ${ZONES[zid].name}`, 'story');
+  for (const z of worldsOf(g, zid)) if (z.players.size) spawnBossIn(z, win);
+  return win;
+}
+/** Stellt den Weltboss eines laufenden Auftritts in diese Welt-Instanz – außer er wurde hier schon besiegt. */
+export function spawnBossIn(z: Zone, win: BossWindow): ActiveEvent | null {
+  const zs = zw(z), def = win.def, now = z.game.now;
+  if (zs.boss || z.rift || z.id !== win.zoneId || win.done.has(z.key) || now > win.until) return null;
   const evDef: EventDef = { kind: 'boss' as EventKind, name: def.name, glyph: '☠', start: def.announce, goal: def.title, win: def.win, fail: def.gone, mul: 1 };
-  const ev = newEvent(z, evDef, Math.round(site.x), Math.round(site.y), now);
-  ev.boss = def; ev.engaged = true; ev.until = now + B.despawnSec;
-  const m = spawnMob(z, def.mob, z.def.level[1] + 2, ev.x, ev.y, { summoned: false });
+  const ev = newEvent(z, evDef, win.site.x, win.site.y, now);
+  ev.boss = def; ev.win = win; ev.engaged = true; ev.until = win.until;
+  const m = spawnMob(z, def.mob, z.def.level[1] + 2, ev.x, ev.y, { summoned: false }); // z.def trägt im Neuen Kreis schon die höhere Stufe
   m.tough = true; m.ownScale = true; m.awake = false;
   ev.bossMob = m;
   ev.st = { base: m.maxHp, n: 1, step: 0, nextAt: 0, acc: 0 };
   zs.boss = ev;
-  gw(g).events.add(ev); gw(g).dirty = true;
-  const s = `${def.announce} ${z.def.name}, ${placeName(z, ev.x, ev.y)}.`;
-  g.sysChat(s);
-  for (const p of g.players.values()) p.toast(`Weltboss: ${def.name} – ${z.def.name}`, 'story');
+  gw(z.game).events.add(ev); gw(z.game).dirty = true;
   return ev;
+}
+/** Erzwungener Auftritt (Tests, Dev-Befehl): öffnet ihn nötigenfalls und stellt den Boss sofort in diese Instanz. */
+export function startBoss(g: Game, def: WorldBossDef, zone?: string | Zone, at?: { x: number; y: number }): ActiveEvent | null {
+  const want = typeof zone === 'object' ? zone : undefined;
+  const running = gw(g).bossWin.get(def.id);
+  const win = running ?? openBossWindow(g, def, want?.id ?? (zone as string | undefined), at);
+  if (!win) return null;
+  const z = want ?? g.zone(win.zoneId), here = zw(z).boss;
+  if (running) return here ? null : spawnBossIn(z, win);        // läuft schon: höchstens noch in eine weitere Welt stellen
+  return here?.win === win ? here : spawnBossIn(z, win);        // eben geöffnet: steht er dort schon (jemand war da), sonst jetzt
 }
 function refresh(z: Zone, m: Mob) { z.ev({ k: 'mob-', id: m.id }); z.ev({ k: 'mob+', m: m.info() }); }
 function bossAttack(ev: ActiveEvent, what: WorldBossDef['pattern'][number], near: Player[], now: number) {
@@ -523,7 +553,7 @@ function tickBoss(ev: ActiveEvent, now: number) {
     for (const a of ev.mobs) removeMob(z, a);
     ev.mobs.clear();
   }
-  if (!inFight && now > ev.until) finishEvent(ev, 'fail');
+  if (!inFight && now > ev.win!.until) finishEvent(ev, 'fail', true); // der Auftritt ist vorbei (angesagt wird das einmal für alle Welten)
 }
 function bossMobDeath(ev: ActiveEvent, _m: Mob, rec: Player[]) { for (const p of rec) credit(ev, p, 2); }
 /** Der Weltboss selbst ist gefallen: alle Beteiligten persönlich belohnen. */
@@ -539,23 +569,27 @@ function bossReward(ev: ActiveEvent, p: Player, tier: number) {
   if (ess) p.give(makeStack(ess, Math.max(1, Math.round(r.int(B.essences[0], B.essences[1]) * k))));
   const bio = BIOME_MATS[z.def.biome];
   if (bio) p.give(makeStack(bio.monster, 2 + tier));
-  if (tier >= 2) p.give(generateGear(r, Math.min(CFG.player.maxLevel, m.lvl), Math.max(2, rollRarity(r, B.rarity)), p.char.cls));
+  if (tier >= 2) p.give(generateGear(r, Math.min(z.ilvlCap, m.lvl), Math.max(2, rollRarity(r, B.rarity)), p.char.cls));
   if (r.chance(B.aether * k)) p.give(makeStack(AETHER));
   if (r.chance(B.scroll * k)) { const s = worldScroll(z, p); if (s) p.give(makeStack(s)); }
   if (r.chance(B.map * k)) p.give(makeStack(mapOf(z.id)));
+  // ab Stufe 40 (Welten der Neuen Kreise): sparsam Echo-Fragmente
+  if (m.lvl >= L.echo.minLevel && r.chance(L.echo.boss * k)) p.give(makeStack(ECHO_FRAG, tier >= 3 ? 2 : 1));
   giveTrophy(z, p, def.id, 0.2);
   p.char.flags[`wb:${def.id}`] = (p.char.flags[`wb:${def.id}`] ?? 0) + 1; p.sync('flags');
   addZoneRep(p, z.id, CFG.living.rep.worldBoss * k);
   p.toast(`${def.name} besiegt – dein Beitrag: ${TIER_NAME[tier]}.`, 'good');
 }
-function finishBoss(ev: ActiveEvent, result: 'win' | 'fail', quiet: boolean) {
-  const z = ev.zone, g = z.game, G = gw(g), def = ev.boss!, m = ev.bossMob!;
+/** Beendet den Weltboss in EINER Instanz (Sieg oder Abzug); der Auftritt selbst läuft für die anderen Welten weiter. */
+function finishBoss(ev: ActiveEvent, result: 'win' | 'fail', _quiet: boolean) {
+  const z = ev.zone, g = z.game, G = gw(g), def = ev.boss!, m = ev.bossMob!, win = ev.win!;
   if (result === 'win') {
     for (const [p, tier] of tiersOf(ev)) { if (ev.paid.has(p.charId)) continue; ev.paid.add(p.charId); bossReward(ev, p, tier); }
     z.ev({ k: 'fx', n: 'bossdeath', x: m.x, y: m.y, el: def.element });
     z.ev({ k: 'sfx', n: 'boss_die', x: m.x, y: m.y });
-    g.sysChat(`${def.win} (${z.def.name})`);
-  } else if (!quiet) g.sysChat(def.gone);
+    win.done.add(z.key);
+    if (win.kills++ === 0) g.sysChat(`${def.win} (${z.def.name})`); else tellZone(z, def.win, 'good');
+  }
   for (const p of ev.shown) if (z.players.has(p.id)) p.pev.push({ k: 'bossend', id: m.id, won: result === 'win' });
   ev.shown.clear();
   z.clearHostile();
@@ -564,18 +598,38 @@ function finishBoss(ev: ActiveEvent, result: 'win' | 'fail', quiet: boolean) {
   ev.mobs.clear();
   G.events.delete(ev);
   if (zw(z).boss === ev) zw(z).boss = null;
-  G.bossNext[def.id] = worldTime(g) + B.respawn[0] + Math.random() * (B.respawn[1] - B.respawn[0]);
   G.dirty = true;
 }
-/** Im Spieltakt: fällige Weltbosse auftreten lassen (nur wenn jemand online ist). */
-export function scheduleBosses(g: Game) {
-  const G = gw(g), t = worldTime(g);
+/**
+ * Im Spieltakt (einmal je Sekunde): fällige Weltbosse auftreten lassen – nur wenn jemand online ist – und abgelaufene
+ * Auftritte schließen, sobald nirgends mehr gekämpft wird.
+ */
+export function scheduleBosses(g: Game, auto: boolean) {
+  const G = gw(g), t = worldTime(g), now = g.now;
+  for (const [id, win] of G.bossWin) {
+    if (now <= win.until) continue;
+    const left = [...G.events].filter(e => e.win === win);
+    if (left.some(e => e.zone.players.size && e.bossMob && e.bossMob.state !== 'idle' && e.bossMob.state !== 'return')) continue;
+    for (const e of left) finishEvent(e, 'fail', true);
+    G.bossWin.delete(id); G.dirty = true;
+    if (!win.kills) g.sysChat(win.def.gone);
+  }
+  if (!auto) return;
   for (const id in WORLD_BOSSES) {
     if (G.bossNext[id] === undefined) G.bossNext[id] = t + B.firstDelay[0] + Math.random() * (B.firstDelay[1] - B.firstDelay[0]);
-    if (t < G.bossNext[id] || [...G.events].some(e => e.boss?.id === id)) continue;
-    if (!g.onlineCount()) continue;
-    // bevorzugt dort, wo gerade jemand ist
-    const def = WORLD_BOSSES[id], busy = def.zones.find(zid => g.zones.get(zid)?.players.size);
-    if (!startBoss(g, def, busy)) G.bossNext[id] = t + 60;
+    if (t < G.bossNext[id] || G.bossWin.has(id) || !g.onlineCount()) continue;
+    if (!openBossWindow(g, WORLD_BOSSES[id])) G.bossNext[id] = t + 60;
   }
+}
+/** Weltzustand für einen Spieler: Ereignisse SEINER Welt (Kreis) und die laufenden Weltboss-Auftritte, die er dort noch antreffen kann. */
+export function eventInfos(g: Game, p: Player): WorldEventInfo[] {
+  const G = gw(g), k = worldOf(p), now = g.now;
+  const out = [...G.events].filter(e => e.zone.kreis === k && !e.zone.rift).map(e => eventInfo(e, p));
+  for (const win of G.bossWin.values()) {
+    if (out.some(e => e.boss && e.zone === win.zoneId)) continue;
+    const inst = worldsOf(g, win.zoneId).find(z => z.kreis === k);
+    if (win.done.has(inst?.key ?? (k > 0 ? `${win.zoneId}#k${k}` : win.zoneId))) continue;
+    out.push({ id: win.infoId, kind: 'boss', zone: win.zoneId, name: win.def.name, x: win.site.x, y: win.site.y, until: Math.max(0, Math.round(win.until - now)), goal: win.def.title, boss: 1 });
+  }
+  return out;
 }

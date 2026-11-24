@@ -19,7 +19,8 @@ import type { Mob, Obj, Zone } from '../server/src/zone';
 import { CFG } from '../shared/src/config';
 import { ENEMIES } from '../shared/src/data/enemies';
 import { EVENTS, EVENT_POOL, SEASON_NAMES, SEASON_NODES, eventPool, isNight, seasonAt, seasonWeathers } from '../shared/src/data/events';
-import { FACTIONS, FACTION_LIST, RANK_NAMES, backfillRep, factionOfZone, factionStock, rankOf, repOf, shopPrice, titleOf } from '../shared/src/data/factions';
+import { FACTIONS, FACTION_LIST, RANK_NAMES, backfillRep, factionOfZone, factionStock, rankOf, repOf, shopPrice } from '../shared/src/data/factions';
+import { ownedTitles, titleName as titleOf } from '../shared/src/data/rifts';
 import { ITEMS, makeStack } from '../shared/src/data/items';
 import { NPCS } from '../shared/src/data/npcs';
 import { QUESTS } from '../shared/src/data/quests';
@@ -516,7 +517,8 @@ describe('Weltboss', () => {
     expect(world(fern).ev.some(e => e.boss)).toBe(false);
     // lange Pause bis zum nächsten Auftritt
     const G = World.state.game(sim.game);
-    expect(G.bossNext.moosgrimm - (G.base + sim.game.now)).toBeGreaterThanOrEqual(CFG.living.boss.respawn[0] - 1);
+    expect(G.bossNext.moosgrimm - (G.base + sim.game.now)).toBeGreaterThanOrEqual(CFG.living.boss.respawn[0] - 60);
+    G.bossWin.clear();
     sim.clear();
   });
   it('zieht unbehelligt nach einer Weile weiter – auch wenn seine Zone leer ist', () => {
@@ -525,11 +527,12 @@ describe('Weltboss', () => {
     sim.travel(t, 'ruinen');
     sim.step(5);
     expect(zs(z).boss).toBe(ev);
-    ev.until = sim.game.now + 1;
+    World.state.game(sim.game).bossWin.get('niemand')!.until = sim.game.now + 1;   // der Auftritt läuft ab
     sim.step(3);
     expect(zs(z).boss).toBeNull();
     expect(z.mobs.has(ev.bossMob!.id)).toBe(false);
     expect(t.msgs.some(q => q.t === 'chat' && q.s.includes('weitermarschiert'))).toBe(true);
+    expect(World.state.game(sim.game).bossWin.size).toBe(0);
     sim.clear();
   });
 });

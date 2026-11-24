@@ -13,6 +13,8 @@ import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
 import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, modEntries, send, sfx } from './common';
 import { StationOptions } from './craft';
+import { KreisOption } from './endgame';
+import { kreisLevel } from '../../../shared/src/data/rifts';
 import { WorldOptions, worldGreeting } from './world';
 import { shopDiscount, shopPrice } from '../../../shared/src/data/factions';
 import { Objectives, QUEST_TYPE, Rewards } from './panels/quests';
@@ -81,6 +83,7 @@ function Dialog({ npc }: { npc: string }) {
           {def.services?.includes('upgrade') && <Opt mark="⚒" onClick={() => setView({ k: 'upgrade' })}>Ausrüstung verbessern</Opt>}
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
           <StationOptions npc={npc} />
+          <KreisOption npc={npc} />
           <WorldOptions npc={npc} />
           <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length && !topics.length}>Auf Wiedersehen</Opt>
         </div>
@@ -89,7 +92,7 @@ function Dialog({ npc }: { npc: string }) {
   } else if (view.k === 'quest') {
     body = <QuestTalk key={view.id + view.mode} q={QUEST_LIST.find(q => q.id === view.id)!} mode={view.mode} npc={npc} char={char} back={main} />;
   } else if (view.k === 'shop') {
-    body = <Shop npc={npc} char={char} zone={zone} zoneLevel={(ZONES[zone]?.level[0] ?? 1) + 1} back={main} />;
+    body = <Shop npc={npc} char={char} zone={zone} zoneLevel={kreisLevel(ZONES[zone]?.level[0] ?? 1, store.state.kreis) + 1} back={main} />;
   } else if (view.k === 'upgrade') {
     body = <Upgrade npc={npc} char={char} back={main} />;
   } else {

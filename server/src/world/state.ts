@@ -10,6 +10,7 @@ import { ENEMIES } from '../../../shared/src/data/enemies';
 import { seasonAt, type EncounterKind, type EventDef } from '../../../shared/src/data/events';
 import type { RareDef, Season, WorldBossDef } from '../../../shared/src/data/rares';
 import type { RoutineDef } from '../../../shared/src/data/routines';
+import type { GameMap } from '../../../shared/src/maps/mapgen';
 import { TILE } from '../../../shared/src/maps/tiles';
 import type { ItemInstance } from '../../../shared/src/types';
 import { freeNear, inSafe, reachable } from '../../../shared/src/world';
@@ -29,12 +30,17 @@ export interface ActiveEvent {
   st: any;
   result: 'win' | 'fail' | null;
   paid: Set<number>;
-  boss?: WorldBossDef; bossMob?: Mob;
+  boss?: WorldBossDef; bossMob?: Mob; win?: BossWindow;
   /** Spieler, denen die Bossleiste gezeigt wird */
   shown: Set<Player>;
   emptySince: number;
   goal: string; prog?: [number, number];
 }
+/**
+ * Auftritt eines Weltbosses: gilt für eine Region in JEDER Welt (jeder Neue Kreis hat seine eigene Instanz). Der Boss steht
+ * in einer Instanz erst, wenn dort jemand ist; `done` = Instanzen (Zone.key), in denen er schon besiegt wurde.
+ */
+export interface BossWindow { def: WorldBossDef; zoneId: string; site: { x: number; y: number }; until: number; done: Set<string>; kills: number; infoId: number }
 export interface RareState { def: RareDef; mob: Mob | null; nextAt: number; spawnedAt: number; st: any; hinted: Set<number> }
 export interface RoutineNpc { def: RoutineDef; obj: Obj; home: { x: number; y: number }; stops: { x: number; y: number }[]; cur: number; path: { x: number; y: number }[] | null; seg: number }
 export interface Encounter {
@@ -52,6 +58,8 @@ export interface GameWorld {
   season: Season;
   /** nächster Auftritt je Weltboss (Weltzeit) */
   bossNext: Record<string, number>;
+  /** laufende Auftritte je Weltboss */
+  bossWin: Map<string, BossWindow>;
   events: Set<ActiveEvent>;
   nextId: number;
   syncT: number; dirty: boolean; loaded: boolean;
@@ -74,7 +82,7 @@ export const META_KEY = 'welt';
 export function gw(g: Game): GameWorld {
   let s = games.get(g);
   if (!s) {
-    games.set(g, (s = { base: 0, season: 0, bossNext: {}, events: new Set(), nextId: 1, syncT: 0, dirty: false, loaded: true, auto: true }));
+    games.set(g, (s = { base: 0, season: 0, bossNext: {}, bossWin: new Map(), events: new Set(), nextId: 1, syncT: 0, dirty: false, loaded: true, auto: true }));
     // Weltzeit und Weltboss-Termine überdauern Neustarts (Tabelle `meta`); unlesbar oder leer: die Welt beginnt im Frühling
     try {
       const raw = JSON.parse(g.db.getMeta(META_KEY) ?? 'null');
@@ -149,25 +157,38 @@ export function zoneLevel(z: Zone, ps: Player[], over = 1): number {
  * Orte für Ereignisse: besondere Orte der Karte und die Mitte der Wege dazwischen – außerhalb der Schutzzonen
  * und mit Abstand zu allen Spielern (`minDist`), damit nichts vor den Augen der Spieler aus dem Boden wächst.
  */
-export function eventSites(z: Zone, minDist: number): { x: number; y: number }[] {
-  const m = z.map, def = z.def, out: { x: number; y: number }[] = [];
+const siteCache = new WeakMap<GameMap, { x: number; y: number }[]>();
+/** Alle möglichen Ereignisorte einer Karte (in jeder Welt-Instanz dieselben – die Karte hängt nicht am Kreis) */
+export function mapSites(m: GameMap): { x: number; y: number }[] {
+  let out = siteCache.get(m);
+  if (out) return out;
+  out = [];
+  const def = m.def;
   const add = (tx: number, ty: number) => {
     const c = freeNear(m, Math.round(tx), Math.round(ty), 6, (x, y) => !inSafe(m, x * TILE + 8, y * TILE + 8, 40));
-    if (!c) return;
-    for (const p of z.players.values()) if (Math.hypot(p.x - c.x, p.y - c.y) < minDist) return;
-    out.push(c);
+    if (c) out!.push(c);
   };
   for (const p of def.pois ?? []) if (p.kind === 'spot') add(p.x + 2, p.y + 3);
   for (const [a, b] of def.links ?? []) {
     const pa = def.pois!.find(p => p.id === a), pb = def.pois!.find(p => p.id === b);
     if (pa && pb) add((pa.x + pb.x) / 2, (pa.y + pb.y) / 2);
   }
+  siteCache.set(m, out);
   return out;
 }
+export function eventSites(z: Zone, minDist: number): { x: number; y: number }[] {
+  const ps = [...z.players.values()];
+  return mapSites(z.map).filter(c => !ps.some(p => Math.hypot(p.x - c.x, p.y - c.y) < minDist));
+}
+/** Ist die Instanz noch Teil der Welt? (Welten höherer Kreise werden verworfen, wenn sie eine Weile leer sind.) */
+export const zoneAlive = (z: Zone) => z.game.zones.get(z.key) === z;
+/** In welcher Welt (Kreis) spielt dieser Spieler gerade? Im Mana-Riss zählt die Welt, in die er zurückkehrt. */
+export const worldOf = (p: Player) => (p.zone.rift ? p.zone.game.worldKreis(p) : p.zone.kreis);
 /** Name des nächsten benannten Ortes (für Ansagen) */
-export function placeName(z: Zone, x: number, y: number): string {
+export function placeName(z: Zone, x: number, y: number): string { return placeOf(z.map, x, y); }
+export function placeOf(m: GameMap, x: number, y: number): string {
   let best = '', bd = 1e9;
-  for (const l of z.map.labels) { const d = Math.hypot(l.x - x, l.y - y); if (d < bd) { bd = d; best = l.name; } }
+  for (const l of m.labels) { const d = Math.hypot(l.x - x, l.y - y); if (d < bd) { bd = d; best = l.name; } }
   return best ? (bd < 10 * TILE ? `bei „${best}“` : `unweit von „${best}“`) : 'abseits der Wege';
 }
 export const rnd = (z: Zone, [a, b]: number[]) => z.rng.range(a, b);

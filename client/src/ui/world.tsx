@@ -10,11 +10,12 @@ import { store, togglePanel, useStore } from '../state/store';
 import { CFG, RARITY_COLOR } from '../../../shared/src/config';
 import { ENEMIES } from '../../../shared/src/data/enemies';
 import { EVENTS, SEASON_EFFECT, SEASON_GLYPH, SEASON_NAMES } from '../../../shared/src/data/events';
-import { FACTION_LIST, RANK_NAMES, REP_SOURCES, factionOfNpc, factionOfZone, factionStock, rankOf, rankProgress, repLine, repOf, shopDiscount, titlesOf, type FactionDef } from '../../../shared/src/data/factions';
+import { FACTION_LIST, RANK_NAMES, REP_SOURCES, factionOfNpc, factionOfZone, factionStock, rankOf, rankProgress, repLine, repOf, shopDiscount, type FactionDef } from '../../../shared/src/data/factions';
 import { ITEMS, itemName } from '../../../shared/src/data/items';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { TRADER_NPC } from '../../../shared/src/data/npcs_welt';
 import { RARE_LIST, TRAIT_TEXT, WORLD_BOSS_LIST } from '../../../shared/src/data/rares';
+import { ownedTitles } from '../../../shared/src/data/rifts';
 import { routineState } from '../../../shared/src/data/routines';
 import { TROPHIES, trophyOf } from '../../../shared/src/data/worlditems';
 import { ZONES } from '../../../shared/src/data/zones';
@@ -217,7 +218,7 @@ export function EncounterDialog() {
 // ------------------------------------------------------------------ Fenster „Ruf und Welt“
 function FactionDetail({ f, char }: { f: FactionDef; char: CharData }) {
   const rep = repOf(char, f.id), rank = rankOf(rep);
-  const titles = titlesOf(char);
+  const owned = ownedTitles(char).includes(f.id);
   const stock = factionStock(char, f);
   return (
     <div class="rep-detail card">
@@ -238,7 +239,7 @@ function FactionDetail({ f, char }: { f: FactionDef; char: CharData }) {
       <div class="rep-stock">
         {stock.map(e => <span class={cx('rep-item', e.locked && 'locked')} title={`${itemName(e.item)} – ab Rang „${RANK_NAMES[e.offer.rank - 1]}“`}><ItemSlot item={e.item} char={char} price={e.price} size="sm" /><i>{e.offer.rank}</i></span>)}
       </div>
-      {titles[f.id] && (
+      {owned && (
         <div class="row between rep-title">
           <span>Titel: <b>{f.title}</b></span>
           {char.title === f.id ? <Btn kind="small" onClick={() => send({ t: 'title', id: '' })}>Ablegen</Btn> : <Btn kind="small" onClick={() => send({ t: 'title', id: f.id })}>Tragen</Btn>}

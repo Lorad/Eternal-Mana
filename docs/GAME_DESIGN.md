@@ -142,6 +142,43 @@ Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohst
   (z. B. Krieger Feuersturm/Sandsturm, Magier Dampf/Frost/Feuersturm, Waldläufer Sandsturm/Frost, Paladin
   Zwielicht/Quellsegen, Schattenjäger Fäulnis/Zwielicht).
 
+## Endspiel (ab 0.5)
+
+Für Charaktere, die die Geschichte abgeschlossen haben. Wenige Mechaniken, die in Handwerk, Sets, Legendäre Waffen und
+Elemente zurückfließen.
+
+- **Mana-Risse:** Nach dem Sieg über den Hohlen König erwacht der **Riss-Stein** in Quellhain. Dort wählt man (in einer
+  Gruppe: wer sie anführt) einen der sechs Dungeons des ersten Akts und eine **Stufe** (1–30). Jeder Riss ist eine eigene
+  Instanz der Gruppe. Gegner stehen über der Höchststufe (Stufe 42 bei Riss-Stufe 1, 100 bei Stufe 30), Leben und Schaden
+  wachsen zusätzlich je Stufe. Wer Stufe n abschließt, schaltet n+1 frei (je Charakter; in der Gruppe alle Beteiligten).
+- **Modifikatoren:** einer bis Stufe 9, zwei ab 10, drei ab 20 – ausgewürfelt aus zwölf und schon vor dem Betreten zu
+  sehen. Nach jedem abgeschlossenen Riss mischen sie sich neu. *Glutspur* (brennender Boden), *Berstend* (Gegner
+  zerplatzen), *Elementwoche* (alle tragen ein Element, widerstehen ihm, sind für das Gegenelement anfällig),
+  *Finsternis* (halbes Licht, Gegner bemerken später), *Versiegt* (halbe Heilung), *Horden* (mehr, schwächere Gegner),
+  *Erwachte Schar* (viele Erwachte), *Wuchernd* (Gegner heilen, außer sie brennen oder sind vergiftet), *Gehetzt*
+  (schnellere Gegner), *Gläsern* (mehr Schaden erleiden, schnellere Fähigkeiten), *Manasturm* (Blitze auf den Standort),
+  *Manadürre* (halbe Regeneration, doppeltes Mana aus Standardangriffen).
+- **Boss-Echos:** Am Ende wartet das Echo des Dungeon-Bosses – blass eingefärbt, einheitlich stark und mit einer
+  Zusatzmechanik: Dornensaat, Prismengitter, Schlackenbrut, Spiegelschritt, Schnellschrift, Kronenschatten.
+- **Richtzeit und Lebensfunken:** Wer unter der Richtzeit bleibt, bekommt eine Bonustruhe; langsam zu sein beendet nichts.
+  Die Gruppe teilt sich Lebensfunken (3, je weiterem Mitglied einer mehr): Wiederkehr am Eingang kostet einen, Aufhelfen
+  durch Mitspieler nichts. Ohne Funken stößt der Riss Gefallene aus; fällt die ganze Gruppe, schließt er sich.
+- **Belohnung** (persönlich): Ausrüstung über der alten Obergrenze (Gegenstandsstufe 40 + Riss-Stufe, anlegbar ab Stufe
+  40), **Echo-Fragmente**, Ätherstaub, Setteile und das Boss-Unikat auf Riss-Stufe, Rezeptrollen.
+- **Echo-Fragmente** fließen ins Handwerk: **Angleichen** an der Schmiede hebt Legendäre Waffen, Setteile und Boss-Unikate
+  schrittweise auf die Beutestufe des höchsten abgeschlossenen Risses; vier **Echo-Runen** sind die stärksten
+  Verzauberungen; sechs Fragmente lassen sich zu Ätherstaub verdichten.
+- **Prüfung der Sieben:** ab abgeschlossener Stufe 15 – sieben Echos nacheinander in einem Raum (die sechs Bosse und das
+  Echo der Wacht). Lohn: der Titel „Bezwinger der Sieben“ hinter dem Namen und das Rezept *Elixier der Sieben*.
+- **Quellstufen:** Erfahrung über Stufe 40 hinaus füllt bis zu 60 Quellstufen; jede gibt einen Punkt für eine von sechs
+  Bahnen (Angriff, Leben, Verteidigung, Abklingzeit, Resistenzen, Goldfund). Jeder weitere Punkt auf einer Bahn bringt
+  weniger, bei zehn ist Schluss – voll ausgebaut sind es höchstens +6 % Angriff und +8 % Leben.
+- **Neuer Kreis:** Nach dem Epilog beginnt bei Mirelda die Geschichte von vorn (bis zu drei weitere Kreise werden
+  härter: kein Gegner unter Stufe 40/44/48, Bosse und Beute steigen mit). Es bleiben Stufe, Ausrüstung, Rezepte,
+  Chronik, Quellsplitter, Quellstufen, Riss-Fortschritt und Titel; Quests, Entscheidungen, Bosssiege, Truhen und
+  Quellsteine beginnen neu. Die gesehenen Enden und die Entscheidungen jedes Kreises bleiben vermerkt. Quests geben ab
+  dem zweiten Kreis Echo-Fragmente statt Punkten. **Gruppen spielen in der Welt des Mitglieds mit dem niedrigsten Kreis.**
+
 ## Balancing
 
 Alle Stellschrauben liegen zentral in `shared/src/config.ts` (Levelkurve, Gegnerformeln, Schadensminderung,

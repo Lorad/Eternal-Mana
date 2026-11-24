@@ -19,7 +19,8 @@ import { npcMarker } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ECHOES, objVisible, type CineStep } from '../../../shared/src/data/story';
 import { ZONES } from '../../../shared/src/data/zones';
-import { mobAffinity } from '../../../shared/src/elements';
+import { counterOf } from '../../../shared/src/data/rifts';
+import { affinities, mobAffinity } from '../../../shared/src/elements';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
 import { T, TILE } from '../../../shared/src/maps/tiles';
 import { computeStats } from '../../../shared/src/stats';
@@ -261,7 +262,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.centerOn(i.x, i.y);
     try { if (this.game.renderer.type === Phaser.WEBGL) { this.cameras.main.postFX.clear(); this.cameras.main.postFX.addVignette(0.5, 0.5, 0.92, def.indoor ? 0.42 : 0.26); } } catch { /* Canvas-Renderer: ohne Vignette */ }
     audio.setAmbience(def.ambience as AmbienceId);
-    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1, ...this.bossAff(i.boss.el) } }); audio.playMusic(this.bossMusic()); }
+    if (i.boss) { store.set({ boss: { id: i.boss.id, name: i.boss.name, phase: i.boss.phase, el: i.boss.el, hp: 1, maxHp: 1, ...this.bossAff(i.boss.el, i.boss.id) } }); audio.playMusic(this.bossMusic()); }
     else audio.playMusic(def.music as MusicId);
     live.zone = i.zone;
     this.sentX = i.x; this.sentY = i.y;
@@ -309,7 +310,7 @@ export class GameScene extends Phaser.Scene {
   private ambientColor(): number {
     if (!settings.lighting) return 0xffffff;
     const def = this.map.def, w = store.state.weather;
-    if (def.indoor) return INDOOR[def.biome][this.map.dungeon ? 1 : 0];
+    if (def.indoor) { const c = INDOOR[def.biome][this.map.dungeon ? 1 : 0]; return this.riftDark() < 1 ? mulC(c, 0x6c6c84) : c; } // Riss-Modifikator „Finsternis"
     let c = mulC(skyColor(store.state.tod), SEASON_TINT[store.state.world?.season ?? -1] ?? 0xffffff); // 0.6: Jahreszeit färbt das Himmelslicht
     if (def.dark > 0) c = mulC(c, lerpC(0xffffff, def.biome === 'glut' ? 0xd0a090 : 0xc8c8d8, Math.min(1, def.dark * 4)));
     if (w === 'rain' || w === 'blizzard') c = mulC(c, 0xc4ccdc);
@@ -342,11 +343,13 @@ export class GameScene extends Phaser.Scene {
     const sunny = this.sun.alpha > 0.04;
     for (const d of this.decorShadows) applyShadow(d.s, d.x, d.y, sunny ? this.sun : d.indoor);
   }
+  private riftDark(): number { return store.state.rift?.mods.includes('finsternis') ? CFG.rift.finsternis.light : 1; }
   private flash(x: number, y: number, r: number, color: number, i = 1, dur = 260) { this.flashes.push({ x, y, r, color, i, i0: i, until: performance.now() + dur, dur }); }
   private collectLights(now: number): LightSrc[] {
     const out: LightSrc[] = this.staticLights.slice();
     const dim = this.map.def.indoor || this.isDay() < 0.6;
-    if (dim) { out.push({ x: this.me.x, y: this.me.y - 10, r: 92, color: 0xffeccc, i: 0.85 }); for (const p of this.players.values()) out.push({ x: p.x, y: p.y - 10, r: 86, color: 0xffeccc, i: 0.8 }); }
+    const lr = this.riftDark(); // Riss-Modifikator „Finsternis“: das eigene Licht reicht nur halb so weit
+    if (dim) { out.push({ x: this.me.x, y: this.me.y - 10, r: 92 * lr, color: 0xffeccc, i: 0.85 }); for (const p of this.players.values()) out.push({ x: p.x, y: p.y - 10, r: 86 * lr, color: 0xffeccc, i: 0.8 }); }
     for (const v of this.objs.values()) if (v.light && !v.hidden) out.push({ x: v.o.x, y: v.o.y - 10, r: v.light[0], color: v.light[1], i: v.light[2], flicker: 0.05 });
     for (const v of this.projs.values()) if (v.p.spr !== 'arrow' && v.p.spr !== 'dagger' && v.p.spr !== 'rock') out.push({ x: v.x, y: v.y, r: 34, color: v.tint, i: 0.8 });
     for (const v of this.zfx.values()) if (v.z.r < 150 && (v.z.kind === 'zone' || !v.z.hostile)) out.push({ x: v.z.x, y: v.z.y, r: Math.min(96, v.z.r + 20), color: ELEMENT_COLOR[v.z.el], i: 0.6 });
@@ -364,10 +367,9 @@ export class GameScene extends Phaser.Scene {
   private addPlayer(p: PlayerInfo) {
     if (p.id === this.me.info.id) { this.me.info = p; return; }
     const old = this.players.get(p.id);
-    const name = p.title ? `${p.name} · ${p.title}` : p.name; // 0.6: Fraktionstitel
-    if (old) { old.info = p; old.label?.setText(name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff'); return; }
+    if (old) { old.info = p; old.label?.setText(p.title ? `${p.name} · ${p.title}` : p.name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff'); return; }
     const v = new PlayerView(this.ctx, p, false);
-    v.label?.setText(name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff');
+    v.label?.setText(p.title ? `${p.name} · ${p.title}` : p.name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff');
     v.x = -999; v.y = -999;
     this.players.set(p.id, v);
   }
@@ -464,6 +466,13 @@ export class GameScene extends Phaser.Scene {
       case 'node': img(o.x, o.y + 7, 'node_' + pr.kind); break;
       case 'shard': img(o.x, o.y + 4, 'shard_0', undefined, false); v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(0.5).setTint(0x70ffe8).setAlpha(0.4).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); v.light = [46, 0x70ffe8, 0.7]; break;
       case 'sign': img(o.x, o.y + 7, 'signpost'); break;
+      case 'riftstone': { // Endspiel (0.5): Riss-Stein in Quellhain
+        img(o.x, o.y + 8, this.objTex.has('riss_stein_0') ? 'riss_stein_0' : this.storyFrame('hueterschrein_0'), undefined, false);
+        v.glow = this.add.image(o.x, o.y - 12, 'fx', 'glow').setScale(0.9).setTint(0x8fdcff).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1);
+        v.light = [84, 0x8fdcff, 0.8];
+        v.label = this.text(o.x, o.y - 40, 'Riss-Stein', '#bfe9ff', 7).setOrigin(0.5, 1);
+        break;
+      }
       case 'cookfire': img(o.x, o.y + 7, this.cookLook(pr.look) + '_0'); v.light = [100, 0xffb060, 1]; v.glow = this.add.image(o.x, o.y - 6, 'fx', 'glow').setScale(0.8).setTint(0xffa040).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); break;
     }
     this.applyObjState(v, true);
@@ -781,7 +790,7 @@ export class GameScene extends Phaser.Scene {
       case 'boss': {
         const cur = store.state.boss;
         const v = this.mobs.get(e.id);
-        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el, v) } });
+        store.set({ boss: { id: e.id, name: e.name, phase: e.phase, el: e.el, hp: v?.hp ?? cur?.hp ?? 1, maxHp: v?.info.maxHp ?? cur?.maxHp ?? 1, ...this.bossAff(e.el, e.id) } });
         if (!cur) { audio.playMusic(this.bossMusic()); this.shake(0.02, 400); }
         if (v && (!cur || cur.phase !== e.phase || cur.el !== e.el)) {
           const tint = elTint(e.el);
@@ -902,8 +911,19 @@ export class GameScene extends Phaser.Scene {
   }
   /** Grafik der Kochstelle: die eigene Stations-Grafik, falls der Atlas sie schon enthält, sonst das Lagerfeuer der Zone. */
   private cookLook(look?: string): string { return this.objTex.has('station_cook_0') ? 'station_cook' : this.objTex.has((look ?? 'campfire') + '_0') ? look ?? 'campfire' : 'campfire'; }
-  /** Schwächen des Bosses; Weltbosse (0.6) sind gewöhnliche Gegner mit eigener Definition */
-  private bossAff(el: Element, v?: MobView) { const a = v && !v.boss ? mobAffinity(v.info.mob, false, el) : mobAffinity(this.map.def.boss ?? '', true, el); return { weak: a.weak, resist: a.resist }; }
+  /** Schwächen des Bosses. Im Riss steht dort ein Echo (Prüfung: wechselnde); Weltbosse (0.6) sind gewöhnliche Gegner mit eigener Definition. */
+  private bossAff(el: Element, id?: number) {
+    const v = id !== undefined ? this.mobs.get(id) : undefined;
+    const a = this.weekAff() ?? (v && !v.boss ? mobAffinity(v.info.mob, false, el) : mobAffinity(v?.info.mob || (this.map.def.boss ?? ''), true, el));
+    return { weak: a.weak, resist: a.resist };
+  }
+  /** Riss-Modifikator „Elementwoche“: alle Gegner tragen das Element der Woche, widerstehen ihm und sind für das Gegenelement anfällig. */
+  private weekAff(): { el: Element; weak: Element[]; resist: Element[] } | null {
+    const el = store.state.rift?.el;
+    if (!el) return null;
+    const c = counterOf(el);
+    return { el, ...affinities({ element: el, weak: c ? [c] : [], resist: [el] }) };
+  }
   /** Versetzt ein Objekt samt Schatten, Beschriftung und Marker (0.6: NPCs mit Tagesablauf, Begleitete) */
   private placeObj(v: ObjView, x: number, y: number) {
     const o = v.o, dx = x - o.x, dy = y - o.y;
@@ -949,7 +969,7 @@ export class GameScene extends Phaser.Scene {
     const cur = store.state.target;
     if (!v) { if (cur) store.set({ target: null }); return; }
     if (cur && cur.id === v.info.id && cur.hp === v.hp && cur.maxHp === v.info.maxHp) return;
-    const a = cur && cur.id === v.info.id ? cur : mobAffinity(v.info.mob, false);
+    const a = cur && cur.id === v.info.id ? cur : this.weekAff() ?? mobAffinity(v.info.mob, false);
     store.set({ target: { id: v.info.id, name: v.info.name ?? '', lvl: v.info.lvl, hp: v.hp, maxHp: v.info.maxHp, el: a.el, elite: !!v.info.elite, weak: a.weak, resist: a.resist } });
   }
   private playerNear(x: number, y: number): PlayerView | undefined {
@@ -1078,7 +1098,7 @@ export class GameScene extends Phaser.Scene {
       const c = st.char!;
       // 0.6: Objekte der Weltsysteme tragen `props.mark` (star, trader, enc); Ereignisorte kommen aus dem Weltzustand
       const wmark = (v: ObjView): string | null => (v.o.type === 'dig' ? 'dig' : v.o.props?.mark && v.o.props.mark !== 'event' ? v.o.props.mark : null);
-      live.objs = [...this.objs.values()].filter(v => !v.hidden && !v.o.props?.anchor && (wmark(v) || ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board'].includes(v.o.type)))
+      live.objs = [...this.objs.values()].filter(v => !v.hidden && !v.o.props?.anchor && (wmark(v) || ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board', 'riftstone'].includes(v.o.type)))
         .map(v => { const w = wmark(v); return { x: v.o.x, y: v.o.y, type: w ? 'w_' + w : v.o.type, state: v.o.state, mark: !w && v.o.type === 'npc' ? npcMarker(c, v.o.tag!) : null, label: v.o.props?.label }; });
     }
   }
@@ -1262,6 +1282,7 @@ export class GameScene extends Phaser.Scene {
         case 'shrine': if (this.countFrames('hueterschrein') > 1) v.parts[0].setFrame(anim('hueterschrein', o.state ? 140 : 260, 4)); if (v.glow && o.state === 1) v.glow.setAlpha(0.35 + 0.2 * Math.sin(now / 220)); break;
         case 'rift': if (this.countFrames('void_rift') > 1) v.parts[0].setFrame(anim('void_rift', 120, 4)); v.parts[0].y = o.y + 8 + Math.sin(now / 260) * 2; break;
         case 'lore': if (!o.state && v.glow) v.glow.setAlpha(0.35 + 0.15 * Math.sin(now / 300 + o.id)); break;
+        case 'riftstone': if (this.countFrames('riss_stein') > 1) v.parts[0].setFrame(anim('riss_stein', 170, 4)); if (v.glow) v.glow.setAlpha(0.3 + 0.15 * Math.sin(now / 340)); break;
         case 'wobj': {
           const fr: string | undefined = o.props?.frame, s0 = v.parts[0];
           if (!fr || !s0) break;
@@ -1343,8 +1364,9 @@ export class GameScene extends Phaser.Scene {
         case 'lore': text = o.state ? 'Erneut lesen' : 'Lesen'; break;
         case 'shrine': text = o.state === 2 ? 'Erinnerung erneut ansehen' : 'Hüterschrein berühren'; break;
         case 'rift': text = `${ECHOES[o.tag!]?.name ?? 'Riss'} berühren`; break;
-        case 'exit': if (o.props?.manual) text = `Hinabsteigen: ${o.props.label ?? ''}`; break;
+        case 'exit': if (o.props?.manual) text = `${o.props.verb ?? 'Hinabsteigen'}: ${o.props.label ?? ''}`; break;
         case 'cookfire': text = 'Am Feuer kochen'; break;
+        case 'riftstone': text = 'Riss-Stein berühren'; break;
       }
       if (!text) continue;
       const reach = o.type === 'door' || o.type === 'bossdoor' || o.type === 'shrine' || o.props?.manual ? d - 12 : d;
@@ -1373,6 +1395,7 @@ export class GameScene extends Phaser.Scene {
     if (o.type === 'board') { store.set({ dialog: { npc: 'ayla' }, panel: null, prompt: null }); return; }
     if (o.type === 'sign') { store.set({ sign: o.props?.text ?? '', prompt: null }); return; }
     if (o.type === 'cookfire') { store.set({ craft: { at: 'fire', station: 'cooking' }, panel: null, dialog: null, prompt: null }); return; }
+    if (o.type === 'riftstone') { store.set({ endgame: { tab: 'risse', stone: true }, panel: null, dialog: null, prompt: null }); return; }
     net.send({ t: 'interact', id: o.id });
     if (o.type === 'stone') this.time.delayedCall(250, () => store.set({ panel: 'map', nearStone: true }));
   }

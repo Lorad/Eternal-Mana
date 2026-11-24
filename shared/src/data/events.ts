@@ -134,7 +134,7 @@ export function traderGoods(zone: RegionId): { fixed: TraderGood[]; pool: Trader
       { item: 'mat_aether', price: 1100, max: 1, w: 1.5 },
       { item: scrollOf('a_stern'), price: 320, max: 1, w: 2 },
       { item: scrollOf('c_stern'), price: 280, max: 1, w: 2 },
-      { item: scrollOf('a_aether'), price: 950, max: 1, w: 1 },
+      { item: scrollOf('a_sternaether'), price: 950, max: 1, w: 1 },
       { item: scrollOf('c_fest'), price: 520, max: 1, w: 1 },
       { item: 'elx_stern', price: 190, max: 2, w: 2 },
       { item: 'potion_cleanse', price: 70, max: 4, w: 2 },

@@ -18,19 +18,19 @@ import type { Game } from '../game';
 import type { Player } from '../player';
 import type { Mob, Obj, Zone } from '../zone';
 import { encounterInteract, encounterMobDeath, encounterPick, startEncounter, tickEncounters } from './encounters';
-import { bossKilled, eventInfo, eventInteract, eventMobDeath, finishEvent, scheduleBosses, scheduleEvents, startBoss, startEvent, tickEvent, traderBuy, traderOffers } from './events';
+import { bossKilled, eventInfos, eventInteract, eventMobDeath, finishEvent, scheduleBosses, scheduleEvents, spawnBossIn, startBoss, startEvent, tickEvent, traderBuy, traderOffers } from './events';
 import { rareDeath, spawnRare, tickRares } from './rares';
-import { addRep, donate, factionBuy, onQuestDone, setTitle } from './rep';
+import { addRep, donate, factionBuy, onQuestDone } from './rep';
 import { snapRoutines, tickRoutines } from './routines';
-import { META_KEY, gw, ringSpot, seasonOf, worldTime, zw } from './state';
+import { META_KEY, gw, ringSpot, seasonOf, worldTime, zoneAlive, zw } from './state';
 import { dig, readMap, useTrophy } from './treasure';
 
 const L = CFG.living;
-type WorldMsg = Extract<ClientMsg, { t: 'donate' | 'fbuy' | 'wbuy' | 'dig' | 'enc' | 'title' }>;
+type WorldMsg = Extract<ClientMsg, { t: 'donate' | 'fbuy' | 'wbuy' | 'dig' | 'enc' }>;
 
 function infoFor(p: Player): WorldInfo {
-  const g = p.zone.game, G = gw(g), s = seasonOf(g);
-  return { season: s.season, sp: Math.round(s.sp * 100) / 100, ev: [...G.events].map(e => eventInfo(e, p)), trader: traderOffers(p.zone, p) };
+  const g = p.zone.game, s = seasonOf(g);
+  return { season: s.season, sp: Math.round(s.sp * 100) / 100, ev: eventInfos(g, p), trader: traderOffers(p.zone, p) };
 }
 function sendTo(p: Player) { if (!p.linkdead) p.send({ t: 'world', w: infoFor(p) }); }
 function regionOf(z: Zone): string | undefined { return factionOfZone(z.id)?.zone; }
@@ -47,12 +47,14 @@ export const World = {
       g.sysChat(SEASON_TEXT[s]);
       for (const p of g.players.values()) p.toast(`${SEASON_NAMES[s]}: ${SEASON_TEXT[s]}`, 'story');
     }
-    if (G.auto) scheduleBosses(g);
-    // Ereignisse in verlassenen Zonen aufräumen (die Zone selbst wird ohne Spieler nicht simuliert)
+    scheduleBosses(g, G.auto);
+    // Ereignisse in verlassenen Zonen aufräumen (die Zone selbst wird ohne Spieler nicht simuliert). Welten höherer Kreise
+    // verwirft das Spiel, wenn sie leer sind – deren Ereignisse verschwinden mit ihnen. Weltbosse schließt `scheduleBosses`.
     for (const ev of [...G.events]) {
+      if (!zoneAlive(ev.zone)) { G.events.delete(ev); G.dirty = true; continue; }
       if (ev.zone.players.size) { ev.emptySince = 0; continue; }
       if (!ev.emptySince) { ev.emptySince = now; continue; }
-      if (ev.boss ? now > ev.until : now - ev.emptySince > L.events.abandonSec) finishEvent(ev, 'fail', !ev.boss);
+      if (!ev.boss && now - ev.emptySince > L.events.abandonSec) finishEvent(ev, 'fail', true);
     }
     // Weltzustand an alle: sofort bei Änderungen, sonst alle 20 s zum Nachziehen
     if (G.dirty || Math.floor(now / 20) !== Math.floor((now - step) / 20)) { G.dirty = false; for (const p of g.players.values()) sendTo(p); }
@@ -66,7 +68,7 @@ export const World = {
 
   // ================================================================== Zonentakt (Zone.update – nur mit Spielern)
   tickZone(z: Zone, dt: number) {
-    if (z.def.kind !== 'overworld') return;
+    if (z.def.kind !== 'overworld' || z.rift) return; // nur Welt-Instanzen der Oberwelt (jeder Kreis hat seine eigene), nie Dungeons oder Mana-Risse
     const zs = zw(z), now = z.game.now;
     if ((zs.acc += dt) < 0.25) return;
     const step = zs.acc; zs.acc = 0;
@@ -84,30 +86,32 @@ export const World = {
   },
   /** Spieler betritt die Zone: war sie leer, stehen die NPCs sofort am richtigen Platz. */
   onJoin(z: Zone, p: Player) {
-    if (z.def.kind !== 'overworld') return;
+    if (z.def.kind !== 'overworld' || z.rift) return;
     if (z.players.size <= 1) { snapRoutines(z); zw(z).lastTick = z.game.now; }
+    // läuft gerade der Auftritt eines Weltbosses für diese Region, steht er auch in dieser Welt
+    for (const win of gw(z.game).bossWin.values()) if (win.zoneId === z.id) spawnBossIn(z, win);
     void p;
   },
   sendTo,
   weathers(z: Zone): [string, number][] { return seasonWeathers(z.def, seasonOf(z.game).season); },
   /** Abbaustelle geerntet: Sonderfunde der Jahreszeit; Rückgabe = Faktor auf die Chance der Biom-Zutat */
   onHarvest(z: Zone, p: Player): number {
-    if (z.def.kind !== 'overworld') return 1;
+    if (z.def.kind !== 'overworld' || z.rift) return 1;
     const s = SEASON_NODES[seasonOf(z.game).season];
     for (const [item, ch] of [...(s.extra['*'] ?? []), ...(s.extra[z.id] ?? [])]) if (ITEMS[item] && z.rng.chance(ch)) p.give(makeStack(item));
     return s.ingredient;
   },
   onMobDeath(z: Zone, m: Mob, rec: Player[]) {
     // Schatzkarten von Erwachten (auch in Dungeons: Karte der Region)
-    if (m.elite && !m.summoned) { const reg = regionOf(z); if (reg) for (const p of rec) if (z.rng.chance(L.treasure.eliteChance)) z.dropItemFor(p, makeStack(mapOf(reg)), m.x, m.y); }
-    if (z.def.kind !== 'overworld') return;
+    if (m.elite && !m.summoned && !z.rift) { const reg = regionOf(z); if (reg) for (const p of rec) if (z.rng.chance(L.treasure.eliteChance)) z.dropItemFor(p, makeStack(mapOf(reg)), m.x, m.y); }
+    if (z.def.kind !== 'overworld' || z.rift) return;
     const zs = zw(z);
     if (zs.boss && zs.boss.bossMob === m) return bossKilled(zs.boss, rec);
     if (eventMobDeath(z, m, rec) || encounterMobDeath(z, m, rec)) return;
     rareDeath(z, m, rec);
   },
   onChest(z: Zone, p: Player, tier: string) {
-    const reg = regionOf(z);
+    const reg = z.rift ? undefined : regionOf(z);
     if (reg && z.rng.chance(L.treasure.chest[tier] ?? 0)) p.give(makeStack(mapOf(reg)));
   },
   /** Objekte der Weltsysteme (Sternsplitter, Geröll, Fährten, Begegnungen) */
@@ -127,7 +131,6 @@ export const World = {
       case 'wbuy': if (traderBuy(p, m.idx, m.qty ?? 1)) sendTo(p); return;
       case 'dig': dig(p); return;
       case 'enc': return encounterPick(p, Number(m.id), Number(m.opt));
-      case 'title': return setTitle(g, p, m.id);
     }
   },
   /** Schatzkarte lesen / Trophäe in die Sammlung aufnehmen */
@@ -150,7 +153,8 @@ export const World = {
     G.syncT = 1; // beim nächsten Takt ansagen
   },
   startEvent(z: Zone, kind: EventKind, at?: { x: number; y: number }) { return startEvent(z, kind, at, true); },
-  startBoss(g: Game, id: string, zoneId?: string, at?: { x: number; y: number }) { return WORLD_BOSSES[id] ? startBoss(g, WORLD_BOSSES[id], zoneId, at) : null; },
+  /** `zone`: Zonen-ID (Welt des ersten Kreises) oder eine bestimmte Welt-Instanz */
+  startBoss(g: Game, id: string, zone?: string | Zone, at?: { x: number; y: number }) { return WORLD_BOSSES[id] ? startBoss(g, WORLD_BOSSES[id], zone, at) : null; },
   spawnRare(z: Zone, id: string) { return spawnRare(z, id, true); },
   startEncounter(p: Player, kind: EncounterKind, at?: { x: number; y: number }) { return startEncounter(p, kind, at); },
   state: { game: gw, zone: zw },
@@ -161,7 +165,7 @@ export const World = {
     const warp = (x: number, y: number) => { p.x = x; p.y = y; p.epoch++; p.send({ t: 'pos', x, y, e: p.epoch }); };
     switch (cmd) {
       case 'event': if (EVENTS[a[0] as EventKind] && isRegion(z.id)) { const zs = zw(z); if (zs.event) finishEvent(zs.event, 'fail', true); startEvent(z, a[0] as EventKind, here(), true); } else p.toast('Dev: /event woge|sterne|haendler|einsturz|aschesturm|jagd (in einer der sechs Regionen)'); return true;
-      case 'wboss': if (!World.startBoss(g, a[0], z.id, here())) p.toast('Dev: /wboss moosgrimm|aschenmaul|niemand (in einer seiner Regionen)'); return true;
+      case 'wboss': if (!World.startBoss(g, a[0], z, here())) p.toast('Dev: /wboss moosgrimm|aschenmaul|niemand (in einer seiner Regionen)'); return true;
       case 'rare': {
         if (RARES[a[0]]) spawnRare(z, a[0], true);
         const m = zw(z).rares?.get(a[0])?.mob; // lebt es schon, geht es einfach dorthin

@@ -7,6 +7,7 @@ import { Btn, send, sfx } from './common';
 export function DeathOverlay() {
   const dead = useStore(s => s.dead);
   const inParty = useStore(s => s.party.length > 1);
+  const rift = useStore(s => s.rift); // Endspiel (0.5): im Mana-Riss kostet die Wiederkehr einen Lebensfunken
   const [ready, setReady] = useState(false);
   useEffect(() => { const t = window.setTimeout(() => setReady(true), 1200); return () => clearTimeout(t); }, []);
   if (!dead) return null;
@@ -18,9 +19,12 @@ export function DeathOverlay() {
         {dead.by && <p class="death-by">Bezwungen von: <b>{dead.by}</b></p>}
         <p class="note">
           {inParty ? 'Verbündete können dich wiederbeleben, wenn sie bei dir interagieren. ' : 'In einer Gruppe könnten Verbündete dich wiederbeleben. '}
-          Beim Erwachen am Quellstein verlierst du {Math.round(CFG.player.deathGoldLoss * 100)} % deines Goldes.
+          {rift && !rift.done
+            ? (rift.revives > 0 ? `Wiederkehr am Eingang kostet einen Lebensfunken der Gruppe (noch ${rift.revives}). ` : 'Es ist kein Lebensfunke mehr übrig: Ohne Hilfe stößt dich der Riss aus. ')
+            : null}
+          {rift ? `Der Tod kostet ${Math.round(CFG.player.deathGoldLoss * 100)} % deines Goldes.` : `Beim Erwachen am Quellstein verlierst du ${Math.round(CFG.player.deathGoldLoss * 100)} % deines Goldes.`}
         </p>
-        {ready && <Btn kind="primary" class="death-btn" autofocus onClick={() => send({ t: 'respawn' })}>Am Quellstein erwachen</Btn>}
+        {ready && <Btn kind="primary" class="death-btn" autofocus onClick={() => send({ t: 'respawn' })}>{rift ? (rift.done || rift.revives > 0 ? 'Am Eingang wiederkehren' : 'Den Riss verlassen') : 'Am Quellstein erwachen'}</Btn>}
       </div>
     </div>
   );

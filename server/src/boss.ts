@@ -12,8 +12,10 @@ import type { Room } from '../../shared/src/maps/mapgen';
 import { TILE } from '../../shared/src/maps/tiles';
 import { Anim } from '../../shared/src/types';
 import type { Element, ItemInstance, StatusSpec } from '../../shared/src/types';
+import { ECHO_MECH, type EchoMech } from './echo';
 import { bossLoot } from './loot';
 import type { Player } from './player';
+import { Rift } from './rift';
 import { Story } from './story';
 import { Mob, type Zone } from './zone';
 
@@ -37,10 +39,13 @@ export class BossCtl {
   private forced = false;
   /** hat sich in dieser Instanz ergeben und verharrt in seiner Ruhepose (Vael kniet, Aetherion ist ruhiges Licht) */
   private yielded = false;
+  /** 0.5: Zusatzmechanik eines Boss-Echos im Mana-Riss (server/src/echo.ts) */
+  private echo: EchoMech | undefined;
 
   constructor(public zone: Zone, public def: BossDef, public room: Room) {
     this.cx = ((room.x0 + room.x1 + 1) / 2) * TILE;
     this.cy = ((room.y0 + room.y1 + 1) / 2) * TILE;
+    if (zone.rift) this.echo = ECHO_MECH[def.id];
     this.spawn();
   }
   private spawn() {
@@ -74,6 +79,13 @@ export class BossCtl {
     this.zone.ev({ k: 'sfx', n: 'boss_roar' });
     for (const p of this.zone.players.values()) p.toast(this.def.intro, 'story');
     if (this.def.awaken) for (const p of this.players()) Story.playCine(p, this.def.awaken, true);
+    this.echo?.start?.(this.kit());
+  }
+  /** Werkzeugkasten für Muster außerhalb dieser Datei (Boss-Echos: server/src/echo.ts) */
+  kit() {
+    return { boss: this as BossCtl, shoot: this.shoot.bind(this), aimed: this.aimed.bind(this), radial: this.radial.bind(this), tele: this.tele.bind(this), beam: this.beam.bind(this),
+      pool: this.pool.bind(this), rndPos: this.rndPos.bind(this), summon: this.summon.bind(this), moveTo: this.moveTo.bind(this), players: this.players.bind(this),
+      target: this.target.bind(this), say: this.say.bind(this), anim: this.anim.bind(this) };
   }
   private reset() {
     this.active = false; this.gen = null; this.phase = 1; this.forced = false;
@@ -137,6 +149,7 @@ export class BossCtl {
     z.ev({ k: 'sfx', n: spared ? 'puzzle_solved' : 'boss_die' });
     if (spared) z.ev({ k: 'fx', n: 'shard', x: this.mob.x, y: this.mob.y });
     else z.ev({ k: 'fx', n: 'bossdeath', x: this.mob.x, y: this.mob.y, el: d.element });
+    if (z.rift) { Rift.bossDown(z, this); return; } // Echos geben keine Siegel, Bossflaggen oder Questfortschritt – nur Riss-Belohnungen
     const all = [...z.players.values()];
     for (const p of all) {
       if (p.dead) { p.dead = false; p.hp = Math.round(p.stats.maxHp * 0.5); p.send({ t: 'toast', s: 'Der Sieg deiner Gruppe reißt dich zurück ins Leben.', kind: 'good' }); }
@@ -194,7 +207,7 @@ export class BossCtl {
         m.facingLeft = dx < 0 ? 1 : 0;
       }
     }
-    this.wait -= dt * (this.phase === 3 ? 1.2 : 1);
+    this.wait -= dt * (this.phase === 3 ? 1.2 : 1) * (this.echo?.speed ?? 1);
     let guard = 0;
     while (this.wait <= 0 && guard++ < 50) {
       if (!this.gen) this.gen = this.next();
@@ -306,17 +319,19 @@ export class BossCtl {
       if (this.phase === 2) this.say('*Die Asche fällt nach oben. Dann hält die ganze Höhle den Atem an: die Große Stille.*');
       else { this.say('*Sieben Risse aus Licht. Du siehst, was es jede Nacht sieht: den Augenblick, in dem das Herz bricht.*'); this.summon('erinnerter', 2); }
     }
+    this.echo?.phase?.(this.kit(), this.phase);
     this.radial(16, 90, this.zone.rng.range(0, 1), 'orb', 0.8);
     yield 0.8;
   }
 
   private next(): Gen {
     this.chase = false;
-    const list = this.patterns();
+    const list = this.echo?.pattern ? [...this.patterns(), this.echoPattern] : this.patterns();
     const g = list[this.idx % list.length];
     this.idx++;
     return g.call(this);
   }
+  private *echoPattern(): Gen { yield* this.echo!.pattern!(this.kit()); }
   private patterns(): (() => Gen)[] {
     const p = this.phase;
     switch (this.def.id) {
