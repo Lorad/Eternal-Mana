@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.7.0 (Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.7.1 (Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -13,8 +13,8 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 | 0.4 | Geschichte: Akt II (4 Kapitel + Epilog, 3 Enden), 47 Quests, Gesprächsbäume, 6 Entscheidungen, 25 Filmszenen, 49 Chronik-Dokumente, 3 Zonen, Bosse Vael und Aetherion | **fertig** |
 | 0.5 | Endspiel: Mana-Risse (30 Stufen, 12 Modifikatoren, 7 Boss-Echos), Prüfung der Sieben, Quellstufen, Neuer Kreis | **fertig** |
 | 0.6 | Lebendige Welt: Ruf (6 Fraktionen), 6 Ereignisarten, 3 Weltbosse, 12 seltene Monster, Schatzkarten, 4 Begegnungen, Tagesabläufe, Jahreszeiten | **fertig** |
-| 0.7 | Zuhause: Hof mit Lagertruhe und drei Ausbaustufen, 30 Trophäen, 8 Begleiter, Sammlung, Erscheinungen – **fertig**. Gemeinsam (Gruppe, Handel, Quests teilen): in Arbeit | teilweise |
-| 0.8 | Feinschliff | geplant |
+| 0.7 | Zuhause (Hof mit Lagertruhe und drei Ausbaustufen, 30 Trophäen, 8 Begleiter, Sammlung, Erscheinungen) und Gemeinsam (Gruppenverwaltung, Handel, Quest teilen, Gruppentruhe, Ansehen) | **fertig** |
+| 0.8 | Feinschliff | in Arbeit |
 
 ### Offene Punkte aus 0.3
 
@@ -57,6 +57,16 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 - Begleiter ignorieren Hindernisse. Waffenglanz färbt Hieb, Geschoss und Schweif, nicht die Trefferfunken am Ziel.
 - Siege über gewöhnliche Gegner zählen fürs Bestiarium erst ab 0.7.
 - Springt nach beschädigter Prüfsumme ein Truhen-Snapshot ein (bis 5 Minuten alt), können Truhe und Charakter auseinanderliegen.
+
+### Offene Punkte aus 0.7.1 (Gemeinsam)
+
+- Geprüft mit genau zwei echten Browsern auf einem Rechner; nicht mit mehr Clients und nicht über Tailscale mit echter Latenz.
+- Nur in Tests, nicht im Browser: Entfernen im Bosskampf, Verfall des freigehaltenen Platzes, gemischte Kreise, Weltboss zu zweit.
+- Gruppen überleben keinen Server-Neustart. Eine leere Riss-Instanz wird nach 90 Sekunden verworfen, der Platz in der Gruppe
+  hält 5 Minuten – fallen alle aus, kann der Riss weg sein.
+- Unter 20 Bildern pro Sekunde läuft die eigene Figur langsamer als in Echtzeit (Zeitschritt-Deckel im Client).
+- Im Riss überlappt die Questverfolgung Namensschilder am rechten Rand; im Handelsfenster gibt es kein Chatfeld.
+- Die Gruppentruhe gibt es bei jedem Bosssieg ohne Abschlag für Wiederholungen. Ansehen geht serverweit, ohne Nähe.
 
 ## Starten und Testen
 

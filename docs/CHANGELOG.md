@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.1 – Gemeinsam
+
+- Gruppenverwaltung ausgelagert nach `server/src/social/party.ts`: Anführer, Ernennen, Entfernen, Auflösen, Einladungsfrist,
+  Führungswechsel, freigehaltener Platz nach Verbindungsabriss; Regeln für Risse, Kreise und Höfe.
+- Handel (`server/src/social/trade.ts`): Anfrage, Angebot, Sperren, Bestätigen; atomarer Tausch mit sofortigem Speichern beider
+  Charaktere in einer Transaktion (`Db.saveChars`), gebundene Gegenstände.
+- Quest teilen, Gruppentruhe nach Dungeon- und Riss-Bossen, Spieler ansehen, „Hinreisen“.
+- Erstmals mit zwei echten Browsern geprüft: `tests/e2e/coop.mjs` (15 Schritte: Gruppe, Handel, Quest teilen, Reaktion zu zweit,
+  Riss, Verbindungsabriss, Gruppentruhe, Mana-Woge, Hofbesuch). Lastprobe `scripts/load-check.ts` (12 Bots: Takt im Mittel
+  unter 1 ms, p95 rund 2 ms).
+- Tests: 28 neue in `tests/social.test.ts`.
+
 ## 0.7.0 – Zuhause
 
 - Hof am Waldrand als eigene Instanz je Profil (`heim:<Konto>`, `server/src/home/*`, `shared/src/maps/homegen.ts`), Kauf bei

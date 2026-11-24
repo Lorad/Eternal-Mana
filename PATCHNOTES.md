@@ -3,6 +3,29 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.7.1 – Gemeinsam
+_25.11.2026_
+
+### Gruppe
+- Gruppen haben jetzt einen **Anführer** (Stern am Namen): Er lädt ein, entfernt, ernennt einen Nachfolger und löst auf. Höchstens vier Mitglieder; Einladungen laufen nach 30 Sekunden ab.
+- Neben einem Mitspieler *Interagieren* drücken oder seine Figur anklicken: **Ansehen, Handeln, Einladen**.
+- Der Gruppenrahmen zeigt, wo jeder steckt (Gebiet, Mana-Riss mit Stufe, Hof, anderer Kreis) und ob jemand gefallen oder getrennt ist.
+- **Hinreisen:** von einem Quellstein direkt ins Gebiet eines Gruppenmitglieds.
+
+### Handel
+- Gegenstände, Stapel mit Menge und Gold tauschen. Beide sperren, beide bestätigen, getauscht wird in einem Zug – oder gar nicht.
+- Gebunden und im Tooltip markiert: Questgegenstände, Legendäre Waffen, Trophäen, Ruf- und Prüfungsrezepte. Die Lagertruhe ist für den Handel unerreichbar.
+
+### Zusammen spielen
+- **Quest teilen:** Neben- und Gruppenquests aus dem Questlog der Gruppe anbieten; Annahme ohne Weg zum Auftraggeber.
+- **Gruppentruhe:** Nach einem Dungeon- oder Riss-Boss mit mindestens zwei Gruppenmitgliedern erscheint eine zusätzliche Truhe. Beute bleibt überall persönlich: Jeder würfelt für sich.
+- **Spieler ansehen:** Stufe, Klasse, Titel, Ausrüstung, Begleiter und Gewand.
+- **Verbindung weg?** 30 Sekunden bleibt die Figur stehen; danach bleibt der Platz in der Gruppe 5 Minuten frei.
+- Im Mana-Riss gilt: Wer die Gruppe verlässt, steht am Riss-Stein. Im Bosskampf wird niemand entfernt.
+
+### Behoben
+- Gruppenmitglieder am Rand des Umkreises bekamen bei Echo-Begegnungen die Wertung, aber nicht das Echo-Zeichen.
+
 ## 0.7.0 – Zuhause
 _24.11.2026_
 
