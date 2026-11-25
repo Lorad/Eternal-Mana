@@ -17,7 +17,7 @@ import { PET_LIST } from '../../../shared/src/data/pets';
 import { RARE_LIST, WORLD_BOSS_LIST } from '../../../shared/src/data/rares';
 import { ENCHANT_LIST, RECIPE_LIST, STATION_NAME, STATION_NPCS, type StationId } from '../../../shared/src/data/recipes';
 import { QUELL_MAX, QUELL_TRACKS, RIFT_DUNGEONS, RIFT_MOD_LIST, TRIAL_BOSSES, TRIAL_NAME } from '../../../shared/src/data/rifts';
-import { SET_LIST } from '../../../shared/src/data/sets';
+import { SET_FULL, SET_LIST } from '../../../shared/src/data/sets';
 import { CINES, DECISIONS } from '../../../shared/src/data/story';
 import { ZONES, ZONE_LIST } from '../../../shared/src/data/zones';
 import { ELEMENT_INFO, REACTIONS } from '../../../shared/src/elements';
@@ -170,11 +170,11 @@ const ALL = [
     <>
       <p>Beute ist immer persönlich: Was du siehst, gehört dir. Im Inventar (<K a="inventory" />) legt ein Doppelklick an; der Tooltip vergleicht mit dem, was du trägst. Der Rucksack fasst {CFG.player.invSize} Gegenstände (Stapel zählen einmal).</p>
       <Facts rows={[
-        ['Plätze', 'Waffe, Kopf, Rüstung und zwei Accessoires.'],
+        ['Plätze', 'Zehn: Hauptwaffe, Zweithand (Schild bei Krieger und Paladin, Köcher beim Waldläufer, Foliant oder Fokus beim Magier, Parierdolch beim Schattenjäger), Helm, Brust, Handschuhe, Beine, Schuhe, Amulett (auch Talisman) und zwei Ringe.'],
         ['Seltenheit', <>{RARITY_NAME.map((n, i) => <><b style={{ color: RARITY_COLOR[i] }}>{n}</b>{i < RARITY_NAME.length - 1 ? ' · ' : ''}</>)} – mit {CFG.loot.affixCount.join('/')} zufälligen Eigenschaften.</>],
-        ['Verbessern', <>Schmiede werten bis +{CFG.upgrade.max} auf (je Stufe +{pct(CFG.upgrade.statPerLevel)} Grundwerte). Erfolgschance: {CFG.upgrade.chance.map((c, i) => `+${i + 1}: ${Math.round(c * 100)} %`).filter((_, i) => i >= CFG.upgrade.chance.findIndex(c => c < 1) - 1).join(' · ')}. Scheitert ein Versuch, sind nur Gold und Material verloren.</>],
+        ['Verbessern', <>Schmiede werten bis +{CFG.upgrade.max} auf (je Stufe +{pct(CFG.upgrade.statPerLevel)} Grundwerte). Jede Stufe gelingt – nichts wird zerstört, nichts fällt zurück, nichts geht verloren; nur die Kosten steigen: ab +4 Essenzen, ab +7 Bosskerne, für +10 Ätherstaub. Bei +3, +6 und +9 kommt je eine feste Eigenschaft dazu, bei +10 eine kleine Wirkung je Art des Teils.</>],
         ['Verkaufen', `Händler zahlen ${pct(CFG.loot.sellFactor)} des Wertes. Doppelklick im Reiter „Verkaufen“ verkauft den ganzen Stapel.`],
-        ['Sets', `${SET_LIST.length} Rüstungssets (je Dungeon eines) mit Boni bei 2 und 4 Teilen.`],
+        ['Sets', `${SET_LIST.length} Rüstungssets (je Dungeon eines) aus ${SET_FULL} Teilen: 2 Teile schützen, 4 Teile stärken eine Fähigkeit deiner Klasse, alle ${SET_FULL} schalten eine eigene Wirkung frei.`],
         ['Legendäre Waffen', `Eine je Klasse, mit eigener Wirkung – geschmiedet aus allen Bosskernen (ab Gegenstandsstufe ${CFG.craft.legendMinIlvl}).`],
         ['Liegengebliebenes', `Beute am Boden verschwindet nach ${sec(CFG.loot.dropLifetimeSec)}. Ist das Inventar voll, bleibt sie liegen.`],
       ]} />

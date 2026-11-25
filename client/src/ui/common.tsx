@@ -4,16 +4,18 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio';
 import type { SfxName } from '../audio';
 import { iconUrl, portraitUrl } from '../gfx/runtime';
-import { UNIQUE_ICONS } from '../gfx/spec';
+import { ITEM_ICONS, UNIQUE_ICONS } from '../gfx/spec';
 import { net } from '../net/net';
 import { onSettingsChange, settings } from '../state/settings';
 import { store } from '../state/store';
 import { CFG, ELEMENT_NAME, RARITY_COLOR, RARITY_NAME } from '../../../shared/src/config';
 import { CLASSES } from '../../../shared/src/data/classes';
-import { ITEMS, baseMods, canEquip, equipLevel, isGear, itemMods, itemName, sellPrice, slotOf } from '../../../shared/src/data/items';
+import { ITEMS, baseMods, canEquip, equipLevel, isGear, itemName, sellPrice, slotKind } from '../../../shared/src/data/items';
+import { SLOT_KIND_NAME, UPGRADE_BONUS, UPGRADE_BONUS_AT, UP10 } from '../../../shared/src/data/upgrade';
+import { compareItem, compareTargets } from '../../../shared/src/equip';
 import type { ItemBase } from '../../../shared/src/data/items';
 import { MOD_LABEL } from '../../../shared/src/types';
-import type { CharData, ClientMsg, Element, ItemInstance, ModKey, Mods, Slot } from '../../../shared/src/types';
+import type { AnySlot, CharData, ClientMsg, Element, ItemInstance, ModKey, Mods } from '../../../shared/src/types';
 import { ItemExtras } from './itemextra';
 
 /** Symbol eines Gegenstands; benannte Unikate (Fraktionen, Fahrende Händlerin) tragen ein eigenes. */
@@ -159,8 +161,25 @@ export function Bar(p: { v: number; max: number; kind: 'hp' | 'mp' | 'xp' | 'bos
 }
 
 // ------------------------------------------------------------------ Icons & Porträts
+/**
+ * ICON-ERSATZ (0.9) – die EINZIGE Stelle dafür: Icons der neuen Ausrüstungsplätze, die (noch) nicht gezeichnet sind, zeigen ein
+ * vorhandenes Icon. Sobald ein Key in ITEM_ICONS steht (client/src/gfx/spec.ts), wird das eigene Icon gezeigt.
+ */
+const ICON_FALLBACK: Record<string, string> = {
+  gloves_heavy: 'armor_heavy', gloves_light: 'armor_light', gloves_robe: 'robe',
+  legs_heavy: 'armor_heavy', legs_light: 'armor_light', legs_robe: 'robe',
+  boots_heavy: 'helm_heavy', boots_light: 'helm_light', boots_robe: 'hood',
+  shield: 'armor_heavy', quiver: 'bow', tome: 'scroll', focus: 'gem', offdagger: 'dagger',
+  slot_offhand: 'armor_heavy', slot_gloves: 'armor_light', slot_legs: 'armor_light', slot_boots: 'helm_light', slot_amulet: 'amulet', slot_ring: 'ring',
+};
+const DRAWN = new Set<string>(ITEM_ICONS);
+export function iconKey(k: string): string {
+  if (!k.startsWith('item_')) return k;
+  const n = k.slice(5);
+  return !DRAWN.has(n) && ICON_FALLBACK[n] ? 'item_' + ICON_FALLBACK[n] : k;
+}
 export function Icon({ k, el, size = 48, class: c }: { k: string; el?: Element; size?: number; class?: string }) {
-  return <img class={cx('px', c)} src={iconUrl(k, el)} width={size} height={size} alt="" draggable={false} />;
+  return <img class={cx('px', c)} src={iconUrl(iconKey(k), el)} width={size} height={size} alt="" draggable={false} />;
 }
 export function Portrait({ k, scale = 2, class: c }: { k: string; scale?: number; class?: string }) {
   // Sprite-Frames sind 32×40 px; gezeigt wird der Ausschnitt 24×32 um die Figur (ganzzahlig vergrößert → scharfe Pixel)
@@ -184,12 +203,17 @@ export function Face({ k, size = 48, class: c }: { k: string; size?: number; cla
 export const WTYPE_NAME: Record<string, string> = { sword: 'Schwert', staff: 'Stab', bow: 'Bogen', hammer: 'Hammer', dagger: 'Dolche' };
 export const ACLASS_NAME: Record<string, string> = { heavy: 'Schwere Rüstung', light: 'Leichte Rüstung', robe: 'Stoffrüstung' };
 export const ACC_NAME: Record<string, string> = { ring: 'Ring', amulet: 'Amulett', charm: 'Talisman' };
+export const OFFHAND_NAME: Record<string, string> = { shield: 'Schild', quiver: 'Köcher', tome: 'Foliant', focus: 'Fokus', offdagger: 'Parierdolch' };
 export function itemTypeName(b: ItemBase): string {
   switch (b.kind) {
-    case 'weapon': return 'Waffe · ' + (WTYPE_NAME[b.wtype ?? ''] ?? '');
-    case 'helm': return 'Kopf · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
-    case 'armor': return 'Rüstung · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
-    case 'accessory': return 'Accessoire · ' + (ACC_NAME[b.acc ?? ''] ?? '');
+    case 'weapon': return 'Hauptwaffe · ' + (WTYPE_NAME[b.wtype ?? ''] ?? '');
+    case 'offhand': return 'Zweithand · ' + (OFFHAND_NAME[b.oh ?? ''] ?? '');
+    case 'helm': return 'Helm · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
+    case 'armor': return 'Brust · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
+    case 'gloves': return 'Handschuhe · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
+    case 'legs': return 'Beine · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
+    case 'boots': return 'Schuhe · ' + (ACLASS_NAME[b.aclass ?? ''] ?? '');
+    case 'accessory': return b.acc === 'ring' ? 'Ring · beide Ringplätze' : b.acc === 'charm' ? 'Amulett · Talisman' : 'Amulett';
     case 'consumable': return 'Verbrauchsgut';
     case 'material': return 'Material';
     case 'quest': return 'Questgegenstand';
@@ -208,18 +232,10 @@ const MOD_ORDER = Object.keys(MOD_LABEL) as ModKey[];
 export function modEntries(m: Mods): [ModKey, number][] {
   return MOD_ORDER.filter(k => m[k]).map(k => [k, m[k]!]);
 }
-/** Welcher angelegte Gegenstand wäre der Vergleich für `it`? */
+/** Welcher angelegte Gegenstand wäre der Vergleich für `it`? (bei Ringen der erste; alle: compareItem in shared/src/equip.ts) */
 export function compareTarget(char: CharData, it: ItemInstance): ItemInstance | null {
-  const b = ITEMS[it.base];
-  if (!b || !isGear(b)) return null;
-  const slot = slotOf(b)!;
-  if (b.kind === 'accessory') {
-    if (!char.equip.acc1 || !char.equip.acc2) return null;
-    return char.equip.acc1;
-  }
-  return char.equip[slot] ?? null;
-}
-export function modDeltas(a: Mods, b: Mods): [ModKey, number][] {
+  return compareTargets(char, it)[0]?.item ?? null;
+}export function modDeltas(a: Mods, b: Mods): [ModKey, number][] {
   return MOD_ORDER.map(k => [k, Math.round(((a[k] ?? 0) - (b[k] ?? 0)) * 10) / 10] as [ModKey, number]).filter(e => e[1] !== 0);
 }
 
@@ -264,6 +280,25 @@ export function Gold({ n, class: c }: { n: number; class?: string }) {
   return <span class={cx('gold', c)}><i class="coin" />{fmtNum(n)}</span>;
 }
 
+/** Verbesserung im Tooltip: erreichte und kommende Zusatzeigenschaften (+3/+6/+9) und die Wirkung bei +10 */
+export function UpgradeLadder({ it, compact }: { it: ItemInstance; compact?: boolean }) {
+  const k = slotKind(ITEMS[it.base]);
+  if (!k) return null;
+  const p10 = UP10[k], max = CFG.upgrade.max;
+  const rows = UPGRADE_BONUS_AT.map((at, i) => ({ at, txt: fmtMod(UPGRADE_BONUS[k][i][0], UPGRADE_BONUS[k][i][1]), on: it.up >= at }));
+  const next = it.up < max ? it.up + 1 : null;
+  const nb = rows.find(r => r.at === next);
+  return (
+    <div class="tip-upg">
+      <div class="tip-upg-h">Verbesserung <b>+{it.up}</b> / +{max}{next !== null && !compact && <span> · nächste Stufe: +{fmtDec(CFG.upgrade.statPerLevel * 100, 0)} % Grundwerte{nb ? ', ' + nb.txt : ''}{next === max ? ', ' + p10.name : ''}</span>}</div>
+      <ul class="tip-upg-list">
+        {rows.map(r => <li class={cx(r.on && 'on', r.at === next && 'next')}><i>+{r.at}</i><span>{r.txt}</span></li>)}
+        <li class={cx(it.up >= max && 'on', next === max && 'next')}><i>+{max}</i><span><b>{p10.name}:</b> {p10.text}</span></li>
+      </ul>
+    </div>
+  );
+}
+
 /** Vollständige Beschreibung eines Gegenstands (Tooltip-Inhalt und Detailbereich). */
 export function ItemDetails({ item: it, char, equipped, price, compare = true }: { item: ItemInstance; char: CharData | null; equipped?: boolean; price?: number; compare?: boolean }) {
   const b = ITEMS[it.base];
@@ -273,40 +308,40 @@ export function ItemDetails({ item: it, char, equipped, price, compare = true }:
   const cls = classesFor(b);
   const usable = !char || !gear || canEquip(char.cls, b);
   const lvlReq = gear ? equipLevel(it.ilvl) : 0;
-  const other = compare && char && gear && !equipped && usable ? compareTarget(char, it) : null;
-  const deltas = other ? modDeltas(itemMods(it), itemMods(other)) : [];
+  const cmp = compare && char && gear && !equipped && usable ? compareItem(char, it) : null;
   const sell = sellPrice(it);
+  const kind = slotKind(b);
   return (
-    <div class="tip-item">
+    <div class={cx('tip-item', gear && 'tip-r' + it.rarity)}>
       <div class="tip-head">
         <span class={cx('slot slot-static', 'r' + it.rarity)}><Icon k={itemIconKey(it)} size={48} /></span>
         <div>
           <b class="tip-name" style={{ color: RARITY_COLOR[it.rarity] }}>{itemName(it)}{(it.qty ?? 1) > 1 ? ` ×${it.qty}` : ''}</b>
-          <div class="tip-sub">{gear ? RARITY_NAME[it.rarity] + ' · ' : ''}{itemTypeName(b)}</div>
-          {gear && <div class="tip-sub">Gegenstandsstufe {it.ilvl}{it.up > 0 ? ` · Verbesserung +${it.up}` : ''}{equipped ? ' · angelegt' : ''}</div>}
+          <div class="tip-sub">{gear ? <span class={'rc' + it.rarity}>{RARITY_NAME[it.rarity]}</span> : null}{gear ? ' · ' : ''}{itemTypeName(b)}</div>
+          {gear && <div class="tip-sub">Gegenstandsstufe {it.ilvl}{kind ? ` · Platz: ${SLOT_KIND_NAME[kind]}` : ''}{equipped ? ' · angelegt' : ''}</div>}
         </div>
       </div>
       {base.length > 0 && <ul class="tip-stats base">{base.map(([k, v]) => <li>{fmtMod(k, v)}</li>)}</ul>}
       {it.affixes.length > 0 && <ul class="tip-stats affix">{it.affixes.map(([k, v]) => <li>{fmtMod(k, v)}</li>)}</ul>}
       {it.element && <div class="tip-el" style={{ color: ELEMENT_CSS[it.element] }}>◆ Element: {ELEMENT_NAME[it.element]}{b.kind === 'weapon' ? ' – Angriffe verursachen Elementarschaden' : ''}</div>}
+      {gear && <UpgradeLadder it={it} />}
       <ItemExtras item={it} char={char} />
       {b.desc && <p class="tip-desc">{b.desc}</p>}
       {gear && char && lvlReq > 1 && <div class={cx('tip-req', char.level < lvlReq && 'bad')}>Benötigt Stufe {lvlReq}</div>}
       {cls.length > 0 && <div class={cx('tip-req', !usable && 'bad')}>Klasse: {cls.join(', ')}</div>}
-      {other && (
+      {cmp && cmp.rows.map(r => (
         <div class="tip-cmp">
-          <div class="tip-cmp-h">Im Vergleich zu <span style={{ color: RARITY_COLOR[other.rarity] }}>{itemName(other)}</span></div>
-          {deltas.length === 0 ? <div class="tip-sub">Gleichwertig.</div> : <ul class="tip-stats">{deltas.map(([k, v]) => <li class={v > 0 ? 'good' : 'bad'}>{fmtMod(k, v)}</li>)}</ul>}
+          <div class="tip-cmp-h">{cmp.rows.length > 1 ? `Statt ${r.slot === 'ring1' ? 'Ring 1' : 'Ring 2'}: ` : 'Im Vergleich zu '}<span style={{ color: RARITY_COLOR[r.item.rarity] }}>{itemName(r.item)}</span></div>
+          {r.delta.length === 0 ? <div class="tip-sub">Gleichwertig.</div> : <ul class="tip-stats">{r.delta.map(([k, v]) => <li class={v > 0 ? 'good' : 'bad'}>{fmtMod(k, v)}</li>)}</ul>}
         </div>
-      )}
-      {compare && char && gear && !equipped && usable && !other && <div class="tip-cmp"><div class="tip-sub">Der Platz ist noch frei.</div></div>}
+      ))}
+      {cmp && cmp.free && <div class="tip-cmp"><div class="tip-sub">{cmp.free === 'ring2' ? 'Der zweite Ringplatz ist noch frei.' : 'Der Platz ist noch frei.'}</div></div>}
       <div class="tip-foot">
         {price !== undefined ? <span>Preis: <Gold n={price} /></span> : b.kind === 'quest' ? <span>Kann weder verkauft noch weggeworfen werden.</span> : <span>Verkaufswert: <Gold n={sell} />{(it.qty ?? 1) > 1 ? ' je Stück' : ''}</span>}
       </div>
     </div>
   );
 }
-
 // ------------------------------------------------------------------ schwebender Tooltip
 interface Tip { el: HTMLElement; content: ComponentChildren }
 let tip: Tip | null = null;
@@ -392,4 +427,8 @@ export function Confirm(p: { text: ComponentChildren; yes: string; no?: string; 
 }
 export function closePanel() { store.set({ panel: null }); }
 export const INV_SIZE = CFG.player.invSize;
-export const SLOT_ICON: Record<Slot, string> = { weapon: 'item_sword', helm: 'item_helm_heavy', armor: 'item_armor_heavy', acc1: 'item_ring', acc2: 'item_amulet' };
+/** Platzhalter leerer Ausrüstungsplätze (grau über .ghost-icon); die neuen Plätze haben eigene `slot_*`-Icons */
+export const SLOT_ICON: Record<AnySlot, string> = {
+  weapon: 'item_sword', offhand: 'item_slot_offhand', helm: 'item_helm_heavy', armor: 'item_armor_heavy', gloves: 'item_slot_gloves', legs: 'item_slot_legs',
+  boots: 'item_slot_boots', amulet: 'item_slot_amulet', ring1: 'item_slot_ring', ring2: 'item_slot_ring', acc1: 'item_ring', acc2: 'item_amulet',
+};

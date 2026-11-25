@@ -9,17 +9,18 @@
 import { CFG } from '../config';
 import { mobAffinity } from '../elements';
 import type { CharData, Element, HomeData, ItemInstance, Mods } from '../types';
-import { SLOTS } from '../types';
+import { equippedItems } from '../equip';
+import { clampRarity } from '../rarity';
 import { BOSSES, ENEMY_LIST } from './enemies';
 import { HOME_MAX, HOME_TROPHIES, HOME_TROPHY, baseSlots, emptyHome, trophyPerks, trophySeen } from './home';
-import { BOSS_UNIQUE, ITEMS } from './items';
+import { BOSS_UNIQUE, BOSS_UNIQUE_GEAR, ITEMS } from './items';
 import { LOOKS, LOOK_LIST } from './looks';
 import { BIOME_MATS, BOSS_CORE, ESSENCE } from './materials';
 import { PETS, PET_LIST } from './pets';
 import { BOSS_BY_MOB, RARES, RARE_BY_MOB, WORLD_BOSSES } from './rares';
 import { LEARNABLE, RECIPES } from './recipes';
 import { TITLES, TITLE_SOURCES } from './rifts';
-import { SETS, SET_LIST, SET_PIECES, setPieceName, type SetPiece } from './sets';
+import { SETS, SET_LIST, SET_PIECES, setPieceName, setPieceOf, type SetPiece } from './sets';
 import { ZONE_LIST } from './zones';
 
 // ------------------------------------------------------------------ Bestiarium
@@ -74,7 +75,9 @@ export function flagBeast(key: string): string | undefined {
 export interface Find { id: string; name: string; group: string; how: string; icon: string }
 const UNIQUE_BY_NAME = new Map<string, string>();
 for (const b in BOSS_UNIQUE) for (const n of Object.values(BOSS_UNIQUE[b].names)) UNIQUE_BY_NAME.set(n, b);
-const PIECE_ICON: Record<SetPiece, string> = { helm: 'helm_heavy', armor: 'armor_heavy', ring: 'ring', amulet: 'amulet' };
+// 0.9: die benannten Stücke für die neuen Plätze zählen zum selben Fundstück des Bosses
+for (const b in BOSS_UNIQUE_GEAR) { const n = BOSS_UNIQUE_GEAR[b].names; for (const x of typeof n === 'string' ? [n] : Object.values(n)) UNIQUE_BY_NAME.set(x, b); }
+const PIECE_ICON: Record<SetPiece, string> = { helm: 'helm_heavy', armor: 'armor_heavy', gloves: 'gloves_heavy', boots: 'boots_heavy', ring: 'ring', amulet: 'amulet' };
 export const FINDS: Find[] = [
   ...Object.values(ITEMS).filter(b => b.legend).map((b): Find => ({ id: 'leg:' + b.legend, name: b.name, group: 'Legendäre Waffen', how: 'Aus sechs Bosskernen geschmiedet (Borin oder Rakhan)', icon: b.icon })),
   ...SET_LIST.flatMap(s => SET_PIECES.map((p): Find => ({ id: `set:${s.id}:${p}`, name: setPieceName(s, p), group: 'Set: ' + s.name, how: `${BOSSES[s.boss].name} und die Truhen seines Dungeons – oder schmieden`, icon: PIECE_ICON[p] }))),
@@ -85,7 +88,7 @@ export function findOf(it: ItemInstance): string | undefined {
   const b = ITEMS[it.base];
   if (!b) return undefined;
   if (b.legend) return 'leg:' + b.legend;
-  if (it.set && SETS[it.set]) { const p: SetPiece | undefined = b.kind === 'helm' ? 'helm' : b.kind === 'armor' ? 'armor' : b.acc === 'ring' ? 'ring' : b.acc === 'amulet' ? 'amulet' : undefined; if (p) return `set:${it.set}:${p}`; }
+  if (it.set && SETS[it.set]) { const p = setPieceOf(it); if (p) return `set:${it.set}:${p}`; }
   if (it.name && UNIQUE_BY_NAME.has(it.name)) return 'uni:' + UNIQUE_BY_NAME.get(it.name);
   return undefined;
 }
@@ -102,7 +105,7 @@ export function proofs(c: CharData): { seen: string[]; pets: string[]; looks: st
   for (const t of HOME_TROPHIES) if (t.has(c)) seen.push(trophySeen(t.id));
   for (const r of c.recipes ?? []) if (RECIPES[r]) seen.push('r:' + r);
   for (const it of c.inv) seen.push(...itemSeen(it));
-  for (const s of SLOTS) { const it = c.equip[s]; if (it) seen.push(...itemSeen(it)); }
+  for (const it of equippedItems(c)) seen.push(...itemSeen(it));
   for (const b in BOSS_UNIQUE) if (c.flags['u:' + b]) seen.push('f:uni:' + b);
   return { seen, pets: PET_LIST.filter(p => p.has?.(c)).map(p => p.id), looks: LOOK_LIST.filter(l => l.has?.(c)).map(l => l.id) };
 }
@@ -196,7 +199,7 @@ export function sanitizeHome(raw: any): HomeData {
   if (raw.seen && typeof raw.seen === 'object') for (const k in raw.seen) if (raw.seen[k] && /^[ifrt]:[\w:.-]{1,60}$/.test(k)) h.seen[k] = 1;
   h.stash = (Array.isArray(raw.stash) ? raw.stash : []).filter((it: any) => it && ITEMS[it.base] && typeof it.uid === 'string').slice(0, 2000); // nie stillschweigend kürzen: überzählige Stücke bleiben abholbar
   for (const it of h.stash) {
-    it.affixes = Array.isArray(it.affixes) ? it.affixes : []; it.up = num(it.up, 0, 0, CFG.upgrade.max); it.rarity = num(it.rarity, 0, 0, 4); it.ilvl = num(it.ilvl, 1, 1, 99);
+    it.affixes = Array.isArray(it.affixes) ? it.affixes : []; it.up = num(it.up, 0, 0, CFG.upgrade.max); it.rarity = clampRarity(it.rarity); it.ilvl = num(it.ilvl, 1, 1, 99);
     if (it.qty !== undefined) it.qty = Math.max(1, Math.floor(num(it.qty, 1, 1, 1e6)));
     if (it.set !== undefined && !SETS[it.set]) delete it.set;
   }

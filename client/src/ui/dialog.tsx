@@ -11,8 +11,10 @@ import type { QuestDef } from '../../../shared/src/data/quests';
 import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
-import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, itemIconKey, modEntries, send, sfx, windowSlot } from './common';
-import { StationOptions } from './craft';
+import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtMod, fmtNum, hideTip, itemIconKey, modEntries, send, sfx, UpgradeLadder, windowSlot } from './common';
+import { CostList, StationOptions } from './craft';
+import { upgradeBlock, upgradeCost, upgradePreview } from '../../../shared/src/craft';
+import { equippedItems } from '../../../shared/src/equip';
 import { KreisOption } from './endgame';
 import { HomeOption } from './home';
 import { kreisLevel } from '../../../shared/src/data/rifts';
@@ -256,22 +258,19 @@ function Shop({ npc, char, zone, zoneLevel, back }: { npc: string; char: CharDat
 }
 
 // ------------------------------------------------------------------ Verbessern
+/** 0.9: faire Verbesserung – jede Stufe gelingt; gezeigt wird genau, was die nächste Stufe bringt und kostet. */
 export function Upgrade({ npc, char, back }: { npc: string; char: CharData; back: () => void }) { // 0.7: auch an der Esse auf dem Hof (craft.tsx)
-  const equipped = SLOTS.map(s => char.equip[s]).filter(Boolean) as ItemInstance[];
+  const equipped = equippedItems(char);
   const bag = char.inv.filter(i => ITEMS[i.base] && isGear(ITEMS[i.base]));
   const all = [...equipped, ...bag];
   const [sel, setSel] = useState<string | null>(equipped[0]?.uid ?? bag[0]?.uid ?? null);
   const it = all.find(i => i.uid === sel) ?? null;
-  const maxed = !!it && it.up >= CFG.upgrade.max;
-  const gold = it ? CFG.upgrade.gold(it.ilvl, it.up) : 0;
-  const matId = it ? TIER_MATERIAL[tierOf(it.ilvl) - 1] : '';
-  const mat = ITEMS[matId];
-  const need = it ? CFG.upgrade.mats(it.up) : 0;
-  const have = char.inv.reduce((a, i) => a + (i.base === matId ? i.qty ?? 1 : 0), 0);
-  const chance = it && !maxed ? CFG.upgrade.chance[it.up] ?? 0 : 0;
+  const cost = it ? upgradeCost(it) : null;
+  const pre = it ? upgradePreview(it) : null;
+  const maxed = !!it && !cost;
   const cur = it ? baseMods(it) : {};
   const nxt = it && !maxed ? baseMods({ ...it, up: it.up + 1 }) : {};
-  const ok = !!it && !maxed && char.gold >= gold && have >= need;
+  const why = it ? upgradeBlock(char, it) : null;
   return (
     <div class="upg">
       <div class="upg-pick">
@@ -290,23 +289,24 @@ export function Upgrade({ npc, char, back }: { npc: string; char: CharData; back
                 <div class="upg-arrow">{maxed ? 'Höchste Verbesserungsstufe erreicht' : <>+{it.up} <i>➜</i> <b>+{it.up + 1}</b></>}</div>
               </div>
             </div>
-            {!maxed && (
+            {!maxed && cost && pre && (
               <>
+                <div class="sec-title">Die nächste Stufe bringt</div>
                 <ul class="upg-stats">
                   {modEntries(cur).map(([k, v]) => <li><span>{MOD_LABEL[k as ModKey]}</span><span>{v}</span><i>➜</i><b class="good">{(nxt as any)[k] ?? v}</b></li>)}
+                  {pre.bonus && <li class="upg-bonus"><span>Neu bei +{pre.to}</span><b class="good">{fmtMod(pre.bonus[0], pre.bonus[1])}</b></li>}
+                  {pre.passive && <li class="upg-bonus"><span>Neu bei +{pre.to}</span><b class="good">{pre.passive.name}</b></li>}
                 </ul>
-                <ul class="upg-cost">
-                  <li class={cx(char.gold < gold && 'bad')}><span>Kosten</span><Gold n={gold} /></li>
-                  <li class={cx(have < need && 'bad')}><span>Material</span><span class="row"><Icon k={'item_' + (mat?.icon ?? 'mat_wood')} size={24} />{need}× {mat?.name ?? matId} <small>(du hast {have})</small></span></li>
-                  <li><span>Erfolgschance</span><b class={chance >= 0.9 ? 'good' : chance >= 0.6 ? 'warn' : 'bad'}>{Math.round(chance * 100)} %</b></li>
-                </ul>
-                <p class="note">Misslingt der Versuch, sind nur Gold und Material verloren – der Gegenstand bleibt unversehrt.</p>
-                <Btn kind="primary" class="block" disabled={!ok} onClick={() => send({ t: 'upgrade', uid: it.uid, npc })} sound={null}>
-                  {char.gold < gold ? 'Nicht genug Gold' : have < need ? 'Material fehlt' : 'Verbessern'}
+                {pre.passive && <p class="note upg-passive">{pre.passive.text}</p>}
+                <CostList cost={cost} char={char} />
+                <p class="note">Jede Stufe gelingt – nichts wird zerstört, nichts fällt zurück. Ab +4 braucht es Essenzen, ab +7 Bosskerne, für +10 Ätherstaub.</p>
+                <Btn kind="primary" class="block" disabled={!!why} title={why ?? undefined} onClick={() => send({ t: 'upgrade', uid: it.uid, npc })} sound={null}>
+                  {why ? (why.startsWith('Nicht genug Gold') ? 'Nicht genug Gold' : 'Material fehlt') : `Auf +${pre.to} verbessern`}
                 </Btn>
               </>
             )}
             {maxed && <p class="note">Mehr geht nicht. Selbst der beste Schmied hat Grenzen.</p>}
+            <UpgradeLadder it={it} compact />
           </>
         ) : <p class="note">Wähle links ein Ausrüstungsteil aus.</p>}
       </div>

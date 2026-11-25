@@ -10,7 +10,7 @@ import { circleFree } from '../../shared/src/collision';
 import { CFG } from '../../shared/src/config';
 import { makeSetPiece } from '../../shared/src/craft';
 import { ENEMIES, type BossDef } from '../../shared/src/data/enemies';
-import { BOSS_UNIQUE, generateGear, makeStack, rollAffixes, rollRarity } from '../../shared/src/data/items';
+import { BOSS_UNIQUE, generateBossUnique, generateGear, makeStack, rescaleItem, rollAffixes, rollRarity } from '../../shared/src/data/items';
 import { AETHER, ECHO_FRAG } from '../../shared/src/data/materials';
 import { RECIPES, scrollOf } from '../../shared/src/data/recipes';
 import { ECHO_TINT, RIFT_DUNGEONS, RIFT_STONE, TRIAL_BOSSES, TRIAL_ID, TRIAL_NAME, TRIAL_RECIPE, TRIAL_ZONE, counterOf, echoBossDef, fmtTime, riftModName, riftMods, riftPar, riftRarity, riftRevives, riftUnlocked, riftZoneDef, trialUnlocked, type RiftModId } from '../../shared/src/data/rifts';
@@ -366,18 +366,19 @@ export const Rift = {
     if (r.chance(R.scroll)) { const sc = pickScroll(zone, p); if (sc) p.give(makeStack(sc)); }
     const u = BOSS_UNIQUE[run.bosses[0]];
     if (u && r.chance(R.unique)) {
-      const it = generateGear(r, run.ilvl, r.chance(0.2) ? 4 : 3, cls, 'weapon');
-      it.element = u.element; it.name = u.names[cls];
+      // 0.9: halb die benannte Waffe, halb das benannte Stück für einen der neuen Plätze (BOSS_UNIQUE_GEAR)
+      const it = generateBossUnique(r, run.bosses[0], cls, r.chance(0.2), r.chance(0.5))!;
+      rescaleItem(it, run.ilvl);
       p.give(it);
     }
   },
   /** Ein Setteil auf der Gegenstandsstufe des Risses (der Grundgegenstand bleibt der des Sets, damit die Teile zusammenzählen). */
   setPiece(zone: Zone, setId: string, cls: CharData['cls']): ItemInstance {
     const run = zone.rift!, r = zone.rng;
-    const piece: SetPiece = r.weighted([['ring', 3], ['amulet', 3], ['helm', 2], ['armor', 2]] as const);
+    const piece: SetPiece = r.weighted([['ring', 3], ['amulet', 3], ['helm', 2], ['armor', 2], ['gloves', 2], ['boots', 2]] as const);
     const it = makeSetPiece(r, setId, piece, cls, Math.max(2, rollRarity(r, riftRarity(run.stufe))));
     it.ilvl = run.ilvl;
-    it.affixes = rollAffixes(r, run.ilvl, it.rarity, cls, false);
+    it.affixes = rollAffixes(r, run.ilvl, it.rarity, cls, it.base);
     return it;
   },
   /** Für Tests und die Oberfläche: Namen der Modifikatoren eines Risses */

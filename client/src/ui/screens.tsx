@@ -343,7 +343,7 @@ const TIPS = [
   'Quellsteine heilen dich, setzen deinen Rückkehrpunkt und erlauben die Schnellreise.',
   'Brüchige Felsblockaden lassen sich mit Angriffen zertrümmern.',
   'Beute fällt für jeden Spieler einzeln – niemand nimmt dir etwas weg.',
-  `Borin verbessert Ausrüstung gegen Gold und Material. Ab +${CFG.upgrade.chance.findIndex(c => c < 1) + 1} kann ein Versuch scheitern.`,
+  `Borin verbessert Ausrüstung bis +${CFG.upgrade.max} – jede Stufe gelingt, nur die Kosten steigen.`,
   'Das Handbuch (Taste H) erklärt jedes System auf einer Seite.',
   'Gefallene Verbündete kannst du wiederbeleben, indem du bei ihnen interagierst.',
   'Quellsplitter erhöhen dauerhaft Leben und Mana. In jeder Region sind fünf versteckt.',

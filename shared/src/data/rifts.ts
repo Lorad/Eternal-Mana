@@ -11,6 +11,7 @@ import type { CharData, Element, ItemInstance, ModKey, Mods } from '../types';
 import { Rng, strHash } from '../util/rng';
 import { BOSSES, type BossDef } from './enemies';
 import { ITEMS, isGear } from './items';
+import { mythicRift, rarityTable } from '../rarity';
 import { AETHER, ECHO_FRAG } from './materials';
 import { ZONES, type ZoneDef } from './zones';
 
@@ -72,7 +73,8 @@ export function riftPar(dungeon: string, stufe: number): number {
 /** Seltenheitsgewichte der Belohnungstruhe (linear zwischen Stufe 1 und der höchsten Stufe) */
 export function riftRarity(stufe: number): number[] {
   const f = Math.max(0, Math.min(1, (stufe - 1) / (CFG.rift.maxStufe - 1)));
-  return CFG.rift.rarityLow.map((w, i) => w + (CFG.rift.rarityHigh[i] - w) * f);
+  const lo = rarityTable(CFG.rift.rarityLow), hi = rarityTable(CFG.rift.rarityHigh);
+  return rarityTable(lo.map((w, i) => w + (hi[i] - w) * f), mythicRift(stufe)); // 0.9: „Mythisch“ erst ab CFG.loot.mythic.riftFrom
 }
 /** Lebensfunken einer Gruppe dieser Größe */
 export function riftRevives(members: number): number { return CFG.rift.revives + CFG.rift.revivesPerExtra * Math.max(0, members - 1); }

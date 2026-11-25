@@ -104,7 +104,8 @@ export class BossCtl {
     const first = !p.char.flags[key];
     if (!first && !this.zone.rng.chance(0.25)) return null;
     p.char.flags[key] = 1; p.sync('flags');
-    return generateBossUnique(this.zone.rng, this.def.id, p.char.cls, this.zone.rng.chance(first ? 0.15 : 0.1));
+    // erster Sieg: die Waffe; danach halb Waffe, halb das Stück für einen der neuen Plätze (0.9)
+    return generateBossUnique(this.zone.rng, this.def.id, p.char.cls, this.zone.rng.chance(first ? 0.15 : 0.1), !first && this.zone.rng.chance(0.5));
   }
 
   // ---- Story-Bosse (0.3): werden verschont und stehen danach friedlich im Raum

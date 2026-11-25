@@ -15,7 +15,10 @@ import { ZONES } from '../../shared/src/data/zones';
 import { getMap } from '../../shared/src/maps/mapgen';
 import { newCharacter } from '../../shared/src/stats';
 import type { AttrKey, ClientMsg, ItemInstance, PlayerInfo, ServerInfo, ServerMsg, Slot } from '../../shared/src/types';
-import { SLOTS } from '../../shared/src/types';
+import { equippedItems, fullKit, normSlot, targetSlot } from '../../shared/src/equip';
+import { upgradeBlock, upgradeCost, upgradePreview } from '../../shared/src/craft';
+import { MOD_LABEL } from '../../shared/src/types';
+import type { AnySlot, ModKey } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { devCraft, handleCraft, restoreTimed, useSpecial } from './craft';
 import { devEndgame, handleEndgame, questPoints, questUnlocks } from './endgame';
@@ -246,7 +249,7 @@ export class Game {
       case 'party': case 'trade': case 'qShare': case 'qShareAns': case 'inspect': return Social.message(this, p, m);
       case 'save': if (this.savePlayer(p)) p.send({ t: 'saved' }); else p.toast('Speichern fehlgeschlagen.', 'bad'); return;
       case 'sortInv': {
-        const order = ['weapon', 'helm', 'armor', 'accessory', 'consumable', 'material', 'quest'];
+        const order = ['weapon', 'offhand', 'helm', 'armor', 'gloves', 'legs', 'boots', 'accessory', 'consumable', 'material', 'quest'];
         p.char.inv.sort((a, b) => order.indexOf(ITEMS[a.base].kind) - order.indexOf(ITEMS[b.base].kind) || b.rarity - a.rarity || b.ilvl - a.ilvl || a.base.localeCompare(b.base));
         p.sync('inv'); return;
       }
@@ -402,7 +405,7 @@ export class Game {
     else if (cmd === 'time') { this.todOffset += (+a[0] || 0.5) - this.tod(); const tod = this.tod(); for (const q of this.players.values()) q.send({ t: 'env', tod }); }
     else if (cmd === 'weather') { p.zone.weather = a[0] ?? 'clear'; p.zone.weatherUntil = this.now + 600; for (const q of p.zone.players.values()) q.send({ t: 'env', weather: p.zone.weather }); }
     else if (cmd === 'god') { p.god = !p.god; p.toast('Unverwundbar: ' + p.god); }
-    else if (cmd === 'gear') { for (const k of ['weapon', 'helm', 'armor', 'accessory'] as const) p.give(generateGear(this.rng, c.level, +a[0] || 3, c.cls, k)); }
+    else if (cmd === 'gear') { for (const it of Object.values(fullKit(this.rng, c.level, +a[0] || 3, c.cls))) p.give(it!); }
     else if (cmd === 'item' && ITEMS[a[0]]) p.give(makeStack(a[0], +a[1] || 1));
     else if (cmd === 'quest' && QUESTS[a[0]]) { c.quests[a[0]] = { s: 'done', p: [], n: 1 }; p.sync('quests'); }
     else if (cmd === 'quests') { for (const id in QUESTS) if (QUESTS[id].type === 'main') c.quests[id] = { s: 'done', p: [], n: 1 }; p.sync('quests'); }
@@ -428,17 +431,18 @@ export class Game {
     return false;
   }
   private findItem(p: Player, uid: string): ItemInstance | undefined {
-    return p.char.inv.find(i => i.uid === uid) ?? SLOTS.map(s => p.char.equip[s]).find(i => i?.uid === uid);
+    return p.char.inv.find(i => i.uid === uid) ?? equippedItems(p.char).find(i => i.uid === uid);
   }
-  private equip(p: Player, uid: string, want?: Slot) {
+  /** 0.9: zehn Plätze. `want` wählt bei Ringen den Platz (alte Namen `acc1`/`acc2` gehen weiter). */
+  private equip(p: Player, uid: string, want?: AnySlot) {
     const c = p.char, i = c.inv.findIndex(it => it.uid === uid);
     if (i < 0 || p.dead) return;
     const it = c.inv[i], b = ITEMS[it.base];
     if (!isGear(b)) return;
     if (!canEquip(c.cls, b)) { p.toast('Deine Klasse kann das nicht ausrüsten.', 'bad'); return; }
     if (c.level < equipLevel(it.ilvl)) { p.toast(`Benötigt Stufe ${equipLevel(it.ilvl)}.`, 'bad'); return; }
-    let slot = slotOf(b)!;
-    if (b.kind === 'accessory') slot = want === 'acc2' || want === 'acc1' ? want : !c.equip.acc1 ? 'acc1' : !c.equip.acc2 ? 'acc2' : 'acc1';
+    const slot = targetSlot(c, it.base, want);
+    if (!slot) return;
     const old = c.equip[slot];
     c.inv.splice(i, 1);
     if (old) c.inv.push(old);
@@ -446,8 +450,10 @@ export class Game {
     p.recalc(); p.sync('inv', 'equip');
     p.pev.push({ k: 'sfx', n: 'ui_equip' });
   }
-  private unequip(p: Player, slot: Slot) {
-    const c = p.char, it = c.equip[slot];
+  private unequip(p: Player, want: AnySlot) {
+    const c = p.char, slot = normSlot(want);
+    if (!slot) return;
+    const it = c.equip[slot];
     if (!it || p.dead) return;
     if (c.inv.length >= CFG.player.invSize) { p.toast('Inventar voll.', 'bad'); return; }
     delete c.equip[slot];
@@ -504,23 +510,20 @@ export class Game {
     p.pev.push({ k: 'sfx', n: 'buy' });
     p.checkCollectQuests();
   }
+  /** 0.9: Verbessern gelingt immer – nur die Kosten steigen (shared/src/craft.ts, upgradeCost). Nichts geht verloren. */
   private upgrade(p: Player, uid: string, npc: string) {
     if (!(npc === HOME_AT ? Home.atStation(p, 'forge') : this.nearNpc(p, npc) && NPCS[npc]?.services?.includes('upgrade'))) return; // 0.7: auch an der Esse auf dem Hof
     const it = this.findItem(p, uid);
     if (!it || !isGear(ITEMS[it.base])) return;
-    if (it.up >= CFG.upgrade.max) { p.toast('Mehr geht nicht. Selbst Borin hat Grenzen.', 'bad'); return; }
-    const gold = CFG.upgrade.gold(it.ilvl, it.up), mat = TIER_MATERIAL[tierOf(it.ilvl) - 1], n = CFG.upgrade.mats(it.up);
-    if (p.char.gold < gold) { p.toast('Nicht genug Gold.', 'bad'); return; }
-    if (p.countItem(mat) < n) { p.toast(`Es fehlt Material: ${n}× ${ITEMS[mat].name}.`, 'bad'); return; }
-    p.char.gold -= gold; p.removeItems(mat, n);
-    if (this.rng.chance(CFG.upgrade.chance[it.up])) {
-      it.up++;
-      p.toast(`${itemName(it)} – Verbesserung gelungen!`, 'good');
-      p.pev.push({ k: 'sfx', n: 'upgrade_success' });
-    } else {
-      p.toast('Die Verbesserung ist misslungen. Material und Gold sind verloren, der Gegenstand bleibt unversehrt.', 'bad');
-      p.pev.push({ k: 'sfx', n: 'upgrade_fail' });
-    }
+    const why = upgradeBlock(p.char, it);
+    if (why) { p.toast(why, 'bad'); p.pev.push({ k: 'sfx', n: 'ui_error' }); return; }
+    const cost = upgradeCost(it)!, pre = upgradePreview(it)!;
+    p.char.gold -= cost.gold;
+    for (const [b, n] of cost.mats) p.removeItems(b, n);
+    it.up++;
+    const extra = pre.passive ? ` Neue Wirkung: ${pre.passive.name}.` : pre.bonus ? ` Dazu: ${fmtModShort(pre.bonus)}.` : '';
+    p.toast(`${itemName(it)} – verbessert!${extra}`, 'good');
+    p.pev.push({ k: 'sfx', n: 'upgrade_success' });
     p.recalc(); p.sync('gold', 'inv', 'equip');
   }
   private attr(p: Player, a: AttrKey, n: number) {
@@ -592,3 +595,6 @@ export class Game {
     this.savePlayer(p);
   }
 }
+
+/** Kurzform einer Eigenschaft für Meldungen: „+2 % Krit-Chance“ */
+function fmtModShort([k, v]: [ModKey, number]): string { return `+${String(v).replace('.', ',')} ${MOD_LABEL[k]}`; }

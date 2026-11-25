@@ -39,7 +39,7 @@ export const COOK_SPOTS: Record<string, [string, number, number, string][]> = {
   ruinen: [['lager', 0, 1, 'campfire']],
 };
 
-export type GearKind = 'weapon' | 'helm' | 'armor' | 'ring' | 'amulet' | 'charm';
+export type GearKind = 'weapon' | 'offhand' | 'helm' | 'armor' | 'gloves' | 'legs' | 'boots' | 'ring' | 'amulet' | 'charm';
 export type RecipeOut =
   | { k: 'item'; item: string; qty: number }
   /** Ausrüstung für die eigene Klasse auf der Materialstufe; `master` = Mindestseltenheit „Selten“ */
@@ -70,20 +70,23 @@ export interface RecipeDef {
   src?: 'ruf' | 'welt';
 }
 export const CAT_NAME: Record<string, string> = {
-  weapon: 'Waffen', armor: 'Rüstung', acc: 'Schmuck', set: 'Sets', special: 'Meisterstücke', potion: 'Tränke', elixir: 'Elixiere', food: 'Speisen',
+  weapon: 'Waffen', offhand: 'Zweithand', armor: 'Rüstung', acc: 'Schmuck', set: 'Sets', special: 'Meisterstücke', potion: 'Tränke', elixir: 'Elixiere', food: 'Speisen',
 };
-export const STATION_CATS: Record<StationId, string[]> = { forge: ['weapon', 'armor', 'acc', 'set', 'special'], alchemy: ['potion', 'elixir'], cooking: ['food'], enchant: [] };
+export const STATION_CATS: Record<StationId, string[]> = { forge: ['weapon', 'offhand', 'armor', 'acc', 'set', 'special'], alchemy: ['potion', 'elixir'], cooking: ['food'], enchant: [] };
 
 const TIER_LEVEL = [1, 6, 11, 16, 21, 26];
 const TIER_ADJ = ['Eisenholz', 'Kristall', 'Glutstahl', 'Frostsilber', 'Runen', 'Schatten'];
 const R: RecipeDef[] = [];
 
 // ------------------------------------------------------------------ Schmiede
-const GEAR_COST: Record<GearKind, [number, number]> = { weapon: [6, 4], armor: [6, 3], helm: [4, 2], ring: [3, 3], amulet: [3, 3], charm: [3, 3] };
+// 0.9: Schmiederezepte für alle zehn Plätze (Zweithand, Handschuhe, Beine, Schuhe neu; IDs `f_<art>_<stufe>`)
+const GEAR_COST: Record<GearKind, [number, number]> = { weapon: [6, 4], offhand: [4, 3], armor: [6, 3], helm: [4, 2], gloves: [3, 2], legs: [4, 2], boots: [3, 2], ring: [3, 3], amulet: [3, 3], charm: [3, 3] };
+const GEAR_CAT: Record<GearKind, string> = { weapon: 'weapon', offhand: 'offhand', helm: 'armor', armor: 'armor', gloves: 'armor', legs: 'armor', boots: 'armor', ring: 'acc', amulet: 'acc', charm: 'acc' };
+export const GEAR_KINDS: GearKind[] = ['weapon', 'offhand', 'helm', 'armor', 'gloves', 'legs', 'boots', 'ring', 'amulet', 'charm'];
 for (let t = 1; t <= 6; t++) {
-  for (const kind of ['weapon', 'helm', 'armor', 'ring', 'amulet', 'charm'] as GearKind[]) {
+  for (const kind of GEAR_KINDS) {
     const [ore, mon] = GEAR_COST[kind];
-    R.push({ id: `f_${kind}_${t}`, station: 'forge', name: '', cat: kind === 'weapon' ? 'weapon' : kind === 'helm' || kind === 'armor' ? 'armor' : 'acc',
+    R.push({ id: `f_${kind}_${t}`, station: 'forge', name: '', cat: GEAR_CAT[kind],
       inputs: [[TIER_ORE[t - 1], ore], [TIER_MONSTER[t - 1], mon]], gold: CFG.craft.gearGold(t), level: TIER_LEVEL[t - 1], out: { k: 'gear', kind, tier: t }, unlock: 'start' });
   }
   // Meisterstück: Waffe mit Mindestseltenheit „Selten“ – das Rezept muss gefunden werden
@@ -91,7 +94,7 @@ for (let t = 1; t <= 6; t++) {
   R.push({ id: `f_master_${t}`, station: 'forge', name: `Meisterstück: ${TIER_ADJ[t - 1]}waffe`, cat: 'special',
     inputs: [[TIER_ORE[t - 1], 10], [TIER_MONSTER[t - 1], 8], [ESSENCE[el], 4]], gold: CFG.craft.gearGold(t) * 3, level: TIER_LEVEL[t - 1] + 2, out: { k: 'gear', kind: 'weapon', tier: t, master: true }, unlock: 'learn' });
 }
-for (const s of SET_LIST) for (const piece of ['helm', 'armor'] as SetPiece[]) {
+for (const s of SET_LIST) for (const piece of ['helm', 'armor', 'gloves', 'boots'] as SetPiece[]) { // 0.9: auch Handschutz und Schritt
   R.push({ id: `f_set_${s.id}_${piece}`, station: 'forge', name: setPieceName(s, piece), cat: 'set',
     inputs: [[BOSS_CORE[s.boss], 1], [TIER_ORE[s.tier - 1], 8], [TIER_MONSTER[s.tier - 1], 6], [ESSENCE[s.element as keyof typeof ESSENCE], 5]],
     gold: CFG.craft.gearGold(s.tier) * 2, level: Math.max(1, s.ilvl - 2), out: { k: 'set', set: s.id, piece }, unlock: 'start' });
@@ -162,6 +165,8 @@ export const scrollOf = (recipeId: string) => 'rs_' + recipeId;
 export const LEARNABLE = R.filter(r => r.unlock === 'learn');
 
 // ------------------------------------------------------------------ Verzauberungen
+/** Runen-Plätze: Waffe, Helm, Brust und Schmuck. Zweithand, Handschuhe, Beine und Schuhe (0.9) tragen bewusst keine Rune –
+ *  sonst verdoppelte sich mit zehn Plätzen die Wirkung der Runen. */
 export type EnchSlot = 'weapon' | 'helm' | 'armor' | 'accessory';
 export interface EnchantDef {
   id: string;

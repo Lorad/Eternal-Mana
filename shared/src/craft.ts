@@ -4,11 +4,12 @@
  */
 import { CFG } from './config';
 import { CLASSES } from './data/classes';
-import { ITEMS, TIER_MATERIAL, generateGear, isGear, newUid, rollAffixes, rollRarity, tierOf } from './data/items';
-import { ELEMENT_CORE, ESSENCE, TIER_MONSTER } from './data/materials';
-import { ENCHANTS, FIRE, HOME_AT, HOME_STATIONS, STATION_NPCS, type EnchantDef, type InfuseElement, type RecipeDef, type StationId } from './data/recipes';
+import { ITEMS, TIER_MATERIAL, gearBase, generateGear, isGear, newUid, rollAffixes, rollRarity, slotKind, tierOf, type GenKind } from './data/items';
+import { AETHER, BOSS_CORE, ECHO_FRAG, ELEMENT_CORE, ESSENCE, TIER_MONSTER } from './data/materials';
+import { ENCHANTS, FIRE, HOME_AT, HOME_STATIONS, STATION_NPCS, type EnchantDef, type GearKind, type InfuseElement, type RecipeDef, type StationId } from './data/recipes';
 import { SETS, setPieceName, type SetPiece } from './data/sets';
-import type { CharData, ClassId, ItemInstance } from './types';
+import { upgradeBonusAt, UP10 } from './data/upgrade';
+import type { CharData, ClassId, ItemInstance, ModKey, Mods } from './types';
 import type { Rng } from './util/rng';
 
 export interface Cost { gold: number; mats: [string, number][] }
@@ -26,13 +27,17 @@ export function tierIlvl(tier: number, level: number): number {
 export function legendIlvl(level: number): number { return Math.max(CFG.craft.legendMinIlvl, Math.min(CFG.player.maxLevel, level)); }
 
 /** Basis-Gegenstand, den ein Rezept für diese Klasse ergibt (für Icon und Namen). */
+/** Schmiede-Art → Art beim Erzeugen und Art des Schmucks */
+export function genOf(kind: GearKind | SetPiece): [GenKind, 'ring' | 'amulet' | 'charm' | undefined] {
+  return kind === 'ring' || kind === 'amulet' || kind === 'charm' ? ['accessory', kind] : [kind, undefined];
+}
 export function recipeBase(r: RecipeDef, cls: ClassId): string {
-  const c = CLASSES[cls], o = r.out;
+  const o = r.out;
   switch (o.k) {
     case 'item': return o.item;
     case 'legend': return 'leg_' + cls;
-    case 'set': { const t = tierOf(SETS[o.set].ilvl); return o.piece === 'helm' ? `h_${c.armor}_${t}` : o.piece === 'armor' ? `a_${c.armor}_${t}` : `c_${o.piece}_${t}`; }
-    case 'gear': return o.kind === 'weapon' ? `w_${c.weapon}_${o.tier}` : o.kind === 'helm' ? `h_${c.armor}_${o.tier}` : o.kind === 'armor' ? `a_${c.armor}_${o.tier}` : `c_${o.kind}_${o.tier}`;
+    case 'set': { const [k, acc] = genOf(o.piece); return gearBase(cls, k, tierOf(SETS[o.set].ilvl), acc); }
+    case 'gear': { const [k, acc] = genOf(o.kind); return gearBase(cls, k, o.tier, acc); }
   }
 }
 export function recipeLabel(r: RecipeDef, cls: ClassId): string {
@@ -69,15 +74,15 @@ export function craftBlock(c: CharData, r: RecipeDef, n = 1): string | null {
 }
 export function makeSetPiece(rng: Rng, setId: string, piece: SetPiece, cls: ClassId, rarity?: number): ItemInstance {
   const s = SETS[setId];
-  const acc = piece === 'ring' || piece === 'amulet' ? piece : undefined;
-  const it = generateGear(rng, s.ilvl, rarity ?? rollRarity(rng, CFG.craft.setWeights), cls, acc ? 'accessory' : (piece as 'helm' | 'armor'), acc);
+  const [k, acc] = genOf(piece);
+  const it = generateGear(rng, s.ilvl, rarity ?? rollRarity(rng, CFG.craft.setWeights), cls, k, acc);
   delete it.element;
   it.set = setId; it.name = setPieceName(s, piece);
   return it;
 }
 export function makeLegendary(rng: Rng, cls: ClassId, level: number): ItemInstance {
   const ilvl = legendIlvl(level);
-  return { uid: newUid(), base: 'leg_' + cls, rarity: 4, ilvl, up: 0, affixes: rollAffixes(rng, ilvl, 4, cls, true) };
+  return { uid: newUid(), base: 'leg_' + cls, rarity: 4, ilvl, up: 0, affixes: rollAffixes(rng, ilvl, 4, cls, 'leg_' + cls) };
 }
 /** Erzeugt das Ergebnis eines Rezepts (ohne Kosten abzuziehen). */
 export function makeCrafted(rng: Rng, r: RecipeDef, c: CharData, n = 1): ItemInstance {
@@ -87,8 +92,8 @@ export function makeCrafted(rng: Rng, r: RecipeDef, c: CharData, n = 1): ItemIns
     case 'legend': return makeLegendary(rng, c.cls, c.level);
     case 'set': return makeSetPiece(rng, o.set, o.piece, c.cls);
     case 'gear': {
-      const acc = o.kind === 'ring' || o.kind === 'amulet' || o.kind === 'charm' ? o.kind : undefined;
-      const it = generateGear(rng, tierIlvl(o.tier, c.level), rollRarity(rng, o.master ? CFG.craft.masterWeights : CFG.craft.gearWeights), c.cls, acc ? 'accessory' : (o.kind as 'weapon' | 'helm' | 'armor'), acc);
+      const [k, acc] = genOf(o.kind);
+      const it = generateGear(rng, tierIlvl(o.tier, c.level), rollRarity(rng, o.master ? CFG.craft.masterWeights : CFG.craft.gearWeights), c.cls, k, acc);
       delete it.element; // das Element bestimmt der Schmied erst beim Einschmieden
       return it;
     }
@@ -135,3 +140,40 @@ export function enchantBlock(c: CharData, it: ItemInstance, id: string): string 
   if (c.level < e.level) return `Benötigt Stufe ${e.level}.`;
   return missing(c, enchantCost(e));
 }
+
+// ------------------------------------------------------------------ Verbessern (0.9: jede Stufe gelingt)
+const TIER_ELEMENT: InfuseElement[] = ['earth', 'light', 'fire', 'water', 'wind', 'dark'];
+const TIER_BOSS = ['dornenmutter', 'kristallkoloss', 'ignarok', 'ysolde', 'archivar', 'hohlkoenig'];
+/**
+ * Kosten des Schritts von `it.up` auf `it.up + 1`: Gold und Rohstoffe der Materialstufe; ab +4 die Essenz des Stufenelements,
+ * ab +7 der Bosskern der Stufe, für +10 Ätherstaub; Gegenstände aus den Rissen (über Stufe 40) brauchen ab +7 Echo-Fragmente.
+ * null = bereits +10.
+ */
+export function upgradeCost(it: ItemInstance): Cost | null {
+  const U = CFG.upgrade;
+  if (it.up >= U.max) return null;
+  const i = Math.max(0, it.up), t = tierOf(it.ilvl) - 1;
+  const mats: [string, number][] = [];
+  const add = (b: string, n: number) => { if (n > 0) mats.push([b, n]); };
+  add(TIER_MATERIAL[t], U.ore[i]);
+  add(TIER_MONSTER[t], U.monster[i]);
+  add(ESSENCE[TIER_ELEMENT[t]], U.essence[i]);
+  add(BOSS_CORE[TIER_BOSS[t]], U.core[i]);
+  add(AETHER, U.aether[i]);
+  if (it.ilvl > CFG.player.maxLevel) add(ECHO_FRAG, U.echo[i]);
+  return { gold: U.gold(it.ilvl, it.up), mats };
+}
+export function upgradeBlock(c: CharData, it: ItemInstance): string | null {
+  const b = ITEMS[it.base];
+  if (!b || !isGear(b)) return 'Nur Ausrüstung lässt sich verbessern.';
+  const cost = upgradeCost(it);
+  if (!cost) return 'Mehr geht nicht. Selbst Borin hat Grenzen.';
+  return missing(c, cost);
+}
+/** Was der nächste Schritt bringt: neue Grundwerte, ggf. die Zusatzeigenschaft (+3/+6/+9) und ggf. die Passive (+10) */
+export function upgradePreview(it: ItemInstance): { to: number; bonus: [ModKey, number] | null; passive: { name: string; text: string } | null } | null {
+  if (it.up >= CFG.upgrade.max) return null;
+  const to = it.up + 1, k = slotKind(ITEMS[it.base]);
+  return { to, bonus: upgradeBonusAt(k, to), passive: to === CFG.upgrade.max && k ? UP10[k] : null };
+}
+export type { Mods };

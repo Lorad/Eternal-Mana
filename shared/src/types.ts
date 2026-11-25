@@ -2,9 +2,20 @@
 export type Element = 'phys' | 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark';
 export type ClassId = 'krieger' | 'magier' | 'waldlaeufer' | 'paladin' | 'schattenjaeger';
 export type AttrKey = 'str' | 'dex' | 'int' | 'vit';
-export type Slot = 'weapon' | 'helm' | 'armor' | 'acc1' | 'acc2';
-export const SLOTS: Slot[] = ['weapon', 'helm', 'armor', 'acc1', 'acc2'];
-export const SLOT_NAME: Record<Slot, string> = { weapon: 'Waffe', helm: 'Kopf', armor: 'Rüstung', acc1: 'Accessoire', acc2: 'Accessoire' };
+/**
+ * Ausrüstungsplätze (seit 0.9: zehn). `armor` ist die Brust (ID bleibt). Regeln je Klasse: shared/src/equip.ts.
+ * Die alten Plätze `acc1`/`acc2` (Schmuck bis 0.8) bleiben lesbar: `sanitizeChar` überführt sie verlustfrei (equip.ts, migrateEquip).
+ */
+export type Slot = 'weapon' | 'offhand' | 'helm' | 'armor' | 'gloves' | 'legs' | 'boots' | 'amulet' | 'ring1' | 'ring2';
+export const SLOTS: Slot[] = ['weapon', 'offhand', 'helm', 'armor', 'gloves', 'legs', 'boots', 'amulet', 'ring1', 'ring2'];
+/** Plätze der Versionen bis 0.8 – werden nur noch gelesen und beim Laden überführt */
+export type LegacySlot = 'acc1' | 'acc2';
+export const LEGACY_SLOTS: LegacySlot[] = ['acc1', 'acc2'];
+export type AnySlot = Slot | LegacySlot;
+export const SLOT_NAME: Record<AnySlot, string> = {
+  weapon: 'Hauptwaffe', offhand: 'Zweithand', helm: 'Helm', armor: 'Brust', gloves: 'Handschuhe', legs: 'Beine', boots: 'Schuhe',
+  amulet: 'Amulett', ring1: 'Ring', ring2: 'Ring', acc1: 'Schmuck', acc2: 'Schmuck',
+};
 export const ATTR_NAME: Record<AttrKey, string> = { str: 'Stärke', dex: 'Geschick', int: 'Intelligenz', vit: 'Vitalität' };
 
 /** Modifikatoren – von Affixen, Passiven und Buffs gemeinsam genutzt. *Pct = Prozentpunkte. */
@@ -31,7 +42,7 @@ export const RES_KEY: Record<Exclude<Element, 'phys'>, ModKey> = { fire: 'resFir
 export interface ItemInstance {
   uid: string;
   base: string;        // ItemBase.id
-  rarity: number;      // 0..4
+  rarity: number;      // 0..RARITY_NAME.length-1 (seit 0.9: 5 = Mythisch)
   ilvl: number;
   up: number;          // Verbesserungsstufe +0..+10
   affixes: [ModKey, number][];
@@ -64,7 +75,8 @@ export interface CharData {
   skills: Record<string, number>;
   hotbar: (string | null)[];
   inv: ItemInstance[];
-  equip: Partial<Record<Slot, ItemInstance>>;
+  /** angelegte Ausrüstung. Alte Stände können noch `acc1`/`acc2` tragen – `sanitizeChar` überführt sie (equip.ts). */
+  equip: Partial<Record<AnySlot, ItemInstance>>;
   quests: Record<string, QuestState>;
   /** Fortschritts-Flags: `c:<zone>:<id>` Truhe, `s:<zone>:<id>` Quellsplitter, `t:<zone>` Quellstein, `b:<boss>` Boss, `z:<zone>` besucht, `x:<zone>:<id>` Geheimnis.
    *  Story (ab 0.3, siehe shared/src/data/cond.ts): `d:` Entscheidung, `l:` Chronik, `h:` Hüter-Erinnerung, `e:` Echo, `v:` Ort, `q:` Gespräch, `k:` Filmszene, `ch` Kapitel */
@@ -105,6 +117,9 @@ export interface CharData {
   rest?: number;
   /** Stand, bis zu dem dieser Charakter in die Sammlung des Profils eingetragen ist (fehlt = noch nie: Nachtrag beim Betreten) */
   cv?: number;
+  // ---- 0.9 Ausrüstung (optional)
+  /** Stand des Ausrüstungsmodells: fehlt = alte fünf Plätze (wird beim Laden überführt), 2 = zehn Plätze */
+  eqv?: number;
 }
 
 /**
@@ -144,6 +159,9 @@ export interface Derived {
   legend?: ClassId;
   /** angelegte Teile je Set */
   sets: Record<string, number>;
+  /** 0.9: Wirkungen der Ausrüstung im Kampf – Passiven der Stufe +10 (Anzahl je Art, data/upgrade.ts) und
+   *  Sonderwirkungen voller Sets (Set-ID → 1) sowie Fähigkeits-Modifikatoren der 4er-Boni (Fähigkeit → Schaden/Abklingzeit) */
+  gearFx?: { up10: Record<string, number>; setFull: Record<string, number>; skill: Record<string, { dmg: number; cd: number }> };
 }
 
 export type StatusId = 'burn' | 'poison' | 'slow' | 'stun' | 'weak' | 'mark' | 'expose' | 'root' | 'freeze';
@@ -215,7 +233,7 @@ export interface TradeView { with: { id: number; name: string; cls: ClassId; lev
 /** Ein anderer Spieler zum Ansehen (nur lesen) */
 export interface InspectInfo {
   id: number; name: string; cls: ClassId; level: number; title?: string; kreis: number; quell: number; riftStufe: number;
-  equip: Partial<Record<Slot, ItemInstance>>;
+  equip: Partial<Record<AnySlot, ItemInstance>>;
   stats: { maxHp: number; maxMp: number; power: number; def: number; crit: number; el: Element };
   sets: Record<string, number>;
   /** aktiver Begleiter und gewählte Erscheinung (Zuhause) */
@@ -238,8 +256,8 @@ export type ClientMsg =
   | { t: 'interact'; id: number }
   | { t: 'revive'; id: number }
   | { t: 'respawn' }
-  | { t: 'equip'; uid: string; slot?: Slot }
-  | { t: 'unequip'; slot: Slot }
+  | { t: 'equip'; uid: string; slot?: AnySlot }
+  | { t: 'unequip'; slot: AnySlot }
   | { t: 'use'; uid: string }
   | { t: 'quick'; kind: 'hp' | 'mp' }
   | { t: 'drop'; uid: string }

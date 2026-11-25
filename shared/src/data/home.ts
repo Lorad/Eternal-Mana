@@ -83,7 +83,7 @@ export function upgradeBlock(c: CharData, h: HomeData): string | null {
 }
 
 // ------------------------------------------------------------------ Lagertruhe
-const SORT = ['weapon', 'helm', 'armor', 'accessory', 'consumable', 'material', 'quest'];
+const SORT = ['weapon', 'offhand', 'helm', 'armor', 'gloves', 'legs', 'boots', 'accessory', 'consumable', 'material', 'quest'];
 export function sortItems(list: ItemInstance[]): void {
   list.sort((a, b) => SORT.indexOf(ITEMS[a.base].kind) - SORT.indexOf(ITEMS[b.base].kind) || b.rarity - a.rarity || b.ilvl - a.ilvl || a.base.localeCompare(b.base));
 }

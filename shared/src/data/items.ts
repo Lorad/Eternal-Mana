@@ -1,13 +1,20 @@
 import { CFG } from '../config';
+import { clampRarity, rarityTable } from '../rarity';
 import type { ClassId, Element, ItemInstance, ModKey, Mods, Slot } from '../types';
 import { Rng } from '../util/rng';
+import { upgradeBonus, type SlotKind } from './upgrade';
 import { CLASSES } from './classes';
 import { CRAFT_ITEMS } from './materials';
 import { ENCHANTS, LEARNABLE, scrollOf } from './recipes';
 import { HOME_ITEMS } from './homeitems';
 import { WORLD_ITEMS } from './worlditems';
 
-export type ItemKind = 'weapon' | 'helm' | 'armor' | 'accessory' | 'consumable' | 'material' | 'quest';
+export type ItemKind = 'weapon' | 'offhand' | 'helm' | 'armor' | 'gloves' | 'legs' | 'boots' | 'accessory' | 'consumable' | 'material' | 'quest';
+/** Art der Zweithand (0.9): je Klasse festgelegt in CLASS_OFFHAND */
+export type OffhandType = 'shield' | 'quiver' | 'tome' | 'focus' | 'offdagger';
+/** Ausrüstungsart beim Erzeugen (`generateGear`) */
+export type GenKind = 'weapon' | 'offhand' | 'helm' | 'armor' | 'gloves' | 'legs' | 'boots' | 'accessory';
+export const GEN_KINDS: GenKind[] = ['weapon', 'offhand', 'helm', 'armor', 'gloves', 'legs', 'boots', 'accessory'];
 
 export interface ItemBase {
   id: string;
@@ -19,6 +26,8 @@ export interface ItemBase {
   wtype?: 'sword' | 'staff' | 'bow' | 'hammer' | 'dagger';
   aclass?: 'heavy' | 'light' | 'robe';
   acc?: 'ring' | 'amulet' | 'charm';
+  /** 0.9: Art der Zweithand */
+  oh?: OffhandType;
   stack?: boolean;
   price: number;
   /** Verbrauchsgüter. Seit 0.4 auch: Zustände beenden, Rezept lernen, Speise/Elixier (ein Platz je Art, `party` = Radius für Gruppenmitglieder) */
@@ -39,6 +48,16 @@ const HELM_NAME: Record<string, string> = { heavy: 'helm', light: 'kappe', robe:
 const ARMOR_NAME: Record<string, string> = { heavy: 'panzer', light: 'wams', robe: 'robe' };
 const HELM_ICON: Record<string, string> = { heavy: 'helm_heavy', light: 'helm_light', robe: 'hood' };
 const ARMOR_ICON: Record<string, string> = { heavy: 'armor_heavy', light: 'armor_light', robe: 'robe' };
+// 0.9: neue Plätze – Namen im Stil „<Material><teil>“, Icons `gloves_*`, `legs_*`, `boots_*`, Zweithand nach Art (Ersatz-Icons: client/src/ui/common.tsx, ICON_FALLBACK)
+const GLOVES_NAME: Record<string, string> = { heavy: 'stulpen', light: 'handschuhe', robe: 'manschetten' };
+const LEGS_NAME: Record<string, string> = { heavy: 'beinschienen', light: 'hose', robe: 'beinkleid' };
+const BOOTS_NAME: Record<string, string> = { heavy: 'treter', light: 'stiefel', robe: 'sandalen' };
+const OFFHAND_NAME: Record<OffhandType, string> = { shield: 'schild', quiver: 'köcher', tome: 'foliant', focus: 'fokus', offdagger: 'parierdolch' };
+export const OFFHAND_TYPES: OffhandType[] = ['shield', 'quiver', 'tome', 'focus', 'offdagger'];
+/** Zweithand je Klasse: Krieger und Paladin führen einen Schild, der Waldläufer einen Köcher, der Magier Foliant oder Fokus, der Schattenjäger einen Parierdolch */
+export const CLASS_OFFHAND: Record<ClassId, OffhandType[]> = {
+  krieger: ['shield'], paladin: ['shield'], waldlaeufer: ['quiver'], magier: ['tome', 'focus'], schattenjaeger: ['offdagger'],
+};
 const ACC_NAME: Record<string, string[]> = {
   ring: ['Rindenring', 'Geodenring', 'Glutring', 'Reifring', 'Runenring', 'Schattenring'],
   amulet: ['Tauperlen-Amulett', 'Prismen-Amulett', 'Aschen-Amulett', 'Eisblumen-Amulett', 'Sternen-Amulett', 'Leeren-Amulett'],
@@ -58,6 +77,13 @@ for (let t = 1; t <= 6; t++) {
   }
   for (const c of ['ring', 'amulet', 'charm'] as const)
     add({ id: `c_${c}_${t}`, name: ACC_NAME[c][t - 1], kind: 'accessory', icon: c, tier: t, acc: c, price: 0 });
+  // 0.9: Handschuhe, Beine, Schuhe je Rüstungsklasse und die Zweithand je Art
+  for (const a of ['heavy', 'light', 'robe'] as const) {
+    add({ id: `gl_${a}_${t}`, name: tn + GLOVES_NAME[a], kind: 'gloves', icon: `gloves_${a}`, tier: t, aclass: a, price: 0 });
+    add({ id: `lg_${a}_${t}`, name: tn + LEGS_NAME[a], kind: 'legs', icon: `legs_${a}`, tier: t, aclass: a, price: 0 });
+    add({ id: `bt_${a}_${t}`, name: tn + BOOTS_NAME[a], kind: 'boots', icon: `boots_${a}`, tier: t, aclass: a, price: 0 });
+  }
+  for (const o of OFFHAND_TYPES) add({ id: `oh_${o}_${t}`, name: tn + OFFHAND_NAME[o], kind: 'offhand', icon: o, tier: t, oh: o, price: 0 });
 }
 
 add({ id: 'potion_hp1', name: 'Kleiner Heiltrank', kind: 'consumable', icon: 'potion_hp', stack: true, price: 18, desc: 'Stellt 70 Leben wieder her.', use: { hp: 70 } });
@@ -116,54 +142,90 @@ export function newUid(): string { return Date.now().toString(36) + (uidCounter+
 /** Mindeststufe zum Anlegen. Beute aus dem Endspiel (0.5) liegt über der alten Obergrenze – sie verlangt die Höchststufe. */
 export function equipLevel(ilvl: number): number { return Math.max(1, Math.min(CFG.player.maxLevel, ilvl - 2)); }
 
-export function isGear(b: ItemBase): boolean { return b.kind === 'weapon' || b.kind === 'helm' || b.kind === 'armor' || b.kind === 'accessory'; }
+const GEAR_KINDS = new Set<ItemKind>(['weapon', 'offhand', 'helm', 'armor', 'gloves', 'legs', 'boots', 'accessory']);
+export function isGear(b: ItemBase): boolean { return GEAR_KINDS.has(b.kind); }
+/** Rüstungsteile, deren Grundgegenstand von der Rüstungsklasse abhängt */
+const ARMOR_PIECES = new Set<ItemKind>(['helm', 'armor', 'gloves', 'legs', 'boots']);
 
-export function slotOf(b: ItemBase): Slot | null {
-  if (b.kind === 'weapon') return 'weapon';
-  if (b.kind === 'helm') return 'helm';
-  if (b.kind === 'armor') return 'armor';
-  if (b.kind === 'accessory') return 'acc1';
-  return null;
+/** Art eines Ausrüstungsteils aus Sicht der Plätze (Talisman → Amulett, Ring → beide Ringplätze); null = keine Ausrüstung */
+export function slotKind(b: ItemBase | undefined): SlotKind | null {
+  if (!b || !isGear(b)) return null;
+  if (b.kind === 'accessory') return b.acc === 'ring' ? 'ring' : 'amulet';
+  return b.kind as SlotKind;
 }
+/** Plätze, auf die ein Teil passt (Ringe: beide Ringplätze) */
+export function slotsFor(b: ItemBase | undefined): Slot[] {
+  const k = slotKind(b);
+  return !k ? [] : k === 'ring' ? ['ring1', 'ring2'] : [k];
+}
+/** Erster passender Platz (Ringe: `ring1`) */
+export function slotOf(b: ItemBase): Slot | null { return slotsFor(b)[0] ?? null; }
 
 export function canEquip(cls: ClassId, b: ItemBase): boolean {
   const c = CLASSES[cls];
   if (b.kind === 'weapon') return b.wtype === c.weapon;
-  if (b.kind === 'helm' || b.kind === 'armor') return b.aclass === c.armor;
+  if (ARMOR_PIECES.has(b.kind)) return b.aclass === c.armor;
+  if (b.kind === 'offhand') return !!b.oh && CLASS_OFFHAND[cls].includes(b.oh);
   return b.kind === 'accessory';
 }
+
+/**
+ * Grundwerte je Platz (0.9). Die zehn Plätze teilen sich das Budget, das bis 0.8 auf fünf lag (Waffe, Kopf, Rüstung,
+ * Ring, Amulett): voll ausgerüstet ergibt sich dieselbe Kurve für Angriff, Verteidigung, Leben und Mana (tests/equipment.test.ts).
+ *   Angriff  6 + 3,6·L = Hauptwaffe 4 + 2,5·L · zwei Ringe je 0,5 + 0,3·L · „Angriffsstück“ 1 + 0,5·L
+ *            (Zweithand bei Köcher, Foliant, Fokus, Parierdolch; schwere Handschuhe bei den Schildträgern)
+ *   Verteidigung (6 + 3·L) × Rüstungsklasse = Helm 1,5 + 0,8·L · Brust 2,5 + 1,2·L · Beine 1 + 0,5·L · Schuhe 0,5 + 0,2·L
+ *            · „Schutzstück“ 0,5 + 0,3·L (Schild bzw. leichte/Stoff-Handschuhe)
+ *   Leben und Mana unverändert auf Brust, Stoffhelm und Amulett.
+ */
+export const GEAR_BUDGET = {
+  weapon: [4, 2.5], ring: [0.5, 0.3], powerPiece: [1, 0.5],
+  helm: [1.5, 0.8], armor: [2.5, 1.2], legs: [1, 0.5], boots: [0.5, 0.2], guardPiece: [0.5, 0.3],
+} as const;
+const lin = (ab: readonly [number, number], L: number) => ab[0] + ab[1] * L;
 
 /** Grundwerte eines Ausrüstungsteils (ohne Affixe), inkl. Seltenheit und Verbesserungsstufe. */
 export function baseMods(it: ItemInstance): Mods {
   const b = ITEMS[it.base];
   if (!b) return {};
-  const mul = CFG.loot.rarityStatMul[it.rarity] * (1 + CFG.upgrade.statPerLevel * it.up);
-  const L = it.ilvl;
+  const mul = (CFG.loot.rarityStatMul[it.rarity] ?? 1) * (1 + CFG.upgrade.statPerLevel * it.up);
+  const L = it.ilvl, B = GEAR_BUDGET;
+  const dm = b.aclass ? ARMOR_DEF_MUL[b.aclass] : ARMOR_DEF_MUL.heavy;
+  const def = (ab: readonly [number, number]): Mods => ({ def: Math.round(lin(ab, L) * dm * mul) });
   switch (b.kind) {
-    case 'weapon': return { power: Math.round((5 + L * 3) * mul) };
+    case 'weapon': return { power: Math.round(lin(B.weapon, L) * mul) };
+    case 'offhand': return b.oh === 'shield' ? def(B.guardPiece) : { power: Math.round(lin(B.powerPiece, L) * mul) };
     case 'helm': {
-      const m: Mods = { def: Math.round((2 + L * 1.1) * ARMOR_DEF_MUL[b.aclass!] * mul) };
+      const m = def(B.helm);
       if (b.aclass === 'robe') m.mp = Math.round((4 + L * 1.5) * mul);
       return m;
     }
     case 'armor': {
-      const m: Mods = { def: Math.round((4 + L * 1.9) * ARMOR_DEF_MUL[b.aclass!] * mul) };
+      const m = def(B.armor);
       if (b.aclass === 'heavy') m.hp = Math.round((6 + L * 2.5) * mul);
       if (b.aclass === 'robe') m.mp = Math.round((6 + L * 2) * mul);
       if (b.aclass === 'light') m.hp = Math.round((3 + L * 1.4) * mul);
       return m;
     }
+    case 'gloves': return b.aclass === 'heavy' ? { power: Math.round(lin(B.powerPiece, L) * mul) } : def(B.guardPiece);
+    case 'legs': return def(B.legs);
+    case 'boots': return def(B.boots);
     case 'accessory':
-      if (b.acc === 'ring') return { power: Math.round((1 + L * 0.6) * mul) };
+      if (b.acc === 'ring') return { power: Math.round(lin(B.ring, L) * mul) };
       if (b.acc === 'amulet') return { hp: Math.round((10 + L * 5) * mul) };
       return { def: Math.round((1 + L * 0.7) * mul) };
   }
   return {};
 }
 
+/** Zusatzeigenschaften der Verbesserung (+3/+6/+9, data/upgrade.ts) */
+export function upgradeMods(it: ItemInstance): Mods { return upgradeBonus(slotKind(ITEMS[it.base]), it.up); }
+
 export function itemMods(it: ItemInstance): Mods {
   const m: Mods = { ...baseMods(it) };
   for (const [k, v] of it.affixes) m[k] = (m[k] ?? 0) + v;
+  const up = upgradeMods(it);
+  for (const k in up) m[k as ModKey] = (m[k as ModKey] ?? 0) + up[k as ModKey]!;
   const en = it.ench ? ENCHANTS[it.ench] : undefined;
   if (en) for (const k in en.mods) m[k as ModKey] = (m[k as ModKey] ?? 0) + en.mods[k as ModKey]!;
   return m;
@@ -207,24 +269,40 @@ const CLASS_ATTR_BIAS: Record<ClassId, ModKey[]> = {
 const OFF_CLASS: Record<ClassId, ModKey[]> = {
   krieger: ['int'], magier: ['str', 'dex'], waldlaeufer: ['int'], paladin: ['dex'], schattenjaeger: ['int'],
 };
+/**
+ * 0.9: Stärke der Eigenschaften je Platz. Zehn Plätze tragen zusammen so viel wie früher fünf (Summe 5,0; Ringe zählen doppelt).
+ * Gegenstände aus der Zeit vor 0.9 behalten ihre gewürfelten Werte; neu gewürfelt (Beute, Schmiede, Umschmieden) gilt dieser Faktor.
+ */
+export const AFFIX_SCALE: Record<SlotKind, number> = { weapon: 0.6, offhand: 0.5, helm: 0.45, armor: 0.55, gloves: 0.45, legs: 0.5, boots: 0.45, amulet: 0.6, ring: 0.45 };
+/** Eigenschaften, die je Platz öfter vorkommen (Geschmack, kein zusätzliches Budget) */
+const SLOT_AFFIX_BIAS: Record<SlotKind, ModKey[]> = {
+  weapon: ['power', 'crit', 'critDmg', 'elemPct'], offhand: ['def', 'hp', 'crit', 'mpRegen'], helm: ['int', 'mp', 'cdr', 'resLight'],
+  armor: ['hp', 'vit', 'def'], gloves: ['crit', 'critDmg', 'power', 'cdr'], legs: ['hp', 'vit', 'hpRegen', 'def'],
+  boots: ['speedPct', 'dex', 'def'], amulet: ['elemPct', 'mpRegen', 'hp', 'xpPct'], ring: ['crit', 'critDmg', 'power', 'goldPct'],
+};
 
-export function rollRarity(rng: Rng, weights: number[]): number {
-  return rng.weighted(weights.map((w, i) => [i, w] as const));
+/** Würfelt eine Seltenheit. Tabellen dürfen kürzer als RARITY_NAME sein (fehlende Stufen: Gewicht 0, rarity.ts). */
+export function rollRarity(rng: Rng, weights: readonly number[]): number {
+  const w = rarityTable(weights);
+  if (!w.some(x => x > 0)) return 0;
+  return rng.weighted(w.map((x, i) => [i, x] as const));
 }
 
-/** Würfelt die Affixe eines Ausrüstungsteils (auch beim Umschmieden). */
-export function rollAffixes(rng: Rng, ilvl: number, rarity: number, cls: ClassId, weapon: boolean): [ModKey, number][] {
+/** Würfelt die Affixe eines Ausrüstungsteils (auch beim Umschmieden). `base` = Grundgegenstand (bestimmt Platz und Stärke). */
+export function rollAffixes(rng: Rng, ilvl: number, rarity: number, cls: ClassId, base: string): [ModKey, number][] {
   const out: [ModKey, number][] = [];
-  const n = CFG.loot.affixCount[rarity];
+  const kind = slotKind(ITEMS[base]) ?? 'weapon', weapon = kind === 'weapon';
+  const n = CFG.loot.affixCount[rarity] ?? 0, scale = AFFIX_SCALE[kind];
   const used = new Set<ModKey>();
-  const pool = AFFIXES.filter(a => !OFF_CLASS[cls].includes(a.k) && !(weapon && a.armorOnly)).map(a => [a, a.w * (CLASS_ATTR_BIAS[cls].includes(a.k) ? 2.5 : 1)] as const);
+  const pool = AFFIXES.filter(a => !OFF_CLASS[cls].includes(a.k) && !(weapon && a.armorOnly))
+    .map(a => [a, a.w * (CLASS_ATTR_BIAS[cls].includes(a.k) ? 2.5 : 1) * (SLOT_AFFIX_BIAS[kind].includes(a.k) ? 1.8 : 1)] as const);
   for (let i = 0; i < n; i++) {
     let a: AffixDef;
     let guard = 0;
     do { a = rng.weighted(pool); } while (used.has(a.k) && guard++ < 20);
     used.add(a.k);
     const r = a.round ?? 1;
-    const val = Math.max(1 / r, Math.round(a.v(ilvl) * rng.range(0.75, 1.3) * (1 + rarity * 0.08) * r) / r);
+    const val = Math.max(1 / r, Math.round(a.v(ilvl) * scale * rng.range(0.75, 1.3) * (1 + rarity * 0.08) * r) / r);
     out.push([a.k, val]);
   }
   return out;
@@ -241,18 +319,36 @@ export function rescaleItem(it: ItemInstance, ilvl: number): void {
   it.ilvl = ilvl;
 }
 
-/** Erzeugt ein zufälliges, zur Klasse passendes Ausrüstungsteil. `acc` legt die Art des Schmuckstücks fest. */
-export function generateGear(rng: Rng, ilvl: number, rarity: number, cls: ClassId, kind?: 'weapon' | 'helm' | 'armor' | 'accessory', acc?: 'ring' | 'amulet' | 'charm'): ItemInstance {
+/** Grundgegenstand einer Ausrüstungsart für diese Klasse auf Materialstufe `t` (`sub` = Art des Schmucks bzw. der Zweithand) */
+export function gearBase(cls: ClassId, kind: GenKind, t: number, sub?: string): string {
   const c = CLASSES[cls];
+  switch (kind) {
+    case 'weapon': return `w_${c.weapon}_${t}`;
+    case 'helm': return `h_${c.armor}_${t}`;
+    case 'armor': return `a_${c.armor}_${t}`;
+    case 'gloves': return `gl_${c.armor}_${t}`;
+    case 'legs': return `lg_${c.armor}_${t}`;
+    case 'boots': return `bt_${c.armor}_${t}`;
+    case 'offhand': return `oh_${sub && CLASS_OFFHAND[cls].includes(sub as OffhandType) ? sub : CLASS_OFFHAND[cls][0]}_${t}`;
+    case 'accessory': return `c_${sub ?? 'ring'}_${t}`;
+  }
+}
+/** Wie oft welche Art fällt, wenn nichts festgelegt ist (Ringe kommen öfter – es gibt zwei Plätze) */
+const GEN_WEIGHTS: [GenKind, number][] = [['weapon', 2], ['offhand', 1.3], ['helm', 1.3], ['armor', 1.5], ['gloves', 1.2], ['legs', 1.2], ['boots', 1.2], ['accessory', 2.3]];
+const ACC_WEIGHTS: ['ring' | 'amulet' | 'charm', number][] = [['ring', 5], ['amulet', 3], ['charm', 2]];
+
+/**
+ * Erzeugt ein zufälliges, zur Klasse passendes Ausrüstungsteil. `acc` legt die Art des Schmuckstücks fest.
+ * 0.9: alle zehn Plätze; `sub` wählt bei der Zweithand des Magiers Foliant oder Fokus (sonst zufällig).
+ */
+export function generateGear(rng: Rng, ilvl: number, rarity: number, cls: ClassId, kind?: GenKind, acc?: 'ring' | 'amulet' | 'charm', sub?: OffhandType): ItemInstance {
   const t = tierOf(ilvl);
-  const k = kind ?? rng.weighted([['weapon', 3], ['helm', 2.5], ['armor', 2.5], ['accessory', 2]] as const);
-  let base: string;
-  if (k === 'weapon') base = `w_${c.weapon}_${t}`;
-  else if (k === 'helm') base = `h_${c.armor}_${t}`;
-  else if (k === 'armor') base = `a_${c.armor}_${t}`;
-  else base = `c_${acc ?? rng.pick(['ring', 'amulet', 'charm'])}_${t}`;
-  const it: ItemInstance = { uid: newUid(), base, rarity, ilvl, up: 0, affixes: rollAffixes(rng, ilvl, rarity, cls, k === 'weapon') };
-  if (k === 'weapon' && rng.chance(CFG.loot.elementChance[rarity]))
+  rarity = clampRarity(rarity);
+  const k = kind ?? rng.weighted(GEN_WEIGHTS);
+  const pick = k === 'accessory' ? acc ?? rng.weighted(ACC_WEIGHTS) : k === 'offhand' ? sub ?? (CLASS_OFFHAND[cls].length > 1 ? rng.pick(CLASS_OFFHAND[cls]) : CLASS_OFFHAND[cls][0]) : undefined;
+  const base = gearBase(cls, k, t, pick);
+  const it: ItemInstance = { uid: newUid(), base, rarity, ilvl, up: 0, affixes: rollAffixes(rng, ilvl, rarity, cls, base) };
+  if (k === 'weapon' && rng.chance(CFG.loot.elementChance[rarity] ?? 0))
     it.element = rng.pick(['fire', 'water', 'earth', 'wind', 'light', 'dark'] as Element[]);
   return it;
 }
@@ -271,9 +367,31 @@ export const BOSS_UNIQUE: Record<string, { ilvl: number; element: Element; names
   hohlkoenig: { ilvl: 33, element: 'dark', names: { krieger: 'Hohlkönigsklinge', magier: 'Zepter der Leere', waldlaeufer: 'Letzte Dämmerung', paladin: 'Kronenbrecher', schattenjaeger: 'Maelis\' Tränen' } },
 };
 
-export function generateBossUnique(rng: Rng, boss: string, cls: ClassId, legendary: boolean): ItemInstance | null {
+/**
+ * 0.9: Boss-Unikate für die neuen Plätze – je Boss ein benanntes Rüstungs- oder Schmuckstück (bzw. eine Zweithand mit Namen je Klasse),
+ * mit einer Resistenz gegen das Element des Bosses als Kennzeichen. Fällt neben der Waffe (ab dem zweiten Sieg und in den Rissen).
+ */
+export const BOSS_UNIQUE_GEAR: Record<string, { kind: GenKind; acc?: 'ring' | 'amulet'; names: string | Record<ClassId, string> }> = {
+  dornenmutter: { kind: 'gloves', names: 'Dornengriff' },
+  kristallkoloss: { kind: 'accessory', acc: 'ring', names: 'Facettenauge' },
+  ignarok: { kind: 'offhand', names: { krieger: 'Schlackenschild', paladin: 'Ambossschild', magier: 'Ignaroks Funke', waldlaeufer: 'Glutköcher', schattenjaeger: 'Aschendorn' } },
+  ysolde: { kind: 'boots', names: 'Eisblumentritt' },
+  archivar: { kind: 'legs', names: 'Saum der Stille' },
+  hohlkoenig: { kind: 'accessory', acc: 'amulet', names: 'Hohles Herz' },
+};
+const RES_OF: Record<string, ModKey> = { fire: 'resFire', water: 'resWater', earth: 'resEarth', wind: 'resWind', light: 'resLight', dark: 'resDark' };
+
+/** Boss-Unikat: die benannte Waffe – oder mit `gear` das benannte Stück für einen der neuen Plätze. */
+export function generateBossUnique(rng: Rng, boss: string, cls: ClassId, legendary: boolean, gear = false): ItemInstance | null {
   const u = BOSS_UNIQUE[boss];
   if (!u) return null;
+  const g = gear ? BOSS_UNIQUE_GEAR[boss] : undefined;
+  if (g) {
+    const it = generateGear(rng, u.ilvl, legendary ? 4 : 3, cls, g.kind, g.acc);
+    it.name = typeof g.names === 'string' ? g.names : g.names[cls];
+    it.affixes = [[RES_OF[u.element], 12], ...it.affixes.filter(a => a[0] !== RES_OF[u.element])];
+    return it;
+  }
   const it = generateGear(rng, u.ilvl, legendary ? 4 : 3, cls, 'weapon');
   it.element = u.element;
   it.name = u.names[cls];

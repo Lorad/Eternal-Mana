@@ -1,11 +1,13 @@
 import { CFG, ELEMENTS } from './config';
 import { CLASSES } from './data/classes';
-import { ITEMS, itemMods } from './data/items';
+import { ITEMS, itemMods, slotKind } from './data/items';
 import { quellMods } from './data/rifts';
-import { setCounts, setMods } from './data/sets';
+import { setCounts, setFullFx, setMods, setSkillMods } from './data/sets';
 import { SKILLS } from './data/skills';
+import { UP10 } from './data/upgrade';
+import { equippedItems, starterGear } from './equip';
 import type { AttrKey, CharData, Derived, Element, Mods } from './types';
-import { RES_KEY, SLOTS } from './types';
+import { RES_KEY } from './types';
 
 export function addMods(into: Mods, m: Mods | undefined, mul = 1): void {
   if (!m) return;
@@ -22,7 +24,13 @@ export function countShards(c: CharData): number {
 export function computeStats(c: CharData, buffs?: Mods[]): Derived {
   const cls = CLASSES[c.cls];
   const m: Mods = {};
-  for (const s of SLOTS) { const it = c.equip[s]; if (it) addMods(m, itemMods(it)); }
+  // 0.9: zehn Plätze; Passiven der Stufe +10 je Art (data/upgrade.ts) – die reinen Wertepassiven fließen hier ein, der Rest im Kampf
+  const up10: Record<string, number> = {};
+  for (const it of equippedItems(c)) {
+    addMods(m, itemMods(it));
+    const k = it.up >= CFG.upgrade.max ? slotKind(ITEMS[it.base]) : null;
+    if (k) { const p = UP10[k]; up10[p.id] = (up10[p.id] ?? 0) + 1; addMods(m, p.mods); }
+  }
   const sets = setCounts(c);
   for (const b of setMods(sets)) addMods(m, b);
   for (const id in c.skills) { const sk = SKILLS[id]; if (sk?.passive) addMods(m, sk.passive, c.skills[id]); }
@@ -59,6 +67,7 @@ export function computeStats(c: CharData, buffs?: Mods[]): Derived {
     elemLvl: weapon?.element ? Math.max(1, Math.min(3, weapon.elv ?? 1)) : 0,
     legend: weapon ? ITEMS[weapon.base]?.legend : undefined,
     sets,
+    gearFx: { up10, setFull: setFullFx(sets), skill: setSkillMods(sets, c.cls) },
   };
 }
 
@@ -73,10 +82,8 @@ export function newCharacter(name: string, clsId: CharData['cls']): CharData {
       { uid: 'start-hp', base: 'potion_hp1', rarity: 0, ilvl: 1, up: 0, affixes: [], qty: 3 },
       { uid: 'start-mp', base: 'potion_mp1', rarity: 0, ilvl: 1, up: 0, affixes: [], qty: 2 },
     ],
-    equip: {
-      weapon: { uid: 'start-w', base: `w_${cls.weapon}_1`, rarity: 0, ilvl: 1, up: 0, affixes: [] },
-      armor: { uid: 'start-a', base: `a_${cls.armor}_1`, rarity: 0, ilvl: 1, up: 0, affixes: [] },
-    },
+    equip: starterGear(clsId), // 0.9: Waffe, Zweithand, Brust, Handschuhe
+    eqv: 2,
     quests: {}, flags: {},
     zone: 'gruenwald', x: 0, y: 0, respawn: { zone: 'gruenwald', x: 0, y: 0 },
     hp: 1, mp: 1, playtime: 0, kills: 0, deaths: 0,

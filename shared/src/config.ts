@@ -102,14 +102,30 @@ export const CFG = {
     eliteGearChance: 0.6,
     potionChance: 0.1,
     materialChance: 0.22,
-    /** Gewichte der Seltenheitsstufen 0..4 (gewöhnlich … legendär) */
+    /** Gewichte der Seltenheitsstufen 0..4 (gewöhnlich … legendär). Tabellen dürfen kürzer sein als RARITY_NAME:
+     *  fehlende Einträge zählen als 0 (rarity.ts, `rarityTable`) – „Mythisch“ gibt es nur aus den Quellen in `mythic`. */
     rarityWeights: [62, 26, 9, 2.6, 0.4],
     eliteRarityWeights: [20, 44, 26, 8.5, 1.5],
     bossRarityWeights: [0, 20, 50, 25, 5],
     chestRarityWeights: { wood: [50, 35, 12, 3, 0], silver: [15, 45, 30, 9, 1], gold: [0, 20, 45, 30, 5] } as Record<string, number[]>,
-    rarityStatMul: [1, 1.12, 1.26, 1.42, 1.62],
-    affixCount: [0, 1, 2, 3, 4],
-    elementChance: [0, 0.1, 0.25, 0.4, 0.6],
+    /** je Seltenheit (Länge = RARITY_NAME.length): Faktor auf die Grundwerte, Zahl der Eigenschaften, Chance auf ein Waffenelement */
+    rarityStatMul: [1, 1.12, 1.26, 1.42, 1.62, 1.85],
+    affixCount: [0, 1, 2, 3, 4, 5],
+    elementChance: [0, 0.1, 0.25, 0.4, 0.6, 0.75],
+    /**
+     * 0.9: „Mythisch“ (Seltenheit 5) – nur aus dem schwersten Inhalt. Gewicht, das der jeweiligen Seltenheitstabelle angehängt wird:
+     *   riftFrom/riftMax: Mana-Risse ab dieser Stufe, linear bis zur höchsten Stufe (Truhen der Risse und der Prüfung der Sieben)
+     *   kreisBoss: Bosstruhen der Geschichte ab diesem Neuen Kreis (Gewicht je Kreis ab dort)
+     *   expedition: Expeditionen je Schwierigkeitsgrad (Truhe / Endboss) – rarity.ts, `expeditionRarity`
+     */
+    mythic: {
+      riftFrom: 15, riftMax: 6,
+      kreisBoss: 2, kreisBossWeight: 2,
+      expedition: { normal: [0, 0], schwer: [0, 0], albtraum: [0, 1.5], mythisch: [2, 6] } as Record<string, [number, number]>,
+    },
+    /** 0.9: Seltenheitsgewichte der Expeditionen je Schwierigkeitsgrad (Truhe / Endboss), ohne „Mythisch“ (das hängt `mythic.expedition` an) */
+    expeditionChest: { normal: [15, 45, 30, 9, 1], schwer: [5, 35, 40, 17, 3], albtraum: [0, 20, 45, 28, 7], mythisch: [0, 5, 40, 40, 15] } as Record<string, number[]>,
+    expeditionBoss: { normal: [0, 20, 50, 25, 5], schwer: [0, 10, 45, 35, 10], albtraum: [0, 0, 40, 42, 18], mythisch: [0, 0, 25, 47, 28] } as Record<string, number[]>,
     dropLifetimeSec: 120,
     sellFactor: 0.25,
     // ---- Handwerks-Rohstoffe (0.4); Tabellen: shared/src/data/materials.ts
@@ -172,12 +188,42 @@ export const CFG = {
     paladin: { shield: 0.5, cap: 0.3, dur: 8, power: 8 },
     schattenjaeger: { mult: 2, radius: 48, cd: 1.5 },
   },
+  /**
+   * Verbessern (seit 0.9 fair): jede Stufe gelingt – kein Misslingen, keine Zerstörung, keine Rückstufung, nichts geht verloren.
+   * Dafür steigen die Kosten: Gold und Rohstoffe, ab +4 Essenzen, ab +7 Bosskerne, für +10 Ätherstaub (Gegenstände aus den
+   * Rissen, Gegenstandsstufe über 40, zusätzlich Echo-Fragmente). Mengen je Zielstufe +1..+10. Boni und Passiven: data/upgrade.ts
+   */
   upgrade: {
     max: 10,
+    /** Grundwerte je Stufe */
     statPerLevel: 0.08,
-    chance: [1, 1, 1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
-    gold: (ilvl: number, up: number) => Math.floor((30 + ilvl * 8) * (up + 1) * (1 + up * 0.25)),
-    mats: (up: number) => 1 + Math.floor(up / 2),
+    gold: (ilvl: number, up: number) => Math.floor((30 + ilvl * 8) * (up + 1) * (1 + up * 0.3)),
+    /** Erz/Holz der Materialstufe, Monster-Rohstoff, Essenz des Stufenelements, Bosskern der Stufe, Ätherstaub, Echo-Fragmente (nur über Stufe 40) */
+    ore: [2, 3, 4, 4, 5, 6, 6, 7, 8, 10],
+    monster: [0, 1, 2, 2, 3, 3, 4, 4, 5, 6],
+    essence: [0, 0, 0, 2, 3, 4, 4, 5, 6, 8],
+    core: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    aether: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    echo: [0, 0, 0, 0, 0, 0, 1, 2, 2, 4],
+  },
+  /** 0.9: Zahlen der Ausrüstungs-Wirkungen (Passiven bei +10: data/upgrade.ts · volle Sets: data/sets.ts) */
+  gearFx: {
+    meister: { every: 5, mult: 1.5 },          // Hauptwaffe: jeder 5. Standardtreffer +50 %
+    parade: { chance: 0.08, mul: 0.5 },        // Zweithand: Chance, einen Treffer zu halbieren
+    klarheit: 0.7,                             // Helm: schädliche Zustände wirken so lange
+    atem: { below: 0.3, heal: 0.15, cd: 60 },  // Brust: einmal je Minute unter 30 % Leben 15 % zurück
+    flink: 0.94,                               // Handschuhe: Abklingzeit des Standardangriffs
+    standfest: 12,                             // Beine: % schnellere Ausweichrolle
+    leicht: 5,                                 // Schuhe: % Tempo
+    segen: 1.2,                                // Amulett: Heiltränke wirken stärker
+    funke: 2,                                  // Ring: Mana je kritischem Treffer (je Ring)
+    // volle Sets
+    rinde: { every: 10, shield: 0.08 },
+    prisma: { every: 4, radius: 56, mult: 1.2 },
+    asche: { radius: 40, mult: 0.6 },
+    frost: { radius: 44, mult: 0.8, cd: 3 },
+    stille: { window: 3, critDmg: 0.2 },
+    krone: { below: 0.4, dmg: 1.2, lifesteal: 2 },
   },
   respecGold: (level: number) => 50 * level,
   /** Endspiel (0.5): Mana-Risse. Modifikatoren, Echos und Texte: shared/src/data/rifts.ts */
@@ -200,7 +246,7 @@ export const CFG = {
     eliteChance: 0.08,
     /** Boss-Echo: einheitliche Stärke, damit alle sechs Dungeons vergleichbar sind */
     echo: { hpMul: 46, dmgMul: 1.9, defMul: 1.5, levelPlus: 2, xpMul: 45, goldMul: 70 },
-    /** Seltenheitsgewichte der Belohnungstruhe bei Stufe 1 und bei der höchsten Stufe (dazwischen linear) */
+    /** Seltenheitsgewichte der Belohnungstruhe bei Stufe 1 und bei der höchsten Stufe (dazwischen linear; „Mythisch“: loot.mythic) */
     rarityLow: [0, 18, 52, 25, 5], rarityHigh: [0, 0, 30, 50, 20],
     chestGear: 2, bonusGear: 1,
     fragments: (stufe: number) => 2 + Math.floor(stufe / 3),
@@ -384,5 +430,9 @@ export function elementMultiplier(attack: Element, target: Element): number {
 }
 export function strongAgainst(e: Element): Element | undefined { return BEATS[e]; }
 
-export const RARITY_NAME = ['Gewöhnlich', 'Ungewöhnlich', 'Selten', 'Episch', 'Legendär'];
-export const RARITY_COLOR = ['#c9c9c9', '#5fd35f', '#4aa3ff', '#c77dff', '#ffb02e'];
+/** Seltenheiten. Alle Tabellen je Seltenheit richten sich nach der Länge dieser Liste (0.9: sechste Stufe „Mythisch“). */
+export const RARITY_NAME = ['Gewöhnlich', 'Ungewöhnlich', 'Selten', 'Episch', 'Legendär', 'Mythisch'];
+export const RARITY_COLOR = ['#c9c9c9', '#5fd35f', '#4aa3ff', '#c77dff', '#ffb02e', '#3ff0d4'];
+/** höchste Seltenheit (Index) */
+export const RARITY_MAX = RARITY_NAME.length - 1;
+export const MYTHIC = 5;

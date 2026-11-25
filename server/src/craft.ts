@@ -11,7 +11,8 @@ import { COOK_SPOTS, ENCHANTS, FIRE, HOME_AT, LEARNABLE, RECIPES, type InfuseEle
 import { SETS, SET_PIECES } from '../../shared/src/data/sets';
 import type { GameMap } from '../../shared/src/maps/mapgen';
 import { TILE } from '../../shared/src/maps/tiles';
-import { MOD_LABEL, SLOTS } from '../../shared/src/types';
+import { equippedItems } from '../../shared/src/equip';
+import { MOD_LABEL } from '../../shared/src/types';
 import type { ClientMsg, ItemInstance, ModKey, Mods } from '../../shared/src/types';
 import type { Game } from './game';
 import { Home } from './home';
@@ -55,7 +56,7 @@ function pay(p: Player, cost: Cost) {
   p.sync('gold', 'inv');
 }
 function findGear(p: Player, uid: string): ItemInstance | undefined {
-  return p.char.inv.find(i => i.uid === uid) ?? SLOTS.map(s => p.char.equip[s]).find(i => i?.uid === uid);
+  return p.char.inv.find(i => i.uid === uid) ?? equippedItems(p.char).find(i => i.uid === uid);
 }
 const AWAY = 'Dafür musst du an der passenden Station stehen.';
 
@@ -85,7 +86,7 @@ export function handleCraft(g: Game, p: Player, m: CraftMsg) {
       const why = reforgeBlock(p.char, it);
       if (why) return reject(p, why);
       pay(p, reforgeCost(it));
-      it.affixes = rollAffixes(rng, it.ilvl, it.rarity, p.char.cls, ITEMS[it.base].kind === 'weapon');
+      it.affixes = rollAffixes(rng, it.ilvl, it.rarity, p.char.cls, it.base);
       p.recalc(); p.sync('inv', 'equip');
       p.toast(`${itemName(it)} wurde umgeschmiedet.`, 'good');
       p.pev.push({ k: 'sfx', n: 'upgrade_success' });
