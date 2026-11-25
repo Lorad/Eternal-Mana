@@ -59,6 +59,14 @@ export const NPC_LOOKS = [
   'echo',          // Maelis: leuchtende, weiß-goldene Gestalt
   'kraemer',       // Pim: riesiger Rucksack, Schlapphut
   'vael',          // Vael (und der Fremde am Brunnen): hager, Kapuze, indigoblauer Ordensmantel mit Goldborte, Laterne – wie boss_vael
+  // Quellwarte (Hub, ab 0.9)
+  'wirtin',        // Wirtin „Zum Letzten Licht“: Dutt, weinrotes Kleid, weiße Schürze, Krug
+  'haendler_hub',  // Ausrüster: Barett mit Feder, Schnurrbart, hüterblaues Wams, Auftragsbuch
+  'meister',       // Fähigkeitenmeister: Haarknoten, langer weißer Bart, blaue Robe mit Goldschärpe, Kampfstab
+  'lagerverwalter',// Lagerverwalter: Schiebermütze, breit, Schürze über grünem Hemd, Klemmbrett
+  'hallenwart',    // Hallenwart: vergoldeter Helm mit weißem Busch, weißer Wappenrock, Speer
+  'schmiedin',     // Schmiedin: rotes Kopftuch, Zopf, Lederschürze, nackte Arme, Hammer
+  'alchemistin',   // Alchemistin: Schutzbrille auf der Stirn, lange dunkle Haare, violette Robe, Trankkolben
 ] as const;
 
 /**
