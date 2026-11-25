@@ -3,11 +3,13 @@ import type { Px } from '../draw';
 import { hubBuildings } from './hub_buildings';
 import { hubProps } from './hub_props';
 import { expObjects } from './exp_objects';
+import { expDressing } from './exp_dressing';
 
 export function hubObjects(): Array<[string, Px]> {
   const out: Array<[string, Px]> = [];
   hubBuildings(out);
   hubProps(out);
   expObjects(out);
+  expDressing(out);
   return out;
 }
