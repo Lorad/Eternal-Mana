@@ -12,7 +12,7 @@ export function openExpeditionState() {
 export function onExpMsg(m: Extract<ServerMsg, { t: 'exp' }>) {
   const p: UiStatePatch = {};
   if (m.lobby !== undefined) p.expLobby = m.lobby;
-  if (m.run !== undefined) { p.expRun = m.run; p.expRunAt = performance.now(); }
+  if (m.run !== undefined) { p.expRun = m.run; p.expRunAt = performance.now(); if (m.run && !store.state.expRun) { p.expWin = null; p.expLobby = null; } } // aufgebrochen: Auswahl schließen
   if (m.result) p.expResult = m.result;
   if (m.summary) { p.expSummary = m.summary; p.expResult = null; }
   if (m.party !== undefined) p.expParty = m.party;

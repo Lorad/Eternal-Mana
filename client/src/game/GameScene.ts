@@ -480,7 +480,7 @@ export class GameScene extends Phaser.Scene {
         const mini = pr.tro && this.objTex.has('trophy_' + pr.tro) ? 'trophy_' + pr.tro : null;
         const fr: string | undefined = pr.frame === 'trophy_stand' && (mini || !pr.tro) && this.objTex.has('trophy_stand_empty') ? 'trophy_stand_empty' : pr.frame, f = fr ? this.resolveFrame(fr) : null;
         if (f && pr.cells) for (const c of pr.cells as number[]) { const [cx2, cy2] = this.cellXY(c); img(cx2, cy2 + 8, f.frame, 3, false); } // 0.9: brüchiger Boden je Feld
-        else if (f) img(o.x, o.y + 8, f.frame, FLAT.test(fr!) || pr.flat ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_'));
+        else if (f) { const im = img(o.x, o.y + 8, f.frame, FLAT.test(fr!) || pr.flat ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_')); if (pr.tint && !f.frame.startsWith(fr!)) im.setTint(pr.tint); } // eingefärbt nur der Ersatz-Frame
         if (mini) img(o.x, o.y - 14, mini, o.y + 8.5, false);
         if (pr.label) v.label = this.text(o.x, o.y - (f ? 30 : 36), pr.label, '#bfe9ff', 7).setOrigin(0.5, 1);
         if (pr.light) { v.light = pr.light; v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(pr.light[0] / 110).setTint(pr.light[1]).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }

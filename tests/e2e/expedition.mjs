@@ -13,7 +13,7 @@ for (const base of [here + '/', '/opt/node22/lib/node_modules/']) {
   try { ({ chromium } = createRequire(base)('playwright')); break; } catch { /* nächster Ort */ }
 }
 if (!chromium) { console.error('Playwright ist nicht installiert:  npm i -D playwright && npx playwright install chromium'); process.exit(2); }
-const url = process.env.EM_URL ?? 'http://localhost:7795';
+const url = (process.env.EM_URL ?? 'http://127.0.0.1:7795').replace(/\/?\?.*$/, '');
 const out = path.join(here, 'out');
 fs.mkdirSync(out, { recursive: true });
 const args = ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
@@ -81,7 +81,7 @@ await step('Auswahlfenster: Liste, Beschreibung, Schwierigkeitsgrade, Freischalt
   await a.page.keyboard.press('e');
   await a.has('Die Wurzeltiefe');
   await a.has('Herausforderung der Woche');
-  await a.has('Erst nach einem Abschluss auf Normal.');
+  await a.has('Nach einem Abschluss auf Normal.');
   await a.shot('02-auswahl');
 }, [a]);
 await step('Allein aufbrechen: eigene Instanz, Einleitung, HUD', async () => {

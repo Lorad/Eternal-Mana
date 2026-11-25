@@ -48,11 +48,11 @@ export function expeditionPortals(map: GameMap): Obj[] {
   const p = portalAt(map);
   if (!p) return [];
   return [{ id: nextId(), type: 'xobj', x: p.x, y: p.y, state: 0, tag: 'portal', props: { sid: 'xportal', kind: 'portal', ui: 'exp', big: p.big ? 1 : undefined,
-    frame: p.big ? 'expedition_portal' : 'portal_small', label: 'Expeditionsportal', prompt: 'Expeditionen wählen', light: [p.big ? 120 : 90, 0x9fe8ff, 0.9] } }];
+    frame: p.big ? 'expedition_portal' : 'portal_small', label: 'Expeditionsportal', prompt: 'Expeditionen wählen', tint: 0x9fe8ff, light: [p.big ? 120 : 90, 0x9fe8ff, 0.9] } }];
 }
 /** Wohin man nach einer Expedition (oder beim Verlassen) zurückkehrt */
 export function returnSpot(): { zone: string; x: number; y: number } {
   if (hubExists()) { const [x, y] = HUB_SPOTS.rueckkehr; return { zone: HUB_ZONE, x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 }; }
   const m = getMap(QUELLHAIN.zone), p = portalAt(m);
-  return p ? { zone: m.id, x: p.x, y: p.y + 3 * TILE } : { zone: m.id, x: m.start.x, y: m.start.y };
+  return p ? { zone: m.id, x: p.x, y: p.y + 1.6 * TILE } : { zone: m.id, x: m.start.x, y: m.start.y };
 }

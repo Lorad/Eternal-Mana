@@ -89,7 +89,7 @@ function setup(zone: Zone) {
   });
   spawnMinis(zone, b => levelFor(run, b), d.hpMul, d.dmgMul);
   for (const pz of info.puzzles) run.puzzles.set(pz.sec, { sec: pz.sec, kind: pz.kind, order: pz.order, bits: pz.bits, runes: pz.runes, time: pz.time, progress: 0, solved: false });
-  for (const ev of info.events) run.events.set(ev.sec, { kind: ev.kind, sec: ev.sec, state: 'idle', wave: 0, waves: 3, mobs: new Set(), barriers: [], at: 0, next: 0 });
+  for (const ev of info.events) run.events.set(ev.sec, { kind: ev.kind, sec: ev.sec, state: 'idle', wave: 0, waves: 4, mobs: new Set(), barriers: [], at: 0, next: 0 });
 }
 
 // =====================================================================================================================
@@ -277,7 +277,7 @@ function tickEvent(zone: Zone, ev: EventState, now: number) {
       for (const p of zone.alivePlayers()) if (m.cells.includes(Math.floor(p.y / TILE) * zone.map.w + Math.floor(p.x / TILE))) { p.x = s.entry.x; p.y = s.entry.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
     }
     zone.ev({ k: 'sfx', n: 'boss_roar' });
-    for (const p of zone.players.values()) p.toast('Hinterhalt! Wurzeln schließen den Raum. Haltet drei Wellen stand!', 'story');
+    for (const p of zone.players.values()) p.toast('Hinterhalt! Wurzeln schließen den Raum. Haltet vier Wellen stand!', 'story');
     sendInfo(zone);
     return;
   }
@@ -301,7 +301,7 @@ function tickEvent(zone: Zone, ev: EventState, now: number) {
   }
   ev.wave++;
   const mix = EXPEDITIONS[run.exp].mobs[s.look as 0 | 1] ?? EXPEDITIONS[run.exp].mobs[0];
-  const n = 3 + ev.wave + Math.floor(inside.length / 2);
+  const n = 3 + ev.wave * 2 + Math.floor(inside.length / 2);
   const lvl = levelFor(run, zone.map.def.level[0] + Math.round((zone.map.def.level[1] - zone.map.def.level[0]) * 0.7));
   for (let i = 0; i < n; i++) {
     for (let t = 0; t < 30; t++) {
@@ -331,7 +331,7 @@ function reveal(zone: Zone) {
   run.returnAt = now + EXP_CFG.returnSec;
   for (const o of zone.objs.values()) if (o.type === 'door' && o.props?.seal === 'boss' && o.state === 0) zone.setObjState(o, 1);
   const { x, y } = info.reward;
-  zone.addDynamicObj('xobj', x, y + 2 * TILE, { kind: 'return', frame: 'expedition_portal', label: 'Heimweg', prompt: 'Gemeinsam zurückkehren', light: [110, 0x9fe8ff, 1] }, 'return');
+  zone.addDynamicObj('xobj', x, y + 2 * TILE, { kind: 'return', frame: 'expedition_portal', label: 'Heimweg', prompt: 'Gemeinsam zurückkehren', tint: 0xffe8a0, light: [110, 0xffe0a0, 1] }, 'return');
   const deaths = [...zone.players.values()].reduce((a, p) => a + p.char.deaths - (run.d0.get(p.charId) ?? p.char.deaths), 0);
   if (d.noDeathChest && deaths === 0) zone.addDynamicObj('chest', x - 4 * TILE, y + 1 * TILE, { tier: 'gold', xb: 'nodeath', label: 'Truhe der Unversehrten' });
   if (d.timedChest && run.done!.sec <= expPar(EXPEDITIONS[run.exp])) zone.addDynamicObj('chest', x + 4 * TILE, y + 1 * TILE, { tier: 'gold', xb: 'timed', label: 'Truhe der Eile' });
