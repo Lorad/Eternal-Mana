@@ -152,7 +152,7 @@ function cobbleCol(c: Chunk, f: QF, i: number, wx: number, wy: number, z: number
     return COB[z][1];
   }
   const tone = (id >>> 8) % 10;
-  let t = worn > 0.6 ? 4 : worn < 0.4 ? 2 : 3;
+  let t = worn > 0.6 ? 4 : worn < 0.33 ? 2 : 3;
   if (tone === 0) t--; else if (tone === 9) t++;
   if (e < 1.4 && s > 0.8) t--;            // Unterkante im Schatten
   else if (e < 1.5 && s < -1.2) t++;       // Lichtkante oben links
