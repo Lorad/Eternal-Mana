@@ -16,6 +16,7 @@ import { ECHO_MECH, type EchoMech } from './echo';
 import { bossLoot } from './loot';
 import type { Player } from './player';
 import { Rift } from './rift';
+import { Expedition } from './expedition';
 import { Social } from './social';
 import { Story } from './story';
 import { Mob, type Zone } from './zone';
@@ -47,6 +48,7 @@ export class BossCtl {
     this.cx = ((room.x0 + room.x1 + 1) / 2) * TILE;
     this.cy = ((room.y0 + room.y1 + 1) / 2) * TILE;
     if (zone.rift) this.echo = ECHO_MECH[def.id];
+    else if (zone.exp) this.echo = Expedition.bossMech(zone, def.id); // 0.9: Phasen bei 60 %/25 %, Signaturmechanik, Schwierigkeitsgrad
     this.spawn();
   }
   private spawn() {
@@ -97,6 +99,7 @@ export class BossCtl {
     this.zone.ev({ k: 'mob-', id: m.id }); this.zone.ev({ k: 'mob+', m: m.info() });
     this.doors(1);
     this.zone.ev({ k: 'bossend', id: m.id, won: false });
+    this.echo?.reset?.(this.kit());
   }
 
   uniqueFor(p: Player): ItemInstance | null {
@@ -151,7 +154,8 @@ export class BossCtl {
     z.ev({ k: 'sfx', n: spared ? 'puzzle_solved' : 'boss_die' });
     if (spared) z.ev({ k: 'fx', n: 'shard', x: this.mob.x, y: this.mob.y });
     else z.ev({ k: 'fx', n: 'bossdeath', x: this.mob.x, y: this.mob.y, el: d.element });
-    if (z.rift) { Rift.bossDown(z, this); return; } // Echos geben keine Siegel, Bossflaggen oder Questfortschritt – nur Riss-Belohnungen
+    if (z.rift) { Rift.bossDown(z, this); return; }
+    if (z.exp) { Expedition.bossDown(z, this); return; } // 0.9: Belohnung genau einmal je Lauf, Arena versiegeln, Rückkehr // Echos geben keine Siegel, Bossflaggen oder Questfortschritt – nur Riss-Belohnungen
     const all = [...z.players.values()];
     for (const p of all) {
       if (p.dead) { p.dead = false; p.hp = Math.round(p.stats.maxHp * 0.5); p.send({ t: 'toast', s: 'Der Sieg deiner Gruppe reißt dich zurück ins Leben.', kind: 'good' }); }
@@ -194,7 +198,8 @@ export class BossCtl {
     this.emptyT = 0;
     const frac = m.hp / m.maxHp;
     if (this.def.spared !== undefined && frac <= this.def.spared) { this.surrender(); return; }
-    const ph = frac <= 0.33 ? 3 : frac <= 0.66 ? 2 : 1;
+    const [p2, p3] = this.echo?.phases ?? [0.66, 0.33];
+    const ph = frac <= p3 ? 3 : frac <= p2 ? 2 : 1;
     if (ph > this.phase) {
       this.phase = ph; this.gen = this.phaseChange(); this.wait = 0;
       this.zone.ev({ k: 'sfx', n: 'boss_phase' });
@@ -202,6 +207,7 @@ export class BossCtl {
       this.announce();
     }
     if (this.now >= this.animUntil) m.anim = Anim.Idle;
+    this.echo?.tick?.(this.kit(), dt);
     if (this.chase && this.def.speed > 0) {
       const t = this.zone.alivePlayers().sort((a, b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0];
       if (t) {

@@ -1,6 +1,7 @@
 import type { Element, StatusSpec } from '../types';
 import { BOSS_UNIQUE } from './items';
 import { WORLD_ENEMIES } from './rares';
+import { expEnemies } from './expmobs';
 
 export interface EnemyDef {
   id: string;
@@ -123,6 +124,7 @@ export const ENEMY_LIST: EnemyDef[] = [
 ];
 // Lebendige Welt (0.6): seltene Monster, Weltbosse, Ereignisgegner – nur beschworen, in keiner Gebietsliste
 ENEMY_LIST.push(...WORLD_ENEMIES);
+ENEMY_LIST.push(...expEnemies(ENEMY_LIST)); // 0.9: Mini-Bosse und Mechanik-Helfer der Expeditionen
 export const ENEMIES: Record<string, EnemyDef> = Object.fromEntries(ENEMY_LIST.map(e => [e.id, e]));
 
 export interface BossDef {

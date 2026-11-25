@@ -11,7 +11,11 @@ import type { BossCtl } from './boss';
 
 export type BossKit = ReturnType<BossCtl['kit']>;
 type Gen = Generator<number, void, void>;
-export interface EchoMech { speed?: number; start?(k: BossKit): void; phase?(k: BossKit, phase: number): void; pattern?(k: BossKit): Gen }
+export interface EchoMech {
+  speed?: number; start?(k: BossKit): void; phase?(k: BossKit, phase: number): void; pattern?(k: BossKit): Gen;
+  // ---- 0.9 Expeditionen (server/src/expedition/bossmech.ts): eigene Phasengrenzen, Takt der Signaturmechanik, Aufräumen beim Zurücksetzen
+  phases?: [number, number]; tick?(k: BossKit, dt: number): void; reset?(k: BossKit): void;
+}
 
 export const ECHO_MECH: Record<string, EchoMech> = {
   /** Dornensaat: angekündigte Felder, die als Giftlachen liegen bleiben und den Raum enger machen */

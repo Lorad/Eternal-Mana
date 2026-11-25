@@ -348,6 +348,39 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Entwickler-Befehle:** `/endspiel`, `/riss <stufe>`, `/risstein`, `/rissmod <id> [dungeon] [stufe]`, `/quell <n>`, `/echo <n>`, `/kreis [n]`, `/pruefung`.
 - **Simulation:** `npx tsx scripts/rift-sim.ts` vergleicht Riss-Stufen 1/10/20/30 für drei Ausrüstungsstände.
 
+## Expeditionen (0.9)
+
+- **Daten und Regeln:** `shared/src/data/expeditions.ts` – je Expedition ein handgeschriebener Abschnittsplan (Form, Rolle, Übergang,
+  Gruppen, Fallen, Rätsel, Mini-Boss, Ereignis, Seitenflügel, Schatzkammer), Mini-Bosse (`MINIS`), Schwierigkeitsgrade (`EXP_DIFF`),
+  Freischaltung (`expUnlock`, `diffBlock`), Wochenherausforderung (`weeklyChallenge(isoWeek)`), `sanitizeExp`. Gegner der Mini-Bosse
+  und Mechanik-Helfer: `expmobs.ts`; Trophäen und seltene Funde: `expitems.ts`. Gemeinsame Namen mit dem Hub: `data/hub.ts`.
+- **Karte:** `shared/src/maps/expedition.ts` (`genExpedition`, deterministisch aus dem Seed). Anordnen (Rechteck je Abschnitt, in
+  freier Richtung an den Vorgänger, Neubeginn bei Überschneidung) → Graben (Formen, Gänge mit echten Übergängen, „Rückgrat“ von jedem
+  Zugang zur Mitte, auf dem nie etwas Solides steht) → Füllen → Prüfen (`validateExpedition`: simuliert Tore, Schlüssel, Rätselsiegel,
+  Arena und Belohnungstür; Schatzkammern nur durch die geheime Wand). Laufzeitdaten in `GameMap.exp`. Die Expeditionszonen stehen wie
+  der Hof NICHT in `ZONE_LIST`. Chronik-Dokumente des alten Dungeons der Region wandern hierher (`placeStory(map, alias)`).
+- **Server:** `server/src/expedition/` – `index.ts` ist der einzige Einstieg für `Game`, `Zone` und `BossCtl` (Nachricht `exp`,
+  Aufbau, Takt, Interaktion, Ausgänge, Bossende, Anmeldung, Gruppenwechsel, Dev-Befehle); `run.ts` (Zustand eines Laufs),
+  `mini.ts` (Mini-Bosse), `bossmech.ts` (Phasen 60 %/25 %, Filmmoment, Signaturmechanik je Endboss, Wut, Helfer – über die
+  Echo-Schnittstelle von `BossCtl`), `reward.ts` (Abschluss), `hub.ts` (EINZIGE Stelle für Portal und Rückkehr: Quellwarte, sonst Quellhain).
+- **Instanzen:** jede Gruppe (oder jeder Einzelne) bekommt `Zone` unter `exp:<n>` mit `Zone.exp`. Betreten nur die eigene Gruppe
+  (`mayEnter`); späteres Beitreten am Portal oder am alten Eingang. Leere Instanzen leben `EXP_CFG.emptySec` (Wiederverbindung).
+  `Game.enter` fragt zuerst `Expedition.entry`: zurück in den laufenden Lauf (an die gespeicherte Stelle) – sonst zum Portal; wer in
+  einem alten Story-Dungeon gespeichert war, steht an dessen Eingang in der Oberwelt.
+- **Genau einmal belohnt:** Jeder Lauf hat einen Schlüssel (`ExpRun.key` = Serverstart + Laufnummer). `reward.grant` prüft ihn gegen
+  `CharData.expRuns`, schreibt Belohnung, `CharData.expeditions[id]` (DungeonRecord) und den Schlüssel in denselben Spielstand und
+  speichert sofort (eine Transaktion). Doppeltes Bossende, erneutes Töten, Wiederverbindung in der Belohnungsphase und ein Neustart
+  finden den Schlüssel. Die Story-Haken des alten Dungeons (Flag `b:<boss>`, Siegel, Questziel `boss`, Bosskern) laufen mit.
+- **Protokoll (nur Zusätze):** Client → Server `exp` (`info`, `select`, `ready`, `unready`, `start`, `cancel`, `join`, `leave`, `return`,
+  `forge`); Server → Client `exp` (`lobby`, `run`, `result`, `summary`, `party`, `weekly`, `forge`). Neue Objektart `xobj` (Portal,
+  Rastplatz, Runenscheibe, Siegel, Altar, Rückkehrportal, Lichtstein, Ventil, Kühlkette, Tintenfass, Spur) – der Client zeichnet sie wie
+  `wobj` und baut sie bei geänderten `props` neu auf.
+- **Oberfläche:** `client/src/ui/expedition.tsx` (Auswahl, Bereitschaft, HUD, Abschluss, Zusammenfassung), `ui/exp-net.ts`,
+  Rückfalltabelle der Grafik `client/src/game/expart.ts`.
+- **Werkzeuge:** `npx tsx scripts/expdump.ts [id]` (ASCII-Karte und Prüfung), `npx tsx scripts/exp-playtest.ts` (ganze Läufe mit dem
+  Spielermodell: sorgsam/zügig, allein/zu zweit), `tests/expedition.test.ts`, `tests/e2e/expedition.mjs`. Dev-Befehle: `/portal`,
+  `/expfrei`, `/exp id [schwierigkeit]`, `/expgo abschnitt [mitte]`, `/expphase 2|3`, `/expsieg`.
+
 ## Tests
 
 - `tests/endgame.test.ts` – Endspiel ohne Netzwerk (`tests/helpers/sim.ts`): Freischaltung, getrennte Instanzen,

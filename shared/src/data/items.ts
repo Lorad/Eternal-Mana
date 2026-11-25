@@ -8,6 +8,7 @@ import { CRAFT_ITEMS } from './materials';
 import { ENCHANTS, LEARNABLE, scrollOf } from './recipes';
 import { HOME_ITEMS } from './homeitems';
 import { WORLD_ITEMS } from './worlditems';
+import { EXP_ITEMS } from './expitems';
 
 export type ItemKind = 'weapon' | 'offhand' | 'helm' | 'armor' | 'gloves' | 'legs' | 'boots' | 'accessory' | 'consumable' | 'material' | 'quest';
 /** Art der Zweithand (0.9): je Klasse festgelegt in CLASS_OFFHAND */
@@ -108,6 +109,7 @@ add({ id: 'gem', name: 'Geschliffener Edelstein', kind: 'material', icon: 'gem',
 for (const b of CRAFT_ITEMS) add(b);
 for (const b of WORLD_ITEMS) add(b); // Lebendige Welt (0.6): Sternsplitter, Schatzkarten, Trophäen
 for (const b of HOME_ITEMS) add(b);  // Zuhause (0.7): Begleiter aus dem Kochtopf
+for (const b of EXP_ITEMS) add(b);   // Expeditionen (0.9): Trophäen und seltene Funde
 for (const r of LEARNABLE) {
   const what = r.name || (r.out.k === 'item' ? ITEMS[r.out.item]?.name : '') || r.id;
   add({ id: scrollOf(r.id), name: 'Rezept: ' + what, kind: 'consumable', icon: 'recipe', stack: true, price: 60 + r.level * 12, desc: 'Benutzen, um das Rezept dauerhaft zu lernen.', use: { learn: r.id } });

@@ -24,6 +24,7 @@ import { planColumn, type ColumnPlan } from './hudlayout';
 import { PerfOverlay } from './perf';
 import { Affinity, TargetInfo } from './elements';
 import { EndgamePill, RiftHud } from './endgame';
+import { ExpHud } from './expedition';
 import { QUELL_MAX, titleName } from '../../../shared/src/data/rifts';
 import { MinimapCanvas } from './mapview';
 import { PartyFrames, PlayerMenu, SocialPopups } from './social';
@@ -309,7 +310,7 @@ function RightColumn() {
     h: uiScale.h, narrow: uiScale.w < 860, minimap: s.showMinimap, rift: !!rift, riftMods: rift?.mods.length ?? 0, boss,
     events: ev.here.length + (ev.hint ? 1 : 0), far: ev.far.length, quests: active.length, collapsed: s.trackerCollapsed, opened,
   });
-  return <div class="hud-tr"><MinimapBox /><RiftHud /><EventTracker /><QuestTracker active={active} plan={plan} /><FarEvents max={plan.far} /></div>;
+  return <div class="hud-tr"><MinimapBox /><RiftHud /><ExpHud /><EventTracker /><QuestTracker active={active} plan={plan} /><FarEvents max={plan.far} /></div>;
 }
 function npcName(id: string) { return NPCS[id]?.name ?? id; }
 

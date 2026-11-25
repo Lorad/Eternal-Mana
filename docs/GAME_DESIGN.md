@@ -92,6 +92,58 @@ Dungeons werden aus einem festen Seed erzeugt (jeder Dungeon sieht immer gleich 
 Leere Dungeons werden nach 90 Sekunden zurückgesetzt und sind beliebig wiederholbar; der erste Sieg gibt volle, jeder
 weitere 40 % der Boss-Erfahrung, dazu jedes Mal eine goldene Truhe.
 
+## Expeditionen (0.9)
+
+Seit 0.9 sind die Dungeons der sechs Regionen **Expeditionen**: große, mehrteilige Karten (16–21 Abschnitte) für 15–30 Minuten.
+Die Dungeon-Eingänge der Oberwelt führen in die Expedition ihrer Region (Normal, eigene Instanz der Gruppe); das Portal in der
+Quellwarte (bis dahin: das kleine Portal in Quellhain) führt in alle freigeschalteten. Die alten Dungeons oben bleiben für die
+Mana-Risse erhalten.
+
+| Expedition | Region | Stufe | Endboss | Signatur | Ereignis | Mini-Bosse |
+|---|---|---|---|---|---|---|
+| Die Wurzeltiefe | Grünwald | 5 | Dornenmutter | Dornenknospen schützen sie – erst die Knospen | Hinterhalt (vier Wellen) | Sporenkönig Pfifferling, Borkenmutter |
+| Die Singende Tiefe | Kristallhöhlen | 10 | Kristallkoloss | Ansturm in eine Prismensäule locken | Finsternis (drei Lichtsteine) | Glasmaul, Glimmerkönigin |
+| Die Gießerei der Ersten | Glutlande | 15 | Ignarok | Glut steigt – Kühlkette ziehen, sonst Ausbruch | Einsturz-Jagd über den Steg | Schlackenvogt, Mutter Asche |
+| Der Webstuhl aus Eis | Frostgebirge | 20 | Ysolde | „Halt still“ – wer sich bewegt, friert ein | Flut (drei Ventile) | Reifriese Hjalmar, Die Weiße Wache |
+| Die Unteren Archive | Verlorene Ruinen | 25 | Der Archivar | „Eintrag“ am Tintenfass streichen | Hinterhalt | Kustos Vierzehn, Die Fußnote |
+| Der Hof der Hohlen Krone | Schattenreich | 30 | Der Hohle König | bei Maelis’ wanderndem Licht stehen | Einsturz-Jagd | Ritter ohne Krone, Die Mahrkönigin |
+| Die Gestrichenen Seiten (geheim) | Verlorene Ruinen | 34 | Der Erste Schreiber | wie der Archivar | Finsternis | Die Fußnote, Kustos Vierzehn |
+
+- **Abschnitte** nach einem Plan je Expedition: Eingang, Erkundung, Gegnergruppen, Kampfhallen, Fallen (Stacheln, Geschoss-Statuen,
+  Gift, brüchiger Boden), Schlüssel und verschlossene Tür, Rätsel (Fackeln, Hebel, Platten, neu: **Runenscheiben**), ein zweiter Teil
+  mit anderer Einrichtung und Gegnermischung, Erwachte, Rastplatz (Kontrollpunkt und Heilung), Arena, Belohnungskammer. Dazu
+  Seitenflügel mit Mini-Bossen (mindestens einer freiwillig), eine Schatzkammer hinter einer rissigen Wand, seltene Abbaustellen,
+  ein verborgenes Ausrüstungsversteck, Inschriften und die Chronik-Dokumente des alten Dungeons. Übergänge: Treppe, Brücke über
+  einen Abgrund, Tor, Stollen, verschlossene Tür.
+- **Endbosse:** Phasen bei 60 % und 25 % mit kurzem Filmmoment (unverwundbar, Worte, die Arena verändert sich), eigene Arena je Region,
+  eine Signaturmechanik, die man lernen muss.
+- **Schwierigkeitsgrade:** Normal → Schwer (nach einem Normal-Abschluss; Erwachte mit einem Affix, mehr Gegner, zusätzlicher Bossangriff,
+  Truhe ohne Tod) → Albtraum (Stufe 40 und Schwer geschafft; zwei Affixe, Helfer je Bossphase, Wut nach fünf Minuten, Truhe unter der
+  Richtzeit) → Mythisch (nach Albtraum; drei Affixe, Wut nach knapp vier Minuten, Signatur öfter). Beute je Grad besser, bis zur
+  höchsten Seltenheit (`RARITY_NAME.length`).
+- **Abschluss:** Belohnung genau einmal je Lauf und Charakter (Erfahrung, Gold, zwei Ausrüstungsteile, Rohstoffe der Region,
+  Boss-Unikat beim ersten Mal, Trophäe je erstem Abschluss eines Grades, selten der besondere Fund der Expedition, Chance auf
+  Legendär), Statistik, gemeinsame Rückkehr durch ein Portal (oder nach 60 Sekunden), Zusammenfassung mit Weg zur Schmiede.
+  Bestzeiten und Abschlüsse je Grad, Geheimnisse und Mini-Bosse stehen in `CharData.expeditions`.
+- **Wochenherausforderung:** je ISO-Woche eine Expedition, ein Grad und zwei Modifikatoren; einmal je Woche anderthalbfache
+  Belohnung und zwei Teile mehr.
+- **Dauer** (gemessen mit `npx tsx scripts/exp-playtest.ts`: echte Läufe der Bots mit dem Spielermodell, Normal, empfohlene Stufe,
+  typische Ausrüstung; „sorgsam“ liest, sucht Geheimnisse und nimmt alle Seitenflügel mit, „zügig“ folgt dem Hauptweg; Zeitaufschläge
+  für Lesen und Rätsel in `scripts/playtest/expedition.ts`, THINK; „hängt“ = Aufgaben, die der Bot nach Frist übersprungen hat).
+  Bots laufen auf dem kürzesten Weg und zögern nie – Menschen brauchen eher länger:
+
+| Expedition | St. | sorgsam allein | zügig allein | sorgsam zu zweit | zügig zu zweit |
+|---|---|---|---|---|---|
+| Die Wurzeltiefe | 5 | 18:05 (2/2, Tode 0.0, hängt 1×) | 13:50 (2/2, Tode 0.0, hängt 1×) | 15:20 (1/1, Tode 0.0) | 12:05 (1/1, Tode 0.0) |
+| Die Singende Tiefe | 10 | 18:30 (2/2, Tode 0.0, hängt 3×) | 15:19 (2/2, Tode 0.0, hängt 4×) | 19:27 (1/1, Tode 0.0, hängt 2×) | 13:56 (1/1, Tode 0.0, hängt 2×) |
+| Die Gießerei der Ersten | 15 | 16:14 (2/2, Tode 0.0) | 13:55 (2/2, Tode 0.0, hängt 1×) | 13:59 (1/1, Tode 0.0) | 11:14 (1/1, Tode 0.0) |
+| Der Webstuhl aus Eis | 20 | 17:41 (2/2, Tode 0.5) | 16:59 (2/2, Tode 0.0) | 16:10 (1/1, Tode 0.0) | 14:16 (1/1, Tode 0.0) |
+| Die Unteren Archive | 25 | 18:32 (2/2, Tode 0.0, hängt 3×) | 15:24 (2/2, Tode 0.0, hängt 2×) | 15:17 (1/1, Tode 0.0, hängt 1×) | 14:20 (1/1, Tode 0.0, hängt 1×) |
+| Der Hof der Hohlen Krone | 30 | 18:24 (2/2, Tode 1.5) | 15:10 (2/2, Tode 2.5, hängt 1×) | 15:43 (1/1, Tode 0.0) | 11:16 (1/1, Tode 0.0) |
+
+- **Erfahrung:** Alle Gegner einer Expedition zusammen bringen doppelt so viel wie die des alten Dungeons ihrer Region – eine
+  Expedition auf Normal hebt bei empfohlener Stufe um gut zwei Stufen.
+
 ## Bosse
 
 Jeder Boss hat drei Phasen (bei 66 % und 33 % Leben) und eigene Mechaniken:
