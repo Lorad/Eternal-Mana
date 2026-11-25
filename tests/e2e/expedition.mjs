@@ -183,10 +183,10 @@ await step('Zu zweit zum Boss, Sieg, Abschluss für beide, gemeinsame Rückkehr'
   await a.cmd('/expsieg');
   await both(p => p.has('Expedition abgeschlossen', 12000));
   await both(p => p.shot('28-gruppe-abschluss'));
-  await a.page.getByRole('button', { name: 'Gemeinsam heimkehren' }).first().click();
+  await a.page.locator('.win-exp-result').getByRole('button', { name: 'Gemeinsam heimkehren' }).click();
   await a.wait(800);
   await a.has('bereit für den Heimweg', 6000).catch(() => {});
-  await b.page.getByRole('button', { name: 'Gemeinsam heimkehren' }).first().click();
+  await b.page.locator('.win-exp-result').getByRole('button', { name: 'Gemeinsam heimkehren' }).click();
   await both(p => p.loaded());
   await both(p => p.has('Zurück aus Die Wurzeltiefe', 12000));
   await both(p => p.shot('29-gruppe-zurueck'));

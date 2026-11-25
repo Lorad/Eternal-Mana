@@ -16,6 +16,31 @@ import { Rng } from '../../shared/src/util/rng';
 import type { Obj, Zone } from '../../server/src/zone';
 import type { Lab } from './lab';
 import { Nav, type Bot, type Skill } from './model';
+import { st } from '../../server/src/expedition/bossmech';
+
+/**
+ * Signaturen der Endbosse: Ein Mensch lernt sie nach dem ersten Mal. Der Bot handelt hier so, wie es die Ansage verlangt:
+ * Knospen zuerst, Kühlkette ziehen, Eintrag am Tintenfass streichen, beim wandernden Licht stehen (Stillstand: siehe oben).
+ */
+function learnSignature(z: Zone, bots: Bot[], now: number) {
+  const b = z.boss!, s = st(b), alive = bots.filter(x => !x.p.dead);
+  const knospen = [...z.mobs.values()].filter(m => m.def.id === 'xm_knospe' && !m.dead);
+  for (const x of alive) x.focus = knospen.length ? (m => m.def.id === 'xm_knospe' || m.summoned) : null;
+  if (s.heat >= 60) {
+    const chain = [...z.objs.values()].find(o => o.props?.kind === 'chain' && o.state === 0);
+    const who = alive[0];
+    if (chain && who) { if (Math.hypot(chain.x - who.p.x, chain.y - who.p.y) < 26) who.send({ t: 'interact', id: chain.id }); else { who.goto = { x: chain.x, y: chain.y + 12 }; who.focus = () => false; } }
+  }
+  if (s.entry) {
+    const who = bots.find(x => x.p === s.entry!.p);
+    const ink = [...z.objs.values()].filter(o => o.props?.kind === 'ink').sort((a, c) => Math.hypot(a.x - s.entry!.p.x, a.y - s.entry!.p.y) - Math.hypot(c.x - s.entry!.p.x, c.y - s.entry!.p.y))[0];
+    if (who && ink) { who.goto = { x: ink.x, y: ink.y + 10 }; who.focus = () => false; }
+  }
+  if (s.wisp) {
+    const w = s.wisp, f = Math.min(1, (now - w.at) / (w.until - w.at - 0.8));
+    for (const x of alive) { x.goto = { x: w.x0 + (w.x1 - w.x0) * f, y: w.y0 + (w.y1 - w.y0) * f }; x.focus = () => false; }
+  }
+}
 
 export type Style = 'sorgsam' | 'zuegig';
 /** Sekunden, die ein Mensch für das braucht, was der Bot nicht spielt */
@@ -93,6 +118,7 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
   // ---- Durchführen
   const navs = bots.map(() => new Nav(z));
   const t0 = game.now, d0 = bots.map(b => b.p.char.deaths);
+  const moved = new Map<Bot, { x: number; y: number; at: number; until: number }>();
   const byRole: Record<string, number> = {};
   let ti = 0, taskAt = game.now, stuck = 0, bossSec = 0, waitUntil = 0, navAt = 0, lastProg = game.now, lastPos = { x: 0, y: 0 };
   const room = z.map.bossRoom!;
@@ -120,6 +146,15 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
         b.bounds = z.boss?.active && z.inRoom(room, b.p.x, b.p.y) ? bounds : null;
         // Türen öffnen, wenn man davorsteht
         for (const o of z.objs.values()) if ((o.type === 'door' || o.type === 'bossdoor') && o.state === 0 && !o.props?.ambush && Math.hypot(o.x - b.p.x, o.y - b.p.y) < 40 && !z.boss?.active) b.send({ t: 'interact', id: o.id });
+      }
+      // festgefahren (Gegner jenseits eines Teichs, Nahkämpfer läuft gegen das Ufer): kurz nur Nahes angreifen und dem Weg folgen
+      for (const b of bots) {
+        const m = moved.get(b) ?? { x: b.p.x, y: b.p.y, at: now, until: 0 };
+        if (Math.hypot(b.p.x - m.x, b.p.y - m.y) > 24) { m.x = b.p.x; m.y = b.p.y; m.at = now; }
+        if (now - m.at > 7 && now > m.until && t.k !== 'boss') { m.until = now + 5; m.at = now; }
+        if (now < m.until && t.k !== 'boss') b.focus = q => Math.hypot(q.x - b.p.x, q.y - b.p.y) < 45;
+        else if (t.k !== 'boss') b.focus = null;
+        moved.set(b, m);
       }
       const L = lead().p;
       if (Math.hypot(L.x - lastPos.x, L.y - lastPos.y) > 20) { lastPos = { x: L.x, y: L.y }; lastProg = now; }
@@ -184,11 +219,14 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
           for (const b of bots) if (!b.p.dead && !z.boss?.active) goal(b, (room.cx + 0.5) * TILE, (room.cy + 2.5) * TILE);
           else if (!b.p.dead && !z.inRoom(room, b.p.x, b.p.y)) goal(b, (room.cx + 0.5) * TILE, (room.cy + 2.5) * TILE); else b.goto = null;
           lastProg = now;
+          if (z.boss?.active) learnSignature(z, bots, now);
           break;
         }
       }
     }
-    lab.step(bots);
+    // Ysolde: Wer die Signatur kennt, bleibt im Stillstand stehen (keine Eingaben, auch kein Ausweichen)
+    const still = z.boss?.active ? st(z.boss).still : undefined;
+    if (still && now >= still.at - 0.3 && now < still.until) (game as any).tick(1 / CFG.net.tickRate); else lab.step(bots);
   }
   if (tasks[ti]) next();
   const res: ExpRunResult = {
