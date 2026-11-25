@@ -534,6 +534,26 @@ export function genExpedition(def: ZoneDef): GameMap {
   }
 
   finishSolid(tiles, solid);
+  // eingeschlossene Objekte freiräumen: Einrichtung, die einen Zugang versperrt, fällt weg (Türen gelten als offen)
+  for (let pass = 0; pass < 3; pass++) {
+    const r = new Uint8Array(w * h), q = [I(Math.floor(start.x / TILE), Math.floor(start.y / TILE))]; r[q[0]] = 1;
+    while (q.length) { const i = q.pop()!; for (const n of [i - 1, i + 1, i - w, i + w]) if (!r[n] && !solid[n]) { r[n] = 1; q.push(n); } }
+    let fixed = 0;
+    for (const o of [...objects, ...spawns.map(m => ({ x: m.x, y: m.y }))]) {
+      const tx = Math.floor(o.x / TILE), ty = Math.floor(o.y / TILE);
+      let ok = false;
+      for (let dy = -1; dy <= 1 && !ok; dy++) for (let dx = -1; dx <= 1; dx++) if (r[I(tx + dx, ty + dy)]) { ok = true; break; }
+      if (ok) continue;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const X = tx + dx, Y = ty + dy, i = I(X, Y);
+        if (solid[i] !== 1 || tiles[i] !== T.FLOOR || (dx === 0 && dy === 0)) continue;
+        if (objects.some(ob => Math.floor(ob.x / TILE) === X && Math.floor(ob.y / TILE) === Y)) continue;
+        solid[i] = 0; fixed++;
+        for (let k = decor.length - 1; k >= 0; k--) if (Math.floor(decor[k].x / TILE) === X && Math.floor((decor[k].y - 2) / TILE) === Y) decor.splice(k, 1);
+      }
+    }
+    if (!fixed) break;
+  }
   const labels = sections.filter(s => s.main && s.role !== 'entrance').map(s => ({ x: px(s.cx), y: px(s.y0) + 4, name: s.name }));
   const entries: GameMap['entries'] = { [x.parent]: start };
   const map: GameMap = { id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: true, seed: def.seed, decor, objects, spawns, rooms, start, entries, safe: [{ x: start.x, y: start.y, r: 80 }], bossRoom, labels, exp: info };
