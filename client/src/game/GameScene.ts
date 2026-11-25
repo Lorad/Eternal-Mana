@@ -49,6 +49,8 @@ import { MobView, ObjView, PlayerView, applyShadow, makeShadow, type ShadowCfg, 
 type Snap = Extract<ServerMsg, { t: 's' }>;
 
 const FONT = '"Trebuchet MS", Verdana, sans-serif';
+/** 0.8 „Blitze reduzieren“ (Einstellungen): Stärke der weichen Varianten */
+const FLASH = { softAlpha: 0.16, softMs: 700, shakeMul: 0.3, lightMul: 0.45, lightMinMs: 420, elementGapMs: 4000 };
 /** flach auf dem Boden liegende Deko (unter Figuren, ohne Schatten) */
 const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy|rug$|dig_spot)/;
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
@@ -154,7 +156,12 @@ export class GameScene extends Phaser.Scene {
     this.applyZoom();
     this.scale.on('resize', this.applyZoom, this);
     this.events.once('shutdown', () => this.scale.off('resize', this.applyZoom, this));
-    this.buildWorld().catch(e => console.error('Zone konnte nicht aufgebaut werden', e));
+    this.failCount = 0;
+    this.buildWorld().catch(e => {
+      // 0.8: Der Ladebildschirm bleibt nicht einfach stehen – er nennt den Grund und bietet einen Ausweg an (ui/screens.tsx)
+      console.error('Zone konnte nicht aufgebaut werden', e);
+      store.set({ loadFail: 'Das Gebiet konnte nicht aufgebaut werden (' + (e?.message ?? e) + ').' });
+    });
   }
 
   /** Ganzzahliger Zoom, sodass etwa 640×360 Weltpixel sichtbar sind (keine verzerrten Pixel). */
@@ -301,8 +308,26 @@ export class GameScene extends Phaser.Scene {
     cam.stopFollow();
     cam.pan(x + (s.dx ?? 0), y + (s.dy ?? 0), ms, 'Sine.easeInOut', true);
   }
-  cineFlash(color: number, ms: number) { if (this.ready) this.cameras.main.flash(ms, (color >> 16) & 255, (color >> 8) & 255, color & 255); }
-  cineShake(i: number, ms: number) { if (this.ready && settings.screenShake) this.cameras.main.shake(ms, i); }
+  cineFlash(color: number, ms: number) {
+    if (!this.ready) return;
+    // 0.8 „Blitze reduzieren“: statt eines vollen Bildschirmblitzes ein schwacher, langsamer Schleier
+    if (settings.reduceFlash) { this.softFlash(color, Math.max(ms, FLASH.softMs)); return; }
+    this.cameras.main.flash(ms, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+  }
+  cineShake(i: number, ms: number) { if (this.ready && settings.screenShake) this.cameras.main.shake(ms, i * (settings.reduceFlash ? FLASH.shakeMul : 1)); }
+  private screenFlashAt = 0;
+  /** Blitz über das ganze Bild; mit „Blitze reduzieren“ nur ein weicher Schleier */
+  private screenFlash(color: number, ms: number) {
+    this.screenFlashAt = performance.now();
+    if (settings.reduceFlash) this.softFlash(color, Math.max(ms, FLASH.softMs));
+    else this.cameras.main.flash(ms, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+  }
+  /** weicher Schleier über dem ganzen Bild (ersetzt bei „Blitze reduzieren“ den Kamerablitz) */
+  private softFlash(color: number, ms: number) {
+    const cam = this.cameras.main;
+    const g = this.add.rectangle(cam.midPoint.x, cam.midPoint.y, cam.displayWidth + 40, cam.displayHeight + 40, color, 1).setDepth(9990).setAlpha(0).setScrollFactor(1);
+    this.tweens.add({ targets: g, alpha: FLASH.softAlpha, duration: ms * 0.35, yoyo: true, hold: ms * 0.1, ease: 'Sine.easeInOut', onComplete: () => g.destroy() });
+  }
   /** Ende (oder Abbruch) einer Filmszene: Kamera zurück zur Figur, Musik der Zone, keine aufgestauten Eingaben. */
   cineEnd() {
     if (!this.ready) return;
@@ -350,7 +375,11 @@ export class GameScene extends Phaser.Scene {
     for (const d of this.decorShadows) applyShadow(d.s, d.x, d.y, sunny ? this.sun : d.indoor);
   }
   private riftDark(): number { return store.state.rift?.mods.includes('finsternis') ? CFG.rift.finsternis.light : 1; }
-  private flash(x: number, y: number, r: number, color: number, i = 1, dur = 260) { this.flashes.push({ x, y, r, color, i, i0: i, until: performance.now() + dur, dur }); }
+  private flash(x: number, y: number, r: number, color: number, i = 1, dur = 260) {
+    // „Blitze reduzieren“: Lichtblitze schwächer und länger – kein hartes Aufblitzen
+    if (settings.reduceFlash) { i *= FLASH.lightMul; dur = Math.max(dur, FLASH.lightMinMs); }
+    this.flashes.push({ x, y, r, color, i, i0: i, until: performance.now() + dur, dur });
+  }
   private collectLights(now: number): LightSrc[] {
     const out: LightSrc[] = this.staticLights.slice();
     const dim = this.map.def.indoor || this.isDay() < 0.6;
@@ -679,7 +708,7 @@ export class GameScene extends Phaser.Scene {
     const s = this.add.image(x, y, 'fx', 'ring').setTint(tint).setDepth(y + 20).setScale(0.15).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({ targets: s, scale: (r * 2) / 64, alpha: 0, duration: dur, ease: 'Cubic.out', onComplete: () => s.destroy() });
   }
-  private shake(i: number, d = 120) { if (settings.screenShake) this.cameras.main.shake(d, i / this.zoomLevel); }
+  private shake(i: number, d = 120) { if (settings.screenShake) this.cameras.main.shake(d, (i / this.zoomLevel) * (settings.reduceFlash ? FLASH.shakeMul : 1)); }
   private hitStop(ms: number) { this.hitStopUntil = Math.max(this.hitStopUntil, performance.now() + ms); }
   private decal(name: string, x: number, y: number, tint: number, life = 5000) {
     const n = this.fx.frames(name);
@@ -837,18 +866,20 @@ export class GameScene extends Phaser.Scene {
         if (!cur) { audio.playMusic(this.bossMusic()); this.shake(0.02, 400); }
         if (v && (!cur || cur.phase !== e.phase || cur.el !== e.el)) {
           const tint = elTint(e.el);
+          // 0.8: Ein bloßer Elementwechsel (Aetherion, Hohler König wechseln oft) blitzt nicht jedes Mal über das ganze Bild –
+          // der Blitz am Boss und die Druckwelle zeigen ihn; den Bildschirmblitz gibt es beim Phasenwechsel und höchstens alle paar Sekunden.
+          const phase = !cur || cur.phase !== e.phase;
           this.fx.play(this.fx.pick('shockwave'), v.x, v.y, { tint, add: true, depth: 3, fps: 14, scale: 1.4 }, c);
           this.flash(v.x, v.y - 20, 220, tint, 1, 600);
-          this.cameras.main.flash(180, (tint >> 16) & 255, (tint >> 8) & 255, tint & 255);
+          if (phase || performance.now() - this.screenFlashAt > FLASH.elementGapMs) { this.screenFlash(tint, 180); this.shake(0.018, 350); }
           this.decal('crack', v.x, v.y + 6, tint, 6000);
-          this.shake(0.018, 350);
         }
         break;
       }
       case 'bossend':
         store.set({ boss: null });
         audio.playMusic(this.map.def.music as MusicId);
-        if (e.won) { audio.playJingle('victory'); this.cameras.main.flash(500, 255, 250, 220); }
+        if (e.won) { audio.playJingle('victory'); this.screenFlash(0xfffadc, 500); }
         break;
     }
   }
@@ -1067,10 +1098,32 @@ export class GameScene extends Phaser.Scene {
     return { ang, tx, ty };
   }
 
-  update(_t: number, dtMs: number) {
+  /**
+   * 0.8: Ein Fehler in einem einzelnen Bild darf das Spiel nicht einfrieren (Phaser fordert nach einer Ausnahme kein neues
+   * Bild mehr an). Er wird gemeldet, das nächste Bild läuft weiter; häufen sich die Fehler, steht eine Leiste mit „Neu laden“.
+   */
+  update(t: number, dtMs: number) {
+    try { this.frame(t, dtMs); this.failCount = 0; }
+    catch (e) {
+      if (this.failCount++ === 0) console.error('Fehler im Spielbild', e);
+      if (this.failCount === 30 && !store.state.fatal) store.set({ fatal: 'Die Darstellung meldet wiederholt einen Fehler (' + ((e as Error)?.message ?? e) + '). Dein Spielstand liegt sicher beim Server.' });
+    }
+  }
+  private failCount = 0;
+  private pf = { at: 0, n: 0, sum: 0, worst: 0 };
+  private frame(_t: number, dtMs: number) {
     pollInput(dtMs);
     if (!this.ready) return;
     const now = performance.now();
+    // Leistungsanzeige: echte Bildabstände, zweimal je Sekunde zusammengefasst
+    if (this.frameAt) { const raw = now - this.frameAt; this.pf.n++; this.pf.sum += raw; if (raw > this.pf.worst) this.pf.worst = raw; }
+    if (now - this.pf.at >= 500 && this.pf.n) {
+      const p = live.perf;
+      p.ms = this.pf.sum / this.pf.n; p.fps = 1000 / p.ms; p.worst = this.pf.worst;
+      p.mobs = this.mobs.size; p.players = this.players.size + 1; p.objs = this.objs.size; p.projs = this.projs.size;
+      if (settings.perfOverlay) { p.draw = this.children.length; p.tex = this.textures.getTextureKeys().length; }
+      this.pf = { at: now, n: 0, sum: 0, worst: 0 };
+    }
     // 0.8: echte vergangene Zeit statt eines 50-ms-Deckels – auch unter 20 Bildern pro Sekunde läuft alles in Echtzeit (motion.ts)
     const dt = frameSeconds(now, this.frameAt);
     this.frameAt = now;

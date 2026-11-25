@@ -108,3 +108,198 @@ describe('Eigene Bewegung gegen den echten Server', () => {
     }
   });
 });
+
+// =====================================================================================================================
+import { ACTIONS, ACTION_LABEL, DEFAULT_KEYS, DEFAULT_PAD, KEY_GROUPS, bindKey, cloneKeys, keyConflicts, keyName, sanitizeKeys, unboundActions, type Action } from '../client/src/state/keys';
+
+describe('Tastenbelegung', () => {
+  it('hat in der Standardbelegung keine Konflikte und keine Aktion ohne Taste', () => {
+    expect(keyConflicts(DEFAULT_KEYS)).toEqual([]);
+    expect(unboundActions(DEFAULT_KEYS)).toEqual([]);
+    for (const a of ACTIONS) expect(ACTION_LABEL[a], a).toBeTruthy();
+  });
+
+  it('führt jede Aktion in genau einer Gruppe (Einstellungen und Handbuch zeigen dieselbe Liste)', () => {
+    const grouped = KEY_GROUPS.flatMap(g => g[1]);
+    expect([...grouped].sort()).toEqual([...ACTIONS].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
+  });
+
+  it('hat für jedes Fenster seit 0.3 eine belegbare Taste; das Gamepad erreicht den Rest über das Menü', () => {
+    for (const a of ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'ruf', 'sammlung', 'help', 'menu'] as Action[]) expect(DEFAULT_KEYS[a].length, a).toBeGreaterThan(0);
+    expect(DEFAULT_KEYS.menu).toContain('Escape');
+    expect(DEFAULT_PAD.menu).toBe(9);                                    // Start öffnet das Menü mit allen Fenstern
+    const used = Object.values(DEFAULT_PAD);
+    expect(new Set(used).size).toBe(used.length);                        // kein Knopf doppelt
+  });
+
+  it('nimmt eine neu vergebene Taste der alten Aktion weg (nie zwei Aktionen auf einer Taste)', () => {
+    const r = bindKey(DEFAULT_KEYS, 'dodge', 'KeyE');
+    expect(r.taken).toEqual(['interact']);
+    expect(r.keys.dodge[0]).toBe('KeyE');
+    expect(r.keys.interact).toEqual([]);
+    expect(keyConflicts(r.keys)).toEqual([]);
+    expect(unboundActions(r.keys)).toEqual(['interact']);
+    expect(DEFAULT_KEYS.interact).toEqual(['KeyE']);                     // die Vorlage bleibt unverändert
+    // Zweitbelegung bleibt erhalten, dieselbe Taste noch einmal ändert nichts
+    const again = bindKey(r.keys, 'attack', 'KeyX');
+    expect(again.keys.attack).toEqual(['KeyX', 'KeyJ']);
+    expect(bindKey(again.keys, 'attack', 'KeyX').keys).toEqual(again.keys);
+  });
+
+  it('ergänzt bei alten Einstellungen neue Aktionen nur mit freien Tasten', () => {
+    // Stand vor 0.8: ohne Handbuch, Questverfolgung, Leistungsanzeige – und der Spieler hat H schon für das Inventar vergeben
+    const old: any = cloneKeys(DEFAULT_KEYS);
+    delete old.help; delete old.tracker; delete old.perf;
+    old.inventory = ['KeyH'];
+    old.frueher = ['KeyZ'];                                               // unbekannte Aktion fällt weg
+    const k = sanitizeKeys(old);
+    expect(k.inventory).toEqual(['KeyH']);
+    expect(k.help).toEqual(['F1']);                                      // H ist vergeben → nur die freie Zweittaste
+    expect(k.tracker).toEqual(['KeyT']);
+    expect(k.perf).toEqual(['F3']);
+    expect((k as any).frueher).toBeUndefined();
+    expect(keyConflicts(k)).toEqual([]);
+    expect(sanitizeKeys(null)).toEqual(DEFAULT_KEYS);
+    expect(sanitizeKeys({ attack: 'kaputt', dodge: [1, 'Space'] }).dodge).toEqual(['Space']);
+  });
+
+  it('benennt Tasten lesbar', () => {
+    expect(keyName('KeyH')).toBe('H'); expect(keyName('Digit3')).toBe('3'); expect(keyName('Space')).toBe('Leertaste'); expect(keyName('Mouse2')).toBe('Rechte Maustaste'); expect(keyName('F1')).toBe('F1');
+  });
+});
+
+// =====================================================================================================================
+import { HELP_TOPICS, HINT, HINTS, hintText, markSeen, nextHint, type HintState } from '../client/src/state/hints';
+import { makeStack } from '../shared/src/data/items';
+
+describe('Hinweise', () => {
+  const sim = new Sim();
+  afterAll(() => sim.close());
+  const base = (patch: Partial<HintState> = {}): HintState => ({
+    screen: 'game', char: null, zone: 'gruenwald', panel: null, craft: null, endgame: null, hof: null, lore: null, cine: null, dlgNode: null, rift: null, world: null,
+    party: [], trade: null, home: null, dead: null, boss: null, target: null, nearStone: false, prompt: null, dialog: null, ...patch,
+  });
+
+  it('haben eindeutige Kennungen, kurze Texte und zeigen nur auf vorhandene Handbuch-Kapitel', () => {
+    expect(new Set(HINTS.map(h => h.id)).size).toBe(HINTS.length);
+    const topics = HELP_TOPICS.map(t => t[0]) as string[];
+    for (const h of HINTS) {
+      expect(h.text.length, h.id).toBeLessThan(230);
+      if (h.topic) expect(topics, h.id).toContain(h.topic);
+      for (const m of h.text.matchAll(/\{(\w+)\}/g)) expect(ACTIONS, `${h.id}: {${m[1]}}`).toContain(m[1]);
+    }
+  });
+
+  it('begleiten einen neuen Charakter durch die ersten Schritte – jeder Hinweis genau einmal', () => {
+    const t = sim.join('Neuling', 'krieger');
+    const c = t.p.char;
+    let seen: string[] = [];
+    const next = (patch: Partial<HintState> = {}) => nextHint(base({ char: c, ...patch }), seen, true)?.id ?? null;
+    const done = (id: string) => { seen = markSeen(seen, id); };
+    expect(next()).toBe('start');                                         // frisch in Quellhain: zu Mirelda
+    expect(next({ screen: 'loading' })).toBeNull();                        // nie außerhalb des Spiels …
+    expect(next({ cine: { id: 'x', bars: true, title: null, line: null, fade: 0, fadeMs: 0 } })).toBeNull(); // … oder in Filmszenen
+    expect(nextHint(base({ char: c }), seen, false)).toBeNull();           // abgeschaltet
+    done('start');
+    expect(next()).toBeNull();                                            // nichts Neues, solange nichts passiert
+    sim.gotoNpc(t, 'mirelda'); t.send({ t: 'qAccept', id: 'm_erwachen', npc: 'mirelda' });
+    expect(c.quests.m_erwachen?.s).toBe('active');
+    expect(next()).toBe('kampf');
+    done('kampf');
+    c.quests.m_erwachen.p = [99];                                         // Ziel erfüllt → zurück zum Auftraggeber
+    expect(next()).toBe('abgeben');
+    done('abgeben');
+    c.attrPoints = 3;
+    expect(next()).toBe('stufe');
+    expect(next({ panel: 'character' })).not.toBe('stufe');               // wer das Fenster schon offen hat, braucht ihn nicht
+    done('stufe'); c.attrPoints = 0;
+    expect(next({ craft: { at: 'fire', station: 'cooking' } })).toBe('kochen');
+    done('kochen');
+    expect(next({ craft: { at: 'borin', station: 'forge' } })).toBe('handwerk');
+    done('handwerk');
+    expect(next({ zone: 'wurzelgruft' })).toBe('dungeon');
+    done('dungeon');
+    expect(next({ lore: { id: 'brunnenbuch', first: true } })).toBe('chronik');
+    expect(seen).toEqual(['start', 'kampf', 'abgeben', 'stufe', 'kochen', 'handwerk', 'dungeon']);
+    expect(markSeen(['gibtsnicht', 'start'], 'start')).toEqual(['start']); // alte, unbekannte Kennungen fallen heraus
+    expect(markSeen(seen, 'unbekannt')).toEqual(seen);
+  });
+
+  it('melden späte Systeme erst, wenn sie da sind: volles Inventar, Gruppe, Handel, Hof', () => {
+    sim.clear();
+    const t = sim.join('Spaet', 'magier', 12);
+    const c = t.p.char;
+    const all = HINTS.map(h => h.id);
+    const only = (id: string, patch: Partial<HintState>) => nextHint(base({ char: c, ...patch }), all.filter(x => x !== id), true)?.id ?? null;
+    expect(only('voll', {})).toBeNull();
+    while (c.inv.length < CFG.player.invSize) c.inv.push({ ...makeStack('mat_wood', 1), uid: 'x' + c.inv.length });
+    expect(only('voll', {})).toBe('voll');
+    expect(only('gruppe', {})).toBeNull();
+    expect(only('gruppe', { party: [{} as any, {} as any] })).toBe('gruppe');
+    expect(only('handel', { trade: {} as any })).toBe('handel');
+    expect(only('hofkauf', { home: { owned: 0, pets: [] } as any })).toBeNull();          // erst nach der Wurzelgruft
+    c.quests[CFG.home.buyQuest] = { s: 'done', p: [], n: 1 };
+    expect(only('hofkauf', { home: { owned: 0, pets: [] } as any })).toBe('hofkauf');
+    expect(only('hofkauf', { home: { owned: 1, pets: [] } as any })).toBeNull();
+    expect(only('begleiter', { home: { owned: 1, pets: ['moosling'] } as any })).toBe('begleiter');
+    expect(only('rissinnen', { rift: { done: null } as any })).toBe('rissinnen');
+  });
+
+  it('setzen die aktuelle Taste in den Text ein', () => {
+    const s = hintText(HINT.start, a => (a === 'interact' ? 'E' : ''));
+    expect(s).toContain('[E]');
+    expect(s).not.toMatch(/\{\w+\}/);
+    expect(hintText(HINT.kampf, () => '')).toContain('(nicht belegt)');
+  });
+});
+
+// =====================================================================================================================
+import { COLUMN, planColumn, type ColumnInput } from '../client/src/ui/hudlayout';
+
+describe('Rangfolge der rechten HUD-Spalte', () => {
+  const inp = (p: Partial<ColumnInput> = {}): ColumnInput => ({ h: 720, narrow: false, minimap: true, rift: false, riftMods: 0, boss: false, events: 0, far: 0, quests: 0, collapsed: false, opened: false, ...p });
+  /** grobe Höhe dessen, was der Plan zeigt – muss über der unteren Leiste bleiben */
+  const height = (i: ColumnInput) => {
+    const p = planColumn(i);
+    let h = COLUMN.top + COLUMN.info + (i.minimap ? (i.narrow ? COLUMN.minimapNarrow : COLUMN.minimap) + 4 : 0);
+    if (i.rift) h += COLUMN.rift + Math.ceil(i.riftMods / 2) * COLUMN.riftModRow + COLUMN.gap;
+    h += i.events * COLUMN.event + (i.events ? COLUMN.gap : 0);
+    if (i.quests) h += COLUMN.pill + p.quests * COLUMN.quest + (p.quests && p.quests < i.quests ? COLUMN.more : 0);
+    return h + p.far * COLUMN.far;
+  };
+
+  it('zeigt im ruhigen Fall bis zu vier Quests und klappt im Mana-Riss und im Bosskampf von selbst ein', () => {
+    expect(planColumn(inp({ quests: 6 }))).toMatchObject({ quests: 4, collapsed: false, why: null });
+    expect(planColumn(inp({ quests: 2 }))).toMatchObject({ quests: 2, collapsed: false });
+    expect(planColumn(inp({ quests: 5, rift: true, riftMods: 3 }))).toMatchObject({ quests: 0, collapsed: true, why: 'kampf', far: 0 });
+    expect(planColumn(inp({ quests: 5, boss: true }))).toMatchObject({ collapsed: true, why: 'kampf' });
+    // von Hand aufgeklappt bleibt sie auch im Riss offen – mit dem Platz, der da ist
+    const open = planColumn(inp({ quests: 5, rift: true, riftMods: 3, opened: true }));
+    expect(open.collapsed).toBe(false); expect(open.quests).toBeGreaterThan(0); expect(open.quests).toBeLessThan(4);
+    expect(planColumn(inp({ quests: 5, collapsed: true, opened: true }))).toMatchObject({ collapsed: true, why: 'hand' });
+    expect(planColumn(inp({ quests: 0, far: 3 }))).toMatchObject({ quests: 0, collapsed: false, far: 2 });
+  });
+
+  it('gibt Ereignissen hier den Vorrang vor Quests und Quests den Vorrang vor fernen Weltbossen', () => {
+    const quiet = planColumn(inp({ quests: 5, far: 2 })), busy = planColumn(inp({ quests: 5, far: 2, events: 2 }));
+    expect(busy.quests).toBeLessThan(quiet.quests);
+    expect(busy.quests).toBeGreaterThanOrEqual(1);
+    expect(busy.far).toBeLessThanOrEqual(1);
+    expect(planColumn(inp({ quests: 5, events: 4, far: 2 })).why).toBe('platz');     // vier Ereignisse: kein Platz mehr, nur die Zeile
+  });
+
+  it('bleibt in jeder Lage über der unteren Leiste (1280×720, 1000×560, Hochformat, ohne Karte)', () => {
+    // 1000×560 wird auf 0,78 verkleinert → dieselben 718 Oberflächen-Pixel Höhe; 600×900 → 1000 hoch und schmal
+    for (const h of [718, 720, 900]) for (const minimap of [true, false]) for (const rift of [false, true]) for (const events of [0, 1, 2]) for (const quests of [0, 1, 3, 8]) for (const far of [0, 3]) for (const opened of [false, true]) {
+      const i = inp({ h, minimap, rift, riftMods: rift ? 3 : 0, events, quests, far, opened });
+      expect(height(i), JSON.stringify(i)).toBeLessThanOrEqual(h - COLUMN.bottom + 1);
+      expect(planColumn(i).quests).toBeLessThanOrEqual(Math.min(quests, 4));
+    }
+    for (const events of [0, 1, 2]) for (const quests of [0, 2, 8]) for (const rift of [false, true]) {
+      const i = inp({ h: 1000, narrow: true, rift, riftMods: rift ? 3 : 0, events, quests, far: 2, opened: true });
+      expect(height(i), JSON.stringify(i)).toBeLessThanOrEqual(1000 - COLUMN.bottomNarrow + 1);
+      expect(planColumn(i).quests).toBeLessThanOrEqual(2);
+    }
+  });
+});

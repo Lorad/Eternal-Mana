@@ -14,6 +14,8 @@ import { CineOverlay, LoreOverlay } from './story';
 import { EncounterDialog, WorldShop } from './world';
 import { InspectWindow, TradeWindow } from './social';
 import { HofWindow } from './home';
+import { HandbuchPanel } from './handbuch';
+import { FatalBar } from './trouble';
 import { SettingsPanel } from './panels/settings';
 import { BootScreen, CharSelect, LoadingScreen, MainMenu } from './screens';
 import './styles/base.css';
@@ -25,6 +27,7 @@ import './styles/endgame.css';
 import './styles/world.css';
 import './styles/social.css';
 import './styles/home.css';
+import './styles/feinschliff.css';
 
 /** Berechnet den Maßstab: Die Oberfläche ist für rund 1280×720 entworfen und skaliert mit dem Fenster. */
 function computeScale() {
@@ -68,7 +71,7 @@ function Root() {
 
   const narrow = uiScale.w < 860, short = uiScale.h < 600;
   return (
-    <div ref={ref} class={cx('em-root', narrow && 'is-narrow', short && 'is-short', uiScale.w < uiScale.h && 'is-portrait', hasCine && 'is-cine')}
+    <div ref={ref} class={cx('em-root', narrow && 'is-narrow', short && 'is-short', uiScale.w < uiScale.h && 'is-portrait', hasCine && 'is-cine', settings.reduceFlash && 'reduce-flash')}
       style={{ width: uiScale.w + 'px', height: uiScale.h + 'px', transform: `scale(${s})` }}>
       {screen === 'boot' && <BootScreen />}
       {screen === 'menu' && <MainMenu />}
@@ -77,6 +80,7 @@ function Root() {
       {screen === 'game' && <Hud />}
       {screen === 'game' && panel && !dead && <PanelHost panel={panel} />}
       {screen !== 'game' && panel === 'settings' && <SettingsPanel />}
+      {screen !== 'game' && panel === 'help' && <HandbuchPanel modal />}
       {screen === 'game' && hasDialog && !dead && <NpcDialog />}
       {screen === 'game' && hasCraft && !dead && <CraftWindow />}
       {screen === 'game' && hasEndgame && !dead && <EndgameWindow />}
@@ -90,6 +94,7 @@ function Root() {
       {hasStory && screen === 'game' && <StoryOverlay />}
       {hasLore && screen === 'game' && !dead && <LoreOverlay />}
       {hasCine && screen === 'game' && <CineOverlay />}
+      <FatalBar />
       <TooltipLayer root={() => ref.current} />
     </div>
   );

@@ -1,0 +1,137 @@
+/* ============================================================== Feinschliff (0.8)
+   Wird zuletzt geladen: einheitliche Fensterköpfe, Rangfolge der rechten HUD-Spalte, Handbuch, Hinweise,
+   Leistungsanzeige, Fehlerleisten, „Blitze reduzieren“. */
+
+/* ---------------------------------------------------------------- Fensterkopf: immer eine Zeile – Titel · Reiter · Zusätze · Schließen */
+.window-head, .win-craft .window-head, .win-endgame .window-head, .win-wshop .window-head, .win-sammlung .window-head { flex-wrap: nowrap; }
+.window-head h2 { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: 2px; }
+.window-head .tabs { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
+.window-head .tab { white-space: nowrap; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.window-head .tabs-many .tab { padding: 5px 10px; font-size: 13.5px; }
+.window-gap { flex: 1 1 0; min-width: 0; }
+.window-head .window-x, .win-craft .window-x, .win-wshop .window-x { margin-left: 0; }
+.window-head .dlg-gold, .craft-gold { margin-left: 0; flex: none; }
+.win-craft { width: 1010px; }
+.win-wshop { width: 820px; }
+/* schmale Fenster: Titel und Schließen oben, Reiter als eigene Zeile darunter (mit Umbruch) */
+.is-narrow .window-head { flex-wrap: wrap; row-gap: 6px; }
+.is-narrow .window-head h2 { order: 1; flex: 1 1 0; }
+.is-narrow .window-head .dlg-gold { order: 2; }
+.is-narrow .window-head .window-gap { display: none; }
+.is-narrow .window-head .window-x { order: 3; }
+.is-narrow .window-head .tabs { order: 4; flex: 1 1 100%; flex-wrap: wrap; margin-left: 0; }
+
+/* ---------------------------------------------------------------- Betragsknöpfe (auch für das Gamepad) */
+.amt-steps { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.amt-step { padding: 2px 7px; font-size: 12px; font-weight: 600; color: var(--dim); background: rgba(10, 12, 20, .55); border: 2px solid #05060a; box-shadow: inset 0 0 0 1px var(--line); border-radius: 3px; pointer-events: auto; }
+.amt-step:hover:not(:disabled) { color: var(--gold-hi); }
+.amt-step:disabled { opacity: .4; }
+.hof-gold { flex-wrap: wrap; }
+.trade-goldrow { flex-wrap: wrap; }
+.trade-chat { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.trade-chat-log { font-size: 12.5px; line-height: 1.35; max-height: 54px; overflow: hidden; color: #cfd3e4; }
+
+/* ---------------------------------------------------------------- HUD: rechte Spalte */
+.hud-tr { gap: 8px; max-height: calc(100% - 150px); overflow: hidden; }
+.hud-tr > * { flex: none; }
+.evt { margin-top: 0; }
+.qt-head { align-self: flex-end; display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 10px; background: rgba(10, 12, 20, .62); border: 0; border-right: 3px solid var(--line-hi); border-radius: 2px; font: 700 11.5px var(--sans); letter-spacing: .04em; color: var(--dim); text-transform: uppercase; }
+.qt-head:hover { color: var(--text); background: rgba(10, 12, 20, .88); }
+.qt-n { min-width: 18px; padding: 0 4px; line-height: 16px; text-align: center; background: var(--gold-dk); color: #fff; border-radius: 8px; font-size: 11px; }
+.qt-chev { font-style: normal; font-size: 10px; color: var(--gold); width: 10px; text-align: center; }
+.qt-rdy { color: var(--quest); text-transform: none; letter-spacing: 0; }
+.qt.shut .qt-head { border-right-color: var(--gold-dk); }
+.qt-rest { color: var(--dim); }
+.evt-far .ev-row { align-items: center; padding: 2px 9px; font-size: 12px; opacity: .9; }
+.evt-far .ev-row b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evt-far .ev-glyph { font-size: 13px; }
+.conn { white-space: nowrap; flex: none; }
+/* Verbindungsanzeige über der Menüleiste: mit zehn Knöpfen ist daneben kein Platz mehr (sie ragte in die Aktionsleiste) */
+.hud-br-row { flex-direction: column; align-items: flex-end; gap: 4px; }
+.is-narrow .menubar { display: grid; grid-template-columns: repeat(2, 36px); }
+.is-narrow .hint { position: absolute; left: 50%; bottom: 330px; transform: translateX(-50%); }
+.is-narrow .qt-head { font-size: 10.5px; }
+.em-root.is-cine .hud > .reconnect { visibility: visible; }
+.reconnect { max-width: min(560px, calc(100% - 24px)); }
+.reconnect-acts { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.reconnect-acts .note { color: #e5b0a8; flex: 1 1 200px; }
+
+/* ---------------------------------------------------------------- Hinweise */
+.hint { display: flex; gap: 10px; width: 460px; max-width: calc(100vw - 24px); padding: 9px 12px 9px 10px; pointer-events: auto;
+  background: linear-gradient(rgba(24, 32, 58, .96), rgba(14, 18, 33, .96)); border: 2px solid #05060a; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px #4f7fb8, 0 6px 22px rgba(0, 0, 0, .55); text-shadow: none; animation: prompt-in .22s ease-out; }
+.hint-mark { flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: #4f7fb8; color: #fff; font: italic 700 14px/1 var(--serif); border-radius: 50%; margin-top: 1px; }
+.hint-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.hint-body b { font: 700 14px var(--serif); color: #bfe0ff; letter-spacing: .02em; }
+.hint-body p { font-size: 13px; line-height: 1.45; color: var(--text); }
+.hint-foot { display: flex; align-items: center; gap: 12px; margin-top: 3px; }
+.hint-link { padding: 0; background: none; border: 0; font-size: 12px; color: #9fc8f2; text-decoration: underline; text-underline-offset: 2px; }
+.hint-link.dim { color: var(--dim); }
+.hint-link:hover { color: #fff; }
+.is-narrow .hint { width: 340px; }
+.em-root.is-narrow .hint-link.dim { display: none; }
+
+/* ---------------------------------------------------------------- Handbuch */
+.win-handbuch { width: 1080px; }
+.win-handbuch .window-body { padding: 0; overflow: hidden; display: flex; }
+.hb { display: grid; grid-template-columns: 226px minmax(0, 1fr); width: 100%; height: 570px; }
+.is-short .hb { height: 470px; }
+.hb-nav { display: flex; flex-direction: column; gap: 2px; padding: 10px 8px; background: rgba(6, 7, 13, .45); border-right: 2px solid #0a0c14; }
+.hb-tab { flex: none; padding: 4px 10px; text-align: left; background: none; border: 2px solid transparent; border-radius: 3px; color: var(--dim); font-weight: 600; font-size: 13px; white-space: nowrap; pointer-events: auto; }
+.hb-tab:hover { color: var(--text); background: rgba(255, 255, 255, .04); }
+.hb-tab.on { background: linear-gradient(#3b4470, #2a3156); color: var(--gold-hi); border-color: #05060a; box-shadow: inset 0 0 0 1px var(--gold-dk); }
+.hb-page { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; line-height: 1.5; color: #d6daea; }
+.em-root .hb-title { font-size: 22px; line-height: 1.1; margin-bottom: 2px; }
+.hb-page p b, .hb-facts dd b { color: var(--parch); }
+.hb-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 22px; align-items: start; }
+.hb-cols > div { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.hb-facts { display: grid; grid-template-columns: minmax(96px, max-content) minmax(0, 1fr); gap: 0; margin: 0; }
+.hb-facts dt, .hb-facts dd { margin: 0; padding: 4px 8px; border-bottom: 1px solid rgba(255, 255, 255, .05); }
+.hb-facts dt { font-weight: 700; color: var(--parch); max-width: 190px; }
+.hb-facts dt .note { font-weight: 400; }
+.hb-facts dd .note { line-height: 1.35; }
+.hb-q { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; background: var(--quest); color: #2a1c05; border-radius: 50%; font: 900 13px/1 var(--serif); }
+.hb-hints { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.hb-page .kbd { margin: 0 1px; }
+.hb-page .help-keys .key-row { min-height: 25px; }
+.is-narrow .hb { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: 640px; }
+.is-narrow .hb-nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 2px solid #0a0c14; max-height: 132px; }
+.is-narrow .hb-tab { padding: 3px 8px; font-size: 12.5px; }
+.is-narrow .hb-cols { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .hb-facts { grid-template-columns: minmax(80px, 34%) minmax(0, 1fr); }
+
+/* ---------------------------------------------------------------- Menü (Pause) */
+.win-pause { width: 640px; }
+.pause { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 18px; }
+.pause-main, .pause-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pause-wins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.pause-wins .btn { text-align: center; }
+.pause-note { text-align: left; margin-top: auto; }
+.pause-req { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: rgba(40, 52, 30, .45); border: 2px solid #07080e; box-shadow: inset 0 0 0 1px #5f8a48; border-radius: 3px; }
+.pause-req-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.is-narrow .pause { grid-template-columns: minmax(0, 1fr); }
+.is-narrow .win-pause { width: 360px; }
+.keys-note { padding: 4px 8px; background: rgba(227, 183, 92, .1); border-radius: 3px; }
+
+/* ---------------------------------------------------------------- Leistungsanzeige */
+.perf { position: absolute; left: 312px; top: 12px; margin: 0; padding: 5px 9px; font: 11.5px/1.45 var(--mono); color: #cfe8d0; background: rgba(5, 7, 12, .78); border: 1px solid #1d2b22; border-radius: 3px; pointer-events: none; white-space: pre; text-shadow: none; z-index: 30; }
+.perf.slow { color: #ffd9a8; border-color: #6a4a1c; }
+.is-narrow .perf { left: 12px; top: auto; bottom: 232px; font-size: 10.5px; }
+
+/* ---------------------------------------------------------------- Fehlerleisten und Auswege */
+.fatal { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 120; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 760px; max-width: calc(100% - 24px); padding: 10px 14px; pointer-events: auto;
+  background: rgba(44, 12, 10, .96); border: 2px solid #05060a; box-shadow: inset 0 0 0 2px #b8463c, 0 10px 40px rgba(0, 0, 0, .7); border-radius: 4px; }
+.fatal b { display: block; font: 700 16px var(--serif); color: #ffd9d2; }
+.fatal span { font-size: 13px; color: #f0c0b8; line-height: 1.4; }
+.fatal .grow { flex: 1 1 320px; }
+.loading-out { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.boot-help { max-width: 520px; }
+.cine-skip.ask { color: #2a1c05; background: linear-gradient(#f3cf78, #b98429); border-color: #2c1f08; font-weight: 700; }
+
+/* ---------------------------------------------------------------- „Blitze reduzieren“: keine pulsierenden oder aufblitzenden Flächen in der Oberfläche */
+.reduce-flash .pframe.low { animation: none; box-shadow: inset 0 0 0 1px #ff5a48, inset 0 0 0 2px #05060a, 0 0 10px rgba(255, 60, 40, .45); }
+.reduce-flash .points-pill, .reduce-flash .mbtn-badge, .reduce-flash .qt-q.ready { animation: none; }
+.reduce-flash .hslot.cd-ready { animation: none; }
+.reduce-flash .boss, .reduce-flash .boss-gem, .reduce-flash .boss-name { transition: color .9s ease, border-color .9s ease, box-shadow .9s ease, background-color .9s ease; }
+.reduce-flash .cine-fade { transition-duration: 900ms !important; }
+.reduce-flash .toast, .reduce-flash .hint, .reduce-flash .prompt { animation-duration: .01s; }

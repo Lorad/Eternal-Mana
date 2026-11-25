@@ -1,11 +1,13 @@
 /** HUD während des Spiels. Jede Komponente abonniert nur den Zustandsausschnitt, den sie braucht. */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { net } from '../net/net';
 import { bus } from '../state/bus';
+import { toggleTracker } from '../state/hud';
 import { settings } from '../state/settings';
 import type { Action } from '../state/settings';
 import { keyHint } from '../state/settings';
-import { store, togglePanel, useStore } from '../state/store';
+import { openHelp, store, togglePanel, useStore } from '../state/store';
 import type { Panel } from '../state/store';
 import { CFG, RARITY_COLOR } from '../../../shared/src/config';
 import { CLASSES } from '../../../shared/src/data/classes';
@@ -16,13 +18,16 @@ import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
 import { FLAG_SHIELD, STATUS_BIT, STATUS_MASK, STATUS_NAME } from '../../../shared/src/types';
 import type { CharData, StatusId } from '../../../shared/src/types';
-import { Bar, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, useSettings, useTick } from './common';
+import { Bar, Btn, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, uiScale, useSettings, useTick } from './common';
+import { HintCard, useHintWatcher } from './hints';
+import { planColumn, type ColumnPlan } from './hudlayout';
+import { PerfOverlay } from './perf';
 import { Affinity, TargetInfo } from './elements';
 import { EndgamePill, RiftHud } from './endgame';
 import { QUELL_MAX, titleName } from '../../../shared/src/data/rifts';
 import { MinimapCanvas } from './mapview';
 import { PartyFrames, PlayerMenu, SocialPopups } from './social';
-import { EventTracker, seasonLabel } from './world';
+import { EventTracker, FarEvents, hudEvents, seasonLabel } from './world';
 
 // ------------------------------------------------------------------ Tastenhinweise (Tastatur oder Gamepad)
 const PAD_NAME = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', '↑', '↓', '←', '→'];
@@ -246,30 +251,65 @@ function MinimapBox() {
 
 // ------------------------------------------------------------------ Questverfolgung
 const TYPE_ORDER = { main: 0, group: 1, side: 2, repeat: 3 } as const;
-function QuestTracker() {
-  const char = useStore(s => s.char);
-  if (!char) return null;
-  const active = QUEST_LIST.filter(q => char.quests[q.id]?.s === 'active')
+type ActiveQuest = { q: (typeof QUEST_LIST)[number]; ready: boolean };
+function activeQuests(char: CharData): ActiveQuest[] {
+  return QUEST_LIST.filter(q => char.quests[q.id]?.s === 'active')
     .map(q => ({ q, ready: questComplete(char, q) }))
     .sort((a, b) => TYPE_ORDER[a.q.type] - TYPE_ORDER[b.q.type] || +b.ready - +a.ready || a.q.level - b.q.level);
-  if (!active.length) return null;
-  const shown = active.slice(0, 4);
+}
+/**
+ * Questverfolgung (0.8): Kopfzeile zum Ein- und Ausklappen, darunter so viele Quests, wie die Spalte Platz hat (hudlayout.ts).
+ * Gezeigt werden nur offene Ziele – Erledigtes steht im Questlog.
+ */
+function QuestTracker({ active, plan }: { active: ActiveQuest[]; plan: ColumnPlan }) {
+  const char = useStore(s => s.char);
+  const hint = useHint();
+  if (!char || !active.length) return null;
+  const shown = plan.collapsed ? [] : active.slice(0, plan.quests);
+  const ready = active.filter(a => a.ready).length;
+  const why = plan.why === 'kampf' ? 'Im Mana-Riss und im Bosskampf klappt sie sich von selbst ein.' : plan.why === 'platz' ? 'Gerade ist kein Platz – oben läuft Wichtigeres.' : '';
   return (
-    <div class="qt">
-      {shown.map(({ q, ready }) => (
-        <button type="button" class={cx('qt-q', q.type, ready && 'ready')} onClick={() => togglePanel('quests')}>
-          <b><i class="qt-mark">{q.type === 'main' ? '◆' : '◇'}</i>{q.name}</b>
-          {ready
-            ? <span class="qt-ready">Abgeben bei {npcName(q.turnIn ?? q.giver)}</span>
-            : q.objectives.map((o, i) => {
-              const p = objectiveProgress(char, q, i), t = objectiveTarget(o);
-              return <span class={cx('qt-o', p >= t && 'done')}>{o.label}{t > 1 ? ` ${Math.min(p, t)}/${t}` : p >= t ? ' ✓' : ''}</span>;
-            })}
-        </button>
-      ))}
-      {active.length > shown.length && <span class="qt-more">+ {active.length - shown.length} weitere im Questlog</span>}
+    <div class={cx('qt', plan.collapsed && 'shut')}>
+      <button type="button" class="qt-head" aria-expanded={!plan.collapsed} onClick={() => { sfx('ui_tab'); toggleTracker(); }}
+        {...tipProps(() => <div class="tip-text"><b>Questverfolgung</b>{plan.collapsed ? 'Aufklappen' : 'Einklappen'}{hint('tracker') && <span> · Taste: {hint('tracker')}</span>}{why && <div class="tip-sub">{why}</div>}</div>)}>
+        {ready > 0 && plan.collapsed && <span class="qt-rdy">{ready} abgabebereit</span>}
+        <span>Quests</span><span class="qt-n">{active.length}</span><i class="qt-chev">{plan.collapsed ? '◂' : '▾'}</i>
+      </button>
+      {shown.map(({ q, ready }) => {
+        const open = q.objectives.map((o, i) => ({ o, p: objectiveProgress(char, q, i), t: objectiveTarget(o) })).filter(x => x.p < x.t);
+        return (
+          <button type="button" class={cx('qt-q', q.type, ready && 'ready')} onClick={() => togglePanel('quests')}>
+            <b><i class="qt-mark">{q.type === 'main' ? '◆' : '◇'}</i>{q.name}</b>
+            {ready
+              ? <span class="qt-ready">Abgeben bei {npcName(q.turnIn ?? q.giver)}</span>
+              : open.slice(0, 2).map(({ o, p, t }) => <span class="qt-o">{o.label}{t > 1 ? ` ${p}/${t}` : ''}</span>)}
+            {!ready && open.length > 2 && <span class="qt-o qt-rest">+ {open.length - 2} weitere Ziele</span>}
+          </button>
+        );
+      })}
+      {!plan.collapsed && active.length > shown.length && <span class="qt-more">+ {active.length - shown.length} weitere im Questlog</span>}
     </div>
   );
+}
+/**
+ * Rechte Spalte (0.8) in fester Rangfolge: Karte → Riss-Anzeige → Ereignisse hier → Questverfolgung → Weltbosse anderswo.
+ * Wie viel die Questverfolgung zeigt, rechnet `planColumn` aus der Fensterhöhe und dem, was darüber steht.
+ */
+function RightColumn() {
+  const char = useStore(s => s.char);
+  const rift = useStore(s => s.rift);
+  const boss = useStore(s => !!s.boss);
+  const world = useStore(s => s.world);
+  const zone = useStore(s => s.zone);
+  const opened = useStore(s => s.trackerOpen);
+  const s = useSettings();
+  const active = char ? activeQuests(char) : [];
+  const ev = hudEvents(world, zone, char);
+  const plan = planColumn({
+    h: uiScale.h, narrow: uiScale.w < 860, minimap: s.showMinimap, rift: !!rift, riftMods: rift?.mods.length ?? 0, boss,
+    events: ev.here.length + (ev.hint ? 1 : 0), far: ev.far.length, quests: active.length, collapsed: s.trackerCollapsed, opened,
+  });
+  return <div class="hud-tr"><MinimapBox /><RiftHud /><EventTracker /><QuestTracker active={active} plan={plan} /><FarEvents max={plan.far} /></div>;
 }
 function npcName(id: string) { return NPCS[id]?.name ?? id; }
 
@@ -278,10 +318,11 @@ function BossBar() {
   const boss = useStore(s => s.boss);
   if (!boss) return null;
   const col = ELEMENT_CSS[boss.el];
+  const calm = useSettings().reduceFlash; // 0.8 „Blitze reduzieren“: der Balken wechselt seine Farbe nicht mit dem Element
   return (
     <div class="boss" style={{ '--el': col } as any}>
       <div class="boss-name"><span class="boss-gem" />{boss.name}<span class="boss-gem" /></div>
-      <Bar kind="boss" v={boss.hp} max={boss.maxHp} label={`${Math.max(0, Math.ceil((boss.hp / Math.max(1, boss.maxHp)) * 100))} %`} color={`linear-gradient(90deg, color-mix(in srgb, ${col} 45%, #400), ${col})`} />
+      <Bar kind="boss" v={boss.hp} max={boss.maxHp} label={`${Math.max(0, Math.ceil((boss.hp / Math.max(1, boss.maxHp)) * 100))} %`} color={calm ? undefined : `linear-gradient(90deg, color-mix(in srgb, ${col} 45%, #400), ${col})`} />
       <div class="boss-pips" aria-label={`Phase ${boss.phase} von 3`}>{[1, 2, 3].map(n => <i class={cx(n <= boss.phase && 'on')} />)}<span>Phase {boss.phase}</span></div>
       <Affinity weak={boss.weak} resist={boss.resist} />
     </div>
@@ -390,11 +431,12 @@ const MENU_ICON: Record<string, ComponentChildren> = {
   party: <Svg><path d="M2 3h4v4H2zM10 3h4v4h-4zM1 8h6v6H1zM9 8h6v6H9z" /></Svg>,
   ruf: <Svg><path d="M3 1h2v14H3zM5 2h8l-2 3 2 3H5z" /></Svg>,
   sammlung: <Svg><path d="M2 2h5l1 1 1-1h5v11H9l-1 1-1-1H2zM4 4v7h3V4zM9 4v7h3V4z" fill-rule="evenodd" /></Svg>,
+  help: <Svg><path d="M5 2h6v1h1v4h-1v1h-1v1H9v2H7V8h1V7h1V6h1V4H6v2H4V3h1zM7 12h2v2H7z" /></Svg>,
   menu: <Svg><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z" /></Svg>,
 };
 const MENU: [Panel, string, Action][] = [
   ['inventory', 'Inventar', 'inventory'], ['character', 'Charakter', 'character'], ['skills', 'Fähigkeiten', 'skills'], ['quests', 'Quests', 'quests'],
-  ['map', 'Karte', 'map'], ['party', 'Gruppe', 'party'], ['ruf', 'Ruf und Welt', 'ruf'], ['sammlung', 'Sammlung und Begleiter', 'sammlung'], ['menu', 'Menü', 'menu'],
+  ['map', 'Karte', 'map'], ['party', 'Gruppe', 'party'], ['ruf', 'Ruf und Welt', 'ruf'], ['sammlung', 'Sammlung und Begleiter', 'sammlung'], ['help', 'Handbuch', 'help'], ['menu', 'Menü', 'menu'],
 ];
 function MenuBar() {
   const panel = useStore(s => s.panel);
@@ -406,7 +448,7 @@ function MenuBar() {
       {MENU.map(([p, label, act]) => {
         const badge = p === 'character' ? ap : p === 'skills' ? sp : 0;
         return (
-          <button type="button" class={cx('mbtn', panel === p && 'on')} aria-label={label} onClick={() => { sfx('ui_click'); togglePanel(p); }}
+          <button type="button" class={cx('mbtn', panel === p && 'on')} aria-label={label} onClick={() => { sfx('ui_click'); if (p === 'help' && panel !== 'help') openHelp(); else togglePanel(p); }}
             {...tipProps(() => <div class="tip-text"><b>{label}</b>{hint(act) && <span>Taste: {hint(act)}</span>}{p === 'inventory' && invFull && <div class="bad">Inventar voll</div>}</div>)}>
             {MENU_ICON[p]}
             <span class="mbtn-key">{hint(act)}</span>
@@ -429,26 +471,48 @@ function ConnIndicator() {
     </div>
   );
 }
+/**
+ * Verbindung verloren (0.8): zählt die Schonfrist herunter, sagt danach, was mit dem Charakter geschehen ist, und bietet
+ * nach ein paar Sekunden einen Ausweg an – der Bildschirm bleibt nie einfach stehen.
+ */
 function ReconnectOverlay() {
   const conn = useStore(s => s.conn);
+  const [since, setSince] = useState(0);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (conn !== 'reconnecting') { setSince(0); return; }
+    setSince(performance.now());
+    const t = window.setInterval(() => tick(n => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [conn]);
   if (conn !== 'reconnecting') return null;
+  const sec = since ? Math.floor((performance.now() - since) / 1000) : 0;
+  const left = Math.round(CFG.net.reconnectGraceMs / 1000) - sec;
   return (
     <div class="reconnect" role="alert">
       <div class="spinner" />
-      <div><b>Verbindung verloren – verbinde neu …</b><span>Dein Charakter bleibt noch {Math.round(CFG.net.reconnectGraceMs / 1000)} Sekunden in der Welt.</span></div>
+      <div>
+        <b>Verbindung verloren – verbinde neu …</b>
+        <span>{left > 0
+          ? `Dein Charakter bleibt noch ${left} Sekunden geschützt in der Welt stehen.`
+          : 'Dein Charakter wurde gespeichert und aus der Welt genommen. Sobald der Server wieder antwortet, geht es an dieser Stelle weiter.'}</span>
+        {sec >= 6 && <div class="reconnect-acts"><span class="note">Läuft der Server noch? Beim Gastgeber nachfragen – das Spiel versucht es weiter.</span><Btn kind="small" onClick={() => net.quitToMenu()}>Zum Hauptmenü</Btn></div>}
+      </div>
     </div>
   );
 }
 export function Hud() {
+  useHintWatcher();
   return (
     <div class="hud">
       <PlayerFrame />
-      <div class="hud-tr"><MinimapBox /><RiftHud /><QuestTracker /><EventTracker /></div>
+      <RightColumn />
       <div class="hud-tc"><BossBar /><TargetInfo /><SocialPopups /></div>
       <PlayerMenu />
       <ZoneBanner />
       <StoryToasts />
-      <div class="hud-bc"><Prompt /><Hotbar /></div>
+      <div class="hud-bc"><HintCard /><Prompt /><Hotbar /></div>
+      <PerfOverlay />
       <div class="hud-bl"><Chat /></div>
       <div class="hud-br"><Toasts /><div class="hud-br-row"><ConnIndicator /><MenuBar /></div></div>
       <ReconnectOverlay />

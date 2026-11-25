@@ -133,6 +133,17 @@ export function Toggle(p: { on: boolean; onChange: (v: boolean) => void; label: 
   );
 }
 export function Kbd({ children }: { children: ComponentChildren }) { return children ? <kbd class="kbd">{children}</kbd> : null; }
+/** Knöpfe neben einem Betragsfeld (0.8): So lässt sich ein Betrag auch ohne Tastatur einstellen – etwa mit dem Gamepad. */
+export function AmountSteps({ value, max, onChange, steps = [10, 100, 1000] }: { value: number; max: number; onChange: (n: number) => void; steps?: number[] }) {
+  const set = (n: number) => { sfx('ui_click'); onChange(clamp(Math.floor(n), 0, Math.max(0, max))); };
+  return (
+    <span class="amt-steps" role="group" aria-label="Betrag einstellen">
+      {steps.filter(s => s <= Math.max(steps[0], max)).map(s => <button type="button" class="amt-step" disabled={value >= max} onClick={() => set(value + s)}>+{fmtNum(s)}</button>)}
+      <button type="button" class="amt-step" disabled={value >= max} onClick={() => set(max)}>alles</button>
+      <button type="button" class="amt-step" disabled={value <= 0} onClick={() => set(0)}>0</button>
+    </span>
+  );
+}
 
 // ------------------------------------------------------------------ Balken
 export function Bar(p: { v: number; max: number; kind: 'hp' | 'mp' | 'xp' | 'boss' | 'cast'; label?: string | false; class?: string; color?: string }) {
@@ -342,9 +353,10 @@ export function Window(p: { title: string; onClose: () => void; children: Compon
       <section class={cx('window', p.class)} role="dialog" aria-label={p.title}>
         <header class="window-head">
           <span class="window-orn" />
-          <h2>{p.title}</h2>
+          <h2 title={p.title}>{p.title}</h2>
           {p.head}
-          <button type="button" class="window-x" aria-label="Schließen" title="Schließen" onClick={close}>✕</button>
+          <span class="window-gap" />
+          <button type="button" class="window-x" aria-label="Schließen" title="Schließen (Esc)" onClick={close}>✕</button>
         </header>
         <div class="window-body">{p.children}</div>
       </section>
@@ -353,7 +365,7 @@ export function Window(p: { title: string; onClose: () => void; children: Compon
 }
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: [T, string, (number | string)?][]; value: T; onChange: (t: T) => void }) {
   return (
-    <div class="tabs" role="tablist">
+    <div class={cx('tabs', tabs.length >= 4 && 'tabs-many')} role="tablist">
       {tabs.map(([id, label, n]) => (
         <button type="button" role="tab" aria-selected={value === id} class={cx('tab', value === id && 'on')} onClick={() => { if (value !== id) { sfx('ui_tab'); onChange(id); } }}>
           {label}{n !== undefined && n !== 0 && n !== '' && <span class="tab-n">{n}</span>}

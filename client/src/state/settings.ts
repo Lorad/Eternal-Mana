@@ -1,32 +1,7 @@
 /** Einstellungen: lokal im Browser gespeichert und zusätzlich beim Server am Profil hinterlegt. */
-export type Action =
-  | 'up' | 'down' | 'left' | 'right' | 'attack' | 'dodge' | 'interact'
-  | 'skill1' | 'skill2' | 'skill3' | 'skill4' | 'potionHp' | 'potionMp'
-  | 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'party' | 'ruf' | 'sammlung' | 'chat' | 'menu';
-
-export const ACTION_LABEL: Record<Action, string> = {
-  up: 'Nach oben', down: 'Nach unten', left: 'Nach links', right: 'Nach rechts',
-  attack: 'Angriff', dodge: 'Ausweichrolle', interact: 'Interagieren',
-  skill1: 'Fähigkeit 1', skill2: 'Fähigkeit 2', skill3: 'Fähigkeit 3', skill4: 'Fähigkeit 4',
-  potionHp: 'Heiltrank', potionMp: 'Manatrank',
-  inventory: 'Inventar', character: 'Charakter', skills: 'Fähigkeiten', quests: 'Questlog', map: 'Weltkarte', party: 'Gruppe', ruf: 'Ruf und Welt', sammlung: 'Sammlung', chat: 'Chat', menu: 'Menü',
-};
-export const ACTIONS = Object.keys(ACTION_LABEL) as Action[];
-
-/** Tasten als KeyboardEvent.code; 'Mouse0' = linke, 'Mouse2' = rechte Maustaste */
-export const DEFAULT_KEYS: Record<Action, string[]> = {
-  up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'], left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'],
-  attack: ['Mouse0', 'KeyJ'], dodge: ['Space'], interact: ['KeyE'],
-  skill1: ['Digit1', 'Mouse2'], skill2: ['Digit2'], skill3: ['Digit3'], skill4: ['Digit4'],
-  potionHp: ['KeyQ'], potionMp: ['KeyR'],
-  inventory: ['KeyI'], character: ['KeyC'], skills: ['KeyK'], quests: ['KeyL'], map: ['KeyM'], party: ['KeyP'], ruf: ['KeyU'], sammlung: ['KeyB'], chat: ['Enter'], menu: ['Escape'],
-};
-
-/** Gamepad-Belegung (Standard-Mapping): Aktion → Button-Index */
-export const DEFAULT_PAD: Partial<Record<Action, number>> = {
-  attack: 2, dodge: 1, interact: 0, skill1: 3, skill2: 4, skill3: 5, skill4: 7, potionHp: 6, potionMp: 11,
-  inventory: 8, menu: 9, map: 12, quests: 13, character: 14, skills: 15,
-};
+import { ACTIONS, ACTION_LABEL, DEFAULT_KEYS, DEFAULT_PAD, cloneKeys, keyName, sanitizeKeys, type Action } from './keys';
+export { ACTIONS, ACTION_LABEL, DEFAULT_KEYS, DEFAULT_PAD, keyName };
+export type { Action };
 
 export interface Settings {
   musicVolume: number;   // 0..1
@@ -42,6 +17,17 @@ export interface Settings {
   weather: boolean;
   playerName: string;
   lastServer: string;    // zuletzt benutzte Serveradresse ('' = dieser Server)
+  // ---- Feinschliff (0.8); alte gespeicherte Einstellungen bekommen die Standardwerte
+  /** Blitze reduzieren: weiche statt greller Bildschirmblitze, kaum Bildschirmwackeln, ruhigere Farbwechsel */
+  reduceFlash: boolean;
+  /** kurze Hinweise, wenn ein System zum ersten Mal wichtig wird */
+  hints: boolean;
+  /** schon gezeigte Hinweise (IDs aus state/hints.ts) – wandert mit den Einstellungen ans Profil */
+  hintsSeen: string[];
+  /** Questverfolgung von Hand eingeklappt */
+  trackerCollapsed: boolean;
+  /** Leistungsanzeige (Bilder pro Sekunde, Bildzeit, Ping, Objekte) */
+  perfOverlay: boolean;
 }
 
 const KEY = 'eternal-mana-settings';
@@ -49,9 +35,10 @@ const TOKEN_KEY = 'eternal-mana-token';
 
 export function defaults(): Settings {
   return {
-    musicVolume: 0.5, sfxVolume: 0.7, keys: JSON.parse(JSON.stringify(DEFAULT_KEYS)), pad: { ...DEFAULT_PAD },
+    musicVolume: 0.5, sfxVolume: 0.7, keys: cloneKeys(DEFAULT_KEYS), pad: { ...DEFAULT_PAD },
     damageNumbers: true, screenShake: true, showMinimap: true, uiScale: 1, autoAim: true, lighting: true, weather: true,
     playerName: '', lastServer: '',
+    reduceFlash: false, hints: true, hintsSeen: [], trackerCollapsed: false, perfOverlay: false,
   };
 }
 
@@ -60,8 +47,9 @@ function load(): Settings {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}');
     Object.assign(d, raw);
-    d.keys = { ...defaults().keys, ...(raw.keys ?? {}) };
+    d.keys = sanitizeKeys(raw.keys ?? DEFAULT_KEYS);   // 0.8: neue Aktionen erhalten ihre Standardtaste nur, wenn sie noch frei ist
     d.pad = { ...defaults().pad, ...(raw.pad ?? {}) };
+    if (!Array.isArray(d.hintsSeen)) d.hintsSeen = [];
   } catch { /* Standardwerte */ }
   return d;
 }
@@ -85,9 +73,9 @@ export function updateSettings(patch: Partial<Settings>) {
 /** Übernimmt beim Anmelden die am Server-Profil gespeicherten Einstellungen (nur wenn lokal noch nichts gespeichert ist). */
 export function adoptServerSettings(json: string | null) {
   if (!json || localStorage.getItem(KEY)) return;
-  try { const raw = JSON.parse(json); delete raw.lastServer; updateSettings(raw); } catch { /* ignorieren */ }
+  try { const raw = JSON.parse(json); delete raw.lastServer; if (raw.keys) raw.keys = sanitizeKeys(raw.keys); if (!Array.isArray(raw.hintsSeen)) delete raw.hintsSeen; updateSettings(raw); } catch { /* ignorieren */ }
 }
-export function resetKeys() { updateSettings({ keys: JSON.parse(JSON.stringify(DEFAULT_KEYS)), pad: { ...DEFAULT_PAD } }); }
+export function resetKeys() { updateSettings({ keys: cloneKeys(DEFAULT_KEYS), pad: { ...DEFAULT_PAD } }); }
 
 /** Profil-Schlüssel: identifiziert den Spieler gegenüber dem Server (Spielstände hängen daran). */
 export function getToken(): string {
@@ -107,17 +95,6 @@ export function setToken(t: string): boolean {
   return true;
 }
 
-const KEY_NAMES: Record<string, string> = {
-  Mouse0: 'Linke Maustaste', Mouse1: 'Mittlere Maustaste', Mouse2: 'Rechte Maustaste', Space: 'Leertaste', Escape: 'Esc', Enter: 'Enter',
-  ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', ShiftLeft: 'Umschalt', ShiftRight: 'Umschalt rechts', ControlLeft: 'Strg', AltLeft: 'Alt', Tab: 'Tab',
-};
-export function keyName(code: string): string {
-  if (KEY_NAMES[code]) return KEY_NAMES[code];
-  if (code.startsWith('Key')) return code.slice(3);
-  if (code.startsWith('Digit')) return code.slice(5);
-  if (code.startsWith('Numpad')) return 'Num ' + code.slice(6);
-  return code;
-}
 /** Kurzbezeichnung der ersten Taste einer Aktion (für HUD-Hinweise) */
 export function keyHint(a: Action): string {
   const k = settings.keys[a]?.[0];

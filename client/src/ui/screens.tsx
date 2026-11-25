@@ -58,7 +58,7 @@ export function BootScreen() {
       <Scenery dim />
       <div class="boot-box">
         <Logo />
-        {error ? <div class="error-box">{error}</div> : (
+        {error ? <><div class="error-box" role="alert">{error}</div><p class="note boot-help">Meist hilft neu laden. Bleibt es dabei: beim Gastgeber im Launcher „Dateien prüfen“ wählen (repariert beschädigte Dateien) und den Server neu starten.</p><Btn kind="primary" autofocus onClick={() => location.reload()}>Seite neu laden</Btn></> : (
           <>
             <div class="boot-bar"><div style={{ width: Math.round(p * 100) + '%' }} /></div>
             <div class="boot-text">Die Welt wird gezeichnet … {Math.round(p * 100)} %</div>
@@ -116,6 +116,7 @@ export function MainMenu() {
                   <div class="note">Tailscale-IP oder MagicDNS-Name des Gastgebers, z. B. 100.101.102.103</div>
                 </div>
               )}
+              <Btn class="block menu-btn" onClick={() => store.set({ panel: 'help' })}>Handbuch</Btn>
               <Btn class="block menu-btn" onClick={() => store.set({ panel: 'settings' })}>Einstellungen</Btn>
               <Btn class="block menu-btn" onClick={toggleFullscreen}>{fs ? 'Vollbild verlassen' : 'Vollbild'}</Btn>
             </>
@@ -337,15 +338,21 @@ const TIPS = [
   'Quellsteine heilen dich, setzen deinen Rückkehrpunkt und erlauben die Schnellreise.',
   'Brüchige Felsblockaden lassen sich mit Angriffen zertrümmern.',
   'Beute fällt für jeden Spieler einzeln – niemand nimmt dir etwas weg.',
-  'Borin verbessert Ausrüstung gegen Gold und Material. Ab +3 kann es schiefgehen.',
+  `Borin verbessert Ausrüstung gegen Gold und Material. Ab +${CFG.upgrade.chance.findIndex(c => c < 1) + 1} kann ein Versuch scheitern.`,
+  'Das Handbuch (Taste H) erklärt jedes System auf einer Seite.',
   'Gefallene Verbündete kannst du wiederbeleben, indem du bei ihnen interagierst.',
   'Quellsplitter erhöhen dauerhaft Leben und Mana. In jeder Region sind fünf versteckt.',
 ];
 export function LoadingScreen() {
   const zone = useStore(s => s.zone);
   const conn = useStore(s => s.conn);
+  const fail = useStore(s => s.loadFail);
   const z = ZONES[zone];
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
+  // 0.8: Dauert das Laden ungewöhnlich lange (oder scheitert es), gibt es einen Ausweg statt eines stehenden Bildes
+  const [slow, setSlow] = useState(false);
+  useEffect(() => { const t = window.setTimeout(() => setSlow(true), 15000); return () => clearTimeout(t); }, []);
+  const retry = () => { const id = store.state.charId; store.set({ loadFail: null }); setSlow(false); if (id) net.enter(id); };
   return (
     <div class="screen center-screen loading-screen">
       <Scenery dim />
@@ -356,6 +363,14 @@ export function LoadingScreen() {
         {z && <div class="note">{z.kind === 'dungeon' ? 'Dungeon' : 'Region'} · Stufe {z.level[0]}–{z.level[1]}</div>}
         <div class="spinner" />
         {conn === 'reconnecting' && <div class="error-box">Verbindung verloren – verbinde neu …</div>}
+        {fail && <div class="error-box" role="alert">{fail}</div>}
+        {(fail || slow) && (
+          <div class="loading-out">
+            {!fail && <span class="note">Das dauert länger als üblich.</span>}
+            <Btn kind="primary" onClick={retry}>Erneut versuchen</Btn>
+            <Btn onClick={() => net.quitToMenu()}>Zum Hauptmenü</Btn>
+          </div>
+        )}
         <div class="loading-tip"><b>Tipp:</b> {tip}</div>
       </div>
     </div>

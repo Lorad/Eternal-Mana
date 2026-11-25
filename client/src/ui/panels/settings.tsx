@@ -3,6 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { audio } from '../../audio';
 import { ACTIONS, ACTION_LABEL, DEFAULT_PAD, getToken, keyName, resetKeys, setToken, settings, updateSettings } from '../../state/settings';
 import type { Action } from '../../state/settings';
+import { KEY_GROUPS, PAD_NAME, bindKey, keyConflicts } from '../../state/keys';
 import { store, useStore } from '../../state/store';
 import { Btn, Confirm, TextInput, Toggle, Window, copyText, cx, sfx, toggleFullscreen, useFullscreen, useSettings } from '../common';
 
@@ -27,12 +28,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
 }
 
-export const PAD_NAME = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', 'Steuerkreuz ↑', 'Steuerkreuz ↓', 'Steuerkreuz ←', 'Steuerkreuz →'];
-const GROUPS: [string, Action[]][] = [
-  ['Bewegung & Kampf', ['up', 'down', 'left', 'right', 'attack', 'dodge', 'interact']],
-  ['Fähigkeiten & Tränke', ['skill1', 'skill2', 'skill3', 'skill4', 'potionHp', 'potionMp']],
-  ['Fenster', ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'ruf', 'sammlung', 'chat', 'menu']],
-];
+const GROUPS = KEY_GROUPS; // dieselbe Einteilung wie im Handbuch (state/keys.ts)
 
 function Slider(p: { label: string; value: number; min: number; max: number; step: number; fmt: (v: number) => string; onChange: (v: number) => void }) {
   return (
@@ -47,6 +43,7 @@ function Slider(p: { label: string; value: number; min: number; max: number; ste
 function KeyBindings() {
   const s = useSettings();
   const [cap, setCap] = useState<Action | null>(null);
+  const [note, setNote] = useState('');
   useEffect(() => () => { capture = null; }, []);
   const start = (a: Action) => {
     sfx('ui_click');
@@ -54,17 +51,21 @@ function KeyBindings() {
     capture = code => {
       setCap(null);
       if (!code) return;
-      const rest = (settings.keys[a] ?? []).slice(1).filter(k => k !== code);
-      updateSettings({ keys: { ...settings.keys, [a]: [code, ...rest] } });
+      // 0.8: Eine Taste gehört immer nur einer Aktion – wer sie neu vergibt, nimmt sie der alten weg (state/keys.ts)
+      const r = bindKey(settings.keys, a, code);
+      updateSettings({ keys: r.keys });
+      setNote(r.taken.length ? `${keyName(code)} gehört jetzt zu „${ACTION_LABEL[a]}“ und wurde entfernt bei: ${r.taken.map(t => ACTION_LABEL[t]).join(', ')}.` : '');
       sfx('ui_equip');
     };
   };
-  const users = (code: string, self: Action) => ACTIONS.filter(a => a !== self && s.keys[a]?.includes(code));
+  const clashes = keyConflicts(s.keys);
+  const users = (code: string, self: Action) => (clashes.find(c => c.code === code)?.actions ?? []).filter(a => a !== self);
   // Standard-Elemente: bekannte Missing-ACTIONS (falls künftig neue dazukommen) landen in der letzten Gruppe
   const grouped = new Set(GROUPS.flatMap(g => g[1]));
   const extra = ACTIONS.filter(a => !grouped.has(a));
   return (
     <div class="keys-wrap">
+      {note && <div class="note keys-note" role="status">{note}</div>}
       {[...GROUPS, ...(extra.length ? [['Weitere', extra] as [string, Action[]]] : [])].map(([title, acts]) => (
         <div class="keys-group">
           <h4>{title}</h4>
@@ -73,7 +74,7 @@ function KeyBindings() {
             const clash = keys[0] ? users(keys[0], a) : [];
             return (
               <div class="key-row">
-                <span class="grow">{ACTION_LABEL[a]}{clash.length > 0 && <small class="bad"> · auch: {clash.map(c => ACTION_LABEL[c]).join(', ')}</small>}</span>
+                <span class="grow">{ACTION_LABEL[a]}{clash.length > 0 && <small class="bad"> · auch: {clash.map(c => ACTION_LABEL[c]).join(', ')}</small>}{!keys.length && <small class="bad"> · nicht belegt</small>}</span>
                 {keys.slice(1).map(k => <span class="key-alt" title="Zweitbelegung">{keyName(k)}</span>)}
                 <button type="button" class={cx('key-btn', cap === a && 'cap')} onClick={() => start(a)} aria-label={`${ACTION_LABEL[a]} neu belegen`}>
                   {cap === a ? 'Taste drücken …' : keys[0] ? keyName(keys[0]) : '—'}
@@ -146,9 +147,12 @@ export function SettingsPanel() {
             <Toggle label="Minimap" hint="Karte oben rechts" on={s.showMinimap} onChange={v => set({ showMinimap: v })} />
             <Toggle label="Schadenszahlen" on={s.damageNumbers} onChange={v => set({ damageNumbers: v })} />
             <Toggle label="Bildschirmwackeln" hint="bei schweren Treffern" on={s.screenShake} onChange={v => set({ screenShake: v })} />
+            <Toggle label="Blitze reduzieren" hint="weiche Blitze, kaum Wackeln" on={s.reduceFlash} onChange={v => set({ reduceFlash: v })} />
             <Toggle label="Beleuchtung" hint="Tag-Nacht und Lichtquellen" on={s.lighting} onChange={v => set({ lighting: v })} />
             <Toggle label="Wettereffekte" on={s.weather} onChange={v => set({ weather: v })} />
             <Toggle label="Automatisch zielen" hint="Tastatur und Gamepad" on={s.autoAim} onChange={v => set({ autoAim: v })} />
+            <Toggle label="Hinweise" hint="Erklärungen beim ersten Mal" on={s.hints} onChange={v => set({ hints: v })} />
+            <Toggle label="Leistungsanzeige" hint={`Bilder/s, Ping${s.keys.perf?.[0] ? ' · Taste ' + keyName(s.keys.perf[0]) : ''}`} on={s.perfOverlay} onChange={v => set({ perfOverlay: v })} />
           </div>
 
           <div class="sec-title">Profil</div>
@@ -157,12 +161,12 @@ export function SettingsPanel() {
 
         <section>
           <div class="sec-title">Tastenbelegung</div>
-          <p class="note">Klicke eine Belegung an und drücke die neue Taste oder Maustaste. <b>Esc</b> bricht ab.</p>
+          <p class="note">Klicke eine Belegung an und drücke die neue Taste oder Maustaste. <b>Esc</b> bricht ab – und schließt im Spiel immer das oberste Fenster. Eine Taste gehört nur einer Aktion.</p>
           <KeyBindings />
           <div class="row end"><Btn kind="small" onClick={() => setResetAsk(true)}>Standard wiederherstellen</Btn></div>
 
           <div class="sec-title">Gamepad</div>
-          <p class="note">Jedes Gamepad mit Standard-Belegung wird automatisch erkannt. <b>Linker Stick</b> bewegt, <b>rechter Stick</b> zielt. In Fenstern wählst du mit Stick oder Steuerkreuz aus, <b>A</b> bestätigt, <b>B</b> schließt.</p>
+          <p class="note">Jedes Gamepad mit Standard-Belegung wird automatisch erkannt. <b>Linker Stick</b> bewegt, <b>rechter Stick</b> zielt. In Fenstern wählst du mit Stick oder Steuerkreuz aus, <b>A</b> bestätigt, <b>B</b> schließt. Fenster ohne eigenen Knopf (Gruppe, Ruf und Welt, Sammlung, Handbuch) stehen im Menü (<b>Start</b>).</p>
           <ul class="pad-list">
             {pad.sort((a, b) => a[1] - b[1]).map(([a, b]) => <li><span class="key-alt pad">{PAD_NAME[b] ?? 'Taste ' + b}</span>{ACTION_LABEL[a]}</li>)}
           </ul>

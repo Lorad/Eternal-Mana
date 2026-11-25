@@ -7,7 +7,8 @@ import { PartyPanel } from './party';
 import { QuestPanel } from './quests';
 import { SettingsPanel } from './settings';
 import { SkillsPanel } from './skills';
-import { HelpPanel, PausePanel } from './system';
+import { PausePanel } from './system';
+import { HandbuchPanel } from '../handbuch';
 import { RepPanel } from '../world';
 import { SammlungPanel } from '../home';
 
@@ -21,7 +22,7 @@ export function PanelHost({ panel }: { panel: Panel }) {
     case 'party': return <PartyPanel />;
     case 'settings': return <SettingsPanel />;
     case 'menu': return <PausePanel />;
-    case 'help': return <HelpPanel />;
+    case 'help': return <HandbuchPanel />;
     case 'ruf': return <RepPanel />;
     case 'sammlung': return <SammlungPanel />;
   }

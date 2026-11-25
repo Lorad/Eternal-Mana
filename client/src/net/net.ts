@@ -4,6 +4,7 @@ import { emptyHome } from '../../../shared/src/data/home';
 import { itemName } from '../../../shared/src/data/items';
 import type { ClassId, ClientMsg, ServerMsg } from '../../../shared/src/types';
 import { bus } from '../state/bus';
+import { live } from '../state/live';
 import { adoptServerSettings, getToken, setServerSync, settings, updateSettings } from '../state/settings';
 import { pushChat, pushToast, store, type UiState } from '../state/store';
 
@@ -37,7 +38,10 @@ function open() {
     clearInterval(pingTimer);
     pingTimer = window.setInterval(() => net.send({ t: 'ping', c: performance.now() }), CFG.net.pingIntervalMs);
   };
-  sock.onmessage = ev => { try { handle(JSON.parse(ev.data)); } catch (e) { console.error('Nachricht fehlerhaft', e); } };
+  sock.onmessage = ev => {
+    rxBytes += typeof ev.data === 'string' ? ev.data.length : 0; rxMsgs++;
+    try { handle(JSON.parse(ev.data)); } catch (e) { console.error('Nachricht fehlerhaft', e); }
+  };
   sock.onclose = ev => {
     if (ws !== sock) return;
     ws = null;
@@ -47,6 +51,13 @@ function open() {
   };
   sock.onerror = () => { /* onclose folgt */ };
 }
+// Leistungsanzeige (0.8): empfangene Meldungen und Bytes je Sekunde
+let rxBytes = 0, rxMsgs = 0, rxAt = performance.now();
+window.setInterval(() => {
+  const now = performance.now(), sec = Math.max(0.001, (now - rxAt) / 1000);
+  live.perf.inKb = rxBytes / 1024 / sec; live.perf.snaps = rxMsgs / sec;
+  rxBytes = 0; rxMsgs = 0; rxAt = now;
+}, 1000);
 function scheduleRetry() {
   retry++;
   store.set({ conn: 'reconnecting' });
@@ -61,7 +72,11 @@ function handle(m: ServerMsg) {
     case 'pong': store.set({ ping: Math.round(performance.now() - m.c) }); break;
     case 'welcome':
       adoptServerSettings(m.settings);
-      store.set({ conn: 'online', chars: m.chars, serverInfo: m.server, error: null });
+      store.set({ conn: 'online', chars: m.chars, serverInfo: m.server, error: null,
+        // 0.8: Nach einem Update des Servers passt der schon geladene Client nicht mehr – das sagen, statt seltsam weiterzulaufen
+        stale: m.server?.version && m.server.version !== CFG.version
+          ? `Der Server läuft mit Version ${m.server.version}, hier ist noch Version ${CFG.version} geladen. ${store.state.serverUrl.includes(location.host) ? 'Lade die Seite neu, damit beide zusammenpassen.' : 'Bringt beide Installationen auf denselben Stand (Launcher) und ladet neu.'}`
+          : null });
       if (st.screen === 'game' || st.screen === 'loading') {
         // Wiederverbindung: Der Server schickt 'entered', falls der Charakter noch in der Welt steht – sonst neu betreten.
         window.setTimeout(() => { if (store.state.conn === 'online' && resumeChar && !resumed) net.send({ t: 'enter', id: resumeChar }); }, 400);
@@ -73,12 +88,12 @@ function handle(m: ServerMsg) {
       resumed = true; resumeChar = m.charId;
       store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null,
         rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, heim: m.init.heim ?? null, hof: null,
-        trade: null, tradeReq: null, qOffers: [], inspect: null, playerMenu: null, invite: null });
+        trade: null, tradeReq: null, qOffers: [], inspect: null, playerMenu: null, invite: null, trackerOpen: false, loadFail: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
       store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0,
-        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null, heim: m.init.heim ?? null, hof: null, inspect: null, playerMenu: null });
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null, heim: m.init.heim ?? null, hof: null, inspect: null, playerMenu: null, trackerOpen: false, loadFail: null });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
@@ -117,7 +132,12 @@ function handle(m: ServerMsg) {
     case 'env': store.set({ ...(m.weather !== undefined ? { weather: m.weather } : {}), ...(m.tod !== undefined ? { tod: m.tod } : {}) }); bus.emit('net:env'); break;
     case 'online': store.set({ online: m.players }); break;
     case 'saved': store.set({ saved: Date.now() }); pushToast('Spielstand gespeichert.', 'good'); break;
-    case 'err': store.set({ error: m.s }); break;
+    case 'err':
+      // 0.8: Fehler des Servers erreichen den Spieler auf jedem Bildschirm – im Spiel als Meldung, beim Laden mit Rückweg
+      if (st.screen === 'game') pushToast(m.s, 'bad');
+      else if (st.screen === 'loading') { store.set({ error: m.s, screen: st.chars.length || st.conn === 'online' ? 'chars' : 'menu', char: null }); bus.emit('net:left'); }
+      else store.set({ error: m.s });
+      break;
   }
 }
 let resumed = false;
