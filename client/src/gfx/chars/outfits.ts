@@ -3,7 +3,7 @@
  * Eine Variante ist eine Umfärbung von Kleidung und Rüstung an der Quelle – Legende, Arm-/Beinfarben und alle
  * Kostüm-Ebenen (Umhang, Schulterstücke, Bänder, Taschen) werden über eine Farbtabelle auf die Rampen des Themas
  * gelegt, bevor Trennlinien und Außenkontur entstehen. Haut, Haar und Waffen bleiben; dazu kommt je Thema ein
- * kleines Motiv (Kragen, Gürtel, Saum) über zusätzliche Legendenzeichen y/Y/z/Z in den Rumpfkarten.
+ * Motiv (Kragen, Brust, Gürtel, Saum) über zusätzliche Legendenzeichen y/Y/z/Z in den Rumpfkarten.
  */
 import { Px } from '../draw';
 import { P, WHITE, mix } from '../palette';
@@ -15,10 +15,12 @@ import type { Art, Costume, Dir, Hook, ItemFn, Legend } from './rig';
 import { CLASSES, M_ROBE, P_SKY, S_COAL, S_PINK, S_TEAL } from './classes';
 
 type ClassId = (typeof CLASS_IDS)[number];
-type Role = 'main' | 'deep' | 'alt' | 'trim' | 'leather' | 'keep';
+type Role = 'main' | 'deep' | 'alt' | 'trim' | 'leather' | 'accent' | 'keep';
 interface Theme {
   /** Hauptstoff · dunklere Zweitfarbe desselben Tons · Gegenfarbe (Rüstung, Hut, Leder) · Zierrat · Riemen und Stiefel */
   main: Ramp; deep: Ramp; alt: Ramp; trim: Ramp; leather: Ramp;
+  /** Sonderfarbe für einzelne Klassen (Rolle `accent`); fehlt sie, gilt `trim` */
+  accent?: Ramp;
   /** Motivfarben für die Legendenzeichen y, Y, z, Z */
   motif: [number, number, number, number];
   /** Stulpenfarbe der Stiefel (überschreibt die umgefärbte) */
@@ -29,7 +31,9 @@ const THEMES: Record<OutfitId, Theme> = {
   // Waldgewand: Laubgrün und Rindenbraun, Ocker als Zierrat, Blätterkragen mit roten Beeren
   wald: {
     main: P.green, deep: P.forest, alt: P.tan, trim: mixR(P.gold, P.tan, 0.45), leather: P.wood,
-    motif: [P.green[3], P.green[4], P.red[2], P.red[3]],
+    // Herbstlaub (Umhang des Waldläufers)
+    accent: [mix(P.red[0], P.wood[0], 0.5), mix(P.red[1], P.wood[1], 0.35), mix(P.fire[1], P.tan[1], 0.4), mix(P.fire[2], P.tan[2], 0.4), mix(P.fire[3], P.tan[3], 0.45)],
+    motif: [P.green[4], mix(P.green[4], P.gold[4], 0.6), P.red[2], P.red[3]],
   },
   // Glutgewand: Glutrot und Kohlschwarz, Zierrat in Flammenfarben, glimmende Schnalle und Funken am Saum
   glut: {
@@ -50,11 +54,12 @@ const THEMES: Record<OutfitId, Theme> = {
   },
   // Schattengewand: Violett und Schwarz, bleicher Zierrat, bleiche Schärpe
   schatten: {
-    main: P.violet,
-    deep: [P.shadow[0], P.violet[0], P.violet[1], P.violet[2], P.violet[3]],
-    alt: [P.shadow[1], P.shadow[2], P.shadow[3], P.shadow[4], mix(P.shadow[4], P.violet[3], 0.4)],
+    // (eine Stufe heller als die Palettenrampen: auf dunklem Dungeonboden versank die Figur sonst)
+    main: [P.violet[1], P.violet[2], P.violet[3], P.violet[4], mix(P.violet[4], WHITE, 0.45)],
+    deep: P.violet,
+    alt: [P.shadow[2], P.shadow[3], P.shadow[4], mix(P.shadow[4], P.violet[3], 0.55), mix(P.violet[3], P.bone[2], 0.3)],
     trim: P.bone,
-    leather: [P.shadow[0], P.shadow[1], mix(P.shadow[2], P.violet[1], 0.4), mix(P.shadow[3], P.violet[1], 0.4), mix(P.shadow[4], P.violet[2], 0.4)],
+    leather: [P.shadow[1], P.shadow[2], mix(P.shadow[3], P.violet[1], 0.4), mix(P.shadow[4], P.violet[2], 0.4), mix(P.shadow[4], P.violet[3], 0.6)],
     motif: [P.bone[2], P.bone[4], P.bone[3], WHITE],
   },
   // Goldgewand (das Prunkstück): Weiß und Gold, Goldkragen, Goldgürtel mit hellem Stein
@@ -78,20 +83,22 @@ interface ClassOutfit {
 }
 const all = (r: Role[]): Record<OutfitId, Role[]> => ({ wald: r, glut: r, frost: r, schatten: r, gold: r });
 const CLASS_OUTFIT: Record<ClassId, ClassOutfit> = {
-  // Waffenrock · Plattenteile · Zierrat · Gürtel und Stiefel (im Glutgewand vertauscht: schwarzer Rock, glutrote Platten – der Rock ist schon rot)
+  // Waffenrock · Plattenteile · Zierrat · Gürtel und Stiefel (im Glutgewand vertauscht: schwarzer Rock, glutrote Platten – der Rock ist schon rot;
+  // im Goldgewand goldener Rock und goldenes Schildfeld mit weißen Platten und weißem Kreuz – Gold auf Weiß war nicht zu lesen)
   krieger: {
     src: [{ c: P.red }, { c: P.steel }, { c: P.gold }, { c: P.wood }], off: true,
-    roles: { ...all(['main', 'alt', 'trim', 'leather']), glut: ['alt', 'main', 'trim', 'leather'] },
+    roles: { ...all(['main', 'alt', 'trim', 'leather']), glut: ['alt', 'main', 'trim', 'leather'], gold: ['alt', 'main', 'main', 'leather'] },
   },
   // Robe · Hut · Borten und Stern · Riemen und Tasche · Schuhe (im Schattengewand: schwarze Robe, violetter Hut)
   magier: {
     src: [{ c: M_ROBE }, { c: P.violet }, { c: P.gold }, { c: P.tan }, { c: P.wood }],
     roles: { ...all(['main', 'alt', 'trim', 'leather', 'leather']), schatten: ['alt', 'main', 'trim', 'leather', 'leather'] },
   },
-  // Umhang und Kapuzenkragen · Rock · Lederwams · Schnalle · Gürtel, Köcher, Stiefel (im Waldgewand vertauscht: Rindenumhang, grünes Wams)
+  // Umhang und Kapuzenkragen · Rock · Lederwams · Schnalle · Gürtel, Köcher, Stiefel (im Waldgewand: Umhang in Herbstlaub-Rot, Rindenrock,
+  // hellgrünes Wams – der Grundlook ist selbst schon grün, die frühere Vertauschung sah ihm zu ähnlich)
   waldlaeufer: {
     src: [{ c: P.forest }, { c: P.green }, { c: P.tan }, { c: P.gold }, { c: P.wood }],
-    roles: { ...all(['main', 'deep', 'alt', 'trim', 'leather']), wald: ['leather', 'deep', 'main', 'trim', 'leather'] },
+    roles: { ...all(['main', 'deep', 'alt', 'trim', 'leather']), wald: ['accent', 'leather', 'main', 'trim', 'leather'] },
   },
   // Rüstung · Gold (Borten, Handschuhe, Stiefel) · Umhang, Stirnband und Stein · Helmflügel · Leder
   paladin: {
@@ -121,17 +128,25 @@ function mapRow(a: Art, row: number, fn: (ch: string, j: number, n: number) => s
   return { rows: a.rows.map((r, i) => (i === row ? out : r)), w: a.w, ay: a.ay };
 }
 const BELT = 5;
+/** setzt in einer Zeile einzelne Zeichen: pick(laufende Nummer, Anzahl) → Zeichen oder nichts */
+const at = (a: Art, row: number, pick: (j: number, n: number) => string | undefined): Art => mapRow(a, row, (ch, j, n) => pick(j, n) ?? ch);
+/** Zeichen auf der Brust (Zeile 2): von vorn zwei Pixel in der Mitte, von der Seite eins vorn; von hinten nichts */
+const chest = (a: Art, dir: Dir, c0: string, c1: string): Art => (dir === 2 ? a : at(a, 2, (j, n) => (dir === 0 ? (j === (n >> 1) - 1 ? c0 : j === n >> 1 ? c1 : undefined) : j === n - 2 ? c1 : undefined)));
+/** Die Kragenzeile liegt meist unter Kinn und Bart – jedes Thema trägt sein Motiv deshalb auch auf Brust und Saum. */
 const MOTIF: Record<OutfitId, (a: Art, dir: Dir) => Art> = {
-  // Blätterkragen: helle und dunkle Blätter, dazwischen Beeren
-  wald: (a) => mapRow(a, 0, (_, j) => (j % 3 === 1 ? 'z' : j % 2 ? 'y' : 'Y')),
-  // glimmende Schnalle (vorn Mitte, seitlich vorn) und Funken am Saum
-  glut: (a, dir) => mapRow(mapRow(a, BELT, (ch, j, n) => (dir === 0 && (j === (n >> 1) - 1 || j === n >> 1) ? (j === n >> 1 ? 'z' : 'Z') : dir === 1 && j === n - 1 ? 'Z' : ch)), -1, (ch, j) => (j % 3 === 1 ? 'y' : ch)),
-  // Pelzkragen
-  frost: (a) => mapRow(a, 0, (_, j, n) => (j === n - 1 || j % 3 === 2 ? 'y' : 'Y')),
-  // bleiche Schärpe statt des Gürtels
-  schatten: (a) => mapRow(a, BELT, (_, j, n) => (j < n / 2 ? 'Y' : 'y')),
-  // Goldkragen und Goldgürtel mit hellem Stein
-  gold: (a, dir) => mapRow(mapRow(a, 0, (_, j, n) => (j === 0 || j === n - 1 ? 'y' : 'Y')), BELT, (_, j, n) => (dir === 0 && j === n >> 1 ? 'Z' : dir === 0 && j === (n >> 1) - 1 ? 'z' : dir === 1 && j === n - 1 ? 'Z' : j < n / 2 ? 'Y' : 'y')),
+  // Blätterkragen (helle und dunkle Blätter, dazwischen Beeren), zwei Beeren auf der Brust, Blättersaum
+  wald: (a, dir) => at(chest(mapRow(a, 0, (_, j) => (j % 3 === 1 ? 'z' : j % 2 ? 'y' : 'Y')), dir, 'z', 'Z'), -1, (j) => (j % 2 ? 'Y' : 'y')),
+  // glimmende Schnalle (vorn Mitte, seitlich vorn), Flamme auf der Brust, Funken am Saum
+  glut: (a, dir) => chest(mapRow(mapRow(a, BELT, (ch, j, n) => (dir === 0 && (j === (n >> 1) - 1 || j === n >> 1) ? (j === n >> 1 ? 'z' : 'Z') : dir === 1 && j === n - 1 ? 'Z' : ch)), -1, (ch, j) => (j % 2 ? 'y' : j % 4 === 0 ? 'Y' : ch)), dir, 'Y', 'Z'),
+  // Pelzkragen, Eisstern auf der Brust, Pelzsaum
+  frost: (a, dir) => at(chest(mapRow(a, 0, (_, j, n) => (j === n - 1 || j % 3 === 2 ? 'y' : 'Y')), dir, 'Z', 'Y'), -1, (j, n) => (j === n - 1 || j % 3 === 2 ? 'y' : 'Y')),
+  // bleiche Schärpe statt des Gürtels, ihr Ende hängt an der Seite herab; bleiche Sichel auf der Brust
+  schatten: (a, dir) => {
+    const tail = (j: number, n: number): string | undefined => (dir !== 2 && j === (dir === 0 ? 1 : n - 2) ? 'y' : undefined);
+    return at(at(chest(mapRow(a, BELT, (_, j, n) => (j < n / 2 ? 'Y' : 'y')), dir, 'Y', 'y'), BELT + 1, tail), BELT + 2, tail);
+  },
+  // Goldkragen, Goldgürtel mit hellem Stein, Goldsaum
+  gold: (a, dir) => at(mapRow(mapRow(a, 0, (_, j, n) => (j === 0 || j === n - 1 ? 'y' : 'Y')), BELT, (_, j, n) => (dir === 0 && j === n >> 1 ? 'Z' : dir === 0 && j === (n >> 1) - 1 ? 'z' : dir === 1 && j === n - 1 ? 'Z' : j < n / 2 ? 'Y' : 'y')), -1, (j) => (j % 2 ? 'y' : 'Y')),
 };
 
 // ---------------------------------------------------------------- Umfärben
@@ -141,7 +156,7 @@ function outfit(cls: ClassId, id: OutfitId): Costume {
   co.src.forEach((s, i) => {
     const role = roles[i];
     if (role === 'keep') return;
-    const to = th[role], at = s.at ?? (s.c.length === 5 ? [0, 1, 2, 3, 4] : [1, 2, 3, 4]);
+    const to = role === 'accent' ? th.accent ?? th.trim : th[role], at = s.at ?? (s.c.length === 5 ? [0, 1, 2, 3, 4] : [1, 2, 3, 4]);
     s.c.forEach((c, j) => map.set(c, to[at[j]]));
   });
   const m = (c: number): number => map.get(c) ?? c;

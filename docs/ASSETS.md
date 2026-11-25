@@ -80,35 +80,35 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `boss_vael` | 96×96 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 | `boss_ysolde` | 96×112 | 26 | idle 6, windup 2, attack 4, special 4, hit 2, death 8 |
 
-## Spritesheets: outfits (Garderobe; 25 Sheets, 384 kB; werden erst bei Bedarf geladen, Raster und Animationen wie das Klassen-Sheet)
+## Spritesheets: outfits (Garderobe; 25 Sheets, 385 kB; werden erst bei Bedarf geladen, Raster und Animationen wie das Klassen-Sheet)
 
 | Sheet | Klasse | Frame | Frames | Größe |
 |---|---|---|---|---|
 | `char_krieger_frost` | `char_krieger` | 32×40 | 129 | 14.6 kB |
 | `char_krieger_glut` | `char_krieger` | 32×40 | 129 | 14.7 kB |
-| `char_krieger_gold` | `char_krieger` | 32×40 | 129 | 14.1 kB |
-| `char_krieger_schatten` | `char_krieger` | 32×40 | 129 | 14.7 kB |
+| `char_krieger_gold` | `char_krieger` | 32×40 | 129 | 14.4 kB |
+| `char_krieger_schatten` | `char_krieger` | 32×40 | 129 | 14.8 kB |
 | `char_krieger_wald` | `char_krieger` | 32×40 | 129 | 14.6 kB |
-| `char_magier_frost` | `char_magier` | 32×40 | 129 | 17.0 kB |
+| `char_magier_frost` | `char_magier` | 32×40 | 129 | 16.9 kB |
 | `char_magier_glut` | `char_magier` | 32×40 | 129 | 17.0 kB |
 | `char_magier_gold` | `char_magier` | 32×40 | 129 | 16.7 kB |
-| `char_magier_schatten` | `char_magier` | 32×40 | 129 | 17.0 kB |
-| `char_magier_wald` | `char_magier` | 32×40 | 129 | 16.9 kB |
+| `char_magier_schatten` | `char_magier` | 32×40 | 129 | 17.2 kB |
+| `char_magier_wald` | `char_magier` | 32×40 | 129 | 16.8 kB |
 | `char_paladin_frost` | `char_paladin` | 32×40 | 129 | 14.9 kB |
 | `char_paladin_glut` | `char_paladin` | 32×40 | 129 | 14.9 kB |
-| `char_paladin_gold` | `char_paladin` | 32×40 | 129 | 14.4 kB |
-| `char_paladin_schatten` | `char_paladin` | 32×40 | 129 | 14.8 kB |
+| `char_paladin_gold` | `char_paladin` | 32×40 | 129 | 14.3 kB |
+| `char_paladin_schatten` | `char_paladin` | 32×40 | 129 | 14.9 kB |
 | `char_paladin_wald` | `char_paladin` | 32×40 | 129 | 15.1 kB |
 | `char_schattenjaeger_frost` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
-| `char_schattenjaeger_glut` | `char_schattenjaeger` | 32×40 | 129 | 14.6 kB |
-| `char_schattenjaeger_gold` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
-| `char_schattenjaeger_schatten` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
-| `char_schattenjaeger_wald` | `char_schattenjaeger` | 32×40 | 129 | 14.5 kB |
-| `char_waldlaeufer_frost` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
-| `char_waldlaeufer_glut` | `char_waldlaeufer` | 32×40 | 129 | 16.0 kB |
+| `char_schattenjaeger_glut` | `char_schattenjaeger` | 32×40 | 129 | 14.7 kB |
+| `char_schattenjaeger_gold` | `char_schattenjaeger` | 32×40 | 129 | 14.6 kB |
+| `char_schattenjaeger_schatten` | `char_schattenjaeger` | 32×40 | 129 | 14.6 kB |
+| `char_schattenjaeger_wald` | `char_schattenjaeger` | 32×40 | 129 | 14.7 kB |
+| `char_waldlaeufer_frost` | `char_waldlaeufer` | 32×40 | 129 | 16.2 kB |
+| `char_waldlaeufer_glut` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
 | `char_waldlaeufer_gold` | `char_waldlaeufer` | 32×40 | 129 | 15.6 kB |
-| `char_waldlaeufer_schatten` | `char_waldlaeufer` | 32×40 | 129 | 16.0 kB |
-| `char_waldlaeufer_wald` | `char_waldlaeufer` | 32×40 | 129 | 15.8 kB |
+| `char_waldlaeufer_schatten` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
+| `char_waldlaeufer_wald` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
 
 ## Atlas: obj (675 Frames, 2048×375)
 
