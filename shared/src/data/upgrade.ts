@@ -19,16 +19,16 @@ export const SLOT_KIND_NAME: Record<SlotKind, string> = {
 export const UPGRADE_BONUS_AT = [3, 6, 9] as const;
 /** Zusatzeigenschaft bei +3 / +6 / +9 je Art – erst schützend, dann nützlich, zuletzt ein Stück Angriff */
 export const UPGRADE_BONUS: Record<SlotKind, [ModKey, number][]> = {
-  weapon: [['crit', 2], ['critDmg', 8], ['powerPct', 3]],
-  offhand: [['resAll', 2], ['crit', 1.5], ['powerPct', 2]],
-  helm: [['resAll', 2], ['mpPct', 4], ['cdr', 2]],
-  armor: [['hpPct', 2], ['defPct', 4], ['resAll', 3]],
-  gloves: [['hpRegen', 0.8], ['crit', 1.5], ['critDmg', 6]],
-  legs: [['hpRegen', 1], ['hpPct', 3], ['defPct', 3]],
-  boots: [['resAll', 2], ['dodgeCdr', 6], ['speedPct', 3]],
-  amulet: [['mpRegen', 0.5], ['hpPct', 3], ['elemPct', 4]],
-  ring: [['hpRegen', 0.5], ['critDmg', 4], ['crit', 1]],
-};
+  weapon: [['crit', 1], ['critDmg', 4], ['powerPct', 2]],
+  offhand: [['resAll', 2], ['hpPct', 1], ['crit', 0.5]],
+  helm: [['resAll', 2], ['mpPct', 2], ['cdr', 1]],
+  armor: [['hpPct', 1], ['defPct', 2], ['resAll', 2]],
+  gloves: [['hpRegen', 0.4], ['crit', 0.5], ['critDmg', 2]],
+  legs: [['hpRegen', 0.4], ['hpPct', 1], ['defPct', 2]],
+  boots: [['resAll', 2], ['dodgeCdr', 3], ['speedPct', 1]],
+  amulet: [['mpRegen', 0.3], ['hpPct', 1], ['elemPct', 2]],
+  ring: [['hpRegen', 0.3], ['critDmg', 1.5], ['crit', 0.25]],
+}
 
 /** Zusatzeigenschaften, die ein Teil dieser Art auf Stufe `up` trägt */
 export function upgradeBonus(kind: SlotKind | null, up: number): Mods {

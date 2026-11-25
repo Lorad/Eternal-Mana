@@ -208,11 +208,11 @@ export const CFG = {
   },
   /** 0.9: Zahlen der Ausrüstungs-Wirkungen (Passiven bei +10: data/upgrade.ts · volle Sets: data/sets.ts) */
   gearFx: {
-    meister: { every: 5, mult: 1.5 },          // Hauptwaffe: jeder 5. Standardtreffer +50 %
+    meister: { every: 5, mult: 1.4 },          // Hauptwaffe: jeder 5. Standardtreffer +40 %
     parade: { chance: 0.08, mul: 0.5 },        // Zweithand: Chance, einen Treffer zu halbieren
     klarheit: 0.7,                             // Helm: schädliche Zustände wirken so lange
     atem: { below: 0.3, heal: 0.15, cd: 60 },  // Brust: einmal je Minute unter 30 % Leben 15 % zurück
-    flink: 0.94,                               // Handschuhe: Abklingzeit des Standardangriffs
+    flink: 0.95,                               // Handschuhe: Abklingzeit des Standardangriffs
     standfest: 12,                             // Beine: % schnellere Ausweichrolle
     leicht: 5,                                 // Schuhe: % Tempo
     segen: 1.2,                                // Amulett: Heiltränke wirken stärker
