@@ -20,7 +20,7 @@ export type HubSpot = 'ankunft' | 'portal' | 'rueckkehr';
 export const HUB_SPOTS: Record<HubSpot, [number, number]> = {
   ankunft: [38, 53],
   portal: [38, 19],
-  rueckkehr: [38, 26],
+  rueckkehr: [38, 24],
 };
 
 /** Die Einrichtungen der Quellwarte (Schlüssel für Karte, NPCs, Hinweise und Handbuch). */

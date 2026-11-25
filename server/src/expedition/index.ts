@@ -35,7 +35,7 @@ import type { Player } from '../player';
 import { Social } from '../social';
 import { Mob, Zone, type Obj } from '../zone';
 import { expBossMech, mechInteract, tickMechObjs } from './bossmech';
-import { expeditionPortals, returnSpot } from './hub';
+import { expeditionPortals, portalAt, returnSpot } from './hub';
 import { miniDown, spawnMinis, tickMinis } from './mini';
 import { grant, totals } from './reward';
 import { lobbiesOf, newRun, runs, type EventState, type ExpRun, type Lobby } from './run';
@@ -799,7 +799,7 @@ export const Expedition = {
       return true;
     }
     if (cmd === 'portal') { // zum Expeditionsportal (Hub oder Quellhain)
-      const t = returnSpot();
+      const r = returnSpot(), pa = portalAt(getMap(r.zone)), t = pa ? { zone: r.zone, x: pa.x, y: pa.y + 22 } : r; // direkt vor das Portal
       if (p.zone.id !== t.zone || p.zone.exp) game.transfer(p, t.zone, '', { x: t.x, y: t.y }); else { p.x = t.x; p.y = t.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
       return true;
     }
