@@ -56,7 +56,7 @@ async function talk(npc, name, option) {
 
 console.log(`Eternal Mana – Quellwarte im Browser gegen ${url} (${W}×${H})`);
 await step('Welt betreten', async () => {
-  await page.goto(url + '?hinweise=aus');
+  await page.goto(url.includes('?') ? url : url + '?hinweise=aus');
   await page.getByText('Spielen', { exact: true }).waitFor({ timeout: 20000 });
   await page.getByText('Spielen', { exact: true }).click();
   await page.getByText('Neues Spiel').first().click();

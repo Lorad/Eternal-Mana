@@ -171,6 +171,7 @@ function handle(g: Game, p: Player, m: HubMsg) {
       return;
     }
     case 'board': return p.send({ t: 'hub', lfg: lfgList(g) });
+    case 'halle': if (atFacility(p, 'halle')) p.sync('playtime', 'kills', 'deaths'); return; // frische Zahlen für die Statistik
   }
 }
 
@@ -196,6 +197,7 @@ export const Hub = {
       return true;
     }
     if (o.props?.fac === 'gruppe') p.send({ t: 'hub', lfg: lfgList(g) });
+    if (o.props?.fac === 'halle') p.sync('playtime', 'kills', 'deaths');
     p.send({ t: 'hub', open: tag });
     return true;
   },

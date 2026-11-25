@@ -66,7 +66,7 @@ export function HubOptions({ npc }: { npc: string }) {
     case 'meister': return <><Opt mark="✧" onClick={() => openHub('meister')}>Meisterränge lernen</Opt><Opt mark="❖" onClick={() => store.set({ dialog: null, panel: 'skills' })}>Fähigkeiten ansehen und verteilen</Opt></>;
     case 'lager': return <><Opt mark="▤" onClick={() => openHub('truhe')}>Truhe öffnen</Opt><Opt mark="▦" onClick={() => openHub('lager')}>Mehr Platz kaufen</Opt></>;
     case 'gasthaus': return <><Opt mark="✎" onClick={() => openHub('geruechte')}>Gerüchtebrett lesen</Opt><Opt mark="⌂" onClick={() => openHub('karte')}>Was gibt es hier alles?</Opt></>;
-    case 'halle': return <Opt mark="♛" onClick={() => openHub('halle')}>Durch die Trophäenhalle gehen</Opt>;
+    case 'halle': return <Opt mark="♛" onClick={() => { send({ t: 'hub', a: 'halle' }); openHub('halle'); }}>Durch die Trophäenhalle gehen</Opt>;
     case 'gruppe': return <Opt mark="⚑" onClick={() => { send({ t: 'hub', a: 'board' }); openHub('gesuche'); }}>Gruppenbereich: Leute finden</Opt>;
   }
   return null;
@@ -191,7 +191,7 @@ function Rumours({ char }: { char: CharData }) {
   const per = hubPeriod(Date.now()), list = boardRumours(char, per.day);
   return (
     <div class="hub-board">
-      <p class="note">Hanne schreibt auf, was am Tresen erzählt wird. Jeden Tag hängen andere Zettel – was du schon erledigt hast, nimmt sie ab. Neue Zettel in {fmtLeft(per.next)}.</p>
+      <p class="note">Hanne schreibt auf, was am Tresen erzählt wird. Jeden Tag hängen andere Zettel – was du schon erledigt hast, nimmt sie ab. Neue Zettel in {fmtLeft(per.next).replace(/\.$/, '')}.</p>
       <ul class="hub-notes scroll">
         {list.map(r => { const z = rumourZone(r); return (
           <li class={cx('hub-note', 'k-' + r.kind)}>

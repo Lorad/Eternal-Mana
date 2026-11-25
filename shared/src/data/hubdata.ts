@@ -52,9 +52,10 @@ export const traderLevel = (c: CharData) => Math.max(1, Math.min(CFG.player.maxL
  */
 export function traderStock(cls: ClassId, level: number, day: number, week: number): TraderOfferDef[] {
   const C = CFG.hub.trader, out: TraderOfferDef[] = [];
+  const KINDS = ['weapon', 'armor', 'helm', 'accessory'] as const; // danach freie Wahl (auch künftige Ausrüstungsplätze)
   for (let i = 0; i < C.daily; i++) {
     const rng = new Rng(strHash(`qw:${day}:${cls}:${i}`));
-    const it = generateGear(rng, level, rollRarity(rng, C.weights), cls, i === 0 ? 'weapon' : undefined);
+    const it = generateGear(rng, level, rollRarity(rng, C.weights), cls, KINDS[i]);
     it.uid = 'hub';
     out.push({ item: it, price: Math.ceil(itemPrice(it) * C.priceMul) });
   }
