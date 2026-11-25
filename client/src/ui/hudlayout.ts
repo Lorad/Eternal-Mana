@@ -13,6 +13,8 @@ export interface ColumnInput {
   minimap: boolean;
   /** Mana-Riss läuft; `riftMods` = Zahl seiner Modifikatoren */
   rift: boolean; riftMods: number;
+  /** Expedition läuft (0.9): ihre Anzeige steht unter der Karte, die Questverfolgung klappt wie im Riss zusammen */
+  exp?: boolean;
   /** Bossleiste ist zu sehen */
   boss: boolean;
   /** Ereignisse in dieser Zone (dazu zählt der Hinweis der Schatzkarte) */
@@ -35,7 +37,7 @@ export interface ColumnPlan {
 }
 
 /** ungefähre Höhen der Blöcke in Oberflächen-Pixeln */
-export const COLUMN = { top: 12, minimap: 160, minimapNarrow: 120, info: 50, gap: 10, rift: 58, riftModRow: 24, event: 72, far: 30, quest: 56, pill: 28, more: 18,
+export const COLUMN = { top: 12, minimap: 160, minimapNarrow: 120, info: 50, gap: 10, rift: 58, riftModRow: 24, exp: 118, event: 72, far: 30, quest: 56, pill: 28, more: 18,
   /** unten frei bleiben: Menüleiste, Verbindungsanzeige und zwei Meldungen – im schmalen Fenster steht die Menüleiste zweispaltig darüber */
   bottom: 180, bottomNarrow: 400 };
 
@@ -43,8 +45,9 @@ export function planColumn(i: ColumnInput): ColumnPlan {
   let free = i.h - COLUMN.top - COLUMN.info - (i.narrow ? COLUMN.bottomNarrow : COLUMN.bottom);
   if (i.minimap) free -= (i.narrow ? COLUMN.minimapNarrow : COLUMN.minimap) + 4;
   if (i.rift) free -= COLUMN.rift + Math.ceil(i.riftMods / 2) * COLUMN.riftModRow + COLUMN.gap;
+  if (i.exp) free -= COLUMN.exp + COLUMN.gap;
   free -= i.events * COLUMN.event + (i.events ? COLUMN.gap : 0);
-  const busy = i.rift || i.boss;
+  const busy = i.rift || i.boss || !!i.exp;
   // ferne Weltbosse: im Kampf gar nicht, sonst höchstens zwei kurze Zeilen
   let far = busy ? 0 : Math.min(i.far, i.events ? 1 : 2);
   if (!i.quests) return { quests: 0, collapsed: false, why: null, far: Math.max(0, Math.min(far, Math.floor(free / COLUMN.far))) };

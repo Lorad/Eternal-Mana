@@ -268,7 +268,7 @@ function QuestTracker({ active, plan }: { active: ActiveQuest[]; plan: ColumnPla
   if (!char || !active.length) return null;
   const shown = plan.collapsed ? [] : active.slice(0, plan.quests);
   const ready = active.filter(a => a.ready).length;
-  const why = plan.why === 'kampf' ? 'Im Mana-Riss und im Bosskampf klappt sie sich von selbst ein.' : plan.why === 'platz' ? 'Gerade ist kein Platz – oben läuft Wichtigeres.' : '';
+  const why = plan.why === 'kampf' ? 'In Mana-Riss, Expedition und Bosskampf klappt sie sich von selbst ein.' : plan.why === 'platz' ? 'Gerade ist kein Platz – oben läuft Wichtigeres.' : '';
   return (
     <div class={cx('qt', plan.collapsed && 'shut')}>
       <button type="button" class="qt-head" aria-expanded={!plan.collapsed} onClick={() => { sfx('ui_tab'); toggleTracker(); }}
@@ -299,6 +299,7 @@ function QuestTracker({ active, plan }: { active: ActiveQuest[]; plan: ColumnPla
 function RightColumn() {
   const char = useStore(s => s.char);
   const rift = useStore(s => s.rift);
+  const exp = useStore(s => !!s.expRun);
   const boss = useStore(s => !!s.boss);
   const world = useStore(s => s.world);
   const zone = useStore(s => s.zone);
@@ -307,7 +308,7 @@ function RightColumn() {
   const active = char ? activeQuests(char) : [];
   const ev = hudEvents(world, zone, char);
   const plan = planColumn({
-    h: uiScale.h, narrow: uiScale.w < 860, minimap: s.showMinimap, rift: !!rift, riftMods: rift?.mods.length ?? 0, boss,
+    h: uiScale.h, narrow: uiScale.w < 860, minimap: s.showMinimap, rift: !!rift, riftMods: rift?.mods.length ?? 0, exp, boss,
     events: ev.here.length + (ev.hint ? 1 : 0), far: ev.far.length, quests: active.length, collapsed: s.trackerCollapsed, opened,
   });
   return <div class="hud-tr"><MinimapBox /><RiftHud /><ExpHud /><EventTracker /><QuestTracker active={active} plan={plan} /><FarEvents max={plan.far} /></div>;

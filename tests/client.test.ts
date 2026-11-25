@@ -274,6 +274,7 @@ describe('Rangfolge der rechten HUD-Spalte', () => {
     const p = planColumn(i);
     let h = COLUMN.top + COLUMN.info + (i.minimap ? (i.narrow ? COLUMN.minimapNarrow : COLUMN.minimap) + 4 : 0);
     if (i.rift) h += COLUMN.rift + Math.ceil(i.riftMods / 2) * COLUMN.riftModRow + COLUMN.gap;
+    if (i.exp) h += COLUMN.exp + COLUMN.gap;
     h += i.events * COLUMN.event + (i.events ? COLUMN.gap : 0);
     if (i.quests) h += COLUMN.pill + p.quests * COLUMN.quest + (p.quests && p.quests < i.quests ? COLUMN.more : 0);
     return h + p.far * COLUMN.far;
@@ -284,6 +285,8 @@ describe('Rangfolge der rechten HUD-Spalte', () => {
     expect(planColumn(inp({ quests: 2 }))).toMatchObject({ quests: 2, collapsed: false });
     expect(planColumn(inp({ quests: 5, rift: true, riftMods: 3 }))).toMatchObject({ quests: 0, collapsed: true, why: 'kampf', far: 0 });
     expect(planColumn(inp({ quests: 5, boss: true }))).toMatchObject({ collapsed: true, why: 'kampf' });
+    expect(planColumn(inp({ quests: 5, exp: true }))).toMatchObject({ collapsed: true, why: 'kampf' }); // Expedition: ihre Anzeige hat Vorrang
+    expect(planColumn(inp({ quests: 5, exp: true, opened: true })).quests).toBeLessThan(planColumn(inp({ quests: 5, opened: true })).quests);
     // von Hand aufgeklappt bleibt sie auch im Riss offen – mit dem Platz, der da ist
     const open = planColumn(inp({ quests: 5, rift: true, riftMods: 3, opened: true }));
     expect(open.collapsed).toBe(false); expect(open.quests).toBeGreaterThan(0); expect(open.quests).toBeLessThan(4);

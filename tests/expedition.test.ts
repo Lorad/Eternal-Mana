@@ -13,6 +13,9 @@ import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
 import { EXP_CFG } from '../shared/src/data/expeditions';
 import { Expedition } from '../server/src/expedition';
 import type { Zone } from '../server/src/zone';
+import { acc } from '../server/src/home/state';
+import { generateGear } from '../shared/src/data/items';
+import { Rng } from '../shared/src/util/rng';
 
 const sim = new Sim();
 afterAll(() => sim.close());
@@ -194,6 +197,23 @@ describe('Expeditionen – Ablauf', () => {
     expect(a.msgs.some(m => m.t === 'exp' && (m as any).summary)).toBe(true);
     a.send({ t: 'exp', a: 'join' });
     expect(a.p.zone.exp).toBeFalsy();
+  });
+
+  it('voller Rucksack: die Belohnung landet in der Lagertruhe statt am Boden der Belohnungskammer', () => {
+    const t = sim.join('Vollgepackt', 'krieger', 6);
+    startSolo(t);
+    const z = t.p.zone;
+    t.p.char.inv = [];
+    const rng = new Rng(7);
+    for (let i = 0; i < CFG.player.invSize; i++) t.p.char.inv.push(generateGear(rng, 5, 0, 'krieger'));
+    const stash0 = acc(sim.game, t.p.accountId).h.stash.length;
+    killBoss(t);
+    expect(t.p.char.expeditions!.exp_gruenwald.clears.normal).toBe(1);
+    const h = acc(sim.game, t.p.accountId).h;
+    expect(h.stash.length).toBeGreaterThan(stash0);
+    expect(t.p.char.inv.some(it => it.base === BOSSES.dornenmutter.seal)).toBe(true); // Siegel (Questgegenstand) bleibt beim Spieler
+    expect(t.msgs.some(m => m.t === 'toast' && /Lagertruhe/.test((m as any).s))).toBe(true);
+    expect(z.exp).toBeTruthy();
   });
 
   it('Rückkehr auch ohne Abstimmung nach dem Countdown', () => {

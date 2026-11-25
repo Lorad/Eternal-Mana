@@ -16,6 +16,10 @@ import { BIOME_MATS } from '../../../shared/src/data/materials';
 import { STORY } from '../../../shared/src/data/quests';
 import { kreisLevel, kreisOf } from '../../../shared/src/data/rifts';
 import type { ExpResult, ItemInstance } from '../../../shared/src/types';
+import { stashSlots } from '../../../shared/src/data/collection';
+import { fits, putInto, stashBlock } from '../../../shared/src/data/home';
+import { invCap } from '../../../shared/src/equip';
+import { acc, touch } from '../home/state';
 import { bossLoot } from '../loot';
 import type { Player } from '../player';
 import type { Zone } from '../zone';
@@ -35,7 +39,19 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
   const first = !(rec.clears[run.diff] ?? 0);
   const weekly = !!run.weekly && run.weekly.exp === run.exp && run.weekly.diff === run.diff && !c.flags[weeklyFlag(run.weekly.week)];
   const items: ItemInstance[] = [];
-  const give = (it: ItemInstance | null) => { if (!it) return; items.push(it); p.give(it, false); };
+  let stashed = 0;
+  const give = (it: ItemInstance | null) => {
+    if (!it) return;
+    items.push(it);
+    if (p.addItem(it)) { p.checkCollectQuests(); return; }
+    // Rucksack voll: Die Belohnung wandert in die Lagertruhe (Profil), gespeichert in derselben Transaktion wie der Rest.
+    // Erst wenn auch die Truhe voll ist, bleibt der alte Weg: Sie liegt in der Belohnungskammer.
+    const h = acc(zone.game, p.accountId).h;
+    if (!stashBlock(it) && fits(h.stash, it, stashSlots(h))) { putInto(h.stash, it); touch(zone.game, p.accountId, 'stash'); stashed++; return; }
+    // Questgegenstände (das Siegel) dürfen nicht in die Truhe – sie nehmen einen der Reserveplätze des Rucksacks.
+    if (stashBlock(it) && p.char.inv.length < invCap()) { p.char.inv.push(it); p.sync('inv'); p.checkCollectQuests(); return; }
+    p.give(it, false);
+  };
   const gold0 = c.gold, lvl0 = c.level, xp0 = c.xp;
 
   // ---- die Geschichte: Bossflagge, Siegel, Questziel „boss“, Filmtext – wie im alten Dungeon
@@ -77,6 +93,7 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
   if (weekly) c.flags[weeklyFlag(run.weekly!.week)] = 1;
   c.expRuns = [...(c.expRuns ?? []), run.key].slice(-EXP_CFG.keepRuns);
   p.sync('flags', 'expeditions', 'expRuns');
+  if (stashed) { p.sync('inv'); p.toast(`Rucksack voll – ${stashed} ${stashed === 1 ? 'Belohnung liegt' : 'Belohnungen liegen'} in deiner Lagertruhe (Quellwarte oder Hof).`, 'info'); }
 
   const T = totals(zone), par = expPar(x);
   const feats: string[] = [];
