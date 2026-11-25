@@ -86,8 +86,10 @@ const ROLE_PROPS: Record<string, [string, boolean][]> = {
   prep: [['d_candles', false], ['d_table', true], ['d_rack', true]],
 };
 const NODE_OF: Partial<Record<BiomeId, string>> = { gruenwald: 'herb', kristall: 'crystal', glut: 'ember', frost: 'frost', ruinen: 'rune', schatten: 'void' };
-const RUNE_NAMES = ['Blatt', 'Wurzel', 'Dorn', 'Blüte'];
-export const RUNE_SYMBOLS = ['❦', '⚘', '✶', '❀'];
+export const RUNE_NAMES = ['Blatt', 'Wurzel', 'Dorn', 'Blüte'];
+/** Beschriftung einer Runenscheibe: Nummer und aktuelles Zeichen */
+export const runeLabel = (idx: number, v: number) => `${idx + 1} · ${RUNE_NAMES[v]}`;
+export const RUNE_SYMBOLS = RUNE_NAMES;
 
 // =====================================================================================================================
 //  1. Anordnen
@@ -489,9 +491,9 @@ export function genExpedition(def: ZoneDef): GameMap {
       do { runes = [0, 1, 2, 3].map(() => rng.int(0, 3)); } while (runes.every(v => v === 0));
       const vert = (r.y1 - r.y0) > (r.x1 - r.x0);
       const pos: [number, number][] = vert ? [[cx - 2, cy - 4], [cx + 2, cy - 1], [cx - 2, cy + 2], [cx + 2, cy + 5]] : [[cx - 6, cy - 2], [cx - 2, cy + 2], [cx + 2, cy - 2], [cx + 6, cy + 2]];
-      pos.forEach(([xx, yy], k) => put('xobj', xx, yy, { kind: 'rune', idx: k, frame: 'rune_stone', label: RUNE_SYMBOLS[0], prompt: 'Runenscheibe drehen' }));
+      pos.forEach(([xx, yy], k) => put('xobj', xx, yy, { kind: 'rune', idx: k, frame: 'rune_stone', label: runeLabel(k, 0), prompt: 'Runenscheibe drehen' }));
       pz.runes = runes;
-      text = `In die Brüstung geritzt, von links nach rechts: ${runes.map(v => `${RUNE_SYMBOLS[v]} ${RUNE_NAMES[v]}`).join(' · ')}. Darunter: „Wer die Brücke will, dreht die Steine, bis sie dasselbe sagen.“`;
+      text = `In die Brüstung geritzt: ${runes.map((v, k) => `Stein ${k + 1}: ${RUNE_NAMES[v]}`).join(' · ')}. Darunter: „Wer weiter will, dreht die Steine, bis sie dasselbe sagen.“`;
     }
     info.puzzles.push(pz);
     const s = nearSpot(cx, cy - 2, roomy, 6) ?? [cx, cy - 2];
@@ -549,6 +551,7 @@ export function genExpedition(def: ZoneDef): GameMap {
       if (ok) continue;
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
         const X = tx + dx, Y = ty + dy, i = I(X, Y);
+        if (tiles[i] === T.LIQUID && secOf[i] >= 0) { tiles[i] = T.FLOOR; solid[i] = 0; fixed++; continue; } // Teich in einem Abschnitt: ein Stück Ufer
         if (solid[i] !== 1 || tiles[i] !== T.FLOOR || (dx === 0 && dy === 0)) continue;
         if (objects.some(ob => Math.floor(ob.x / TILE) === X && Math.floor(ob.y / TILE) === Y)) continue;
         solid[i] = 0; fixed++;

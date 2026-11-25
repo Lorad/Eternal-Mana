@@ -25,7 +25,7 @@ import { kreisBossDef, kreisLevel, kreisOf } from '../../../shared/src/data/rift
 import { ZONES, type ZoneDef } from '../../../shared/src/data/zones';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
 import type { ExpSection } from '../../../shared/src/maps/expedition';
-import { RUNE_SYMBOLS } from '../../../shared/src/maps/expedition';
+import { runeLabel } from '../../../shared/src/maps/expedition';
 import { TILE } from '../../../shared/src/maps/tiles';
 import type { ClientMsg, ExpLobbyInfo, ExpRunInfo } from '../../../shared/src/types';
 import type { BossCtl } from '../boss';
@@ -228,8 +228,8 @@ function puzzleInteract(zone: Zone, p: Player, o: Obj): boolean {
     if ([...zone.objs.values()].filter(l => l.type === 'lever' && l.props?.psec === sec).every(l => l.state === pz.bits![l.props!.idx])) puzzleSolved(zone, sec!);
   } else if (o.type === 'xobj' && o.props?.kind === 'rune') {
     const v = (o.state + 1) % 4;
-    zone.setObjState(o, v, { label: RUNE_SYMBOLS[v] });
-    o.props.label = RUNE_SYMBOLS[v];
+    zone.setObjState(o, v, { label: runeLabel(o.props.idx, v) });
+    o.props.label = runeLabel(o.props.idx, v);
     zone.ev({ k: 'sfx', n: 'lever', x: o.x, y: o.y });
     if ([...zone.objs.values()].filter(r => r.props?.kind === 'rune' && r.props?.psec === sec).every(r => r.state === pz.runes![r.props!.idx])) puzzleSolved(zone, sec!);
   } else return false;
