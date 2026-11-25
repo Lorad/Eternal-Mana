@@ -38,7 +38,7 @@ for (const t of TOPICS) for (const id in t.nodes) {
   n.opts?.forEach((o, i) => { if (o.fx) ALL_FX.push({ where: `${t.id}/${id}#${i}`, fx: o.fx }); });
 }
 const FLAGS_SET = new Set(ALL_FX.flatMap(x => (x.fx.flag ? (Array.isArray(x.fx.flag) ? x.fx.flag : [x.fx.flag]) : [])));
-const placed = (type: string, tag: string) => ZONE_LIST.some(z => getMap(z.id).objects.some(o => o.type === type && o.tag === tag));
+const placed = (type: string, tag: string) => Object.values(ZONES).some(z => getMap(z.id).objects.some(o => o.type === type && o.tag === tag)); // 0.9: auch die Quellwarte
 
 function checkCond(c: Cond | undefined, where: string) {
   if (!c) return;

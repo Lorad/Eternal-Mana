@@ -23,7 +23,7 @@ export const QUESTS_HUB: QuestDef[] = [
       'Willkommen in der Quellwarte. Um den Platz herum findest du alles: Schmiede, Händler, Alchemie, Lagerhaus, den Fähigkeitenmeister und die Trophäenhalle. In der Mitte das Portal – damit geht es in die Tiefe. Mit Freunden, wenn du schlau bist.',
       'Und wenn du etwas hören willst, das du nicht wissen solltest: das Brett neben meiner Tür. Gerüchte, frisch und ungeprüft. Den Krug zahlt übrigens Mirelda. Das weiß sie nur noch nicht.'] }),
 
-  Q({ id: 'qw_hanne', name: 'Eintopf für alle', type: 'side', line: 'Quellwarte', giver: 'hanne', level: 3, zone: 'quellwarte',
+  Q({ id: 'qw_hanne', name: 'Eintopf für alle', type: 'side', giver: 'hanne', level: 3, zone: 'quellwarte',
     summary: 'Im Gasthaus „Zum Versiegten Brunnen“ gehen die Vorräte aus. Bring Hanne Waldbeeren und Quellkraut aus dem Grünwald.',
     objectives: [{ t: 'collect', item: 'ing_berry', n: 6, label: 'Waldbeeren sammeln (Grünwald)' }, { t: 'collect', item: 'mat_herb', n: 4, label: 'Quellkraut sammeln (Grünwald)' }],
     rewards: { xp: 220, gold: 90, items: [['food_bread', 3]] },
@@ -32,7 +32,7 @@ export const QUESTS_HUB: QuestDef[] = [
     progress: 'Beeren und Kraut, beides aus dem Grünwald. Kuchen und Eintopf. Nicht verwechseln.',
     done: ['Wunderbar! Das reicht für drei Tage. Oder für Alrik für einen.', 'Hier, nimm Brot mit. Es ist von gestern, aber es weiß das nicht.'] }),
 
-  Q({ id: 'qw_alrik', name: 'Die andere Hälfte', type: 'side', line: 'Quellwarte', giver: 'alrik', level: 5, zone: 'quellwarte',
+  Q({ id: 'qw_alrik', name: 'Die andere Hälfte', type: 'side', giver: 'alrik', level: 5, zone: 'quellwarte',
     summary: 'Alrik der Halbe behauptet, sein Mut stecke seit vierzig Jahren in der Wurzelgruft fest. Besiege die Dornenmutter in seinem Namen.',
     objectives: [{ t: 'boss', boss: 'dornenmutter', label: 'Die Dornenmutter in der Wurzelgruft besiegen' }],
     rewards: { xp: 520, gold: 180, gear: 1 },
@@ -42,7 +42,7 @@ export const QUESTS_HUB: QuestDef[] = [
     progress: 'Die Wurzelgruft. Nordwestlich von Quellhain, unter dem ältesten Baum. Grüß meine Hälfte.',
     done: ['Du hast sie – wirklich? … Ich fühle mich schon ganzer. Ungefähr drei Viertel.', 'Hanne! Eine Runde für alle, auf meine Rechnung! … Sie sagt, meine Rechnung ist voll. Dann eben auf deine.'] }),
 
-  Q({ id: 'qw_lotte', name: 'Weiße Flecken', type: 'side', line: 'Quellwarte', giver: 'lotte', level: 8, zone: 'quellwarte',
+  Q({ id: 'qw_lotte', name: 'Weiße Flecken', type: 'side', giver: 'lotte', level: 8, zone: 'quellwarte',
     summary: 'Lotte Kompass zeichnet eine Karte der Welt – bisher mit sehr viel Weiß. Berühre die Quellsteine im Grubenlager der Kristallhöhlen und in der Aschenrast der Glutlande.',
     objectives: [{ t: 'flag', flag: 't:kristall', label: 'Quellstein in den Kristallhöhlen berühren' }, { t: 'flag', flag: 't:glut', label: 'Quellstein in den Glutlanden berühren' }],
     rewards: { xp: 900, gold: 260, items: [['mat_crystal', 3]] },
@@ -52,7 +52,7 @@ export const QUESTS_HUB: QuestDef[] = [
     progress: 'Zwei Quellsteine: Grubenlager und Aschenrast. Du musst sie nur anfassen. Nicht ablecken. Das hat Hedda verboten.',
     done: ['Zwei Steine! Zwei Ecken! … Mit Quellhain ist das ein Dreieck. Ich habe ein Dreieck gezeichnet. Mein Lehrmeister wird weinen.', 'Hier, für dich. Kartenzeichner zahlen in Ehre und Kristall. Die Ehre ist gerade aus.'] }),
 
-  Q({ id: 'qw_merle', name: 'Lieder vom Rand der Welt', type: 'side', line: 'Quellwarte', giver: 'merle', level: 12, zone: 'quellwarte',
+  Q({ id: 'qw_merle', name: 'Lieder vom Rand der Welt', type: 'side', giver: 'merle', level: 12, zone: 'quellwarte',
     summary: 'Merle Federkiel schreibt ein Lied über Orte, an denen sie nie war. Stell dich für sie an den Weiher im Grünwald, an den Spiegelsee in den Kristallhöhlen und auf das Obsidianfeld der Glutlande.',
     objectives: [{ t: 'visit', place: 'qw_weiher', label: 'Am Weiher im Grünwald lauschen' }, { t: 'visit', place: 'qw_spiegelsee', label: 'Am Spiegelsee in den Kristallhöhlen lauschen' }, { t: 'visit', place: 'qw_obsidian', label: 'Auf dem Obsidianfeld in den Glutlanden lauschen' }],
     rewards: { xp: 1500, gold: 420, items: [['ess_wind', 3]] },
@@ -62,7 +62,7 @@ export const QUESTS_HUB: QuestDef[] = [
     progress: 'Weiher, Spiegelsee, Obsidianfeld. Hinstellen, zuhören, merken. Singen nur im Notfall.',
     done: ['Der Weiher plätschert in G. Der Spiegelsee schweigt in Moll. Und das Obsidianfeld knistert – das ist kein Ton, das ist eine Drohung.', 'Wunderbar. Das wird das schlechteste Lied, das ich je geschrieben habe. Also mein bestes.'] }),
 
-  Q({ id: 'qw_rudger', name: 'Ein letzter Appell', type: 'side', line: 'Quellwarte', giver: 'rudger', level: 22, zone: 'quellwarte',
+  Q({ id: 'qw_rudger', name: 'Ein letzter Appell', type: 'side', giver: 'rudger', level: 22, zone: 'quellwarte',
     summary: 'In den Verlorenen Ruinen marschieren Skelettkrieger in Reih und Glied – Rudger glaubt, es sei die alte Ehrenwache der Quellwarte. Gib zwölf von ihnen ihre Ruhe.',
     objectives: [{ t: 'kill', mob: 'skelettkrieger', n: 12, label: 'Skelettkrieger in den Verlorenen Ruinen zur Ruhe betten' }],
     rewards: { xp: 6000, gold: 1300, gear: 2 },

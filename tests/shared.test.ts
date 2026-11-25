@@ -49,7 +49,7 @@ describe('Karten', () => {
 describe('Daten-Integrität', () => {
   it('Quests verweisen nur auf existierende Dinge', () => {
     const placed = new Set<string>();
-    for (const z of ZONE_LIST) for (const o of getMap(z.id).objects) if (o.type === 'npc') placed.add(o.tag!);
+    for (const z of Object.values(ZONES)) for (const o of getMap(z.id).objects) if (o.type === 'npc') placed.add(o.tag!); // 0.9: auch die Quellwarte
     for (const q of QUEST_LIST) {
       expect(NPCS[q.giver], q.id).toBeTruthy();
       expect(placed.has(q.giver), `${q.id}: ${q.giver} steht nirgends`).toBe(true);

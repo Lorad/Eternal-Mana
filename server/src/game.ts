@@ -331,7 +331,7 @@ export class Game {
     this.moveTo(p, z, pos ?? z.map.entries[from] ?? z.map.start);
   }
   teleport(p: Player, zoneId: string) {
-    if (p.dead || !ZONES[zoneId] || !p.char.flags[`t:${zoneId}`]) return;
+    if (p.dead || !ZONES[zoneId] || (!p.char.flags[`t:${zoneId}`] && ZONES[zoneId].kind !== 'hub')) return; // 0.9: die Quellwarte kennt jeder Quellstein
     const near = [...p.zone.objs.values()].some(o => o.type === 'stone' && Math.hypot(o.x - p.x, o.y - p.y) < 70);
     if (!near) { p.toast('Du musst an einem Quellstein stehen, um zu reisen.', 'bad'); return; }
     if (zoneId === p.zone.id) return;

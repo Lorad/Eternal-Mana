@@ -217,7 +217,6 @@ export const Hub = {
    */
   onEnter(g: Game, p: Player) {
     const c = p.char;
-    if (!c.flags[`t:${HUB_ZONE}`]) { c.flags[`t:${HUB_ZONE}`] = 1; p.sync('flags'); }
     if (c.flags[HUB_NEW_FLAG] || c.flags[HUB_OLD_FLAG]) return;
     const old = c.quests.m_erwachen?.s === 'done' || c.quests[HUB_MAIN_QUEST] !== undefined || c.level > 3;
     c.flags[old ? HUB_OLD_FLAG : HUB_NEW_FLAG] = 1;
