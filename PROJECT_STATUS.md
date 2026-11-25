@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.8.0 (Feinschliff; Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.9.0 (Quellwarte, Expeditionen und Ausrüstung mit zehn Plätzen; Feinschliff; Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -15,6 +15,25 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 | 0.6 | Lebendige Welt: Ruf (6 Fraktionen), 6 Ereignisarten, 3 Weltbosse, 12 seltene Monster, Schatzkarten, 4 Begegnungen, Tagesabläufe, Jahreszeiten | **fertig** |
 | 0.7 | Zuhause (Hof mit Lagertruhe und drei Ausbaustufen, 30 Trophäen, 8 Begleiter, Sammlung, Erscheinungen) und Gemeinsam (Gruppenverwaltung, Handel, Quest teilen, Gruppentruhe, Ansehen) | **fertig** |
 | 0.8 | Feinschliff: Spieltest mit Spielermodell und Abstimmung aller Zahlen, Balance-Wächter, Handbuch, Hinweise, aufgeräumtes HUD, Gamepad in allen Fenstern, „Blitze reduzieren“, Echtzeit-Bewegung bei wenig Bildern, fehlende Grafik, Dokumentation | **fertig** |
+| 0.9 | Quellwarte (Hub mit neun Einrichtungen), sieben Expeditionen mit Mini-Bossen, Endbossen mit Signaturmechanik, vier Schwierigkeitsgraden, Wochen-Herausforderung und gemeinsamer Rückkehr; zehn Ausrüstungsplätze, Seltenheit Mythisch, faires Verbessern bis +10, Sets mit sechs Teilen | **fertig** |
+
+### Offene Punkte nach 0.9 (Roadmap Abschnitt 5)
+
+Ein Großteil von 0.10 ist schon in 0.9 enthalten (alle Expeditionen, Schwierigkeitsgrade, Wochen-Herausforderung, Bestzeiten,
+zehn Plätze). Offen bleibt:
+
+- **Im Browser durchgespielt** ist nur die Wurzeltiefe (allein und zu zweit) und der ganze Hub. Die anderen fünf Expeditionen,
+  die geheime Expedition, die Ereignisse Finsternis, Flut und Einsturz und alle Grade ab Schwer sind durch Tests und Bot-Läufe
+  geprüft, nicht im Browser. Die Prismensäulen des Kristallkolosses haben die Bots nie benutzt.
+- **Dauer:** Bot-Läufe auf Normal brauchen allein 14–19 Minuten, zu zweit 11–19 (`scripts/exp-playtest.ts`). Schnelle Läufe
+  von Wurzeltiefe und Gießerei liegen knapp unter 15 Minuten.
+- **Tempo:** Ein Abschluss bringt etwa zwei Stufen – mehr als die alten Dungeons. Der Tempo-Test misst noch die alten Karten.
+- **Ausrüstung:** Hoch verbesserte alte Stücke verlieren nach der Überführung bis zu 15–20 % Grundverteidigung; +10 auf allem
+  ist stärker als vorher (×1,34 statt ×1,19). Keine legendären Zweithand-Stücke.
+- **Gruppen:** mit höchstens zwei echten Browsern geprüft. Gruppen-Instanzen und Gruppengesuche überleben keinen Neustart.
+- Händler-Wechsel um Mitternacht nur mit gestellter Uhr geprüft; Gamepad in Hub-Fenstern und Inventar-Puppe nicht mit echtem Pad.
+- Noch nicht gebaut (0.11): eigene Endspiel-Expeditionen, Abstimmung der Balance über die neue Länge, Leistungsmessung mit
+  vier Spielern in einer Expedition.
 
 ### Offene Punkte nach 0.8
 
@@ -95,7 +114,9 @@ Dev-Befehle zusätzlich: `/time 0..1` (Tageszeit), `/weather <art>`.
 
 ## Als Nächstes sinnvoll
 
-1. Spieltest-Runde zu zweit oder dritt über Tailscale: Schwierigkeit, Tempo, Lautstärken und Animationen in Bewegung beurteilen.
-2. Touch-Steuerung (virtueller Stick und Aktionsknöpfe).
-3. Mehr Bewegungsphasen bei Bossen und zusätzliche Rätseltypen (Schiebeblöcke, Spiegel).
-4. Sprachumschaltung (Texte liegen gesammelt in `shared/src/data/`).
+1. Die übrigen Expeditionen und die Grade ab Schwer im Browser durchspielen; Erfahrung je Abschluss und Tempo-Test auf die
+   Expeditionen umstellen (Roadmap 0.10/0.11).
+2. Spieltest-Runde zu zweit oder dritt über Tailscale: Schwierigkeit, Tempo, Lautstärken und Animationen in Bewegung beurteilen.
+3. Touch-Steuerung (virtueller Stick und Aktionsknöpfe).
+4. Mehr Bewegungsphasen bei Bossen und zusätzliche Rätseltypen (Schiebeblöcke, Spiegel).
+5. Sprachumschaltung (Texte liegen gesammelt in `shared/src/data/`).

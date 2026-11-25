@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.0 – Quellwarte und Expeditionen
+
+- Hub `quellwarte` (`shared/src/maps/hubgen.ts`, `server/src/hub/`, `shared/src/data/hubdata.ts`, `client/src/ui/hub.tsx`):
+  eine Instanz für alle, neun Einrichtungen mit serverseitig geprüften Aktionen, Händler mit Tages-/Wochenware,
+  Meisterränge (`CFG.hub.mastery`), Lagerhaus-Regale (`HomeData.rows`), Gasthaus mit vier Stammgästen, fünf Aufträgen und
+  38 Gerüchten, Trophäenhalle, Gruppengesuche. Neue Hauptquest `m_quellwarte`. Lasttest `scripts/load-check.ts --hub`.
+- Expeditionen (`server/src/expedition/*`, `shared/src/data/expeditions.ts`, `shared/src/maps/expedition.ts`,
+  `client/src/ui/expedition.tsx`): deterministischer Abschnitts-Generator mit `validateExpedition`, sieben Expeditionen
+  (eine geheim), Ereignisse, Mini-Bosse, Bossmechaniken (`bossmech.ts`), vier Schwierigkeitsgrade, Freischaltungen,
+  Wochen-Herausforderung, Bereitschaftsprüfung, Instanzen je Gruppe, Wiederverbinden, Abschluss genau einmal je Lauf
+  (`CharData.expRuns`, `CharData.expeditions`), gemeinsame Rückkehr. Belohnungen bei vollem Rucksack in die Lagertruhe.
+  Dauer gemessen mit `scripts/exp-playtest.ts`.
+- Ausrüstung (`shared/src/equip.ts`, `shared/src/rarity.ts`, `server/src/gearfx.ts`, `shared/src/data/upgrade.ts`): zehn Plätze,
+  Überführung alter Stände (`migrateEquip`, `CharData.eqv = 2`), Budget je Platz (`GEAR_BUDGET`), Seltenheit Mythisch,
+  Verbessern +0…+10 ohne Fehlschlag mit Boni bei +3/+6/+9 und Passiven bei +10, Sets mit 2/4/6 Teilen, Puppe im Inventar.
+- Grafik: Quellwarte-Biom, Fassaden, Requisiten und Hub-NPCs, Expeditionsobjekte, Icons der neuen Plätze.
+- HUD: Expeditionsanzeige in der rechten Spalte; die Questverfolgung klappt in Expeditionen ein.
+- Tests: `tests/hub.test.ts`, `tests/expedition.test.ts`, `tests/equipment.test.ts`; Browser-Durchläufe `hub` und `expedition`.
+
 ## 0.8.0 – Feinschliff
 
 - Spieltest mit Spielermodell (`scripts/playtest.ts`, `scripts/playtest/*`): drei Spielertypen, ganze Dungeon- und

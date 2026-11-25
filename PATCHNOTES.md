@@ -3,6 +3,37 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.9.0 – Quellwarte und Expeditionen
+_26.11.2026_
+
+### Die Quellwarte
+- Neu: **Die Quellwarte** – die alte Wache der Hüter, Treffpunkt aller Quellgänger. Erreichbar von jedem Quellstein und durch ein Tor in Quellhain, ohne Kampf.
+- Schmiede, Alchemie, Lagerhaus mit deiner Profil-Truhe (auch ohne Hof, mit kaufbaren Regalen), Fähigkeitenmeister, Trophäenhalle und Gruppenbereich an einem Ort.
+- **Ottmars Ausrüstung:** jeden Tag neue Ware für Klasse und Stufe, dazu ein Stück der Woche.
+- **Meisterränge:** bis zu zwei zusätzliche Ränge für voll ausgebaute Techniken.
+- **Gasthaus „Zum Versiegten Brunnen“:** vier Stammgäste mit eigenen Geschichten, fünf neue Aufträge und ein Gerüchtebrett, das auf Geheimnisse, seltene Wesen und Weltbosse zeigt.
+- **Trophäenhalle** mit Statistik, Bossen, Erfolgen, Bestzeiten der Expeditionen und Vitrinen für deine seltensten Stücke.
+- Gruppengesuche mit Fähnchen über dem Kopf.
+
+### Expeditionen
+- Neu: **sechs große Dungeons** (15–30 Minuten) mit vielen Abschnitten, Geheimgängen, verschlossenen Türen, Fallen, Rätseln (neu: Runenscheiben), Mini-Bossen, einem Ereignis je Expedition und einem Rastplatz vor der Arena.
+- Das **Expeditionsportal** steht mitten auf dem Portalplatz der Quellwarte: Übersicht, empfohlene Stufe, Boss, Belohnungen, Bedingungen und Bestzeiten. Gruppen bis vier Spieler mit Bereitschaftsprüfung; jede Gruppe hat ihre eigene Instanz.
+- Die Dungeon-Eingänge der Welt führen in die Expedition ihrer Region.
+- **Endbosse** mit Phasen bei 60 % und 25 % und je einer Mechanik, die man lernen muss: Knospen, Prismensäulen, Kühlketten, „Halt still“, Tintenfässer, Maelis’ Licht.
+- **Schwierigkeitsgrade** Normal, Schwer, Albtraum und Mythisch – mit neuen Gegnermechaniken, Wut, Zusatztruhen und besserer Beute, nicht nur mehr Leben.
+- **Abschluss** mit Statistik, Bestzeiten, Trophäen und gemeinsamer Rückkehr in die Quellwarte samt Zusammenfassung; „Zur Schmiede“ führt direkt zu Gunda. Jede Belohnung gibt es genau einmal je Lauf – auch bei Verbindungsabbruch.
+- Ist der Rucksack voll, landet die Belohnung in deiner Lagertruhe.
+- **Herausforderung der Woche** und eine geheime Expedition, die man erst finden muss.
+
+### Ausrüstung
+- **Zehn Ausrüstungsplätze:** Hauptwaffe, Zweithand (Schild, Köcher, Foliant/Fokus, Parierdolch), Helm, Brust, Handschuhe, Beine, Schuhe, Amulett und zwei Ringe.
+- Alte Spielstände werden verlustfrei überführt; Borin legt einfache Stücke für die neuen Plätze bei.
+- Neue Seltenheit **„Mythisch“**: nur aus hohen Riss-Stufen, Bossen der Neuen Kreise und Expeditionen auf Albtraum und Mythisch; mit eigenem Rahmen und Lichtstrahl am Boden.
+- **Verbessern ist fair:** jede Stufe gelingt, nichts geht verloren. Bei +3/+6/+9 gibt es eine Eigenschaft, bei +10 eine eigene Wirkung.
+- **Sets haben sechs Teile:** 2 schützen, 4 stärken eine Fähigkeit der eigenen Klasse, 6 schalten eine eigene Wirkung frei.
+- Neue Puppe im Inventar; Tooltips vergleichen mit beiden Ringen und zeigen, was die nächste Verbesserung bringt.
+- Benannte Boss-Stücke für die neuen Plätze; die Händler führen alle Arten.
+
 ## 0.8.0 – Feinschliff
 _25.11.2026_
 
