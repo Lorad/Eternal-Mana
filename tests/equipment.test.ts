@@ -13,6 +13,7 @@ import { AETHER, BOSS_CORE, ECHO_FRAG, ESSENCE } from '../shared/src/data/materi
 import { GEAR_KINDS, RECIPES } from '../shared/src/data/recipes';
 import { riftRarity } from '../shared/src/data/rifts';
 import { diffRarity } from '../shared/src/data/expeditions';
+import { traderStock } from '../shared/src/data/hubdata';
 import { SETS, SET_FULL, SET_LIST, SET_PIECES, setCounts } from '../shared/src/data/sets';
 import { SLOT_KINDS, UP10, UPGRADE_BONUS, upgradeBonus } from '../shared/src/data/upgrade';
 import { compareItem, compareTargets, equippedItems, migrateEquip, normSlot, targetSlot } from '../shared/src/equip';
@@ -311,6 +312,10 @@ describe('Mythisch', () => {
     // Beute ohne festgelegte Art fällt für alle zehn Plätze
     const kinds = new Set<string>(); for (let i = 0; i < 600; i++) kinds.add(slotKind(ITEMS[generateGear(rng, 30, 2, 'magier').base])!);
     expect([...kinds].sort()).toEqual([...SLOT_KINDS].sort());
+    // Händler der Quellwarte: über ein paar Tage alle Arten, nie Mythisch
+    const hub = new Set<string>();
+    for (let d = 0; d < 4; d++) for (const o of traderStock('paladin', 30, 20000 + d, 2857)) { hub.add(slotKind(ITEMS[o.item.base])!); expect(o.item.rarity).toBeLessThan(MYTHIC); expect(canEquip('paladin', ITEMS[o.item.base])).toBe(true); }
+    expect([...hub].sort()).toEqual([...SLOT_KINDS].sort());
   });
   it('Bosstruhe im Neuen Kreis 2 kann Mythisch enthalten, im ersten Durchgang nie', () => {
     const t = sim.join('Mythenjaeger', 'schattenjaeger', 40);

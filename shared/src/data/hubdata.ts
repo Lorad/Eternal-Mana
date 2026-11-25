@@ -10,7 +10,7 @@
 import { CFG } from '../config';
 import type { CharData, ClassId, HomeData, ItemInstance } from '../types';
 import type { Facility } from './hub';
-import { generateGear, itemPrice, rollRarity } from './items';
+import { GEN_KINDS, generateGear, itemPrice, rollRarity } from './items';
 import { ESSENCE, AETHER } from './materials';
 import { SKILLS, type SkillDef } from './skills';
 import { Rng, strHash } from '../util/rng';
@@ -52,10 +52,10 @@ export const traderLevel = (c: CharData) => Math.max(1, Math.min(CFG.player.maxL
  */
 export function traderStock(cls: ClassId, level: number, day: number, week: number): TraderOfferDef[] {
   const C = CFG.hub.trader, out: TraderOfferDef[] = [];
-  const KINDS = ['weapon', 'armor', 'helm', 'accessory'] as const; // danach freie Wahl (auch künftige Ausrüstungsplätze)
+  // 0.9: die Tagesware wandert jeden Tag weiter durch alle Ausrüstungsarten (zehn Plätze; „Mythisch“ gibt es hier nie)
   for (let i = 0; i < C.daily; i++) {
     const rng = new Rng(strHash(`qw:${day}:${cls}:${i}`));
-    const it = generateGear(rng, level, rollRarity(rng, C.weights), cls, KINDS[i]);
+    const it = generateGear(rng, level, rollRarity(rng, C.weights), cls, GEN_KINDS[(day * C.daily + i) % GEN_KINDS.length]);
     it.uid = 'hub';
     out.push({ item: it, price: Math.ceil(itemPrice(it) * C.priceMul) });
   }
