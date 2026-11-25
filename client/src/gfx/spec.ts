@@ -286,6 +286,10 @@ export const ITEM_ICONS = [
   'tro_m_riss10', 'tro_m_riss20', 'tro_m_riss30', 'tro_m_sieben', 'tro_m_ende1', 'tro_m_ende2', 'tro_m_ende3',
   'pet_pilzling', 'buff_ausgeruht',
   'uni_dornenmutter', 'uni_kristallkoloss', 'uni_ignarok', 'uni_ysolde', 'uni_archivar', 'uni_hohlkoenig',
+  // Ausrüstung mit zehn Plätzen (0.9/0.10, icons_gear.ts) und Platzhalter leerer Plätze
+  'gloves_heavy', 'gloves_light', 'gloves_robe', 'legs_heavy', 'legs_light', 'legs_robe', 'boots_heavy', 'boots_light', 'boots_robe',
+  'shield', 'quiver', 'tome', 'focus', 'offdagger',
+  'slot_offhand', 'slot_gloves', 'slot_legs', 'slot_boots', 'slot_amulet', 'slot_ring',
 ] as const;
 
 /**
