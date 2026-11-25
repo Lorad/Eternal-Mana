@@ -23,6 +23,8 @@ import { HOME_AT } from '../../shared/src/data/recipes';
 import { HOME_ID } from '../../shared/src/data/home';
 import { Home } from './home';
 import { Hub } from './hub';
+import { Expedition } from './expedition';
+import { EXP_CFG } from '../../shared/src/data/expeditions';
 import { Rift } from './rift';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
@@ -117,6 +119,7 @@ export class Game {
   rehome(p: Player) {
     const cur = p.zone;
     if (cur.rift || !this.players.has(p.charId)) return;
+    if (Expedition.rehome(this, p)) return; // 0.9: Expeditionen sind Instanzen ihrer Gruppe
     if (Home.rehome(this, p)) return; // 0.7: Höfe sind Instanzen ihres Besitzers, kein Teil der Welt eines Kreises
     const want = this.zone(cur.id, this.worldKreis(p));
     if (want !== cur) this.moveTo(p, want, cur.def.kind === 'dungeon' ? want.map.start : { x: p.x, y: p.y });
@@ -127,7 +130,7 @@ export class Game {
     for (const [id, z] of this.zones) {
       if (z.players.size) z.update(dt);
       // leere Dungeons, Riss-Instanzen und Welten höherer Kreise werden nach einer Weile verworfen und bei Bedarf frisch erzeugt
-      else if ((z.def.kind === 'dungeon' || z.key !== z.id) && this.now - z.emptySince > CFG.world.dungeonResetSec) this.zones.delete(id);
+      else if ((z.def.kind === 'dungeon' || z.key !== z.id) && this.now - z.emptySince > (z.exp && !z.exp.returned ? EXP_CFG.emptySec : CFG.world.dungeonResetSec)) this.zones.delete(id); // 0.9: Expeditionen warten länger (Wiederverbindung)
     }
     // getrennte Spieler nach Schonfrist entfernen
     for (const p of this.players.values()) if (p.linkdead && this.now - p.linkdeadAt > CFG.net.reconnectGraceMs / 1000) this.removePlayer(p, true);
@@ -246,6 +249,7 @@ export class Game {
       case 'rift': case 'quell': case 'kreis': case 'attune': case 'title': return handleEndgame(this, p, m);
       case 'home': return Home.message(this, p, m);
       case 'hub': return Hub.message(this, p, m); // 0.9: Quellwarte
+      case 'exp': return Expedition.message(this, p, m);
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': case 'trade': case 'qShare': case 'qShareAns': case 'inspect': return Social.message(this, p, m);
@@ -275,6 +279,7 @@ export class Game {
       p.buffsDirty = true;
       World.sendTo(p);
       Home.sendTo(this, p);
+      Expedition.sendTo(this, p); // 0.9: laufender Lauf, Bereitschaftsprüfung
       this.sysChat(`${p.name} ist wieder da.`);
       Social.onReconnect(this, p);
       break;
@@ -304,10 +309,11 @@ export class Game {
     const p = new Player(acc.id, charId, char, msg => this.send(s, msg));
     s.player = p;
     this.players.set(charId, p);
-    const z = Home.entry(this, p) ?? this.zone(char.zone, kreisOf(char)); // 0.7: wer auf einem Hof gespeichert wurde, erscheint auf dem eigenen
+    const xe = Expedition.entry(this, p); // 0.9: zurück in den laufenden Lauf – oder zum Portal; aus alten Dungeons an deren Eingang
+    const z = xe?.zone ?? Home.entry(this, p) ?? this.zone(char.zone, kreisOf(char)); // 0.7: wer auf einem Hof gespeichert wurde, erscheint auf dem eigenen
     const fresh = char.x === 0 && char.y === 0;
-    const useStart = fresh || z.def.kind === 'dungeon';
-    z.addPlayer(p, useStart ? z.map.start.x : char.x, useStart ? z.map.start.y : char.y);
+    const useStart = !xe && (fresh || z.def.kind === 'dungeon');
+    z.addPlayer(p, xe ? xe.pos.x : useStart ? z.map.start.x : char.x, xe ? xe.pos.y : useStart ? z.map.start.y : char.y);
     restoreTimed(p);
     if (fresh) char.respawn = { zone: z.id, x: z.map.start.x, y: z.map.start.y };
     p.send({ t: 'entered', char, charId, init: z.initFor(p) });
@@ -317,6 +323,7 @@ export class Game {
     if (!char.flags.intro) { char.flags.intro = 1; this.story(p, 'intro'); }
     this.sysChat(`${p.name} betritt die Welt.`);
     Social.onEnter(this, p);
+    if (z.exp) Expedition.sendTo(this, p);
     this.sendOnline();
   }
 
@@ -347,6 +354,7 @@ export class Game {
     p.iframesUntil = this.now + CFG.player.respawnInvuln;
     const cur = p.zone;
     if (cur.rift) Rift.respawn(this, p);
+    else if (cur.exp) Expedition.respawn(this, p); // 0.9: am Rastplatz der Expedition oder am Eingang
     else if (cur.def.kind === 'dungeon') this.moveTo(p, cur, cur.map.start);
     else {
       const r = p.char.respawn;
@@ -421,6 +429,7 @@ export class Game {
     else if (World.dev(this, p, cmd, a)) { /* Lebendige Welt: server/src/world/index.ts */ }
     else if (Social.dev(this, p, cmd, a)) { /* Gemeinsam: server/src/social/index.ts */ }
     else if (Hub.dev(this, p, cmd)) { /* Quellwarte: /warte */ }
+    else if (Expedition.dev(this, p, cmd, a)) { /* Expeditionen: /exp id [schwierigkeit], /expgo abschnitt, /expsieg */ }
     else if (Home.dev(this, p, cmd, a)) { /* Zuhause: server/src/home/index.ts – /hof [stufe], /begleiter id|alle, /gewand, /trophaeen, /bestiarium [n] */ }
     else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /rissmod id [dungeon] [stufe], /quell n, /echo n, /kreis [n], /pruefung · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an · Gemeinsam: /zu name [dx] [dy]');
   }

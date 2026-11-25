@@ -83,7 +83,7 @@ export function riftHome(): { zone: string; x: number; y: number } {
   return stoneCache;
 }
 function nearStone(p: Player): Obj | undefined {
-  for (const o of p.zone.objs.values()) if (o.type === 'riftstone' && dist(o, p) <= CFG.rift.stoneRadius) return o;
+  for (const o of p.zone.objs.values()) if ((o.type === 'riftstone' || (o.type === 'xobj' && o.props?.kind === 'portal')) && dist(o, p) <= CFG.rift.stoneRadius) return o; // 0.9: auch am Expeditionsportal
   return undefined;
 }
 

@@ -1,6 +1,7 @@
 import type { BiomeId } from '../maps/tiles';
 import { HUB_BIOME } from './hubart';
 import { HUB_ZONE as HUB_ID } from './hub';
+import { EXPEDITION_ZONES } from './expeditions';
 
 export interface Poi {
   id: string;
@@ -56,6 +57,8 @@ export interface ZoneDef {
   gx?: number; gy?: number; maxRooms?: number;
   puzzle?: 'torches' | 'levers' | 'plates';
   boss?: string;
+  /** 0.9: Expedition (Kartengenerator shared/src/maps/expedition.ts, Plan in data/expeditions.ts) */
+  exp?: string;
   // ---- beide
   mobs: [string, number][];
   /** Position auf der Weltkarte (0..100) */
@@ -332,7 +335,7 @@ export const HUB_ZONE_DEF: ZoneDef = Z({
   ],
   mobs: [], mapPos: [47, 50],
 });
-export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE, [HUB_ZONE_DEF.id]: HUB_ZONE_DEF };
+export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE, [HUB_ZONE_DEF.id]: HUB_ZONE_DEF, ...Object.fromEntries(EXPEDITION_ZONES.map(z => [z.id, z])) }; // 0.9: Quellwarte und Expeditionen wie der Hof außerhalb von ZONE_LIST
 export const OVERWORLD_IDS = ZONE_LIST.filter(z => z.kind === 'overworld').map(z => z.id);
 /** Verbindungen für die Weltkarte */
 export const WORLD_LINKS: [string, string][] = [

@@ -3,6 +3,7 @@
  * Schutz vor beschädigten Spielständen: Prüfsummen je Charakter, rollierende Charakter-Snapshots,
  * WAL-Journal, Integritätsprüfung beim Start und automatische Datei-Backups.
  */
+import { sanitizeExp } from '../../shared/src/data/expeditions';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -56,6 +57,7 @@ export function sanitizeChar(raw: any): CharData | null {
     if (c.timed && typeof c.timed === 'object') for (const k of ['food', 'elixir']) { const v = (c.timed as any)[k]; if (Array.isArray(v) && ITEMS[v[0]]?.use?.buff?.slot === k) t[k] = [v[0], num(v[1], 0, 0, 7200)]; }
     c.timed = t;
   }
+  sanitizeExp(c); // 0.9: Expeditionen – Fortschritt und Lauf-Schlüssel
   // 0.5: Endspiel – alte Stände haben diese Felder nicht und bekommen Standardwerte; beschädigte Werte werden begrenzt
   {
     const r: any = c.rift && typeof c.rift === 'object' ? c.rift : {}, best: Record<string, [number, number]> = {};

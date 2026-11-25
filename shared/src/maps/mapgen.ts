@@ -8,6 +8,7 @@ import { Rng, fbm2, hash2, noise2 } from '../util/rng';
 import { genHome } from './homegen';
 import { genHub } from './hubgen';
 import { placeStory } from './storygen';
+import { genExpedition, type ExpMapInfo } from './expedition';
 import { T, TILE, isWalkableTile, type BiomeId } from './tiles';
 
 export interface DecorSpawn { f: string; x: number; y: number }
@@ -36,6 +37,8 @@ export interface GameMap {
   bossRoom?: Room;
   /** Benannte Orte für Minimap/Weltkarte */
   labels: { x: number; y: number; name: string }[];
+  /** 0.9: Abschnitte, Mini-Bosse, Rätsel und Ereignisse einer Expedition (shared/src/maps/expedition.ts) */
+  exp?: ExpMapInfo;
 }
 
 const cache = new Map<string, GameMap>();
@@ -44,7 +47,7 @@ export function getMap(zoneId: string): GameMap {
   if (!m) {
     const def = ZONES[zoneId];
     if (!def) throw new Error('Unbekannte Zone: ' + zoneId);
-    m = def.kind === 'home' ? genHome(def) : def.kind === 'hub' ? genHub(def) : def.kind === 'dungeon' ? genDungeon(def) : genOverworld(def);
+    m = def.kind === 'home' ? genHome(def) : def.kind === 'hub' ? genHub(def) : def.exp ? genExpedition(def) : def.kind === 'dungeon' ? genDungeon(def) : genOverworld(def);
     cache.set(zoneId, m);
   }
   return m;

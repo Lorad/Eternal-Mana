@@ -7,6 +7,7 @@ import { bus } from '../state/bus';
 import { live } from '../state/live';
 import { adoptServerSettings, getToken, setServerSync, settings, updateSettings } from '../state/settings';
 import { pushChat, pushToast, store, type UiState } from '../state/store';
+import { onExpMsg } from '../ui/exp-net';
 
 let ws: WebSocket | null = null;
 let wantOpen = false;
@@ -133,6 +134,7 @@ function handle(m: ServerMsg) {
     case 'cine': bus.emit('cine:play', m.id); break;
     case 'lore': store.set({ lore: { id: m.id, first: !!m.first }, sign: null, prompt: null }); break;
     case 'rift': store.set({ rift: m.r, riftAt: performance.now() }); break; // Endspiel (0.5)
+    case 'exp': onExpMsg(m); break; // Expeditionen (0.9)
     // ---- Lebendige Welt (0.6)
     case 'world': store.set({ world: m.w, worldAt: performance.now(), ...(st.wshop?.kind === 'trader' && !m.w.trader ? { wshop: null } : {}) }); break;
     case 'encdlg': store.set(m.d ? { enc: m.d, dialog: null, panel: null, prompt: null } : { enc: null }); break;

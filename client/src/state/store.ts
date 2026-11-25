@@ -1,6 +1,6 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, HubStock, LfgEntry, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, HubStock, LfgEntry, ExpLobbyInfo, ExpResult, ExpRunInfo, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
 import { bus } from './bus';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf' | 'sammlung';
@@ -113,6 +113,17 @@ export interface UiState {
   /** Angebot des Ausrüstungshändlers (vom Server) und Gruppengesuche am Brett (`lfgAt` = performance.now() beim Empfang) */
   hubStock: HubStock | null;
   lfg: LfgEntry[]; lfgAt: number;
+  // ---- Expeditionen (0.9; Oberfläche: ui/expedition.tsx)
+  /** Auswahlfenster am Portal offen (`stone` = am Portal geöffnet) */
+  expWin: { at: boolean } | null;
+  expLobby: ExpLobbyInfo | null;
+  /** laufender Lauf (HUD) und Zeitpunkt (performance.now), zu dem `t` galt */
+  expRun: ExpRunInfo | null; expRunAt: number;
+  /** Abschlussbildschirm (in der Belohnungskammer) und Zusammenfassung nach der Rückkehr */
+  expResult: ExpResult | null; expSummary: ExpResult | null;
+  /** laufende Instanz der eigenen Gruppe · Herausforderung der Woche */
+  expParty: { exp: string; diff: string; n: number } | null;
+  expWeekly: { week: string; exp: string; diff: string; mods: string[]; done: boolean } | null;
 }
 
 const state: UiState = {
@@ -127,6 +138,7 @@ const state: UiState = {
   home: null, heim: null, hof: null, sammlungTab: 'uebersicht',
   trackerOpen: false, hint: null, helpTab: 'start', loadFail: null, fatal: null, stale: null,
   hubWin: null, hubStock: null, lfg: [], lfgAt: 0,
+  expWin: null, expLobby: null, expRun: null, expRunAt: 0, expResult: null, expSummary: null, expParty: null, expWeekly: null,
 };
 
 const listeners = new Set<() => void>();
@@ -194,6 +206,9 @@ export function closeTop(): boolean {
   if (state.hof) { store.set({ hof: null }); return true; }
   if (state.hubWin) { store.set({ hubWin: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
+  if (state.expResult) { store.set({ expResult: null }); return true; }
+  if (state.expWin) { store.set({ expWin: null }); return true; }
+  if (state.expSummary) { store.set({ expSummary: null }); return true; }
   if (state.endgame) { store.set({ endgame: null }); return true; }
   if (state.dialog) { store.set({ dialog: null, dlgNode: null }); return true; }
   if (state.panel) { store.set({ panel: null }); return true; }
@@ -202,5 +217,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.hof || state.trade || state.inspect || state.hubWin);
+  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.hof || state.trade || state.inspect || state.hubWin || state.expWin || state.expResult);
 }
