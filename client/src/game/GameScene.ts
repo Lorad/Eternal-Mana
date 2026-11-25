@@ -64,7 +64,7 @@ const LIGHTS: Record<string, [number, number, number, number]> = {
   lantern_post: [84, 0xffd08a, 0.95, 0.04], nomad_brazier: [96, 0xffa850, 1, 0.07], fire_geyser: [60, 0xff8030, 0.8, 0.08], magma_crack: [30, 0xff6a20, 0.5, 0.03], forge_ruin: [50, 0xff8040, 0.5, 0.04],
   ice_crystal: [40, 0xa0e8ff, 0.5, 0], lantern_frost: [84, 0xffd8a0, 0.95, 0.04], cabin: [70, 0xffcf90, 0.6, 0.02], brazier_blue: [84, 0x70b0ff, 0.95, 0.06], obelisk: [50, 0xffe090, 0.6, 0], floating_rune: [34, 0x80c8ff, 0.6, 0],
   void_rift: [60, 0xc070ff, 0.8, 0.04], ghost_flower: [24, 0xd8c8ff, 0.4, 0], last_light: [120, 0xfff0c0, 1, 0.03], eye_stalk: [0, 0, 0, 0], house_a: [60, 0xffd8a0, 0.5, 0], house_b: [60, 0xffd8a0, 0.5, 0], house_c: [60, 0xffd8a0, 0.5, 0],
-  hueterschrein: [64, 0xfff2c8, 0.75, 0.02], riss_stein: [66, 0x9a90ff, 0.8, 0.06], mana_surge: [84, 0x70ffe0, 0.9, 0.05], star_shard: [44, 0xfff0c8, 0.65, 0.04], lore_stone: [22, 0x70ffe0, 0.35, 0],
+  hueterschrein: [64, 0xfff2c8, 0.75, 0.02], riss_stein: [66, 0x9a90ff, 0.8, 0.06], mana_surge: [84, 0x70ffe0, 0.9, 0.05], star_shard: [44, 0xfff0c8, 0.65, 0.04], lore_stone: [24, 0xfff0c8, 0.4, 0],
   station_cook: [82, 0xffb060, 0.95, 0.07], station_enchant: [56, 0x80c0ff, 0.7, 0.03], station_alchemy: [30, 0x70ffd8, 0.4, 0.02],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]

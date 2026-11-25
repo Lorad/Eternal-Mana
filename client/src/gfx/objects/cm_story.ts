@@ -136,20 +136,23 @@ function loreScroll(p: Px): void {
   inkOutline(p);
   loreGlint(p, 14, 1);
 }
+/** warmer, heller Stein des Gedenksteins – bewusst nicht das kühle Grau der Grabsteine */
+const MEMO: Ramp = [mix(S[0], W[0], 0.45), mix(S[1], P.tan[0], 0.4), mix(S[2], P.tan[2], 0.42), mix(S[3], P.cream[2], 0.5), mix(S[4], P.cream[4], 0.55)];
 function loreStone(p: Px): void {
-  const R = SHRINE;
-  p.poly([[4, 19], [3, 11], [5, 5], [8, 2], [11, 2], [14, 5], [15, 11], [14, 19]], MARK);
-  stoneFill(p, R, 5, MARK);
-  for (let x = 4; x < 15; x++) if (p.get(x, 18) >>> 24) p.set(x, 18, R[x > 11 ? 0 : 1]);
-  // gemeißelte Zeilen, in denen noch Quelllicht steht
-  glyph(p, 5, 5, 2, TL[3], TL[4]); glyph(p, 11, 5, 5, TL[3], TL[4]);
-  for (const [y, a, b] of [[12, 5, 13], [14, 6, 12], [16, 5, 11]] as const) for (let x = a; x < b; x++) if (x % 3 !== 2) { p.set(x, y, R[0]); if (p.get(x, y + 1) !== R[0]) p.set(x, y + 1, R[3]); }
-  p.px([9, 6, 9, 8], Y[3]); p.set(9, 7, WGOLD);
-  p.line(12, 3, 13, 6, R[0]); p.px([6, 17, 12, 12], R[1]);
-  part(p, (l) => { boulder(l, 3, 20, 4, 3, { ramp: R, seed: 3, facets: 2, cracks: 0 }); boulder(l, 15, 20, 4, 3, { ramp: R, seed: 5, facets: 2, cracks: 0 }); });
+  // Gedenkstein: schlanker Obelisk mit vergoldeter Spitze auf zwei Sockelplatten; die Zeilen sind vergoldet und halten noch Licht
+  const R = MEMO;
+  part(p, (l) => { slab(l, 1, 16, 16, 3, 1, 3, R); slab(l, 3, 14, 12, 3, 1, 5, R); });
+  part(p, (l) => {
+    l.poly([[5, 15], [6, 5], [9.5, 0], [13, 5], [14, 15]], MARK); stoneFill(l, R, 5, MARK);
+    for (let y = 1; y < 15; y++) { let a = 0; while (a < 18 && !(l.get(a, y) >>> 24)) a++; let b = 17; while (b > 0 && !(l.get(b, y) >>> 24)) b--; if (a < b) { l.set(a, y, R[4]); l.set(b, y, R[1]); } }
+    l.rect(6, 5, 7, 1, R[1]); l.px([9, 0, 9, 1, 8, 2], WGOLD); l.px([10, 1, 10, 2, 9, 2, 11, 3, 8, 3], Y[3]); l.px([10, 3, 11, 4, 12, 4], Y[2]); l.px([9, 3, 8, 4, 7, 4], Y[4]);
+    // vier vergoldete Zeilen
+    for (const [y, a, b, hi] of [[7, 7, 11, 8], [9, 7, 12, 10], [11, 7, 11, 7], [13, 7, 12, 9]] as const) for (let x = a; x < b; x++) if (x % 3 !== 0 || y === 11) { l.set(x, y, x === hi ? WGOLD : Y[3]); l.set(x, y - 1, R[1]); }
+  });
+  p.px([2, 15, 3, 15, 2, 14], P.green[2]); p.set(3, 14, P.green[3]); p.px([14, 17, 15, 16], P.green[2]);
   inkOutline(p);
-  glow(p, 9.5, 9, 6, TL[3], 34, true);
-  loreGlint(p, 15, 2);
+  glow(p, 9.5, 9, 6.5, WGOLD, 30, true);
+  loreGlint(p, 14, 2);
 }
 
 // ---------------------------------------------------------------- Riss-Stein
@@ -260,19 +263,28 @@ function manaSurge(p: Px, f: number): void {
 /** Sternenglas (6): nachtblauer Kern → warmes Weiß */
 const STAR: Ramp = [P.blue[0], mix(P.blue[1], P.violet[2], 0.5), mix(P.blue[3], P.violet[3], 0.4), mix(P.ice[3], P.violet[4], 0.25), mix(Y[4], WHITE, 0.6), WHITE];
 function starShard(p: Px, f: number): void {
-  const A = P.ash;
-  // kleiner Einschlagkrater: versengter Ring, aufgeworfene Brocken
+  // Schwebender Sternsplitter: vierzackiger Stern mit kurzen Zwischenzacken, die rechte Zacke abgebrochen – wie das Icon
+  // `mat_star`. Kein Kristallhaufen und kein Krater: Die Engine lässt das ganze Bild auf und ab schweben.
+  const cx = 9, cy = 8.5, pulse = f === 1 ? 1 : 0;
+  const pts: Array<[number, number]> = [];
+  for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 4, r = i % 2 ? 2.7 : i === 0 ? 8 : i === 4 ? 7.4 : i === 2 ? 3.6 : 6.4; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
   part(p, (l) => {
-    l.ell(9, 16.5, 8, 2.8, A[2]); l.ell(9, 16.6, 6, 1.9, A[0]); l.ell(8.5, 16.2, 4.4, 1.2, A[1]);
-    for (const [x, y, c] of [[1, 15, 4], [3, 14, 3], [14, 14, 3], [16, 16, 2], [6, 18, 2], [12, 18, 1]] as const) { l.rect(x, y, 2, 2, A[c]); l.set(x, y, A[Math.min(4, c + 1)]); }
+    for (let i = 0; i < 8; i++) {
+      const a = pts[i], b = pts[(i + 1) % 8], mx = (a[0] + b[0]) / 2 - cx, my = (a[1] + b[1]) / 2 - cy, lit = -(mx * 0.42 + my * 0.58) / 3.4;
+      l.poly([[cx, cy], a, b], STAR[clamp(Math.round(2 + lit * 1.5 + (i % 2 ? -0.6 : 0.6)), 0, 4)]);
+    }
+    // Grate entlang der Zacken, heller Kern
+    l.line(cx, cy, cx, 1, WHITE); l.line(cx, cy, 3, cy, STAR[4]); l.line(cx, cy, cx, 15, STAR[3]); l.line(cx, cy, 12, cy, STAR[3]);
+    l.rect(8, 7, 2, 2 + pulse, WHITE); l.px([7, 8, 10, 8], STAR[4]);
+    // Bruchkante rechts und der abgesprungene Splitter
+    l.px([13, 8, 13, 9], STAR[1]);
   });
-  part(p, (l) => { prism(l, 8.5, 17, 11.5, 4, 3, STAR, { seed: 3, lift: f === 1 ? 1 : 0, skew: 0.5 }); prism(l, 6, 17, 3, 10, 1.6, STAR, { seed: 5, lift: f === 3 ? 1 : 0 }); prism(l, 12, 17, 15, 12, 1.3, STAR, { seed: 7 }); });
-  glow(p, 9.5, 11, 9, WGOLD, 26 + (f & 1) * 10); glow(p, 10, 9, 4.5, WHITE, 30 + (f === 1 ? 26 : 0), true);
-  // Funkeln wandert, Sternenstaub steigt auf
-  const tw: Array<[number, number, boolean]> = [[11, 4, false], [11, 4, true], [4, 10, false], [14, 8, true]];
+  part(p, (l) => { l.rect(15, 10 + (f === 3 ? 1 : 0), 2, 2, STAR[3]); l.set(15, 10 + (f === 3 ? 1 : 0), STAR[5]); });
+  glow(p, cx, cy, 9, WGOLD, 26 + (f & 1) * 10); glow(p, cx, cy, 4.5, WHITE, 30 + (f === 1 ? 26 : 0), true);
+  // Funkeln wandert, Sternenstaub rieselt nach unten
+  const tw: Array<[number, number, boolean]> = [[13, 3, false], [13, 3, true], [4, 13, false], [15, 15, true]];
   twinkle(p, tw[f][0], tw[f][1], WGOLD, tw[f][2]);
-  for (let j = 0; j < 4; j++) { const t = ((f + j) % 4) / 4, x = [3, 15, 7, 13][j], y = Math.round(9 - t * 8 + j); if (y > 0) p.blend(x, y, alpha(j % 2 ? WGOLD : P.ice[4], Math.round(220 * (1 - t)))); }
-  p.px([7, 16, 11, 17], alpha(WGOLD, 200));
+  for (let j = 0; j < 4; j++) { const t = ((f + j) % 4) / 4, x = [6, 11, 8, 12][j], y = Math.round(15 + t * 4); if (y < 20) p.blend(x, y, alpha(j % 2 ? WGOLD : P.ice[4], Math.round(230 * (1 - t)))); }
 }
 
 // ---------------------------------------------------------------- Grabstelle, vergrabene Truhe

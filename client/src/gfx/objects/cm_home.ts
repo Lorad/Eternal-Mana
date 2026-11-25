@@ -40,37 +40,39 @@ function flask(l: Px, cx: number, cy: number, r: number, neck: number, liq: Ramp
 
 // ---------------------------------------------------------------- Alchemietisch
 function stationAlchemy(p: Px): void {
+  // Drei klar getrennte Gruppen statt einer vollgestellten Mitte: links der große Rundkolben, in der Mitte die Destille
+  // über blauer Flamme (frei stehend), rechts Auffangglas und hohe Flasche; das Glasrohr verbindet Mitte und rechts.
   // unter dem Tisch: Kiste und Krug im Schatten
   part(p, (l) => { l.rect(7, 23, 8, 6, MARK); planks(l, 7, 23, 8, 6, { ramp: DWOOD, pw: 3, seed: 3, mark: MARK }); l.rect(7, 23, 8, 1, DWOOD[3]); l.px([9, 22, 12, 22], P.ice[3]); l.px([9, 21, 12, 21], P.tan[2]); });
   part(p, (l) => { l.ball(21, 26, 3.4, 3.2, TERRA, 1, 4); l.rect(20, 21, 3, 2, TERRA[2]); l.rect(19, 21, 5, 1, TERRA[3]); });
   shadeArea(p, (_x, y) => y >= 21, SHADE, 0.32);
   tableFrame(p, 1, 14, 30, 6, 8, 13);
-  // Fleck und Brandspuren auf der Platte
-  p.px([12, 17, 13, 17, 13, 18], mix(P.green[2], W[2], 0.5)); p.px([24, 18, 25, 18], W[0]);
-  // links: großer Rundkolben mit rotem Trank
+  // Fleck und Brandspur auf der Platte
+  p.px([10, 17, 11, 17, 11, 18], mix(P.green[2], W[2], 0.5)); p.px([21, 18, 22, 18], W[0]);
+  // links: großer Rundkolben mit rotem Trank auf einem Ring
   part(p, (l) => { flask(l, 6.5, 11, 4.4, 3, P.red, 0.62); l.rect(4, 15, 5, 1, I[2]); l.set(4, 15, I[3]); });
-  // Mitte: Destille auf Dreibein über blauer Flamme, Glasrohr zum Auffanggläschen
+  // Glasrohr von der Destille hinüber zum Auffangglas (liegt hinter beiden)
+  for (const [x, y] of bez([17, 2], [24, 0], [24, 9], 14)) { p.set(x, y, P.ice[3]); }
+  p.px([19, 1, 22, 2], P.ice[4]);
+  // Mitte: Destille auf Dreibein, darunter der Brenner mit blauer Flamme
   part(p, (l) => {
-    l.rect(13, 12, 8, 1, I[2]); l.set(13, 12, I[4]); l.line(13, 13, 12, 17, I[1]); l.line(20, 13, 21, 17, I[1]); l.line(17, 13, 17, 15, I[0]);
-    l.rect(15, 16, 4, 2, I[1]); l.rect(15, 16, 4, 1, I[3]);
+    l.rect(13, 12, 8, 1, I[2]); l.set(13, 12, I[4]); l.line(13, 13, 12, 17, I[1]); l.line(20, 13, 21, 17, I[1]);
+    l.rect(15, 17, 4, 2, I[1]); l.rect(15, 17, 4, 1, I[3]);
   });
-  p.px([16, 15, 17, 15], P.blue[3]); p.px([16, 14, 17, 13], P.ice[4]); p.set(17, 14, WHITE); p.set(16, 13, P.blue[2]);
+  p.px([16, 16, 17, 16], P.blue[3]); p.px([16, 15, 17, 14], P.ice[4]); p.set(17, 15, WHITE); p.set(16, 14, P.blue[2]);
   part(p, (l) => {
     flask(l, 17, 8, 3.6, 0, TEALC, 0.7, false);
     l.px([15, 7, 18, 8], WHITE); l.set(17, 6, TL[4]);
     l.rect(16, 2, 2, 3, P.ice[2]); l.rect(16, 2, 1, 3, P.ice[4]); l.rect(15, 2, 4, 1, P.ice[3]);
   });
-  part(p, (l) => { l.rect(23, 11, 4, 5, P.ice[2]); l.rect(23, 13, 4, 3, P.green[3]); l.rect(23, 13, 4, 1, P.green[4]); l.rect(26, 13, 1, 3, P.green[2]); l.rect(23, 11, 1, 2, P.ice[4]); l.rect(22, 10, 6, 1, P.ice[3]); });
-  // rechts: hohe violette Flasche, Reagenzgläschen
+  // rechts: Auffangglas mit grünem Destillat, hohe violette Flasche
+  part(p, (l) => { l.rect(23, 10, 4, 6, P.ice[2]); l.rect(23, 13, 4, 3, P.green[3]); l.rect(23, 13, 4, 1, P.green[4]); l.rect(26, 13, 1, 3, P.green[2]); l.rect(23, 10, 1, 3, P.ice[4]); l.rect(22, 9, 6, 1, P.ice[3]); });
   part(p, (l) => {
     l.rect(28, 7, 3, 9, P.violet[2]); l.rect(28, 7, 1, 9, P.violet[4]); l.rect(30, 8, 1, 8, P.violet[1]); l.rect(28, 5, 3, 2, P.ice[2]); l.set(28, 5, P.ice[4]); l.rect(29, 3, 2, 2, P.tan[2]); l.set(29, 3, P.tan[4]);
     l.rect(28, 10, 3, 2, C[3]); l.set(29, 11, P.violet[1]);
   });
-  // vorn: Mörser mit Stößel, Kräuterbündel
-  part(p, (l) => { l.poly([[9, 15], [15, 15], [14, 19], [10, 19]], S[2]); l.rect(9, 15, 6, 1, S[4]); l.rect(10, 16, 1, 3, S[3]); l.rect(13, 16, 1, 3, S[1]); l.line(13, 14, 16, 10, W[3]); l.set(16, 10, W[4]); l.px([11, 15, 12, 15], P.green[3]); });
-  p.px([3, 18, 4, 17, 5, 18, 6, 17], P.green[3]); p.px([4, 18, 6, 18, 7, 17], P.green[2]); p.px([2, 18, 5, 17], P.green[4]); p.px([7, 18, 8, 18], P.tan[2]);
   inkOutline(p);
-  glow(p, 17, 8, 6, TL[3], 40); glow(p, 16.5, 14, 3, P.blue[3], 70, true); p.set(17, 0, alpha(TL[4], 220)); p.set(15, 0, alpha(TL[4], 120)); p.set(19, 1, alpha(WHITE, 160));
+  glow(p, 17, 8, 6, TL[3], 40); glow(p, 16.5, 15, 3, P.blue[3], 70, true); p.set(17, 0, alpha(TL[4], 220)); p.set(15, 0, alpha(TL[4], 120)); p.set(19, 1, alpha(WHITE, 160));
 }
 
 // ---------------------------------------------------------------- Kochstelle
