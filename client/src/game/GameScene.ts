@@ -7,7 +7,7 @@
  * 9000 Lichtkarte (multiplizierend) · 9400+ Beschriftungen und Schadenszahlen.
  */
 import Phaser from 'phaser';
-import { moveCircle } from '../../../shared/src/collision';
+import { advanceSelf, frameSeconds } from './motion';
 import { CFG, ELEMENT_COLOR } from '../../../shared/src/config';
 import { CLASSES } from '../../../shared/src/data/classes';
 import { ENEMIES } from '../../../shared/src/data/enemies';
@@ -109,7 +109,7 @@ export class GameScene extends Phaser.Scene {
   private epoch = 0;
   private stats!: Derived;
   private statsFor: CharData | null = null;
-  private rollUntil = 0; private rollDir = 0; private dodgeReady = 0; private atkReady = 0; private combo = 0; private comboAt = 0;
+  private rollFrom = 0; private rollUntil = 0; private rollDir = 0; private frameAt = 0; private dodgeReady = 0; private atkReady = 0; private combo = 0; private comboAt = 0;
   private lastSend = 0; private sentMoving = false; private sentX = 0; private sentY = 0; private sentF = 0;
   private moveLockUntil = 0; private stepAt = 0; private dustAt = 0; private stepDist = 0; private stepSide = 1;
   private timeOffset: number | null = null;
@@ -146,7 +146,7 @@ export class GameScene extends Phaser.Scene {
     this.players.clear(); this.mobs.clear(); this.objs.clear(); this.drops.clear(); this.projs.clear(); this.zfx.clear();
     this.animDecor = []; this.decorShadows = []; this.fadeDecor = []; this.staticLights = []; this.flashes = []; this.smokeSpots = []; this.dying = [];
     this.blocked.clear(); this.frameCounts.clear(); this.target = null; this.timeOffset = null; this.markerChar = null; this.sunKey = ''; this.liquidFrame = -1;
-    this.digView = null; this.digKey = ''; this.sleepAt = 0;
+    this.digView = null; this.digKey = ''; this.sleepAt = 0; this.frameAt = 0;
     this.objTex = this.textures.get('obj');
     this.fx = new Fx(this);
     this.lighting = new Lighting(this);
@@ -1071,8 +1071,10 @@ export class GameScene extends Phaser.Scene {
     pollInput(dtMs);
     if (!this.ready) return;
     const now = performance.now();
-    const dt = Math.min(0.05, dtMs / 1000);
-    if (now >= this.hitStopUntil) this.animClock += Math.min(50, dtMs);
+    // 0.8: echte vergangene Zeit statt eines 50-ms-Deckels – auch unter 20 Bildern pro Sekunde läuft alles in Echtzeit (motion.ts)
+    const dt = frameSeconds(now, this.frameAt);
+    this.frameAt = now;
+    if (now >= this.hitStopUntil) this.animClock += dt * 1000;
     const st = store.state;
     live.serverNow = () => performance.now() + (this.timeOffset ?? 0);
     this.updateSun();
@@ -1176,7 +1178,7 @@ export class GameScene extends Phaser.Scene {
       if (ml > 0.1) this.aim = Math.atan2(mv.y, mv.x);
       if (!blocked && input.pressed('dodge') && now >= this.dodgeReady && now >= this.rollUntil) {
         this.rollDir = ml > 0.1 ? Math.atan2(mv.y, mv.x) : store.state.inputMode === 'kbm' ? this.aimInfo().ang : this.aim;
-        this.rollUntil = now + CFG.player.dodgeDuration * 1000;
+        this.rollFrom = now; this.rollUntil = now + CFG.player.dodgeDuration * 1000;
         this.dodgeReady = now + stats.dodgeCd * 1000;
         this.moveLockUntil = 0;
         net.send({ t: 'dodge', ang: this.rollDir });
@@ -1186,17 +1188,16 @@ export class GameScene extends Phaser.Scene {
         const until = this.rollUntil;
         this.fx.play(this.fx.pick('dodge_trail'), me.x, me.y - 9, { rot: this.rollDir, tint: 0xffffff, alpha: 0.6, fps: 16, follow: () => (performance.now() < until ? { x: this.me.x - Math.cos(this.rollDir) * 10, y: this.me.y - 9 } : null) }, this.animClock);
       }
-      let vx = 0, vy = 0;
-      let speed = me.flags & STATUS_BIT.root ? 0 : stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
-      if (now < this.rollUntil) { speed *= CFG.player.dodgeSpeedMul; vx = Math.cos(this.rollDir) * speed; vy = Math.sin(this.rollDir) * speed; }
-      else if (ml > 0.1 && now >= this.moveLockUntil) { vx = mv.x * speed; vy = mv.y * speed; slowGait = ml < 0.6 || !!(me.flags & STATUS_BIT.slow); }
-      if (vx || vy) {
-        const r = moveCircle(this.solid, me.x, me.y, vx * dt, vy * dt, CFG.player.radius);
-        const dist = Math.hypot(r.x - me.x, r.y - me.y);
-        moving = dist > 0.01;
+      const speed = me.flags & STATUS_BIT.root ? 0 : stats.speed * (me.flags & STATUS_BIT.slow ? CFG.combat.slowFactor : 1);
+      const walk = ml > 0.1;
+      if (walk && now >= this.rollUntil && now >= this.moveLockUntil) slowGait = ml < 0.6 || !!(me.flags & STATUS_BIT.slow);
+      // 0.8: Die Zeit seit dem letzten Bild wird in Teilschritten nachgeholt – Rolle und Lauf sind bei jeder Bildrate gleich weit
+      const r = advanceSelf(this.solid, me.x, me.y, CFG.player.radius, now, dt, { speed, rollMul: CFG.player.dodgeSpeedMul, rollFrom: this.rollFrom, rollUntil: this.rollUntil, rollDir: this.rollDir, lockUntil: this.moveLockUntil, mx: walk ? mv.x : 0, my: walk ? mv.y : 0 });
+      if (r.vx || r.vy) {
+        moving = r.dist > 0.01;
         me.x = r.x; me.y = r.y;
-        if (this.animClock >= me.lockUntil) me.facing = now < this.rollUntil ? this.rollDir : Math.atan2(vy, vx);
-        this.stepDist += dist;
+        if (this.animClock >= me.lockUntil) me.facing = now < this.rollUntil ? this.rollDir : Math.atan2(r.vy, r.vx);
+        this.stepDist += r.dist;
       }
       if (!blocked) this.handleActions(now, stats, cls);
     } else { input.clearPressed(); }
