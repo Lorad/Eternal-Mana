@@ -15,6 +15,8 @@ import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNu
 import { StationOptions } from './craft';
 import { KreisOption } from './endgame';
 import { HomeOption } from './home';
+import { HubOptions } from './hub';
+import { hubLook } from '../../../shared/src/data/hubart';
 import { kreisLevel } from '../../../shared/src/data/rifts';
 import { WorldOptions, worldGreeting } from './world';
 import { shopDiscount, shopPrice } from '../../../shared/src/data/factions';
@@ -85,6 +87,7 @@ function Dialog({ npc }: { npc: string }) {
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
           <StationOptions npc={npc} />
           <KreisOption npc={npc} />
+          <HubOptions npc={npc} />
           <HomeOption npc={npc} />
           <WorldOptions npc={npc} />
           <Opt mark="×" kind="bye" onClick={close} autofocus={!turnIns.length && !offers.length && !topics.length}>Auf Wiedersehen</Opt>
@@ -105,7 +108,7 @@ function Dialog({ npc }: { npc: string }) {
     <div class={cx('backdrop', 'dlg-backdrop', wide && 'dlg-center')} onMouseDown={e => { if (e.target === e.currentTarget) close(); }}>
       <section class={cx('window', 'dlg', wide && 'dlg-wide')} role="dialog" aria-label={`Gespräch mit ${def.name}`}>
         <header class="dlg-head">
-          <div class="dlg-portrait"><Portrait k={'npc_' + def.look} scale={wide ? 2 : 3} /></div>
+          <div class="dlg-portrait"><Portrait k={'npc_' + hubLook(def.look, k => !!(window as any).__em?.game?.textures?.exists(k))} scale={wide ? 2 : 3} /></div>
           <div class="grow">
             <h2>{def.name}</h2>
             <div class="dlg-title">{def.title}</div>

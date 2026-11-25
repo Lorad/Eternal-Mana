@@ -15,6 +15,7 @@ import { CineOverlay, LoreOverlay } from './story';
 import { EncounterDialog, WorldShop } from './world';
 import { InspectWindow, TradeWindow } from './social';
 import { HofWindow } from './home';
+import { HubWindow } from './hub';
 import { HandbuchPanel } from './handbuch';
 import { FatalBar } from './trouble';
 import { SettingsPanel } from './panels/settings';
@@ -29,6 +30,7 @@ import './styles/world.css';
 import './styles/social.css';
 import './styles/home.css';
 import './styles/feinschliff.css';
+import './styles/hub.css';
 
 /** Berechnet den Maßstab: Die Oberfläche ist für rund 1280×720 entworfen und skaliert mit dem Fenster. */
 function computeScale() {
@@ -59,6 +61,7 @@ function Root() {
   const hasTrade = useStore(s => !!s.trade);
   const hasInspect = useStore(s => !!s.inspect);
   const hasHof = useStore(s => !!s.hof);
+  const hasHub = useStore(s => !!s.hubWin);
   const dead = useStore(s => !!s.dead);
   const s = computeScale();
 
@@ -87,6 +90,7 @@ function Root() {
       {screen === 'game' && hasEndgame && !dead && <EndgameWindow />}
       {screen === 'game' && hasWshop && !dead && <WorldShop />}
       {screen === 'game' && hasHof && !dead && <HofWindow />}
+      {screen === 'game' && hasHub && !dead && <HubWindow />}
       {screen === 'game' && hasEnc && !dead && <EncounterDialog />}
       {screen === 'game' && hasInspect && !dead && <InspectWindow />}
       {screen === 'game' && hasTrade && !dead && <TradeWindow />}

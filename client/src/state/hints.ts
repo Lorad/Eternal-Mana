@@ -13,7 +13,7 @@ import type { Action } from './keys';
 import type { UiState } from './store';
 
 /** Ausschnitt des UI-Zustands, den die Hinweise ansehen */
-export type HintState = Pick<UiState, 'screen' | 'char' | 'zone' | 'panel' | 'craft' | 'endgame' | 'hof' | 'lore' | 'cine' | 'dlgNode' | 'rift' | 'world' | 'party' | 'trade' | 'home' | 'dead' | 'boss' | 'target' | 'nearStone' | 'prompt' | 'dialog' | 'story' | 'sign' | 'enc' | 'wshop' | 'inspect'>;
+export type HintState = Pick<UiState, 'screen' | 'char' | 'zone' | 'panel' | 'craft' | 'endgame' | 'hof' | 'lore' | 'cine' | 'dlgNode' | 'rift' | 'world' | 'party' | 'trade' | 'home' | 'dead' | 'boss' | 'target' | 'nearStone' | 'prompt' | 'dialog' | 'story' | 'sign' | 'enc' | 'wshop' | 'inspect'> & { hubWin?: UiState['hubWin'] };
 
 /**
  * Kapitel des Handbuchs in ihrer Reihenfolge: [Kennung, Titel]. Die Seiten selbst stehen in ui/handbuch.tsx; dort prüft der
@@ -32,6 +32,7 @@ export const HELP_TOPICS = [
   ['endspiel', 'Endspiel'],
   ['ruf', 'Ruf und lebendige Welt'],
   ['zuhause', 'Zuhause und Sammlung'],
+  ['quellwarte', 'Die Quellwarte'],
   ['gemeinsam', 'Gemeinsam spielen'],
   ['gamepad', 'Gamepad'],
   ['hilfe', 'Wenn etwas hakt'],
@@ -77,6 +78,16 @@ export const HINTS: HintDef[] = [
   { id: 'quellstein', title: 'Quellstein', topic: 'welt',
     text: 'Quellsteine heilen, setzen deinen Rückkehrpunkt und erlauben über die Weltkarte ({map}) die Schnellreise zu jedem Stein, den du schon berührt hast.',
     when: s => s.nearStone && !!s.char && Object.keys(s.char.quests).length > 0 },
+  // ---- Quellwarte (0.9)
+  { id: 'quellwarte_weg', title: 'Zur Quellwarte', topic: 'quellwarte',
+    text: 'Mirelda schickt dich in die Quellwarte: An einem Quellstein die Karte ({map}) öffnen und „Zur Quellwarte reisen“ wählen – oder durch das Tor am Dorfrand gehen.',
+    when: s => !!s.char && s.char.quests.m_quellwarte?.s === 'active' && s.zone !== 'quellwarte' && !s.dialog },
+  { id: 'quellwarte', title: 'Die Quellwarte', topic: 'quellwarte',
+    text: 'Um den Platz liegen alle Einrichtungen; ihre Hüter stehen vor den Türen. Das Schild am Ankunftsplatz zeigt die Übersicht. Hier wird nicht gekämpft.',
+    when: s => s.zone === 'quellwarte' && !s.dialog && !s.hubWin },
+  { id: 'meisterrang', win: true, title: 'Meisterränge', topic: 'quellwarte',
+    text: 'Nur für voll ausgebaute Techniken und nur für wenige zugleich. Sie bleiben gelernt – auch nach dem Zurücksetzen wirken sie wieder, sobald die Technik erneut ausgebaut ist.',
+    when: s => s.hubWin?.tab === 'meister' },
   { id: 'kochen', win: true, title: 'Kochstelle', topic: 'handwerk',
     text: 'Am Feuer kochst du Speisen aus den Zutaten der Region. Es wirken immer nur eine Speise und ein Elixier zugleich – dafür lange.',
     when: s => s.craft?.station === 'cooking' },

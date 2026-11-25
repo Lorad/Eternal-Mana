@@ -1,4 +1,5 @@
 /** Fähigkeitenbaum der Klasse mit Detailbereich und Belegung der Aktionsleiste. */
+import { masteryOf } from '../../../../shared/src/data/hubdata';
 import { useState } from 'preact/hooks';
 import { keyHint } from '../../state/settings';
 import type { Action } from '../../state/settings';
@@ -114,7 +115,7 @@ export function SkillsPanel() {
                   onDblClick={() => { if (s.id === sel.id && canLearn) send({ t: 'learn', id: s.id }); }}>
                   <span class="node-icon"><Icon k={'skill_' + s.glyph} el={s.element} size={48} />{st === 'locked' && <i class="node-lock">{char.level < s.reqLevel ? `St. ${s.reqLevel}` : 'Vorstufe'}</i>}</span>
                   <span class="node-name">{s.name}</span>
-                  <span class="pips">{Array.from({ length: s.maxRank }, (_, i) => <i class={cx(i < r && 'on')} />)}</span>
+                  <span class="pips">{Array.from({ length: s.maxRank }, (_, i) => <i class={cx(i < r && 'on')} />)}{Array.from({ length: masteryOf(char, s.id) }, () => <i class="on master" title="Meisterrang (Quellwarte)" />)}</span>
                 </button>
               );
             })}
