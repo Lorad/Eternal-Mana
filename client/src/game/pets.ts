@@ -14,7 +14,7 @@ const LIGHT: Record<string, number> = { wisp: 0x9fe8ff, glutfuchs: 0xffa060, que
 
 export class PetView {
   sprite: Phaser.GameObjects.Image; blob: Phaser.GameObjects.Image;
-  x = 0; y = 0; private placed = false; private left = false; private movingUntil = 0;
+  x = 0; y = 0; private placed = false; private left = false; private movingUntil = 0; private phase = 0;
   constructor(scene: Phaser.Scene, public id: string) {
     this.blob = scene.add.image(0, 0, 'fx', 'shadow').setDepth(4).setAlpha(0.3).setScale(0.55);
     this.sprite = scene.add.image(0, 0, 'obj', `pet_${id}_0`).setOrigin(0.5, 1);
@@ -32,9 +32,12 @@ export class PetView {
       this.x += (dx / d) * step; this.y += (dy / d) * step;
       if (Math.abs(dx) > 1.5) this.left = dx < 0;
       this.movingUntil = now + 140;
+      // 0.8: Schrittfolge hängt an der zurückgelegten Strecke (ein Bild je 7 px, höchstens 9 Bilder/s) – beim langsamen
+      // Aufschließen zappeln die Beine nicht mehr schneller, als der Begleiter vorankommt.
+      this.phase += Math.min(step / 7, dt * 9);
     }
     const fly = FLY.has(this.id), moving = now < this.movingUntil;
-    const frame = moving ? 2 + (Math.floor(now / 110) % 4) : Math.floor(now / 460) % 2;
+    const frame = moving ? 2 + (Math.floor(this.phase) & 3) : Math.floor(now / 460) % 2;
     const px = Math.round(this.x), py = Math.round(this.y);
     this.sprite.setFrame(`pet_${this.id}_${frame}`).setFlipX(this.left).setPosition(px, py - (fly ? 7 + Math.round(Math.sin(now / 330) * 1.6) : 0)).setDepth(this.y).setVisible(visible);
     this.blob.setPosition(px, py - 1).setVisible(visible);
