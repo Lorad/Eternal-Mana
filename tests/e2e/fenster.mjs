@@ -88,8 +88,10 @@ const audit = () => page.evaluate(() => {
 
 let problems = 0, checked = 0;
 const report = [];
+/** Hält das Spielbild an (Fenster brauchen es nicht) – der Durchlauf wird dadurch um ein Mehrfaches schneller. */
+const freeze = on => page.evaluate(v => { const l = window.__em.game.loop; if (v) l.sleep(); else l.wake(); }, on);
 async function check(label, sizeTag) {
-  await wait(260);
+  await wait(140);
   const bad = await audit();
   checked++;
   if (bad.length) { problems += bad.length; report.push(`  ✗ ${sizeTag} · ${label}`); for (const b of bad) report.push('      ' + b); }
@@ -138,6 +140,7 @@ try {
     await closeAll();
     await cmd('/event woge'); await wait(900);
     await check('HUD mit Quests und Ereignis', tag);
+    await freeze(true);
     for (const p of ['inventory', 'character', 'skills', 'quests', 'map', 'party', 'ruf', 'sammlung', 'menu', 'help', 'settings']) await win('Fenster ' + p, { panel: p }, tag);
     await win('Gespräch Borin', { dialog: { npc: 'borin' } }, tag);
     for (const t of ['Handeln', 'Ausrüstung verbessern']) {
@@ -154,6 +157,7 @@ try {
     for (const t of ['lager', 'ausbau', 'trophaeen', 'schrank', 'weg']) await win('Hof ' + t, { hof: { tab: t } }, tag, false);
     await win('Chronik-Dokument', { lore: { id: 'brunnenbuch', first: true } }, tag);
     await win('Schild', { sign: 'Ein Schild.\nMit zwei Zeilen und einem etwas längeren Satz, damit der Umbruch geprüft wird.' }, tag);
+    await freeze(false);
   }
 
   // ---- im Mana-Riss: Riss-Anzeige, Questverfolgung und Ereignisse teilen sich die rechte Spalte
