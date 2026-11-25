@@ -19,8 +19,10 @@ export const newGearState = (): GearState => ({ hits: 0, casts: 0, atemAt: -999,
 /** Welle um den Spieler (Folgetreffer: nie kritisch, keine weiteren Folgen) */
 function nova(z: Zone, p: Player, x: number, y: number, r: number, mult: number, el: Element, status?: StatusSpec) {
   z.ev({ k: 'fx', n: 'spin', x: Math.round(x), y: Math.round(y), r, el });
-  for (const m of [...z.mobs.values()]) if (!m.dead && Math.hypot(m.x - x, m.y - y) - m.radius <= r)
-    z.hitMob(m, p, p.stats.power * mult, el, { extra: true, status, kb: 30, ang: Math.atan2(m.y - y, m.x - x) });
+  for (const m of [...z.mobs.values()]) if (!m.dead && Math.hypot(m.x - x, m.y - y) - m.radius <= r) {
+    const dealt = z.hitMob(m, p, p.stats.power * mult, el, { extra: true, kb: 30, ang: Math.atan2(m.y - y, m.x - x) });
+    if (status && dealt > 0 && !m.dead) z.applyStatusMob(m, status, dealt, el, p); // Folgetreffer lösen sonst keine Zustände aus
+  }
 }
 
 // ------------------------------------------------------------------ Angriffe und Fähigkeiten

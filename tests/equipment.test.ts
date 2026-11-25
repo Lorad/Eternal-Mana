@@ -21,6 +21,7 @@ import type { CharData, ClassId, ItemInstance, Mods } from '../shared/src/types'
 import { SLOTS } from '../shared/src/types';
 import { Rng } from '../shared/src/util/rng';
 import { Sim, type Tester } from './helpers/sim';
+import * as GearFx from '../server/src/gearfx';
 
 let sim: Sim;
 beforeAll(() => { sim = new Sim(); });
@@ -446,6 +447,41 @@ describe('Sets mit sechs Teilen', () => {
     delete c.equip.boots; t.p.recalc();
     expect(t.p.stats.gearFx!.setFull).toEqual({});
     expect(SETS.aschenglut.bonus2.resFire).toBeGreaterThan(0);
+  });
+  it('die übrigen Passiven und vollen Sets wirken (Meisterschliff, Flinke Hände, Parade, Klarer Kopf, Quellsegen, Lichtbrechung, Frostspur, Stille, Krone)', () => {
+    const t = sim.join('Wirkprobe', 'krieger', 30);
+    const { z, x, y } = sim.arena(t);
+    const p = t.p, G = CFG.gearFx;
+    const fx = (up10: Record<string, number>, setFull: Record<string, number> = {}) => { p.stats.gearFx = { up10, setFull, skill: {} }; };
+    fx({ meister: 1 });
+    const muls = Array.from({ length: G.meister.every * 2 }, () => GearFx.attackMul(p));
+    expect(muls.filter(m => m > 1).length).toBe(2);
+    fx({ flink: 1 }); expect(GearFx.attackCdMul(p)).toBe(G.flink);
+    fx({ parade: 1 }); sim.seed(z, 3);
+    expect(Array.from({ length: 400 }, () => GearFx.takenMul(z, p)).filter(m => m < 1).length).toBeGreaterThan(10);
+    fx({ klarheit: 1 }); expect(GearFx.statusDurMul(p)).toBe(G.klarheit);
+    fx({ segen: 1 }); expect(GearFx.potionMul(p)).toBe(G.segen);
+    fx({}); expect([GearFx.attackCdMul(p), GearFx.statusDurMul(p), GearFx.potionMul(p)]).toEqual([1, 1, 1]);
+    // volle Sets
+    const m = sim.dummy(z, 'waldwolf', 30, x + 20, y);
+    fx({}, { prisma: 1 });
+    for (let i = 0; i < G.prisma.every; i++) GearFx.afterSkill(z, p);
+    expect(m.hp).toBeLessThan(m.maxHp);
+    const hp1 = m.hp;
+    fx({}, { frost: 1 }); GearFx.onDodge(z, p, sim.game.now);
+    expect(m.hp).toBeLessThan(hp1);
+    expect(m.statuses.has('slow')).toBe(true);
+    const hp2 = m.hp; GearFx.onDodge(z, p, sim.game.now);                // Abklingzeit: keine zweite Nova
+    expect(m.hp).toBe(hp2);
+    fx({}, { stille: 1 }); GearFx.onDodge(z, p, sim.game.now);
+    expect(GearFx.critBonus(p, sim.game.now).crit).toBe(1);
+    expect(GearFx.critBonus(p, sim.game.now).crit).toBe(0);               // verbraucht
+    fx({}, { krone: 1 }); p.hp = p.stats.maxHp;
+    expect(GearFx.dealtMul(p)).toBe(1);
+    p.hp = p.stats.maxHp * 0.2;
+    expect(GearFx.dealtMul(p)).toBe(G.krone.dmg);
+    expect(GearFx.lifesteal(p)).toBeLessThanOrEqual(CFG.combat.lifestealCap);
+    expect(GearFx.lifesteal(p)).toBeGreaterThan(0);
   });
   it('4er-Bonus: kürzere Abklingzeit der Fähigkeit (Magier, Wurzelwacht → Blinzeln)', () => {
     const t = sim.join('Blinzler', 'magier', 12);
