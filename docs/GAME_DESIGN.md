@@ -127,6 +127,20 @@ Mana-Risse erhalten.
   Bestzeiten und Abschlüsse je Grad, Geheimnisse und Mini-Bosse stehen in `CharData.expeditions`.
 - **Wochenherausforderung:** je ISO-Woche eine Expedition, ein Grad und zwei Modifikatoren; einmal je Woche anderthalbfache
   Belohnung und zwei Teile mehr.
+- **Dauer** (gemessen mit `npx tsx scripts/exp-playtest.ts`: echte Läufe der Bots mit dem Spielermodell, Normal, empfohlene Stufe,
+  typische Ausrüstung; „sorgsam“ liest, sucht Geheimnisse und nimmt alle Seitenflügel mit, „zügig“ folgt dem Hauptweg; Zeitaufschläge
+  für Lesen und Rätsel in `scripts/playtest/expedition.ts`, THINK; „hängt“ = Aufgaben, die der Bot nach Frist übersprungen hat).
+  Bots laufen auf dem kürzesten Weg und zögern nie – Menschen brauchen eher länger:
+
+| Expedition | St. | sorgsam allein | zügig allein | sorgsam zu zweit | zügig zu zweit |
+|---|---|---|---|---|---|
+| Die Wurzeltiefe | 5 | 18:05 (2/2, Tode 0.0, hängt 1×) | 13:50 (2/2, Tode 0.0, hängt 1×) | 15:20 (1/1, Tode 0.0) | 12:05 (1/1, Tode 0.0) |
+| Die Singende Tiefe | 10 | 18:30 (2/2, Tode 0.0, hängt 3×) | 15:19 (2/2, Tode 0.0, hängt 4×) | 19:27 (1/1, Tode 0.0, hängt 2×) | 13:56 (1/1, Tode 0.0, hängt 2×) |
+| Die Gießerei der Ersten | 15 | 16:14 (2/2, Tode 0.0) | 13:55 (2/2, Tode 0.0, hängt 1×) | 13:59 (1/1, Tode 0.0) | 11:14 (1/1, Tode 0.0) |
+| Der Webstuhl aus Eis | 20 | 17:41 (2/2, Tode 0.5) | 16:59 (2/2, Tode 0.0) | 16:10 (1/1, Tode 0.0) | 14:16 (1/1, Tode 0.0) |
+| Die Unteren Archive | 25 | 18:32 (2/2, Tode 0.0, hängt 3×) | 15:24 (2/2, Tode 0.0, hängt 2×) | 15:17 (1/1, Tode 0.0, hängt 1×) | 14:20 (1/1, Tode 0.0, hängt 1×) |
+| Der Hof der Hohlen Krone | 30 | 18:24 (2/2, Tode 1.5) | 15:10 (2/2, Tode 2.5, hängt 1×) | 15:43 (1/1, Tode 0.0) | 11:16 (1/1, Tode 0.0) |
+
 - **Erfahrung:** Alle Gegner einer Expedition zusammen bringen doppelt so viel wie die des alten Dungeons ihrer Region – eine
   Expedition auf Normal hebt bei empfohlener Stufe um gut zwei Stufen.
 
