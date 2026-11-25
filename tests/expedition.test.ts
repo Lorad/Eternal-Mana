@@ -220,6 +220,17 @@ describe('Expeditionen – Schwierigkeitsgrade und Woche', () => {
     const lv = [...z.mobs.values()].filter(m => !m.boss).map(m => m.lvl);
     expect(Math.min(...lv)).toBeGreaterThanOrEqual(EXPEDITIONS.exp_gruenwald.level[0] + 3);
   });
+  it('Herausforderung der Woche: Bonus genau einmal je Woche und Charakter', () => {
+    const t = sim.join('Woche', 'krieger', 6);
+    const w = { week: '2026-48', exp: 'exp_gruenwald', diff: 'normal' as const, mods: ['horde', 'glas'] as any };
+    const z1 = startSolo(t); z1.exp!.weekly = w; killBoss(t);
+    const r1 = z1.exp!.results.get(t.p.charId)!;
+    expect(r1.weekly).toBe(true);
+    expect(t.p.char.flags['xw:2026-48']).toBe(1);
+    sim.step(70);
+    const z2 = startSolo(t); z2.exp!.weekly = w; killBoss(t);
+    expect(z2.exp!.results.get(t.p.charId)!.weekly).toBe(false);
+  });
   it('Herausforderung der Woche: deterministisch je ISO-Woche', () => {
     expect(weeklyChallenge('2026-48')).toEqual(weeklyChallenge('2026-48'));
     expect(isoWeek(Date.UTC(2026, 10, 25))).toBe('2026-48');
