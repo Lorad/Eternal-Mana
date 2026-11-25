@@ -3,7 +3,10 @@
  * und die Größe der Snapshots. Der Server läuft in diesem Prozess (echte WebSockets), die Bots in einem Kindprozess,
  * damit ihr JSON-Aufwand die Messung nicht verfälscht.
  *
- *   npx tsx scripts/load-check.ts [bots=12] [sekunden=60] [--solo]
+ *   npx tsx scripts/load-check.ts [bots=12] [sekunden=60] [--solo] [--hub]
+ *
+ * `--hub` (0.9): Die Bots stehen in der Quellwarte, laufen zwischen den Einrichtungen hin und her, hängen Gruppengesuche aus
+ * und lesen das Brett – so viele Spieler wie möglich an einem Ort, ohne Kampf.
  *
  * Ohne `--solo` bilden die Bots Vierergruppen (Gruppenwertung, Gruppenanzeige). Ausgabe: eine Tabelle und eine JSON-Zeile.
  */
@@ -58,7 +61,7 @@ async function runServer() {
   await new Promise<void>(res => server.listen(port, '127.0.0.1', res));
   game.start();
 
-  const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', '--import', 'tsx', fileURLToPath(import.meta.url), String(BOTS), String(SECS), ...(flag('solo') ? ['--solo'] : []), '--bots', `ws://127.0.0.1:${port}/ws`],
+  const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', '--import', 'tsx', fileURLToPath(import.meta.url), String(BOTS), String(SECS), ...(flag('solo') ? ['--solo'] : []), ...(flag('hub') ? ['--hub'] : []), '--bots', `ws://127.0.0.1:${port}/ws`],
     { stdio: ['ignore', 'pipe', 'inherit'], env: process.env });
   let botOut = '';
   child.stdout.on('data', d => {
@@ -107,6 +110,7 @@ async function runBots(url: string) {
   }));
   for (const b of bots) { b.chat('/lvl 5'); b.chat('/welt aus'); }
   await bots[0].sleep(400);
+  if (flag('hub')) return hubBots(bots);
   // Sammelpunkt: die Gegnergruppe, die dem Start am nächsten liegt – alle kämpfen im selben Gebiet
   const m0 = bots[0].nearestMob()!;
   await Promise.all(bots.map((b, i) => b.warp(m0.x + 30 * Math.cos(i), m0.y + 30 * Math.sin(i)).catch(() => {})));
@@ -147,6 +151,32 @@ async function runBots(url: string) {
     }
   }));
   console.log(`BOTS Gegner besiegt (gezählt je Bot): ${kills}, Tode: ${deaths}, Fähigkeiten: ${casts}, Stufe am Ende: ${bots.map(b => b.char.level).join('/')}`);
+  for (const b of bots) b.close();
+  await new Promise(r => setTimeout(r, 300));
+  process.exit(0);
+}
+
+/** 0.9: Lastprobe in der Quellwarte – alle Bots in derselben Instanz, laufen über Straßen und Plätze */
+async function hubBots(bots: any[]) {
+  const { HUB_WALKERS } = await import('../shared/src/maps/hubgen');
+  const pts = HUB_WALKERS.flatMap(([, p]) => p).map(([x, y]) => ({ x: x * 16 + 8, y: y * 16 + 8 }));
+  for (const b of bots) b.chat('/warte');
+  await bots[0].sleep(1500);
+  console.log('BEREIT');
+  const until = Date.now() + SECS * 1000;
+  let walks = 0;
+  await Promise.all(bots.map(async (b, i) => {
+    let k = i;
+    while (Date.now() < until) {
+      const t = pts[k++ % pts.length];
+      await b.warp(t.x, t.y).catch(() => {});
+      await b.walkTo(t.x + 40 * Math.cos(k), t.y + 24 * Math.sin(k), 1500, 12); walks++;
+      if (k % 3 === 0) b.send({ t: 'hub', a: 'lfg', goal: k % 2 ? 'riss' : '' });
+      if (k % 4 === 0) b.send({ t: 'hub', a: 'board' });
+      await b.sleep(300);
+    }
+  }));
+  console.log(`BOTS Wege: ${walks}, Zone: ${bots[0].zone}`);
   for (const b of bots) b.close();
   await new Promise(r => setTimeout(r, 300));
   process.exit(0);
