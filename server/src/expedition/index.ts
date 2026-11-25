@@ -34,7 +34,7 @@ import type { Game } from '../game';
 import type { Player } from '../player';
 import { Social } from '../social';
 import { Mob, Zone, type Obj } from '../zone';
-import { expBossMech } from './bossmech';
+import { expBossMech, mechInteract, tickMechObjs } from './bossmech';
 import { expeditionPortals, returnSpot } from './hub';
 import { miniDown, spawnMinis, tickMinis } from './mini';
 import { grant, totals } from './reward';
@@ -44,6 +44,7 @@ type ExpMsg = Extract<ClientMsg, { t: 'exp' }>;
 const reject = (p: Player, s: string) => { p.toast(s, 'bad'); p.pev.push({ k: 'sfx', n: 'ui_error' }); };
 const secOf = (zone: Zone, id: string) => zone.map.exp!.sections.find(s => s.id === id)!;
 const inSec = (s: ExpSection, x: number, y: number, pad = 0) => x >= (s.x0 + pad) * TILE && x < (s.x1 + 1 - pad) * TILE && y >= (s.y0 + pad) * TILE && y < (s.y1 + 1 - pad) * TILE;
+const EVENT_TEXT: Record<string, string> = { ambush: 'Hinterhalt: Welle', darkness: 'Finsternis: Lichtsteine', flood: 'Flut: Ventile', collapse: 'Einsturz – lauft!' };
 const weeklyNow = (): Weekly => weeklyChallenge(isoWeek(Date.now()));
 /** Stufe eines Gegners in diesem Lauf: Plan + Neuer Kreis + Schwierigkeitsgrad */
 function levelFor(run: ExpRun, base: number): number { const d = EXP_DIFF[run.diff]; return Math.max(d.lvlMin, kreisLevel(base, run.kreis) + d.lvlPlus); }
@@ -89,7 +90,7 @@ function setup(zone: Zone) {
   });
   spawnMinis(zone, b => levelFor(run, b), d.hpMul, d.dmgMul);
   for (const pz of info.puzzles) run.puzzles.set(pz.sec, { sec: pz.sec, kind: pz.kind, order: pz.order, bits: pz.bits, runes: pz.runes, time: pz.time, progress: 0, solved: false });
-  for (const ev of info.events) run.events.set(ev.sec, { kind: ev.kind, sec: ev.sec, state: 'idle', wave: 0, waves: 4, mobs: new Set(), barriers: [], at: 0, next: 0 });
+  for (const ev of info.events) run.events.set(ev.sec, { kind: ev.kind, sec: ev.sec, state: 'idle', wave: 0, waves: 4, mobs: new Set(), barriers: [], at: 0, next: 0, pools: [] });
 }
 
 // =====================================================================================================================
@@ -168,7 +169,7 @@ function goalFor(zone: Zone, p: Player): string {
   if (zone.boss?.active) return `${zone.boss.def.name} besiegen`;
   const here = info.sections.find(s => s.id === run.where.get(p.charId));
   const ev = here && run.events.get(here.id);
-  if (ev && ev.state === 'running') return 'Den Hinterhalt überstehen';
+  if (ev && ev.state === 'running') return ev.kind === 'ambush' ? 'Den Hinterhalt überstehen' : ev.kind === 'darkness' ? 'Die Lichtsteine entzünden' : ev.kind === 'flood' ? 'Die Ventile schließen' : 'Ans andere Ende rennen!';
   const pz = here && run.puzzles.get(here.id);
   if (pz && !pz.solved) return 'Das Rätsel dieses Abschnitts lösen';
   if (here?.role === 'key' && zone.keys === 0) return 'Den Schlüssel finden';
@@ -184,7 +185,8 @@ function runInfo(zone: Zone, p: Player): ExpRunInfo {
     exp: run.exp, diff: run.diff, t: Math.round(run.done ? run.done.sec : now - run.startAt), sec: here ? secOf(zone, here).name : '', goal: goalFor(zone, p),
     kills: run.kills, deaths: p.char.deaths - (run.d0.get(p.charId) ?? p.char.deaths), secrets: [run.secrets.size, T.secrets], minis: [run.minis.size, T.minis],
     weekly: run.weekly?.mods, par: d.timedChest ? expPar(EXPEDITIONS[run.exp]) : undefined,
-    event: ev ? { kind: ev.kind, wave: ev.wave, waves: ev.waves, text: 'Hinterhalt' } : undefined,
+    event: ev ? { kind: ev.kind, wave: ev.kind === 'ambush' ? ev.wave : [...zone.objs.values()].filter(o => (o.props?.kind === 'lightstone' || o.props?.kind === 'valve') && o.props.sec === ev.sec && o.state === 1).length, waves: ev.kind === 'collapse' ? 0 : ev.waves, text: EVENT_TEXT[ev.kind] } : undefined,
+    dark: ev?.kind === 'darkness' ? 1 : undefined,
     done: run.done?.sec, ret: run.done?.revealed ? Math.max(0, Math.round(run.returnAt - now)) : undefined,
     votes: run.done?.revealed ? [run.votes.size, zone.alivePlayers().length + [...zone.players.values()].filter(q => q.dead).length] : undefined,
     enrage: zone.boss?.active && d.enrage ? Math.round(d.enrage - (now - run.bossAt)) : undefined,
@@ -263,12 +265,12 @@ function tickCollapse(zone: Zone, now: number) {
     } else if (o.state === 2 && now >= o.activeUntil!) { zone.setObjState(o, 0, { frame: 'collapse_floor_0' }); o.props.frame = 'collapse_floor_0'; }
   }
 }
-/** Hinterhalt: Der Abschnitt schließt sich, drei Wellen, dann öffnet er sich wieder (mit einer Truhe) */
-function tickEvent(zone: Zone, ev: EventState, now: number) {
+/** Hinterhalt: Der Abschnitt schließt sich, vier Wellen, dann öffnet er sich wieder (mit einer Truhe) */
+function tickAmbush(zone: Zone, ev: EventState, now: number) {
   const run = zone.exp!, s = secOf(zone, ev.sec);
   const inside = zone.alivePlayers().filter(p => inSec(s, p.x, p.y, 1));
   if (ev.state === 'idle') {
-    if (!inside.length || ev.kind !== 'ambush') return;
+    if (!inside.length) return;
     ev.state = 'running'; ev.wave = 0; ev.next = now + 1.4; ev.at = now;
     for (const m of s.mouths) {
       const o = zone.addDynamicObj('door', m.x, m.y, { cells: m.cells, orient: m.orient, ambush: 1 }, 'ambush');
@@ -316,6 +318,123 @@ function tickEvent(zone: Zone, ev: EventState, now: number) {
   }
   for (const p of zone.players.values()) p.toast(`Welle ${ev.wave} von ${ev.waves}!`, 'bad');
   sendInfo(zone);
+}
+/** Verteiler der besonderen Ereignisse (Hinterhalt, Finsternis, Flut, Einsturz) */
+function tickEvent(zone: Zone, ev: EventState, now: number) {
+  if (ev.kind === 'ambush') return tickAmbush(zone, ev, now);
+  const s = secOf(zone, ev.sec);
+  const inside = zone.alivePlayers().filter(p => inSec(s, p.x, p.y, 1));
+  if (ev.state === 'done') return;
+  if (ev.state === 'idle') {
+    if (!inside.length) return;
+    ev.state = 'running'; ev.at = now; ev.next = now + 2; ev.wave = 0;
+    if (ev.kind === 'darkness') startDarkness(zone, ev, s);
+    if (ev.kind === 'flood') startFlood(zone, ev, s);
+    if (ev.kind === 'collapse') startChase(zone, ev, s);
+    sendInfo(zone);
+    return;
+  }
+  if (ev.kind === 'collapse') return tickChase(zone, ev, s, inside, now);
+  // Finsternis und Flut: wer den Abschnitt verlässt, beendet nichts – aber ohne jemanden darin ruht das Ereignis
+  if (!inside.length) return;
+  if (ev.kind === 'darkness' && now >= ev.next) {
+    ev.next = now + 6.5;
+    for (const m of [...ev.mobs]) if (m.dead) ev.mobs.delete(m);
+    if (ev.mobs.size >= 6) return;
+    const p = zone.rng.pick(inside), run = zone.exp!, mix = EXPEDITIONS[run.exp].mobs[1];
+    for (let i = 0; i < 2; i++) {
+      const a = zone.rng.range(0, 6.28), x = p.x + Math.cos(a) * 80, y = p.y + Math.sin(a) * 80;
+      if (!circleFree(zone.solidWalk, x, y, 8) || !inSec(s, x, y)) continue;
+      const m = makeMob(zone, zone.rng.weighted(mix), levelFor(run, zone.map.def.level[1] - 1), x, y, false, -300, -1);
+      m.awake = true; m.state = 'chase'; m.target = p; m.name = 'Schatten: ' + m.name;
+      zone.ev({ k: 'mob+', m: m.info() }); zone.ev({ k: 'fx', n: 'spawn', x, y, el: 'dark' });
+      ev.mobs.add(m);
+    }
+  }
+  if (ev.kind === 'flood' && now >= ev.next && ev.wave < 16) {
+    ev.next = now + 2.2;
+    for (let t = 0; t < 20; t++) {
+      const x = (zone.rng.int(s.x0 + 1, s.x1 - 1) + 0.5) * TILE, y = (zone.rng.int(s.y0 + 1, s.y1 - 1) + 0.5) * TILE;
+      if (!circleFree(zone.solidWalk, x, y, 6) || [...zone.objs.values()].some(o => o.props?.kind === 'valve' && Math.hypot(o.x - x, o.y - y) < 40)) continue;
+      const f = zone.addFx({ kind: 'zone', x, y, r: 34, el: 'water', dur: 999, until: now + 999, tick: 0.6, nextTick: now + 1, hostile: true, raw: CFG.enemy.dmg(zone.def.level[1]) * 0.3, lvl: zone.def.level[1], status: { id: 'slow', dur: 1.2 }, by: 'Schmelzwasser' });
+      ev.pools.push(f.id); ev.wave++;
+      break;
+    }
+  }
+}
+/** Finsternis: das Licht geht aus; drei Lichtsteine bringen es zurück, bis dahin kommen Schatten */
+function startDarkness(zone: Zone, ev: EventState, s: ExpSection) {
+  ev.waves = 3;
+  for (const [x, y] of eventSpots(zone, s, 3)) zone.addDynamicObj('xobj', x, y, { kind: 'lightstone', sec: s.id, frame: 'brazier_unlit', label: 'Lichtstein', prompt: 'Lichtstein entzünden' }, 'lightstone');
+  for (const p of zone.players.values()) p.toast('Das Licht geht aus. Irgendwo hier stehen Lichtsteine – entzündet alle drei!', 'story');
+  zone.ev({ k: 'sfx', n: 'boss_phase' });
+}
+/** Flut: Schmelzwasser steigt; drei Ventile schließen es ab */
+function startFlood(zone: Zone, ev: EventState, s: ExpSection) {
+  ev.waves = 3;
+  for (const [x, y] of eventSpots(zone, s, 3)) zone.addDynamicObj('xobj', x, y, { kind: 'valve', sec: s.id, frame: 'lever_off', label: 'Ventil', prompt: 'Ventil schließen' }, 'valve');
+  for (const p of zone.players.values()) p.toast('Das Eis bricht – Schmelzwasser steigt! Schließt die drei Ventile.', 'story');
+  zone.ev({ k: 'sfx', n: 'boss_phase' });
+}
+function eventSpots(zone: Zone, s: ExpSection, n: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let t = 0; t < 300 && out.length < n; t++) {
+    const x = (zone.rng.int(s.x0 + 2, s.x1 - 2) + 0.5) * TILE, y = (zone.rng.int(s.y0 + 2, s.y1 - 2) + 0.5) * TILE;
+    if (!circleFree(zone.solidWalk, x, y, 12) || out.some(([a, b]) => Math.hypot(a - x, b - y) < 90 - t / 6) || Math.hypot(s.entry.x - x, s.entry.y - y) < 60) continue;
+    out.push([x, y]);
+  }
+  return out;
+}
+/** Lichtstein entzünden / Ventil schließen */
+function eventInteract(zone: Zone, p: Player, o: Obj): boolean {
+  const ev = zone.exp!.events.get(o.props!.sec);
+  if (!ev || ev.state !== 'running' || o.state === 1) return true;
+  ev.wave = 0;
+  if (o.props!.kind === 'lightstone') { zone.setObjState(o, 1, { frame: 'brazier', light: [110, 0xffc070, 1] }); o.props = { ...o.props, frame: 'brazier', light: [110, 0xffc070, 1], prompt: undefined }; zone.ev({ k: 'sfx', n: 'cast_fire', x: o.x, y: o.y }); }
+  else { zone.setObjState(o, 1, { frame: 'lever_on' }); o.props = { ...o.props, frame: 'lever_on', prompt: undefined }; zone.ev({ k: 'sfx', n: 'lever', x: o.x, y: o.y }); }
+  const all = [...zone.objs.values()].filter(x => x.props?.kind === o.props!.kind && x.props?.sec === ev.sec);
+  const done = all.filter(x => x.state === 1).length;
+  for (const q of zone.players.values()) q.toast(`${o.props!.kind === 'lightstone' ? 'Lichtstein' : 'Ventil'} ${done} von ${all.length}.`, 'info');
+  if (done >= all.length) finishEvent(zone, ev, o.props!.kind === 'lightstone' ? 'Das Licht kehrt zurück. Die Schatten zerfasern.' : 'Die Ventile halten. Das Wasser fließt ab.');
+  else sendInfo(zone);
+  return true;
+}
+function finishEvent(zone: Zone, ev: EventState, msg: string) {
+  ev.state = 'done';
+  for (const id of ev.pools) { zone.fx.delete(id); zone.ev({ k: 'zone-', id }); }
+  ev.pools = [];
+  if (ev.kind === 'darkness') for (const m of ev.mobs) if (!m.dead) zone.killMob(m);
+  const s = secOf(zone, ev.sec);
+  const at = ev.kind === 'collapse' ? ev.end! : { x: (s.cx + 0.5) * TILE, y: (s.cy + 0.5) * TILE };
+  const c = eventSpots(zone, { ...s, entry: { x: -999, y: -999 } }, 1)[0];
+  zone.addDynamicObj('chest', ev.kind === 'collapse' ? at.x : c?.[0] ?? at.x, ev.kind === 'collapse' ? at.y : c?.[1] ?? at.y, { tier: 'silver', label: 'Lohn der Mühe' });
+  zone.ev({ k: 'sfx', n: 'puzzle_solved' });
+  for (const p of zone.players.values()) p.toast(msg, 'good');
+  sendInfo(zone);
+}
+/** Einsturz-Jagd: hinter den Spielern bricht der Steg; wer stehen bleibt, stürzt */
+function startChase(zone: Zone, ev: EventState, s: ExpSection) {
+  const far = s.mouths.reduce((a, m) => (Math.hypot(m.x - s.entry.x, m.y - s.entry.y) > Math.hypot(a.x - s.entry.x, a.y - s.entry.y) ? m : a), s.mouths[0]);
+  ev.end = { x: far.x, y: far.y };
+  ev.front = 0;
+  for (const p of zone.players.values()) p.toast('Der Steg bricht hinter euch weg – lauft!', 'story');
+  zone.ev({ k: 'sfx', n: 'wall_break' });
+}
+function tickChase(zone: Zone, ev: EventState, s: ExpSection, inside: Player[], now: number) {
+  const end = ev.end!, sx = s.entry.x, sy = s.entry.y, L = Math.hypot(end.x - sx, end.y - sy) || 1, ux = (end.x - sx) / L, uy = (end.y - sy) / L;
+  if (now - ev.at < 1.6) return;
+  ev.front = Math.min(L, (now - ev.at - 1.6) * 46);
+  const arrived = zone.alivePlayers().some(p => Math.hypot(p.x - end.x, p.y - end.y) < 48 || (inSec(s, p.x, p.y) && (p.x - sx) * ux + (p.y - sy) * uy > L - 40));
+  if (ev.front >= L - 8 || arrived) { finishEvent(zone, ev, 'Geschafft! Hinter euch stürzt der Rest in die Tiefe.'); return; }
+  if (!inside.length && now - ev.at > 4) { // alle gefallen oder umgekehrt: der Steg „wächst“ beim nächsten Betreten erneut zusammen
+    ev.state = 'idle'; sendInfo(zone); return;
+  }
+  if (now < ev.next) return;
+  ev.next = now + 0.35;
+  const half = Math.max(s.x1 - s.x0, s.y1 - s.y0) * TILE; // Breite quer zur Laufrichtung reicht über den ganzen Abschnitt
+  const fx = sx + ux * ev.front, fy = sy + uy * ev.front, px2 = -uy, py2 = ux, lvl = zone.def.level[1];
+  zone.addFx({ kind: 'tele', shape: 'line', x: fx - px2 * half / 2, y: fy - py2 * half / 2, x2: fx + px2 * half / 2, y2: fy + py2 * half / 2, w: 26, r: 0, el: 'phys', dur: 0.55, until: now + 0.55, hostile: true, raw: CFG.enemy.dmg(lvl) * 1.5, lvl, by: 'Einsturz' });
+  if (zone.rng.chance(0.5)) { const d = ev.front + zone.rng.range(40, 120); zone.addFx({ kind: 'tele', x: sx + ux * d + px2 * zone.rng.range(-30, 30), y: sy + uy * d + py2 * zone.rng.range(-30, 30), r: 18, el: 'phys', dur: 0.9, until: now + 0.9, hostile: true, raw: CFG.enemy.dmg(lvl) * 0.9, lvl, by: 'Trümmer' }); }
 }
 function clearBarriers(zone: Zone, ev: EventState) {
   for (const o of ev.barriers) { zone.setObjState(o, 1); zone.objs.delete(o.id); zone.ev({ k: 'obj-', id: o.id }); }
@@ -387,6 +506,7 @@ export const Expedition = {
     tickMinis(zone, now);
     tickPlates(zone, now);
     tickCollapse(zone, now);
+    tickMechObjs(zone, now);
     for (const ev of run.events.values()) tickEvent(zone, ev, now);
     // Abschnitte: Anzeige, erster Besuch, Rastplatz
     if (Math.floor(now * 2) !== Math.floor((now - dt) * 2)) {
@@ -470,6 +590,8 @@ export const Expedition = {
           return true;
         }
         case 'rune': return puzzleInteract(zone, p, o);
+        case 'chain': case 'ink': return mechInteract(zone, p, o);
+        case 'lightstone': case 'valve': return eventInteract(zone, p, o);
       }
       return true;
     }

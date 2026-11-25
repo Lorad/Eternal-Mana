@@ -379,7 +379,7 @@ export class GameScene extends Phaser.Scene {
     const sunny = this.sun.alpha > 0.04;
     for (const d of this.decorShadows) applyShadow(d.s, d.x, d.y, sunny ? this.sun : d.indoor);
   }
-  private riftDark(): number { return store.state.rift?.mods.includes('finsternis') ? CFG.rift.finsternis.light : 1; }
+  private riftDark(): number { return store.state.rift?.mods.includes('finsternis') || store.state.expRun?.dark ? CFG.rift.finsternis.light : 1; } // 0.9: auch das Ereignis „Finsternis“ einer Expedition
   private flash(x: number, y: number, r: number, color: number, i = 1, dur = 260) {
     // „Blitze reduzieren“: Lichtblitze schwächer und länger – kein hartes Aufblitzen
     if (settings.reduceFlash) { i *= FLASH.lightMul; dur = Math.max(dur, FLASH.lightMinMs); }

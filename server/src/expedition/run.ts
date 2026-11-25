@@ -12,7 +12,7 @@ import type { Mob, Obj, Zone } from '../zone';
 
 export interface MiniState { id: string; mob: Mob; nextAt: number; step: number; shown: Set<Player>; n: number; base: number; sec: string; optional: boolean; charge?: { x: number; y: number; at: number } }
 export interface PuzzleState { sec: string; kind: string; order?: number[]; bits?: number[]; runes?: number[]; time?: number; progress: number; solved: boolean }
-export interface EventState { kind: string; sec: string; state: 'idle' | 'running' | 'done'; wave: number; waves: number; mobs: Set<Mob>; barriers: Obj[]; at: number; next: number }
+export interface EventState { kind: string; sec: string; state: 'idle' | 'running' | 'done'; wave: number; waves: number; mobs: Set<Mob>; barriers: Obj[]; at: number; next: number; pools: number[]; end?: { x: number; y: number }; front?: number }
 
 export interface ExpRun {
   id: number;

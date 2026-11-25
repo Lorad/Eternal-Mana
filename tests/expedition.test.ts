@@ -19,7 +19,10 @@ function atPortal(t: Tester) {
   const o = [...t.p.zone.objs.values()].find(x => x.props?.kind === 'portal')!;
   t.p.x = o.x; t.p.y = o.y + 20;
 }
-function unlockAll(t: Tester) { t.p.char.flags['z:gruenwald'] = 1; t.p.char.quests.m_wurzel = { s: 'active', p: [0] }; }
+function unlockAll(t: Tester) {
+  t.p.char.flags['z:gruenwald'] = 1; t.p.char.quests.m_wurzel = { s: 'active', p: [0] };
+  for (const x of EXPEDITION_LIST) for (const r of x.unlock) { if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] }; }
+}
 const expZone = (t: Tester): Zone | null => (t.p.zone.exp ? t.p.zone : null);
 function killBoss(t: Tester) {
   const z = t.p.zone, b = z.boss!, r = z.map.bossRoom!;
@@ -29,7 +32,7 @@ function killBoss(t: Tester) {
   for (let i = 0; i < 40 && !b.mob.dead; i++) { b.mob.invuln = false; b.mob.vuln = 1; z.hitMob(b.mob, t.p, b.mob.maxHp, 'phys'); sim.step(0.1); }
   expect(b.mob.dead).toBe(true);
 }
-function startSolo(t: Tester, diff: 'normal' | 'schwer' = 'normal') { unlockAll(t); atPortal(t); t.send({ t: 'exp', a: 'select', id: 'exp_gruenwald', diff }); return t.p.zone; }
+function startSolo(t: Tester, diff: 'normal' | 'schwer' = 'normal', id = 'exp_gruenwald') { unlockAll(t); atPortal(t); t.send({ t: 'exp', a: 'select', id, diff }); return t.p.zone; }
 
 describe('Expeditionen – Karten', () => {
   it('jede Expedition ist gültig und vollständig spielbar (Weg über Schlüssel, Türen, Rätsel bis zur Arena; Geheimes nur durch die Wand)', () => {
@@ -145,11 +148,12 @@ describe('Expeditionen – Ablauf', () => {
     a.send({ t: 'exp', a: 'start' });
     const z = a.p.zone, r = z.map.bossRoom!;
     b.p.x = (r.cx + 0.5) * TILE; b.p.y = (r.cy + 3) * TILE; b.p.god = true;
+    const b0 = a.p.char.flags['b:dornenmutter'] ?? 0;
     killBoss(a);
     const gold = a.p.char.gold, runs = a.p.char.expRuns!.length;
     expect(a.p.char.expeditions!.exp_gruenwald.clears.normal).toBe(1);
     expect(a.p.char.expeditions!.exp_gruenwald.best!.normal).toBeGreaterThan(0);
-    expect(a.p.char.flags['b:dornenmutter']).toBe(1);
+    expect(a.p.char.flags['b:dornenmutter']).toBe(b0 + 1);
     expect(a.p.char.quests.m_wurzel.p[0]).toBe(1); // Questziel „boss“ zählt
     z.boss!.onDeath();
     z.killMob(z.boss!.mob);
@@ -208,5 +212,62 @@ describe('Expeditionen – Schwierigkeitsgrade und Woche', () => {
     const w = weeklyChallenge('2026-48');
     expect(EXPEDITIONS[w.exp]).toBeTruthy();
     expect(new Set(w.mods).size).toBe(2);
+  });
+});
+
+describe('Expeditionen – Ereignisse und Bosse', () => {
+  it('jede Expedition hat ihr Ereignis, und es lässt sich bestehen (Hinterhalt, Finsternis, Flut, Einsturz)', () => {
+    for (const x of EXPEDITION_LIST) {
+      const t = sim.join('Ev' + x.id.slice(4, 9), 'krieger', x.rec);
+      const z = startSolo(t, 'normal', x.id);
+      expect(z.exp, x.id).toBeTruthy();
+      t.p.god = true;
+      const info = z.map.exp!, evd = info.events[0];
+      expect(evd?.kind).toBe(x.event);
+      const s = info.sections.find(q => q.id === evd.sec)!;
+      t.p.x = (s.cx + 0.5) * TILE; t.p.y = (s.cy + 0.5) * TILE;
+      sim.step(0.6);
+      const ev = z.exp!.events.get(s.id)!;
+      expect(ev.state, x.id).toBe('running');
+      if (evd.kind === 'darkness' || evd.kind === 'flood') {
+        expect(t.msgs.filter(m => m.t === 'exp' && (m as any).run).some(m => evd.kind !== 'darkness' || (m as any).run.dark === 1)).toBe(true);
+        for (const o of [...z.objs.values()].filter(o => o.props?.sec === s.id && (o.props?.kind === 'lightstone' || o.props?.kind === 'valve'))) { t.p.x = o.x; t.p.y = o.y + 14; t.send({ t: 'interact', id: o.id }); }
+      } else if (evd.kind === 'ambush') {
+        for (let i = 0; i < 400 && ev.state === 'running'; i++) { for (const m of [...ev.mobs]) z.killMob(m); sim.step(0.5); }
+      } else {
+        sim.step(2); t.p.x = ev.end!.x; t.p.y = ev.end!.y; sim.step(0.5);
+      }
+      expect(ev.state, x.id).toBe('done');
+      sim.leave(t);
+    }
+  });
+  it('Endbosse: Phasen bei 60 % und 25 %, Signaturmechanik je Boss', () => {
+    for (const x of EXPEDITION_LIST) {
+      const t = sim.join('Bo' + x.id.slice(4, 9), 'paladin', x.rec);
+      const z = startSolo(t, 'normal', x.id), b = z.boss!, r = z.map.bossRoom!;
+      t.p.god = true; t.p.x = (r.cx + 0.5) * TILE; t.p.y = (r.cy + 3) * TILE;
+      sim.step(0.3);
+      expect(b.active, x.id).toBe(true);
+      expect((b as any).echo?.phases).toEqual([0.6, 0.25]);
+      b.mob.hp = Math.round(b.mob.maxHp * 0.62); sim.step(0.2); expect(b.phase).toBe(1);
+      b.mob.hp = Math.round(b.mob.maxHp * 0.58); sim.step(0.2); expect(b.phase).toBe(2);
+      sim.step(0.8); expect(b.mob.invuln, 'Filmmoment beim Phasenwechsel').toBe(true);
+      b.mob.hp = Math.round(b.mob.maxHp * 0.24); sim.step(0.2); expect(b.phase).toBe(3);
+      sim.step(30);
+      sim.leave(t);
+    }
+  });
+  it('Signaturen greifen: Knospen schützen, Säulen panzern, Kühlkette kühlt, Stillstand bestraft Bewegung, Eintrag ohne Tinte wird gelöscht', () => {
+    const run = (id: string, cls: 'paladin' = 'paladin') => { const t = sim.join('Si' + id.slice(4, 9), cls, EXPEDITIONS[id].rec); const z = startSolo(t, 'normal', id), r = z.map.bossRoom!; t.p.god = true; t.p.x = (r.cx + 0.5) * TILE; t.p.y = (r.cy + 3) * TILE; sim.step(0.4); return { t, z, b: z.boss! }; };
+    { const { t, z, b } = run('exp_gruenwald'); expect([...z.mobs.values()].some(m => m.def.id === 'xm_knospe')).toBe(true); expect(b.mob.vuln).toBeLessThan(0.5);
+      for (const m of [...z.mobs.values()]) if (m.def.id === 'xm_knospe') z.killMob(m); sim.step(0.2); expect(b.mob.vuln).toBe(1); sim.leave(t); }
+    { const { t, b } = run('exp_kristall'); expect(b.mob.vuln).toBeLessThan(0.5); sim.leave(t); }
+    { const { t, z, b } = run('exp_glut'); const chain = [...z.objs.values()].find(o => o.props?.kind === 'chain')!; expect(chain).toBeTruthy();
+      sim.step(9); t.p.x = chain.x; t.p.y = chain.y + 12; t.send({ t: 'interact', id: chain.id }); sim.step(0.1); expect(b.mob.vuln).toBeGreaterThan(1.5); sim.leave(t); }
+    { const { t } = run('exp_frost'); sim.step(14); t.p.god = false; t.p.char.level = 40; t.p.recalc();
+      let hit = false; for (let i = 0; i < 200 && !hit; i++) { t.p.x += i % 2 ? 8 : -8; t.p.iframesUntil = 0; t.p.hp = t.p.stats.maxHp; sim.step(0.05); hit = t.p.statuses.has('freeze'); }
+      expect(hit, 'Bewegung im Stillstand friert ein').toBe(true); sim.leave(t); }
+    { const { t, z } = run('exp_ruinen'); sim.step(10.5); const mech = (z.boss as any); expect(t.p.statuses.has('mark')).toBe(true);
+      const ink = [...z.objs.values()].find(o => o.props?.kind === 'ink')!; t.p.x = ink.x; t.p.y = ink.y + 10; sim.step(0.2); expect(t.p.statuses.has('mark')).toBe(false); void mech; sim.leave(t); }
   });
 });
