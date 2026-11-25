@@ -14,8 +14,9 @@ import { T, TILE, isWalkableTile } from './tiles';
 
 const px = (t: number) => t * TILE + TILE / 2;
 
-export function placeStory(m: GameMap): void {
-  const docs = LORE_DOCS.filter(d => d.zone === m.id);
+/** `alias` (0.9): eine Expedition übernimmt die Chronik-Dokumente des alten Dungeons ihrer Region */
+export function placeStory(m: GameMap, alias?: string): void {
+  const docs = LORE_DOCS.filter(d => d.zone === m.id || (!!alias && d.zone === alias));
   const objs = STORY_OBJS.filter(o => o.zone === m.id);
   if (!docs.length && !objs.length) return;
   const { w, h, tiles, solid } = m;

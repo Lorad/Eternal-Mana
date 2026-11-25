@@ -1,4 +1,5 @@
 import type { BiomeId } from '../maps/tiles';
+import { EXPEDITION_ZONES } from './expeditions';
 
 export interface Poi {
   id: string;
@@ -53,6 +54,8 @@ export interface ZoneDef {
   gx?: number; gy?: number; maxRooms?: number;
   puzzle?: 'torches' | 'levers' | 'plates';
   boss?: string;
+  /** 0.9: Expedition (Kartengenerator shared/src/maps/expedition.ts, Plan in data/expeditions.ts) */
+  exp?: string;
   // ---- beide
   mobs: [string, number][];
   /** Position auf der Weltkarte (0..100) */
@@ -315,7 +318,7 @@ export const HOME_ZONE: ZoneDef = Z({
   level: [1, 1], music: 'gruenwald', ambience: 'forest', weathers: [['clear', 7], ['rain', 1], ['leaves', 3]], dark: 0, indoor: false,
   mobs: [], mapPos: [34, 58],
 });
-export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE };
+export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE, ...Object.fromEntries(EXPEDITION_ZONES.map(z => [z.id, z])) }; // 0.9: Expeditionen wie der Hof außerhalb von ZONE_LIST
 export const OVERWORLD_IDS = ZONE_LIST.filter(z => z.kind === 'overworld').map(z => z.id);
 /** Verbindungen für die Weltkarte */
 export const WORLD_LINKS: [string, string][] = [

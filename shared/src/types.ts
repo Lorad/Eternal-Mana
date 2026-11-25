@@ -1,4 +1,5 @@
 /** Gemeinsame Datentypen von Server und Client. */
+import type { DungeonRecord } from './data/hub';
 export type Element = 'phys' | 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark';
 export type ClassId = 'krieger' | 'magier' | 'waldlaeufer' | 'paladin' | 'schattenjaeger';
 export type AttrKey = 'str' | 'dex' | 'int' | 'vit';
@@ -105,6 +106,11 @@ export interface CharData {
   rest?: number;
   /** Stand, bis zu dem dieser Charakter in die Sammlung des Profils eingetragen ist (fehlt = noch nie: Nachtrag beim Betreten) */
   cv?: number;
+  // ---- 0.9 Expeditionen (optional; Regeln: shared/src/data/expeditions.ts, Format: shared/src/data/hub.ts)
+  /** Fortschritt je Expedition: Abschlüsse und Bestzeit je Schwierigkeitsgrad, Geheimnisse, Mini-Bosse */
+  expeditions?: Record<string, DungeonRecord>;
+  /** Schlüssel der zuletzt belohnten Expeditionsläufe – jede Belohnung genau einmal je Lauf und Charakter */
+  expRuns?: string[];
 }
 
 /**
