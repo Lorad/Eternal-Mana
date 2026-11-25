@@ -108,8 +108,8 @@ const LG = CFG.legend;
 /** Beschreibung der Sonderwirkung der Legendären Waffen – die Zahlen stammen aus CFG.legend */
 export const LEGEND_TEXT: Record<ClassId, string> = {
   krieger: `Jeder ${LG.krieger.every}. Treffer deiner Standardangriffe entfesselt eine Schockwelle, die alle Gegner um dich trifft (${pct(LG.krieger.mult)} deines Angriffs).`,
-  magier: `Reaktionen, die du auslöst, treffen ${LG.magier.reactMul === 2 ? 'doppelt so hart' : pct(LG.magier.reactMul - 1) + ' härter'}, und das Ziel kann ${sec(LG.magier.reactCdCut)} Sekunden früher erneut reagieren.`,
+  magier: `Reaktionen, die du auslöst, treffen ${LG.magier.reactMul === 2 ? 'doppelt so hart' : LG.magier.reactMul === 3 ? 'dreimal so hart' : pct(LG.magier.reactMul - 1) + ' härter'}, und das Ziel kann ${sec(LG.magier.reactCdCut)} Sekunden früher erneut reagieren.`,
   waldlaeufer: `Kritische Treffer prallen auf einen weiteren Gegner in der Nähe ab (${pct(LG.waldlaeufer.ricochet)} Schaden). Steht keiner dort, hallt der Treffer am selben Ziel nach (${pct(LG.waldlaeufer.echo)}).`,
-  paladin: `Deine Heilungen legen einen Schild auf alle Geheilten (${pct(LG.paladin.shield)} des Heilwerts, höchstens ${pct(LG.paladin.cap)} ihres Lebens).`,
+  paladin: `Deine Heilungen legen einen Schild auf alle Geheilten (${pct(LG.paladin.shield)} des Heilwerts, höchstens ${pct(LG.paladin.cap)} ihres Lebens). ${LG.paladin.dur} Sekunden lang steigt außerdem ihr Angriff um ${LG.paladin.power} %.`,
   schattenjaeger: `Triffst du ein gezeichnetes Ziel, detoniert das Mal: Schaden im Element deiner Waffe (ohne Element: Dunkelheit) für alle Gegner im Umkreis – ${pct(LG.schattenjaeger.mult)} deines Angriffs, höchstens alle ${sec(LG.schattenjaeger.cd)} Sekunden je Ziel.`,
 };

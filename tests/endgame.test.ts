@@ -551,11 +551,12 @@ describe('Modifikatoren', () => {
     sim.step(2);
     expect(t.p.hp).toBeCloseTo(100 + t.p.stats.hpRegen * 4 * 2 * half, 1);
     // Lebensraub
-    t.p.addBuff({ id: 'ls', name: 'x', glyph: 'x', until: 1e9, mods: { lifesteal: 10 }, shield: 0 });
+    const ls = CFG.combat.lifestealCap; // 0.8: Lebensraub ist gedeckelt – der Test nimmt genau die Obergrenze
+    t.p.addBuff({ id: 'ls', name: 'x', glyph: 'x', until: 1e9, mods: { lifesteal: ls }, shield: 0 });
     const d = sim.dummy(z, 'wurzelschleicher', 40, t.p.x + 20, t.p.y);
     t.p.hp = 100;
     const dealt = z.hitMob(d, t.p, 500, 'phys');
-    expect(t.p.hp).toBeCloseTo(100 + dealt * 0.1 * half, 5);
+    expect(t.p.hp).toBeCloseTo(100 + dealt * (ls / 100) * half, 5);
     // zum Vergleich ein Riss ohne den Modifikator
     t.send({ t: 'rift', a: 'leave' });
     const z2 = open(t, 'wurzelgruft', 1, ['finsternis']);

@@ -54,44 +54,44 @@ const E = (e: EnemyDef) => e;
 /** `named` = eigener Name über dem Kopf und Markierung auf der Minimap */
 export const WORLD_ENEMIES: EnemyDef[] = [
   // ---------------- Seltene Monster: Grünwald
-  E({ id: 'r_borkenkoenig', name: 'Borkenkönig', sprite: 'dornkaefer', tint: 0xd8b070, scale: 1.7, named: true, element: 'earth', hpMul: 9, dmgMul: 1.35, defMul: 2, xpMul: 9, speed: 46, radius: 11, ai: 'charge', aggro: 130,
+  E({ id: 'r_borkenkoenig', name: 'Borkenkönig', sprite: 'dornkaefer', tint: 0xd8b070, scale: 1.7, named: true, element: 'earth', hpMul: 14, dmgMul: 1.35, defMul: 2, xpMul: 9, speed: 46, radius: 11, ai: 'charge', aggro: 130,
     atk: { range: 80, windup: 0.6, cd: 2, reach: 16, mult: 1.35 }, weak: ['fire'], resist: ['dark'] }),
-  E({ id: 'r_fliegenhut', name: 'Der Alte Fliegenhut', sprite: 'pilzling', tint: 0xff8a8a, scale: 1.8, named: true, element: 'earth', hpMul: 7, dmgMul: 1.25, defMul: 0.9, xpMul: 9, speed: 30, radius: 11, ai: 'ranged', aggro: 150,
+  E({ id: 'r_fliegenhut', name: 'Der Alte Fliegenhut', sprite: 'pilzling', tint: 0xff8a8a, scale: 1.8, named: true, element: 'earth', hpMul: 11, dmgMul: 1.25, defMul: 0.9, xpMul: 9, speed: 30, radius: 11, ai: 'ranged', aggro: 150,
     atk: { range: 120, windup: 0.6, cd: 1.8, proj: { spr: 'spore', speed: 100, count: 3, spread: 36 }, status: { id: 'poison', dur: 4, chance: 0.6 }, mult: 0.8 }, weak: ['fire'] }),
   // ---------------- Kristallhöhlen
-  E({ id: 'r_tante_echo', name: 'Tante Echo', sprite: 'fledermaus', tint: 0xc8a8ff, scale: 1.9, named: true, element: 'wind', hpMul: 7.5, dmgMul: 1.3, defMul: 0.7, xpMul: 9, speed: 88, radius: 10, ai: 'chase', move: 'swoop', flying: true, aggro: 170,
+  E({ id: 'r_tante_echo', name: 'Tante Echo', sprite: 'fledermaus', tint: 0xc8a8ff, scale: 1.9, named: true, element: 'wind', hpMul: 12, dmgMul: 1.3, defMul: 0.7, xpMul: 9, speed: 88, radius: 10, ai: 'chase', move: 'swoop', flying: true, aggro: 170,
     atk: { range: 18, windup: 0.25, cd: 1, reach: 16 }, weak: ['light'] }),
-  E({ id: 'r_guenther', name: 'Günther der Kleine', sprite: 'kristallkrabbler', tint: 0xffe0ff, scale: 1.8, named: true, element: 'light', hpMul: 10, dmgMul: 1.3, defMul: 2.4, xpMul: 9, speed: 38, radius: 13, ai: 'chase', aggro: 120,
+  E({ id: 'r_guenther', name: 'Günther der Kleine', sprite: 'kristallkrabbler', tint: 0xffe0ff, scale: 1.8, named: true, element: 'light', hpMul: 16, dmgMul: 1.3, defMul: 2.4, xpMul: 9, speed: 38, radius: 13, ai: 'chase', aggro: 120,
     atk: { range: 24, windup: 0.6, cd: 1.5, reach: 20, mult: 1.3 }, weak: ['dark', 'earth'], resist: ['fire'] }),
   // ---------------- Glutlande
-  E({ id: 'r_meister_russ', name: 'Meister Ruß', sprite: 'glutimp', tint: 0x707078, scale: 1.8, named: true, element: 'fire', hpMul: 8, dmgMul: 1.2, defMul: 0.9, xpMul: 9, speed: 58, radius: 10, ai: 'ranged', aggro: 170,
+  E({ id: 'r_meister_russ', name: 'Meister Ruß', sprite: 'glutimp', tint: 0x707078, scale: 1.8, named: true, element: 'fire', hpMul: 13, dmgMul: 1.2, defMul: 0.9, xpMul: 9, speed: 58, radius: 10, ai: 'ranged', aggro: 170,
     atk: { range: 135, windup: 0.55, cd: 1.7, proj: { spr: 'orb', speed: 140, count: 5, spread: 56 }, status: { id: 'burn', dur: 3, chance: 0.4 }, mult: 0.7 }, weak: ['light', 'water'] }),
-  E({ id: 'r_glucke', name: 'Die Glucke', sprite: 'magmaschleim', tint: 0xffd890, scale: 2.2, named: true, element: 'fire', hpMul: 11, dmgMul: 1.25, defMul: 1.2, xpMul: 9, speed: 38, radius: 14, ai: 'chase', move: 'hop', aggro: 120,
+  E({ id: 'r_glucke', name: 'Die Glucke', sprite: 'magmaschleim', tint: 0xffd890, scale: 2.2, named: true, element: 'fire', hpMul: 17, dmgMul: 1.25, defMul: 1.2, xpMul: 9, speed: 38, radius: 14, ai: 'chase', move: 'hop', aggro: 120,
     atk: { range: 24, windup: 0.5, cd: 1.3, reach: 20, status: { id: 'burn', dur: 3, chance: 0.6 } }, weak: ['earth', 'water'] }),
   // ---------------- Frostgebirge
-  E({ id: 'r_altvater_reif', name: 'Altvater Reif', sprite: 'schneebrute', tint: 0xd8f4ff, scale: 1.5, named: true, element: 'water', hpMul: 11, dmgMul: 1.5, defMul: 1.8, xpMul: 9, speed: 42, radius: 15, ai: 'charge', aggro: 150,
+  E({ id: 'r_altvater_reif', name: 'Altvater Reif', sprite: 'schneebrute', tint: 0xd8f4ff, scale: 1.5, named: true, element: 'water', hpMul: 17, dmgMul: 1.5, defMul: 1.8, xpMul: 9, speed: 42, radius: 15, ai: 'charge', aggro: 150,
     atk: { range: 100, windup: 0.8, cd: 2.4, reach: 22, mult: 1.45, status: { id: 'stun', dur: 0.7, chance: 0.4 } }, weak: ['light', 'earth'], resist: ['wind'] }),
-  E({ id: 'r_nordlicht', name: 'Irrlicht Nordwärts', sprite: 'frostwisp', tint: 0xa0ffd0, scale: 1.8, named: true, element: 'wind', hpMul: 7, dmgMul: 1.3, defMul: 0.7, xpMul: 9, speed: 76, radius: 9, ai: 'blink', flying: true, aggro: 170,
+  E({ id: 'r_nordlicht', name: 'Irrlicht Nordwärts', sprite: 'frostwisp', tint: 0xa0ffd0, scale: 1.8, named: true, element: 'wind', hpMul: 11, dmgMul: 1.3, defMul: 0.7, xpMul: 9, speed: 76, radius: 9, ai: 'blink', flying: true, aggro: 170,
     atk: { range: 22, windup: 0.3, cd: 1.1, reach: 18, status: { id: 'slow', dur: 2, chance: 0.5 } }, weak: ['light'], resist: ['phys'] }),
   // ---------------- Verlorene Ruinen
-  E({ id: 'r_quill', name: 'Unterarchivar Quill', sprite: 'arkanauge', tint: 0xffe0a0, scale: 1.7, named: true, element: 'light', hpMul: 8.5, dmgMul: 1.3, defMul: 1, xpMul: 9, speed: 48, radius: 11, ai: 'ranged', flying: true, aggro: 180,
+  E({ id: 'r_quill', name: 'Unterarchivar Quill', sprite: 'arkanauge', tint: 0xffe0a0, scale: 1.7, named: true, element: 'light', hpMul: 14, dmgMul: 1.3, defMul: 1, xpMul: 9, speed: 48, radius: 11, ai: 'ranged', flying: true, aggro: 180,
     atk: { range: 150, windup: 0.7, cd: 2.1, proj: { spr: 'lance', speed: 230, count: 3, spread: 22 }, mult: 1.05 }, weak: ['wind'] }),
-  E({ id: 'r_sockel', name: 'Das Standbild auf dem falschen Sockel', sprite: 'runenwaechter', tint: 0xb8b8c0, scale: 1.5, named: true, element: 'earth', hpMul: 12, dmgMul: 1.4, defMul: 2.4, xpMul: 9, speed: 34, radius: 15, ai: 'chase', aggro: 130,
+  E({ id: 'r_sockel', name: 'Das Standbild auf dem falschen Sockel', sprite: 'runenwaechter', tint: 0xb8b8c0, scale: 1.5, named: true, element: 'earth', hpMul: 19, dmgMul: 1.4, defMul: 2.4, xpMul: 9, speed: 34, radius: 15, ai: 'chase', aggro: 130,
     atk: { range: 28, windup: 0.6, cd: 1.6, reach: 24, mult: 1.35 }, weak: ['wind', 'fire'], resist: ['phys'] }),
   // ---------------- Schattenreich
-  E({ id: 'r_stunde', name: 'Die Verlorene Stunde', sprite: 'nachtmahr', tint: 0xa0e0ff, scale: 1.5, named: true, element: 'dark', hpMul: 8.5, dmgMul: 1.3, defMul: 1, xpMul: 9, speed: 112, radius: 13, ai: 'chase', aggro: 180,
+  E({ id: 'r_stunde', name: 'Die Verlorene Stunde', sprite: 'nachtmahr', tint: 0xa0e0ff, scale: 1.5, named: true, element: 'dark', hpMul: 14, dmgMul: 1.3, defMul: 1, xpMul: 9, speed: 112, radius: 13, ai: 'chase', aggro: 180,
     atk: { range: 24, windup: 0.22, cd: 0.6, reach: 19, mult: 0.8 }, weak: ['fire', 'light'] }),
-  E({ id: 'r_hohlprinz', name: 'Hohlprinz Ohneland', sprite: 'hohlritter', tint: 0xffd8a8, scale: 1.4, named: true, element: 'dark', hpMul: 11, dmgMul: 1.45, defMul: 2.2, xpMul: 9, speed: 46, radius: 14, ai: 'chase', aggro: 150,
+  E({ id: 'r_hohlprinz', name: 'Hohlprinz Ohneland', sprite: 'hohlritter', tint: 0xffd8a8, scale: 1.4, named: true, element: 'dark', hpMul: 17, dmgMul: 1.45, defMul: 2.2, xpMul: 9, speed: 46, radius: 14, ai: 'chase', aggro: 150,
     atk: { range: 28, windup: 0.6, cd: 1.5, reach: 24, mult: 1.4, status: { id: 'stun', dur: 0.6, chance: 0.3 } }, weak: ['earth', 'light'], resist: ['water'] }),
   // ---------------- Helfer der seltenen Monster
   E({ id: 'r_trugbild', name: 'Trugbild', sprite: 'hohlritter', tint: 0x8878c0, element: 'dark', hpMul: 0.9, dmgMul: 0.9, defMul: 0.6, xpMul: 0.5, speed: 50, radius: 9, ai: 'chase', aggro: 220,
     atk: { range: 26, windup: 0.6, cd: 1.6, reach: 20 }, weak: ['light'] }),
   // ---------------- Weltbosse (Leben skaliert mit den Teilnehmern, siehe CFG.living.boss)
-  E({ id: 'wb_moosgrimm', name: 'Moosgrimm', sprite: 'schneebrute', tint: 0x8fd070, scale: 2.6, named: true, element: 'earth', hpMul: 46, dmgMul: 1.5, defMul: 1.8, xpMul: 24, speed: 36, radius: 24, ai: 'chase', aggro: 200,
+  E({ id: 'wb_moosgrimm', name: 'Moosgrimm', sprite: 'schneebrute', tint: 0x8fd070, scale: 2.6, named: true, element: 'earth', hpMul: 92, dmgMul: 1.9, defMul: 1.8, xpMul: 24, speed: 36, radius: 24, ai: 'chase', aggro: 200,
     atk: { range: 38, windup: 0.8, cd: 1.9, reach: 34, mult: 1.4 }, weak: ['fire'], resist: ['water'] }),
-  E({ id: 'wb_aschenmaul', name: 'Aschenmaul', sprite: 'aschenhund', tint: 0xff9060, scale: 3, named: true, element: 'fire', hpMul: 50, dmgMul: 1.55, defMul: 1.5, xpMul: 24, speed: 62, radius: 24, ai: 'charge', aggro: 220,
+  E({ id: 'wb_aschenmaul', name: 'Aschenmaul', sprite: 'aschenhund', tint: 0xff9060, scale: 3, named: true, element: 'fire', hpMul: 100, dmgMul: 1.9, defMul: 1.5, xpMul: 24, speed: 62, radius: 24, ai: 'charge', aggro: 220,
     atk: { range: 110, windup: 0.75, cd: 2.3, reach: 28, mult: 1.45, status: { id: 'burn', dur: 3, chance: 0.5 } }, weak: ['water', 'earth'], resist: ['fire'] }),
-  E({ id: 'wb_niemand', name: 'Feldwebel Niemand', sprite: 'hohlritter', tint: 0xc0a0ff, scale: 2.4, named: true, element: 'dark', hpMul: 54, dmgMul: 1.6, defMul: 2, xpMul: 24, speed: 44, radius: 24, ai: 'chase', aggro: 210,
+  E({ id: 'wb_niemand', name: 'Feldwebel Niemand', sprite: 'hohlritter', tint: 0xc0a0ff, scale: 2.4, named: true, element: 'dark', hpMul: 108, dmgMul: 2, defMul: 2, xpMul: 24, speed: 44, radius: 24, ai: 'chase', aggro: 210,
     atk: { range: 40, windup: 0.75, cd: 1.7, reach: 36, mult: 1.45, status: { id: 'weak', dur: 3, chance: 0.4 } }, weak: ['light', 'fire'], resist: ['dark'] }),
   // ---------------- Gegner der Ereignisse und Begegnungen
   E({ id: 'ev_wogenbrecher', name: 'Wogenbrecher', sprite: 'frostwolf', tint: 0x80ffe8, scale: 1.4, named: true, element: 'water', hpMul: 4, dmgMul: 1.25, defMul: 1.1, xpMul: 2, speed: 84, radius: 11, ai: 'chase', aggro: 240,

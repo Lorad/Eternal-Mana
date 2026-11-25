@@ -46,7 +46,7 @@ export const CFG = {
   /** XP, die für den Aufstieg von `level` auf `level+1` nötig sind */
   xpToNext: (level: number) => Math.floor(40 * Math.pow(level, 1.6) + 60),
   enemy: {
-    hp: (lvl: number) => 30 + lvl * 20 + lvl * lvl * 2,
+    hp: (lvl: number) => 36 + lvl * 20 + lvl * lvl * 2,
     dmg: (lvl: number) => 8 + lvl * 3.6,
     def: (lvl: number) => lvl * 1.5,
     xp: (lvl: number) => 10 + lvl * 6,
@@ -165,9 +165,9 @@ export const CFG = {
   /** Legendäre Waffen (0.4): Zahlen der Sonderwirkungen */
   legend: {
     krieger: { every: 4, mult: 1.2, radius: 52 },
-    magier: { reactMul: 2, reactCdCut: 1.5 },
-    waldlaeufer: { ricochet: 0.6, echo: 0.22, range: 110 },
-    paladin: { shield: 0.3, cap: 0.2, dur: 6 },
+    magier: { reactMul: 3, reactCdCut: 2 },
+    waldlaeufer: { ricochet: 0.5, echo: 0.18, range: 110 },
+    paladin: { shield: 0.5, cap: 0.3, dur: 8, power: 8 },
     schattenjaeger: { mult: 2, radius: 48, cd: 1.5 },
   },
   upgrade: {
@@ -186,7 +186,7 @@ export const CFG = {
     ilvl: (stufe: number) => 40 + stufe,
     /** zusätzlich zur Gegnerstufe: Faktor auf Leben und Schaden aller Gegner und des Echos (Stufe 1 = unverändert) */
     hpMul: (stufe: number) => 1 + 0.03 * (stufe - 1),
-    dmgMul: (stufe: number) => 1 + 0.025 * (stufe - 1),
+    dmgMul: (stufe: number) => 1 + 0.04 * (stufe - 1),
     /** Anzahl der Modifikatoren */
     modCount: (stufe: number) => (stufe >= 20 ? 3 : stufe >= 10 ? 2 : 1),
     /** Richtzeit: Grundzeit + Zeit je Raum des Dungeons + Zuschlag je Stufe (s) */
@@ -223,7 +223,7 @@ export const CFG = {
     /** Angleichen (Schmiede): Stufen je Schritt, Echo-Fragmente je Stufe, Ätherstaub je Schritt bei Legendären Waffen, Gold je Stufe */
     attune: { step: 5, frags: 2, legendFrags: 3, legendAether: 1, gold: (ilvl: number) => 120 + ilvl * 12 },
     /** Prüfung der Sieben */
-    trial: { unlock: 15, stufe: 18, hpMul: 0.5, revives: 3, pause: 5, fragments: 8, aether: 2 },
+    trial: { unlock: 15, stufe: 18, hpMul: 0.4, revives: 3, pause: 5, fragments: 8, aether: 2 },
   },
   /** Endspiel (0.5): Quellstufen – Erfahrung über die Höchststufe hinaus. Bahnen: QUELL_TRACKS in data/rifts.ts */
   quell: {
