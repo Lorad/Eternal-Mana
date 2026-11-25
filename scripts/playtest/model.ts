@@ -8,6 +8,7 @@
  *     nach ihrem Erscheinen wahr (±30 % Streuung). Fliegen schon Geschosse, reagiert er auf weitere doppelt so schnell.
  *   - Fehlerquote: Mit Wahrscheinlichkeit `miss` übersieht er eine Bodenmarkierung/ein Geschoss ganz, mit `missPose`
  *     das Ausholen eines gewöhnlichen Gegners (das hat keine Markierung am Boden).
+ *   - Er kennt die groben Signale: bei einem Sperrfeuer und nach dem Brüllen eines Phasenwechsels geht ein Nahkämpfer auf Abstand.
  *   - Bewegungssperre beim Zuschlagen wie im Client (0,14 s je Hieb, 0,275 s beim Kombo-Abschluss, 0,24 s bei Fähigkeiten
  *     mit Hieb-Animation) und eine kurze Pause zwischen zwei Fähigkeiten.
  * Was er nicht kann: Muster auswendig lernen, vorausplanen, Mitspieler wiederbeleben, Fallenräume lesen.
@@ -31,11 +32,15 @@ export interface Skill {
   miss: number; missPose: number;
   /** Heiltrank unter diesem Anteil des Lebens */
   potionAt: number;
+  /** Augenmaß: so stark verschätzt er sich bei Radius und Breite einer Gefahr (Anteil), und so viel Sicherheitsabstand hält er (px) */
+  sigma: number; margin: number;
+  /** s zwischen zwei Bewegungsentscheidungen (dazwischen läuft er weiter wie entschieden – außer es taucht eine neue Gefahr auf) */
+  cadence: number;
 }
 export const SKILL: Record<string, Skill> = {
-  sorgsam: { id: 'sorgsam', name: 'sorgfältig', react: 0.25, miss: 0.03, missPose: 0.25, potionAt: 0.5 },
-  mittel: { id: 'mittel', name: 'durchschnittlich', react: 0.35, miss: 0.1, missPose: 0.5, potionAt: 0.45 },
-  achtlos: { id: 'achtlos', name: 'unachtsam', react: 0.55, miss: 0.3, missPose: 0.85, potionAt: 0.3 },
+  sorgsam: { id: 'sorgsam', name: 'sorgfältig', react: 0.25, miss: 0.03, missPose: 0.25, potionAt: 0.5, sigma: 0.08, margin: 6, cadence: 0.1 },
+  mittel: { id: 'mittel', name: 'durchschnittlich', react: 0.38, miss: 0.12, missPose: 0.5, potionAt: 0.45, sigma: 0.2, margin: 4, cadence: 0.2 },
+  achtlos: { id: 'achtlos', name: 'unachtsam', react: 0.55, miss: 0.3, missPose: 0.85, potionAt: 0.3, sigma: 0.35, margin: 2, cadence: 0.3 },
 };
 
 interface Threat {
@@ -49,7 +54,6 @@ interface Threat {
 }
 
 const DIRS = 12, STEP = 0.05, NSTEP = 24, PROJ_STEPS = 16;
-const MARGIN = 5;
 
 /** Wegfindung über das Kachelraster der Karte (Breitensuche; Türen gelten als offen). */
 export class Nav {
@@ -82,12 +86,13 @@ export class Nav {
 
 export class Bot {
   rng: Rng;
-  /** Wahrnehmung: Schlüssel der Gefahr → Zeitpunkt, ab dem der Bot sie kennt (Infinity = übersehen) */
-  private aware = new Map<string, number>();
+  /** Wahrnehmung: Schlüssel der Gefahr → Zeitpunkt, ab dem der Bot sie kennt (Infinity = übersehen), und sein Augenmaß für sie (Faktor auf Radius/Breite) */
+  private aware = new Map<string, { at: number; f: number }>();
+  private fresh = false; private lastThink = -1; private decideAt = 0; private choice: number | null = null;
   private windup = new Map<number, { serial: number; on: boolean }>();
   private lastProjSeen = -99;
   private moveLockUntil = 0; private nextSkillAt = 0; private rollDir = 0;
-  private backUntil = 0;
+  private backUntil = 0; private lastPhase = 0; private cueAt = 0;
   /** letzter Zeitpunkt, an dem ein Angriff oder eine Fähigkeit herausging – findet der Bot lange keinen Schuss, läuft er um das Hindernis herum */
   private lastActAt = 0; private hadTarget = false; private nav: Nav | null = null; private navZone: Zone | null = null; private via: { x: number; y: number } | null = null; private viaAt = 0;
   /** Messwerte */
@@ -105,43 +110,48 @@ export class Bot {
   send(m: ClientMsg) { (this.game as any).route(this.s, m); }
 
   // ------------------------------------------------------------------ Wahrnehmung
-  private note(key: string, now: number, pose: boolean, proj: boolean): number {
-    let at = this.aware.get(key);
-    if (at !== undefined) return at;
+  private note(key: string, now: number, pose: boolean, proj: boolean): { at: number; f: number } {
+    let a = this.aware.get(key);
+    if (a) return a;
     const sk = this.skill;
+    let at: number;
     if (this.rng.chance(pose ? sk.missPose : sk.miss)) at = Infinity;
     else {
       const alert = proj && now - this.lastProjSeen < 1.5;
       at = now + sk.react * this.rng.range(0.7, 1.3) * (alert ? 0.5 : 1);
     }
-    this.aware.set(key, at);
-    if (this.aware.size > 4000) { for (const [k, v] of this.aware) if (v < now - 8) this.aware.delete(k); }
-    return at;
+    // Augenmaß: Dreiecksverteilung um 1 (wer zu klein schätzt, bleibt am Rand stehen und wird getroffen)
+    a = { at, f: 1 + (this.rng.next() - this.rng.next()) * sk.sigma };
+    this.aware.set(key, a);
+    if (this.aware.size > 4000) { for (const [k, v] of this.aware) if (v.at < now - 8) this.aware.delete(k); }
+    return a;
   }
 
   private threats(now: number): Threat[] {
     const p = this.p, z = p.zone, out: Threat[] = [];
     for (const f of z.fx.values()) {
       if (!f.hostile) continue;
-      const at = this.note('f' + f.id, now, false, false);
+      const { at, f: k } = this.note('f' + f.id, now, false, false);
       if (now < at) continue;
+      if (at > this.lastThink) this.fresh = true;
       const t = Math.max(0, f.until - now);
       if (f.kind === 'tele') {
         if (f.safeSpots) out.push({ kind: 'nuke', t, tEnd: t, x: f.x, y: f.y, r: f.r, safe: f.safeSpots, w: 6 });
         else if (f.shape === 'line') {
           // Linien ohne Schaden kündigen den Sturmlauf eines Gegners an: gefährlich ist die Bahn kurz danach
           const charge = f.raw <= 0;
-          out.push({ kind: 'line', t, tEnd: t + (charge ? 0.5 : 0), x: f.x, y: f.y, x2: f.x2!, y2: f.y2!, hw: charge ? Math.max(f.w! / 2, 20) : f.w! / 2, r: 0, w: 1 });
-        } else if (f.raw > 0) out.push({ kind: 'circle', t, tEnd: t, x: f.x, y: f.y, r: f.r, w: 1 });
-      } else if (f.raw > 0) out.push({ kind: 'pool', t: 0, tEnd: t, x: f.x, y: f.y, r: f.r, w: 0.35 });
+          out.push({ kind: 'line', t, tEnd: t + (charge ? 0.5 : 0), x: f.x, y: f.y, x2: f.x2!, y2: f.y2!, hw: (charge ? Math.max(f.w! / 2, 20) : f.w! / 2) * k, r: 0, w: 1 });
+        } else if (f.raw > 0) out.push({ kind: 'circle', t, tEnd: t, x: f.x, y: f.y, r: f.r * k, w: 1 });
+      } else if (f.raw > 0) out.push({ kind: 'pool', t: 0, tEnd: t, x: f.x, y: f.y, r: f.r * k, w: 0.35 });
     }
     let sawProj = false;
     for (const pr of z.projs.values()) {
       if (!pr.hostile) continue;
-      const at = this.note('p' + pr.id, now, false, true);
+      const { at, f: k } = this.note('p' + pr.id, now, false, true);
       if (now < at) continue;
+      if (at > this.lastThink) this.fresh = true;
       sawProj = true;
-      out.push({ kind: 'proj', t: 0, tEnd: pr.life, x: pr.x, y: pr.y, r: pr.r, vx: pr.vx, vy: pr.vy, life: pr.life, w: 1 });
+      out.push({ kind: 'proj', t: 0, tEnd: pr.life, x: pr.x, y: pr.y, r: (pr.r + CFG.player.radius + 2) * k, vx: pr.vx, vy: pr.vy, life: pr.life, w: 1 });
     }
     if (sawProj) this.lastProjSeen = now;
     // Ausholen gewöhnlicher Nahkämpfer (Bosse greifen nur über Markierungen und Geschosse an)
@@ -155,9 +165,10 @@ export class Bot {
       if (!on) continue;
       const a = m.def.atk;
       if (a.proj || a.aoe || m.def.ai === 'charge') continue; // die kommen als Geschoss, Kreis oder Linie
-      const at = this.note('m' + m.id + ':' + w.serial, now, true, false);
+      const { at, f: k } = this.note('m' + m.id + ':' + w.serial, now, true, false);
       if (now < at) continue;
-      out.push({ kind: 'circle', t: Math.max(0, m.t), tEnd: Math.max(0, m.t), x: m.x + m.aimX * a.range * 0.6, y: m.y + m.aimY * a.range * 0.6, r: (a.reach ?? 14) + CFG.player.radius - 2, w: 0.7 });
+      if (at > this.lastThink) this.fresh = true;
+      out.push({ kind: 'circle', t: Math.max(0, m.t), tEnd: Math.max(0, m.t), x: m.x + m.aimX * a.range * 0.6, y: m.y + m.aimY * a.range * 0.6, r: ((a.reach ?? 14) + CFG.player.radius - 2) * k, w: 0.7 });
     }
     return out;
   }
@@ -165,6 +176,7 @@ export class Bot {
   /** Kosten einer Bahn (Positionen im Abstand von STEP) gegen alle bekannten Gefahren; Treffer vor `safeUntil` zählen nicht. */
   private cost(path: Float32Array, th: Threat[], safeUntil: number): number {
     let c = 0;
+    const MARGIN = this.skill.margin;
     const at = (t: number): [number, number] => { const k = Math.max(0, Math.min(NSTEP, Math.round(t / STEP))); return [path[k * 2], path[k * 2 + 1]]; };
     for (const h of th) {
       if (h.kind === 'circle') {
@@ -193,7 +205,7 @@ export class Bot {
           const t = k * STEP;
           if (t > h.life!) break;
           if (t < safeUntil) continue;
-          if (Math.hypot(path[k * 2] - (h.x + h.vx! * t), path[k * 2 + 1] - 6 - (h.y + h.vy! * t)) <= h.r + CFG.player.radius + 2 + MARGIN - 1) { c += h.w * (k <= 6 ? 1.2 : 1); break; }
+          if (Math.hypot(path[k * 2] - (h.x + h.vx! * t), path[k * 2 + 1] - 6 - (h.y + h.vy! * t)) <= h.r + MARGIN - 1) { c += h.w * (k <= 6 ? 1.2 : 1); break; }
         }
       }
     }
@@ -240,7 +252,9 @@ export class Bot {
     const p = this.p;
     if (!p || p.dead) return;
     const z = p.zone, now = z.game.now, cls = CLASSES[p.char.cls], atk = cls.attack, melee = atk.kind === 'arc';
+    this.fresh = false;
     const th = this.threats(now);
+    this.lastThink = now;
     const tgt = this.pickTarget();
     const stunned = p.stunned(now);
 
@@ -260,7 +274,14 @@ export class Bot {
     // Sperrfeuer (mehrere Geschosse in der Luft): Nahkämpfer lösen sich vom Boss, bis es vorbei ist – wie ein Mensch, der „erst mal weg“ denkt
     const barrage = !!tgt?.boss && th.reduce((a, h) => a + (h.kind === 'proj' ? 1 : 0), 0) >= 4;
     if (barrage) this.backUntil = now + 0.5;
-    const back = melee && now < this.backUntil;
+    // Phasenwechsel (Brüllen, Lichtblitz, neue Leiste): danach kommt ein Geschossring aus dem Boss – wer es bemerkt, geht auf Abstand
+    const ph = z.boss?.active ? z.boss.phase : 0;
+    if (ph > this.lastPhase && this.lastPhase > 0 && !this.rng.chance(this.skill.miss)) this.cueAt = now + this.skill.react * this.rng.range(0.7, 1.3);
+    this.lastPhase = ph;
+    if (this.cueAt && now >= this.cueAt) { this.cueAt = 0; this.backUntil = Math.max(this.backUntil, now + 1.4); }
+    // Schwer Gerüstete (Krieger, Paladin) bleiben auch im Sperrfeuer am Gegner, solange sie noch gut Leben haben – dafür sind sie gebaut
+    const stays = cls.armor === 'heavy' && p.hp > p.stats.maxHp * 0.6;
+    const back = melee && now < this.backUntil && !stays;
     const want = !tgt ? 0 : melee ? (back ? 100 : atk.range + tgt.radius - 7) : Math.min(atk.range * (tgt.boss ? 0.62 : 0.55), 135);
     const nuke = th.find(h => h.kind === 'nuke');
     // kein Schuss seit drei Sekunden: Umweg über das Kachelraster suchen (Hindernis im Weg, Ziel hinter einer Ecke)
@@ -297,7 +318,9 @@ export class Bot {
     };
     let moveAng: number | null = null;
     if (rolling) moveAng = this.rollDir;
+    else if (now < this.decideAt && !this.fresh) moveAng = now < this.moveLockUntil ? null : this.choice; // zwischen zwei Entscheidungen: weiter wie gehabt
     else {
+      this.decideAt = now + this.skill.cadence * this.rng.range(0.7, 1.3);
       const stay = this.path(null, 0, false);
       const stayThreat = this.cost(stay, th, safeUntil);
       let best = stayThreat * 10 + pref(stay), bestAng: number | null = null, bestThreat = stayThreat;
@@ -323,6 +346,7 @@ export class Bot {
         if (ra >= 0) { this.send({ t: 'dodge', ang: ra }); if (now < p.rollUntil) { this.rolls++; this.rollDir = ra; this.moveLockUntil = 0; moveAng = ra; } }
       }
       if (moveAng === null) moveAng = bestAng;
+      this.choice = bestAng;
     }
     if (moveAng !== null) {
       const v = p.speed(now) * (1 / CFG.net.tickRate);

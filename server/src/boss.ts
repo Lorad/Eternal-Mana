@@ -561,7 +561,7 @@ export class BossCtl {
   private *hkDash(): Gen {
     for (let k = 0; k < 2 + this.phase; k++) {
       const t = this.target(); if (!t) return;
-      yield* this.dashLine(t, 190, 28, this.phase === 3 ? 0.45 : 0.6, 1.5);
+      yield* this.dashLine(t, 190, 28, this.phase === 3 ? 0.6 : 0.75, 1.5);
       yield 0.25;
     }
   }
@@ -621,7 +621,7 @@ export class BossCtl {
   private *vlWatch(): Gen {
     for (let k = 0; k < 1 + this.phase; k++) {
       const t = this.target(); if (!t) return;
-      yield* this.dashLine(t, 200, 26, this.phase === 3 ? 0.5 : 0.65, 1.5);
+      yield* this.dashLine(t, 200, 26, this.phase === 3 ? 0.6 : 0.75, 1.5);
       yield 0.25;
     }
   }

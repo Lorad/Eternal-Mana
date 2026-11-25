@@ -996,8 +996,11 @@ export class Zone {
         if (this.solidFly(Math.floor(p.x / TILE), Math.floor((p.y + 5) / TILE))) { end = true; hit = true; this.explodeProj(p); break; }
         if (p.hostile) {
           for (const pl of this.players.values()) {
-            if (pl.dead || Math.hypot(pl.x - p.x, pl.y - 6 - p.y) > p.r + CFG.player.radius + 2) continue;
-            this.hitPlayer(pl, p.raw, p.el, p.lvl, p.by, p.status);
+            if (pl.dead || p.hit.has(pl.id) || Math.hypot(pl.x - p.x, pl.y - 6 - p.y) > p.r + CFG.player.radius + 2) continue;
+            // 0.8: Schonfrist – wer eben von einem Geschoss desselben Urhebers getroffen wurde, den durchfliegen dessen weitere
+            // Geschosse kurz. So trifft eine Salve aus nächster Nähe einmal statt mit allen Geschossen zugleich.
+            if (this.game.now < pl.shotGraceUntil && pl.shotBy === p.by) { p.hit.add(pl.id); continue; }
+            if (this.hitPlayer(pl, p.raw, p.el, p.lvl, p.by, p.status) > 0) { pl.shotGraceUntil = this.game.now + CFG.combat.shotGrace; pl.shotBy = p.by; }
             end = true; hit = true; break;
           }
         } else {

@@ -46,8 +46,8 @@ export const CFG = {
   /** XP, die für den Aufstieg von `level` auf `level+1` nötig sind */
   xpToNext: (level: number) => Math.floor(40 * Math.pow(level, 1.6) + 60),
   enemy: {
-    hp: (lvl: number) => 30 + lvl * 18 + lvl * lvl * 1.2,
-    dmg: (lvl: number) => 6 + lvl * 2.6,
+    hp: (lvl: number) => 30 + lvl * 20 + lvl * lvl * 2,
+    dmg: (lvl: number) => 8 + lvl * 3.6,
     def: (lvl: number) => lvl * 1.5,
     xp: (lvl: number) => 10 + lvl * 6,
     gold: (lvl: number) => 2 + lvl * 1.2,
@@ -56,7 +56,7 @@ export const CFG = {
     wakeDist: 420,           // Gegner simulieren nur, wenn ein Spieler so nah ist
     respawnSec: 75,
     eliteChance: 0.06,       // Chance auf einen Elite-Gegner (mehr HP/Schaden, besserer Loot)
-    eliteHpMul: 2.4,
+    eliteHpMul: 3,
     eliteDmgMul: 1.35,
     /** Zusätzliche HP je weiterem Spieler in der Zone */
     hpPerExtraPlayer: 0.55,
@@ -87,6 +87,10 @@ export const CFG = {
     /** „Entblößt“ (Wind): Treffer gegen das Ziel sind um so viel wahrscheinlicher kritisch; Spieler erleiden stattdessen mehr Schaden */
     exposeCrit: 0.15,
     exposeDmgTaken: 1.1,
+    /** 0.8: s Schonfrist nach einem Geschosstreffer gegen weitere Geschosse desselben Gegners (eine Salve trifft einmal, nicht mit jedem Geschoss) */
+    shotGrace: 0.3,
+    /** 0.8: Obergrenze für Lebensraub in Prozent des Schadens (Affixe, Rune, Set und Blutdurst zusammen) */
+    lifestealCap: 4,
     partyXpRadius: 520,
     partyXpBonus: 0.1, // je weiterem Gruppenmitglied in Reichweite
   },
@@ -186,14 +190,14 @@ export const CFG = {
     /** Anzahl der Modifikatoren */
     modCount: (stufe: number) => (stufe >= 20 ? 3 : stufe >= 10 ? 2 : 1),
     /** Richtzeit: Grundzeit + Zeit je Raum des Dungeons + Zuschlag je Stufe (s) */
-    parBase: 150, parPerRoom: 42, parPerStufe: 4,
+    parBase: 60, parPerRoom: 10, parPerStufe: 11,
     /** Lebensfunken: so oft darf die Gruppe am Eingang wiederkehren (allein / je weiterem Mitglied) */
     revives: 3, revivesPerExtra: 1,
     joinRadius: 420,          // so nah am Riss-Stein müssen Gruppenmitglieder stehen, um mitgenommen zu werden
     stoneRadius: 70,
     eliteChance: 0.08,
     /** Boss-Echo: einheitliche Stärke, damit alle sechs Dungeons vergleichbar sind */
-    echo: { hpMul: 17, dmgMul: 1.5, defMul: 1.5, levelPlus: 2, xpMul: 45, goldMul: 70 },
+    echo: { hpMul: 46, dmgMul: 1.9, defMul: 1.5, levelPlus: 2, xpMul: 45, goldMul: 70 },
     /** Seltenheitsgewichte der Belohnungstruhe bei Stufe 1 und bei der höchsten Stufe (dazwischen linear) */
     rarityLow: [0, 18, 52, 25, 5], rarityHigh: [0, 0, 30, 50, 20],
     chestGear: 2, bonusGear: 1,
@@ -219,7 +223,7 @@ export const CFG = {
     /** Angleichen (Schmiede): Stufen je Schritt, Echo-Fragmente je Stufe, Ätherstaub je Schritt bei Legendären Waffen, Gold je Stufe */
     attune: { step: 5, frags: 2, legendFrags: 3, legendAether: 1, gold: (ilvl: number) => 120 + ilvl * 12 },
     /** Prüfung der Sieben */
-    trial: { unlock: 15, stufe: 18, hpMul: 0.6, revives: 3, pause: 5, fragments: 8, aether: 2 },
+    trial: { unlock: 15, stufe: 18, hpMul: 0.5, revives: 3, pause: 5, fragments: 8, aether: 2 },
   },
   /** Endspiel (0.5): Quellstufen – Erfahrung über die Höchststufe hinaus. Bahnen: QUELL_TRACKS in data/rifts.ts */
   quell: {
@@ -230,7 +234,7 @@ export const CFG = {
   kreis: {
     max: 3,
     floor: 36,                // ab dem 1. Kreis ist kein Gegner schwächer als diese Stufe …
-    levelPer: 4,              // … und jeder Kreis legt so viele Stufen darauf
+    levelPer: 10,             // … und jeder Kreis legt so viele Stufen darauf
     bossXp: 40, bossGold: 60, // Boss-Belohnung mindestens: Gegner-EP/-Gold seiner Stufe × Faktor
     pointFragments: 1,        // ab dem 1. Kreis geben Quests statt Attribut-/Fähigkeitspunkten Echo-Fragmente
   },
