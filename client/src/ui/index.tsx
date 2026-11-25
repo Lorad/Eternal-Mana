@@ -15,6 +15,7 @@ import { CineOverlay, LoreOverlay } from './story';
 import { EncounterDialog, WorldShop } from './world';
 import { InspectWindow, TradeWindow } from './social';
 import { HofWindow } from './home';
+import { ExpResultScreen, ExpSummary, ExpeditionWindow } from './expedition';
 import { HandbuchPanel } from './handbuch';
 import { FatalBar } from './trouble';
 import { SettingsPanel } from './panels/settings';
@@ -87,6 +88,9 @@ function Root() {
       {screen === 'game' && hasEndgame && !dead && <EndgameWindow />}
       {screen === 'game' && hasWshop && !dead && <WorldShop />}
       {screen === 'game' && hasHof && !dead && <HofWindow />}
+      {screen === 'game' && !dead && <ExpeditionWindow />}
+      {screen === 'game' && <ExpSummary />}
+      {screen === 'game' && !dead && <ExpResultScreen />}
       {screen === 'game' && hasEnc && !dead && <EncounterDialog />}
       {screen === 'game' && hasInspect && !dead && <InspectWindow />}
       {screen === 'game' && hasTrade && !dead && <TradeWindow />}

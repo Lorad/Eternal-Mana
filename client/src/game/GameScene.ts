@@ -44,6 +44,8 @@ import { HOME_TROPHY } from '../../../shared/src/data/home';
 import { glowColor } from '../../../shared/src/data/looks';
 import { HOME_AT } from '../../../shared/src/data/recipes';
 import { PetView } from './pets';
+import { expArtFallback } from './expart';
+import { openExpedition } from '../ui/expedition';
 import { MobView, ObjView, PlayerView, applyShadow, makeShadow, type ShadowCfg, type ViewCtx } from './views';
 
 type Snap = Extract<ServerMsg, { t: 's' }>;
@@ -175,9 +177,10 @@ export class GameScene extends Phaser.Scene {
   };
 
   /** Löst einen Deko-Namen in einen Atlas-Frame auf (animierte Varianten `_0..n` haben Vorrang). */
-  private resolveFrame(f: string): { frame: string; n: number } | null {
+  private resolveFrame(f: string, alt = true): { frame: string; n: number } | null {
     if (this.objTex.has(f + '_0')) return { frame: f + '_0', n: this.countFrames(f) };
     if (this.objTex.has(f)) return { frame: f, n: 0 };
+    if (alt) for (const c of expArtFallback(f)) { const r = this.resolveFrame(c, false); if (r) return r; } // 0.9: Expeditionsgrafik mit Rückfall (game/expart.ts)
     return null;
   }
   private countFrames(name: string): number {
@@ -471,12 +474,13 @@ export class GameScene extends Phaser.Scene {
         break;
       }
       // ---- Lebendige Welt (0.6): Objekte der Ereignisse und Begegnungen – Frame aus dem Objekt-Atlas, optional Beschriftung und Licht
-      case 'wobj': case 'hobj': { // 0.7: Hof-Objekte (Truhe, Stationen, Trophäenständer …) – gleiche Darstellung, Aussehen vom Server
+      case 'wobj': case 'hobj': case 'xobj': { // 0.7: Hof-Objekte · 0.9: Expeditionen (Portal, Rastplatz, Runenscheiben, Siegel …) (Truhe, Stationen, Trophäenständer …) – gleiche Darstellung, Aussehen vom Server
         // 0.8: Trophäenständer – leer zeigt er nur das Kissen; eine ausgestellte Trophäe liegt als Miniatur `trophy_<id>` darauf
         // (gibt es für sie keine Miniatur, bleibt der Ständer mit Pokal).
         const mini = pr.tro && this.objTex.has('trophy_' + pr.tro) ? 'trophy_' + pr.tro : null;
         const fr: string | undefined = pr.frame === 'trophy_stand' && (mini || !pr.tro) && this.objTex.has('trophy_stand_empty') ? 'trophy_stand_empty' : pr.frame, f = fr ? this.resolveFrame(fr) : null;
-        if (f) img(o.x, o.y + 8, f.frame, FLAT.test(fr!) ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_'));
+        if (f && pr.cells) for (const c of pr.cells as number[]) { const [cx2, cy2] = this.cellXY(c); img(cx2, cy2 + 8, f.frame, 3, false); } // 0.9: brüchiger Boden je Feld
+        else if (f) img(o.x, o.y + 8, f.frame, FLAT.test(fr!) || pr.flat ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_'));
         if (mini) img(o.x, o.y - 14, mini, o.y + 8.5, false);
         if (pr.label) v.label = this.text(o.x, o.y - (f ? 30 : 36), pr.label, '#bfe9ff', 7).setOrigin(0.5, 1);
         if (pr.light) { v.light = pr.light; v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(pr.light[0] / 110).setTint(pr.light[1]).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }
@@ -486,7 +490,7 @@ export class GameScene extends Phaser.Scene {
       case 'door': case 'bossdoor': case 'boulder': {
         const cells: number[] = pr.cells ?? [];
         if (o.type === 'bossdoor') img(pr.orient === 'v' ? o.x - 8 : o.x, o.y + 8, 'door_boss', undefined, false);
-        else for (const c of cells) { const [x, y] = this.cellXY(c); img(x, y + 8, o.type === 'boulder' ? 'boulder_wall' : 'door_closed', undefined, o.type === 'boulder'); }
+        else for (const c of cells) { const [x, y] = this.cellXY(c); img(x, y + 8, o.type === 'boulder' ? (pr.look ? this.resolveFrame(pr.look)?.frame ?? 'boulder_wall' : 'boulder_wall') : 'door_closed', undefined, o.type === 'boulder'); }
         break;
       }
       case 'lever': img(o.x, o.y + 7, 'lever_off'); break;
@@ -849,7 +853,7 @@ export class GameScene extends Phaser.Scene {
       case 'zone-': { const v = this.zfx.get(e.id); if (v) { v.g.destroy(); v.rune?.destroy(); this.zfx.delete(e.id); } break; }
       case 'obj': {
         const v = this.objs.get(e.id);
-        if (v?.o.type === 'hobj' && e.props) { this.addObj({ ...v.o, state: e.state, props: { ...v.o.props, ...e.props } }); break; } // 0.7: Hof umgebaut – neu aufstellen
+        if ((v?.o.type === 'hobj' || v?.o.type === 'xobj') && e.props) { this.addObj({ ...v.o, state: e.state, props: { ...v.o.props, ...e.props } }); break; } // 0.7: Hof umgebaut – neu aufstellen
         if (v) { v.o.state = e.state; if (e.props) v.o.props = { ...v.o.props, ...e.props }; this.applyObjState(v); }
         break;
       }
@@ -1416,9 +1420,10 @@ export class GameScene extends Phaser.Scene {
         case 'rift': if (this.countFrames('void_rift') > 1) v.parts[0].setFrame(anim('void_rift', 120, 4)); v.parts[0].y = o.y + 8 + Math.sin(now / 260) * 2; break;
         case 'lore': if (!o.state && v.glow) v.glow.setAlpha(0.35 + 0.15 * Math.sin(now / 300 + o.id)); break;
         case 'riftstone': if (this.countFrames('riss_stein') > 1) v.parts[0].setFrame(anim('riss_stein', 170, 4)); if (v.glow) v.glow.setAlpha(0.3 + 0.15 * Math.sin(now / 340)); break;
-        case 'wobj': case 'hobj': {
-          const fr: string | undefined = o.props?.frame, s0 = v.parts[0];
-          if (!fr || !s0) break;
+        case 'wobj': case 'hobj': case 'xobj': {
+          const fr0: string | undefined = o.props?.frame, s0 = v.parts[0];
+          if (!fr0 || !s0) break;
+          const fr = o.type === 'xobj' && !this.countFrames(fr0) ? (this.resolveFrame(fr0)?.frame.replace(/_0$/, '') ?? fr0) : fr0;
           const n = o.props!.frames ?? this.countFrames(fr);
           if (n > 1) s0.setFrame(`${fr}_${Math.floor((now + o.id * 53) / (fr.startsWith('pet_') ? 460 : 130)) % n}`);
           if (fr === 'star_shard') s0.y = o.y + 6 + Math.sin(now / 280 + o.id) * 2;
@@ -1482,7 +1487,7 @@ export class GameScene extends Phaser.Scene {
         case 'npc': text = `Mit ${NPCS[o.tag!]?.name ?? '???'} sprechen`; break;
         // ---- Lebendige Welt (0.6)
         case 'wobj': if (o.props?.prompt && !(o.props.hide1 && o.state)) text = o.props.prompt; break;
-        case 'hobj': if (o.props?.prompt) text = o.props.prompt; break;
+        case 'hobj': case 'xobj': if (o.props?.prompt) text = o.props.prompt; break;
         case 'dig': text = 'Hier graben'; break;
         case 'chest': if (!o.state) text = 'Truhe öffnen'; break;
         case 'door': if (!o.state) text = o.props?.locked && !o.props?.unlocked ? 'Tür aufschließen' : 'Tür öffnen'; break;
@@ -1539,7 +1544,8 @@ export class GameScene extends Phaser.Scene {
     if (o.type === 'sign') { store.set({ sign: o.props?.text ?? '', prompt: null }); return; }
     if (o.type === 'cookfire') { store.set({ craft: { at: 'fire', station: 'cooking' }, panel: null, dialog: null, prompt: null }); return; }
     if (o.type === 'riftstone') { store.set({ endgame: { tab: 'risse', stone: true }, panel: null, dialog: null, prompt: null }); return; }
-    if (o.type === 'hobj') { this.hofInteract(o); return; }                                           // 0.7: Hof
+    if (o.type === 'hobj') { this.hofInteract(o); return; }
+    if (o.type === 'xobj' && o.props?.ui === 'exp') { openExpedition(); return; }                   // 0.9: Expeditionsportal                                           // 0.7: Hof
     net.send({ t: 'interact', id: o.id });
     if (o.type === 'stone') this.time.delayedCall(250, () => store.set({ panel: 'map', nearStone: true }));
   }

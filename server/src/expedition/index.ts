@@ -651,6 +651,18 @@ export const Expedition = {
       startRun(game, p, id, diff, members.length ? members : [p]);
       return true;
     }
+    if (cmd === 'portal') { // zum Expeditionsportal (Hub oder Quellhain)
+      const t = returnSpot();
+      if (p.zone.id !== t.zone || p.zone.exp) game.transfer(p, t.zone, '', { x: t.x, y: t.y }); else { p.x = t.x; p.y = t.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
+      return true;
+    }
+    if (cmd === 'expfrei') { // alle Expeditionen auf Normal freischalten (Bedingungen der Daten erfüllen)
+      for (const x of Object.values(EXPEDITIONS)) for (const r of x.unlock) { const c = r.cond; if (c?.flag) p.char.flags[c.flag] = 1; for (const a2 of c?.any ?? []) { if (a2.started && !p.char.quests[a2.started]) p.char.quests[a2.started] = { s: 'active', p: [0] }; } if (r.item) p.give(makeStack(r.item)); }
+      for (const x of Object.values(EXPEDITIONS)) p.char.flags['xs:' + x.id] = 1;
+      p.sync('flags', 'quests');
+      return true;
+    }
+    if (cmd === 'expphase' && p.zone.boss?.active) { const b = p.zone.boss, f = [0, 1, 0.58, 0.23][Math.max(1, Math.min(3, +a[0] || 2))]; b.mob.hp = Math.max(1, Math.round(b.mob.maxHp * f)); return true; }
     if (cmd === 'expgo' && p.zone.exp) {
       const s = p.zone.map.exp!.sections.find(x => x.id === a[0]) ?? p.zone.map.exp!.sections.find(x => x.role === (a[0] ?? 'boss'));
       if (s) { p.x = s.entry.x; p.y = s.entry.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
