@@ -13,7 +13,7 @@ export const enum T {
   HAZARD = 8,  // begehbar, verursacht Schaden (Dornen, Glutboden, …)
 }
 
-export type BiomeId = 'gruenwald' | 'kristall' | 'glut' | 'frost' | 'ruinen' | 'schatten';
+export type BiomeId = 'gruenwald' | 'kristall' | 'glut' | 'frost' | 'ruinen' | 'schatten' | 'quellwarte';
 export const BIOMES: BiomeId[] = ['gruenwald', 'kristall', 'glut', 'frost', 'ruinen', 'schatten'];
 
 export function isWalkableTile(t: number): boolean {
