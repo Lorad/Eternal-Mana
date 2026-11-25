@@ -69,8 +69,9 @@ const SIG: Record<string, Signature> = {
     start(k, s) { this.phase!(k, s, 1); },
     phase(k, s, ph) {
       const z = k.boss.zone, d = diffOf(z);
-      const n = Math.min(4, 1 + ph + (d.bossAdds > 0 ? 1 : 0));
-      for (const [x, y] of edgeSpots(k, n)) { const m = z.spawnMob('xm_knospe', Math.max(1, k.boss.def.level - 1), x, y); m.maxHp = m.hp = Math.round(m.maxHp * (0.8 + 0.25 * ph)); s.adds.add(m); }
+      for (const a of [...s.adds]) if (a.dead || !z.mobs.has(a.id)) s.adds.delete(a);
+      const n = Math.min(4, 1 + ph + (d.bossAdds > 0 ? 1 : 0)) - s.adds.size; // höchstens vier Knospen zugleich
+      for (const [x, y] of n > 0 ? edgeSpots(k, n) : []) { const m = z.spawnMob('xm_knospe', Math.max(1, k.boss.def.level - 1), x, y); m.maxHp = m.hp = Math.round(m.maxHp * (0.8 + 0.25 * ph)); s.adds.add(m); }
       s.next = 0;
       if (ph === 2) { k.say('*Die Wände wuchern zu. Der Raum wird enger.*'); const r = k.boss.room; overgrow(k, (r.x0 + 1.5) * TILE, k.boss.cy, 34, 'earth'); overgrow(k, (r.x1 - 0.5) * TILE, k.boss.cy, 34, 'earth'); }
       if (ph === 3) { k.say('*Aus jeder Fuge treiben Dornen.*'); const r = k.boss.room; overgrow(k, k.boss.cx, (r.y0 + 1.5) * TILE, 34, 'earth'); overgrow(k, (r.x0 + 3) * TILE, (r.y1 - 1) * TILE, 28, 'earth'); overgrow(k, (r.x1 - 2) * TILE, (r.y0 + 2) * TILE, 28, 'earth'); }

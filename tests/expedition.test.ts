@@ -8,6 +8,10 @@ import { getMap } from '../shared/src/maps/mapgen';
 import { genExpedition, validateExpedition } from '../shared/src/maps/expedition';
 import { TILE } from '../shared/src/maps/tiles';
 import { Sim, type Tester } from './helpers/sim';
+import { CFG } from '../shared/src/config';
+import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
+import { EXP_CFG } from '../shared/src/data/expeditions';
+import { Expedition } from '../server/src/expedition';
 import type { Zone } from '../server/src/zone';
 
 const sim = new Sim();
@@ -280,5 +284,21 @@ describe('Expeditionen – Ereignisse und Bosse', () => {
       expect(hit, 'Bewegung im Stillstand friert ein').toBe(true); sim.leave(t); }
     { const { t, z } = run('exp_ruinen'); sim.step(10.5); const mech = (z.boss as any); expect(t.p.statuses.has('mark')).toBe(true);
       const ink = [...z.objs.values()].find(o => o.props?.kind === 'ink')!; t.p.x = ink.x; t.p.y = ink.y + 10; sim.step(0.2); expect(t.p.statuses.has('mark')).toBe(false); void mech; sim.leave(t); }
+  });
+});
+
+describe('Expeditionen – Tempo der Geschichte', () => {
+  it('eine Expedition auf Normal hebt bei empfohlener Stufe um höchstens drei Stufen (die Geschichte läuft nicht davon)', () => {
+    for (const x of EXPEDITION_LIST) {
+      const t = sim.join('Xp' + x.id.slice(4, 9), 'krieger', x.rec);
+      const z = startSolo(t, 'normal', x.id), f = Expedition.mobXp(z);
+      let lvl = x.rec, xp = 0;
+      const add = (n: number) => { xp += n; while (xp >= CFG.xpToNext(lvl)) { xp -= CFG.xpToNext(lvl); lvl++; } };
+      for (const s of z.map.spawns) add(CFG.enemy.xp(s.lvl) * ENEMIES[s.mob].xpMul * f * (s.elite ? 3 : 1) * CFG.enemy.xpLevelPenalty(lvl, s.lvl));
+      add(BOSSES[x.boss].xp * EXP_CFG.clearXp);
+      expect(lvl - x.rec, x.id).toBeLessThanOrEqual(3);
+      expect(lvl - x.rec, x.id).toBeGreaterThanOrEqual(1);
+      sim.leave(t);
+    }
   });
 });
