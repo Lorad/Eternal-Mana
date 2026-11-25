@@ -553,7 +553,7 @@ export class Game {
   private respec(p: Player, npc: string) {
     if (!this.nearNpc(p, npc) || !NPCS[npc]?.services?.includes('respec')) return;
     const c = p.char, cost = CFG.respecGold(c.level);
-    if (c.gold < cost) { p.toast(`Fenwick verlangt ${cost} Gold.`, 'bad'); return; }
+    if (c.gold < cost) { p.toast(`${NPCS[npc].name} verlangt ${cost} Gold.`, 'bad'); return; }
     c.gold -= cost;
     const cls = CLASSES[c.cls];
     let sp = c.skillPoints; for (const id in c.skills) sp += c.skills[id];
