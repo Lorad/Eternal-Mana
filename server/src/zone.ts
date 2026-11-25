@@ -561,7 +561,8 @@ export class Zone {
       }
       case 'heal': {
         const amount = raw * (1 + p.stats.healPct / 100);
-        for (const q of this.players.values()) if (!q.dead && Math.hypot(q.x - p.x, q.y - p.y) <= e.party) { q.heal(amount); legendShield(this, p, q, amount); this.ev({ k: 'fx', n: 'heal', x: q.x, y: q.y, el: 'light' }); }
+        // 0.8: Ein Heilzauber stellt höchstens einen festen Anteil des Lebens des Geheilten wieder her – der Angriffswert wächst im Endspiel schneller als das Leben
+        for (const q of this.players.values()) if (!q.dead && Math.hypot(q.x - p.x, q.y - p.y) <= e.party) { const h = Math.min(amount, q.stats.maxHp * CFG.combat.healCap); q.heal(h); legendShield(this, p, q, h); this.ev({ k: 'fx', n: 'heal', x: q.x, y: q.y, el: 'light' }); }
         break;
       }
     }
@@ -996,8 +997,11 @@ export class Zone {
         if (this.solidFly(Math.floor(p.x / TILE), Math.floor((p.y + 5) / TILE))) { end = true; hit = true; this.explodeProj(p); break; }
         if (p.hostile) {
           for (const pl of this.players.values()) {
-            if (pl.dead || Math.hypot(pl.x - p.x, pl.y - 6 - p.y) > p.r + CFG.player.radius + 2) continue;
-            this.hitPlayer(pl, p.raw, p.el, p.lvl, p.by, p.status);
+            if (pl.dead || p.hit.has(pl.id) || Math.hypot(pl.x - p.x, pl.y - 6 - p.y) > p.r + CFG.player.radius + 2) continue;
+            // 0.8: Schonfrist – wer eben von einem Geschoss desselben Urhebers getroffen wurde, den durchfliegen dessen weitere
+            // Geschosse kurz. So trifft eine Salve aus nächster Nähe einmal statt mit allen Geschossen zugleich.
+            if (this.game.now < pl.shotGraceUntil && pl.shotBy === p.by) { p.hit.add(pl.id); continue; }
+            if (this.hitPlayer(pl, p.raw, p.el, p.lvl, p.by, p.status) > 0) { pl.shotGraceUntil = this.game.now + CFG.combat.shotGrace; pl.shotBy = p.by; }
             end = true; hit = true; break;
           }
         } else {

@@ -216,3 +216,75 @@ Elementfaktoren, Beutechancen, Seltenheitsgewichte, Verbesserungskosten, Mehrspi
 und in den Datentabellen unter `shared/src/data/` (Klassen, Fähigkeiten, Gegner, Bosse, Gegenstände, Zonen, Quests).
 Ein automatischer Test prüft für alle Klassen auf den Stufen 1, 10, 20 und 30, dass „Treffer bis zum Sieg“ und
 „Treffer bis zum Tod“ in einem fairen Korridor bleiben.
+
+## Balance (Stand 0.8)
+
+Bis 0.7 waren alle Zahlen gerechnet. Seit 0.8 misst ein Spieltest sie: `npx tsx scripts/playtest.ts [Abschnitt …] [--schnell]`
+(Abschnitte: `tempo`, `bosse`, `gebiete`, `dungeons`, `wirtschaft`, `kraft`, `risse`, `welt`; Spielermodell in
+`scripts/playtest/model.ts`). Bots kämpfen dabei im echten Server-Code ohne Unverwundbarkeit und ohne Entwicklerbefehle: Sie
+laufen, greifen an, nutzen ihre Fähigkeiten, weichen markierten Angriffen mit Reaktionszeit und Fehlerquote aus und trinken
+Tränke mit der echten Abklingzeit. Ausrüstung entspricht dem, was man an der Stelle plausibel besitzt, nicht dem Besten.
+
+Drei Spielertypen: **sorgfältig** (Reaktion 0,25 s, übersieht 3 % der Markierungen), **durchschnittlich** (0,35 s, 10 %),
+**unachtsam** (0,55 s, 30 %).
+
+### Zielkorridore
+
+- Sorgfältige Spieler schaffen jeden Story-Boss allein; niemand stirbt gezwungen (kein unausweichlicher Schaden).
+- Durchschnittliche Spieler schaffen jeden Story-Boss in mindestens 90 % der Versuche; Unachtsamkeit wird nach hinten hin
+  spürbar bestraft.
+- Bosskämpfe dauern lang genug für alle drei Phasen (rund 40 s am Anfang, rund 100 s am Ende).
+- Gruppenspiel lohnt sich, ist für die Geschichte aber nie nötig.
+- Die schwächste Klasse liegt im Schaden bei mindestens 60 % der stärksten (vor 0.8: 47 %).
+- Lebensraub ist gedeckelt; Heilzauber heilen je Wirken höchstens einen Teil des Lebens.
+
+Die wichtigsten Korridore bewacht `tests/balance.test.ts`: Wer später etwa den Bossschaden verdoppelt, bekommt einen roten Test.
+
+### Messung: Story-Bosse allein (schneller Lauf, fünf Klassen)
+
+| Boss | Stufe Boss / Spieler | Sieg sorgfältig | Sieg durchschn. | Sieg unachtsam | Dauer (s) | Tränke |
+|---|---|---|---|---|---|---|
+| Dornenmutter | 6 / 6 | 100 % | 100 % | 90 % | 43 | 0,6 |
+| Kristallkoloss | 12 / 11 | 100 % | 100 % | 95 % | 48 | 0,5 |
+| Ignarok | 17 / 16 | 100 % | 100 % | 70 % | 61 | 1,4 |
+| Ysolde | 22 / 21 | 100 % | 100 % | 95 % | 66 | 1,4 |
+| Der Archivar | 27 / 26 | 100 % | 100 % | 75 % | 75 | 2,5 |
+| Der Hohle König | 33 / 31 | 100 % | 100 % | 45 % | 93 | 3,4 |
+| Vael | 38 / 37 | 100 % | 90 % | 45 % | 99 | 2,8 |
+| Aetherion | 40 / 40 | 100 % | 95 % | 25 % | 105 | 3,3 |
+
+Zu zweit (durchschnittlich) gewinnen alle geprüften Paare jeden Boss ohne Tod, in rund 70 % der Zeit.
+Ganze Dungeon-Durchläufe gelingen durchschnittlichen Spielern fast immer; unachtsame scheitern ab der Aschenschmiede häufiger.
+
+### Messung: Tempo
+
+Wer Nebenaufgaben größtenteils erledigt, kommt jeweils etwa eine Stufe über dem Boss an und erreicht Stufe 40 vor Akt II,
+Kapitel 10. Wer nur der Hauptlinie folgt, steht ein bis fünf Stufen unter dem Boss – machbar, aber spürbar schwerer;
+Nebenaufgaben lohnen sich also, ohne Pflicht zu sein.
+
+### Was 0.8 geändert hat und warum
+
+| Wert | vorher | nachher | Grund |
+|---|---|---|---|
+| Gegnerleben `enemy.hp` (Stufe 40) | 2670 | 4036 | gewöhnliche Gegner fielen nach ein bis zwei Treffern |
+| Gegnerschaden `enemy.dmg` (Stufe 40) | 110 | 152 | Gegner taten nichts; Tränke waren überflüssig |
+| Elitegegner Leben | ×2,4 | ×3 | Elite kaum von normalen Gegnern zu unterscheiden |
+| Schonfrist nach Geschosstreffer | – | 0,3 s | Salven trafen mit jedem Geschoss, kaum auszuweichen |
+| Heilzauber je Wirken | unbegrenzt | höchstens 35 % des Lebens | Paladin und Heilendes Licht machten Bosse belanglos |
+| Lebensraub | unbegrenzt | höchstens 4 % | Lebensraub-Stapel hielten unbegrenzt am Leben |
+| Legendär Magier (Reaktion) | ×2, Abklingzeit −1,5 s | ×3, −2 s | wirkte im Einzelkampf kaum |
+| Legendär Waldläufer (Abpraller) | 60 % / 22 % | 50 % / 18 % | deutlich stärker als die übrigen |
+| Legendär Paladin (Schild) | 30 %, 6 s | 50 %, 8 s, +8 Angriff | rein defensiv und zu schwach |
+| Riss-Schaden je Stufe | +2,5 % | +4 % | die Kurve war bis Stufe 25 flach und stieg dann abrupt |
+| Riss-Richtzeit | 150 s + 42 s je Raum + 4 s je Stufe | 60 s + 10 s je Raum + 11 s je Stufe | Bonustruhe gab es praktisch immer |
+| Boss-Echos | Leben ×17, Schaden ×1,5 | Leben ×46, Schaden ×1,9 | Echos fielen schneller als ihre normalen Vorbilder |
+| Prüfung der Sieben | Leben ×0,6 | ×0,4 | sieben Echos hintereinander waren mit den neuen Echos zu lang |
+| Neuer Kreis | +4 Stufen je Kreis | +10 | ein höherer Kreis war kaum zu spüren |
+| Vael, Aetherion | – | schärfere Muster, Spiralen mit Lücken | Spiralen hatten Stellen ohne Ausweg |
+
+Dazu Feinheiten an Fähigkeiten (`shared/src/data/skills.ts`), Weltbossen und seltenen Monstern (zäher).
+
+### Was der Spieltest nicht beurteilen kann
+
+Gefühl, Lesbarkeit und Ton; ob Muster auf dem Bildschirm gut erkennbar sind; Bedienung mit Gamepad; echte Netzverzögerung;
+Lernen über mehrere Versuche. Das Spielermodell ist eine Näherung – seine Zahlen sind Vergleichswerte, keine Versprechen.

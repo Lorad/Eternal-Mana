@@ -455,11 +455,14 @@ describe('Legendäre Waffen', () => {
     expect(ally.p.buffs.length).toBe(0);
     legend(t);
     t.p.cds.clear(); t.p.mp = t.p.stats.maxMp;
+    // 0.8: Heilwert aus den Daten (die Zahl wurde im Feinschliff gesenkt); Angriff VOR dem Wirken – Morgenwacht stärkt ihn danach
+    const power = t.p.stats.power, mult = (skillsOf('paladin').find(s => s.id === 'pa_heilung')!.effects![0] as { mult: number }).mult;
     t.send({ t: 'skill', id: 'pa_heilung', ang: 0, tx: x, ty: y });
     for (const who of [t, ally]) {
       const b = who.p.buffs.find(q => q.id === 'morgenwacht')!;
       expect(b, who.p.name).toBeTruthy();
-      const heal = t.p.stats.power * 2.4 * (1 + t.p.stats.healPct / 100);
+      const heal = power * mult * (1 + t.p.stats.healPct / 100);
+      expect(b.mods.powerPct).toBe(C.power);
       expect(b.shield).toBe(Math.min(Math.round(who.p.stats.maxHp * C.cap), Math.round(heal * C.shield)));
       expect(b.until - sim.game.now).toBeCloseTo(C.dur, 3);
     }

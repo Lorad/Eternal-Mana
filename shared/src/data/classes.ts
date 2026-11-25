@@ -38,7 +38,7 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     baseAttrs: { str: 10, dex: 6, int: 3, vit: 9 }, powerWeights: { str: 2, dex: 0.4 },
     baseHp: 130, baseMp: 40, hpPerVit: 13, mpPerInt: 5,
     weapon: 'sword', armor: 'heavy',
-    attack: { kind: 'arc', cooldown: 0.42, mult: 1, range: 30, arc: 120, element: 'phys', mpGain: 3, sfx: 'swing_heavy' },
+    attack: { kind: 'arc', cooldown: 0.42, mult: 1.25, range: 30, arc: 120, element: 'phys', mpGain: 3, sfx: 'swing_heavy' },
     defMul: 1.3, speedMul: 1, startSkill: 'kr_wucht', difficulty: 1,
   },
   magier: {
@@ -56,16 +56,16 @@ export const CLASSES: Record<ClassId, ClassDef> = {
     baseAttrs: { str: 5, dex: 11, int: 4, vit: 7 }, powerWeights: { dex: 2, str: 0.4 },
     baseHp: 100, baseMp: 60, hpPerVit: 11, mpPerInt: 5,
     weapon: 'bow', armor: 'light',
-    attack: { kind: 'proj', cooldown: 0.46, mult: 0.9, range: 220, speed: 300, sprite: 'arrow', element: 'phys', mpGain: 2, sfx: 'bow_shot' },
+    attack: { kind: 'proj', cooldown: 0.46, mult: 0.8, range: 220, speed: 300, sprite: 'arrow', element: 'phys', mpGain: 2, sfx: 'bow_shot' },
     defMul: 0.9, speedMul: 1.08, startSkill: 'wl_faecher', difficulty: 2,
   },
   paladin: {
     id: 'paladin', name: 'Paladin', tagline: 'Licht der Quelle',
     desc: 'Beschützer der Gruppe. Heilt Verbündete, errichtet Schilde und zermalmt Gegner mit geweihtem Hammer.',
-    baseAttrs: { str: 8, dex: 4, int: 7, vit: 9 }, powerWeights: { str: 1.4, int: 1 },
+    baseAttrs: { str: 8, dex: 4, int: 7, vit: 9 }, powerWeights: { str: 1.6, int: 1 },
     baseHp: 120, baseMp: 75, hpPerVit: 12, mpPerInt: 6,
     weapon: 'hammer', armor: 'heavy',
-    attack: { kind: 'arc', cooldown: 0.55, mult: 1.2, range: 28, arc: 110, element: 'phys', mpGain: 4, sfx: 'swing_heavy' },
+    attack: { kind: 'arc', cooldown: 0.55, mult: 1.6, range: 28, arc: 110, element: 'phys', mpGain: 4, sfx: 'swing_heavy' },
     defMul: 1.2, speedMul: 0.97, startSkill: 'pa_lichtschlag', difficulty: 1,
   },
   schattenjaeger: {

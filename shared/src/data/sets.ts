@@ -39,7 +39,7 @@ export const SET_LIST: SetDef[] = [
   { id: 'stilleschrift', name: 'Stille Schrift', gen: 'der Stillen Schrift', element: 'wind', tier: 5, ilvl: 27, boss: 'archivar', dungeon: 'archiv',
     bonus2: { speedPct: 4, dodgeCdr: 8 }, bonus4: { crit: 5, resWind: 15 } },
   { id: 'hohlekrone', name: 'Hohle Krone', gen: 'der Hohlen Krone', element: 'dark', tier: 6, ilvl: 33, boss: 'hohlkoenig', dungeon: 'thron',
-    bonus2: { powerPct: 5 }, bonus4: { lifesteal: 2, critDmg: 10, resDark: 15 } },
+    bonus2: { powerPct: 5 }, bonus4: { lifesteal: 1, critDmg: 12, resDark: 15 } },
 ];
 export const SETS: Record<string, SetDef> = Object.fromEntries(SET_LIST.map(s => [s.id, s]));
 export const SET_BY_BOSS: Record<string, SetDef> = Object.fromEntries(SET_LIST.map(s => [s.boss, s]));

@@ -50,7 +50,7 @@ export function computeStats(c: CharData, buffs?: Mods[]): Derived {
     speed: CFG.player.baseSpeed * cls.speedMul * (1 + Math.min(40, m.speedPct ?? 0) / 100),
     hpRegen: 0.5 + attrs.vit * 0.05 + (m.hpRegen ?? 0),
     mpRegen: 1 + attrs.int * 0.06 + (m.mpRegen ?? 0),
-    cdr: Math.min(40, m.cdr ?? 0), lifesteal: m.lifesteal ?? 0,
+    cdr: Math.min(40, m.cdr ?? 0), lifesteal: Math.min(CFG.combat.lifestealCap, m.lifesteal ?? 0),
     elemPct: m.elemPct ?? 0, healPct: m.healPct ?? 0, goldPct: m.goldPct ?? 0, xpPct: m.xpPct ?? 0,
     dodgeCd: CFG.player.dodgeCooldown * (1 - Math.min(50, m.dodgeCdr ?? 0) / 100),
     attackElement: weapon?.element ?? cls.attack.element,

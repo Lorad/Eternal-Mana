@@ -180,7 +180,7 @@ export const ENCHANT_LIST: EnchantDef[] = [
   { id: 'fokus', name: 'Rune des Fokus', slots: ['weapon'], mods: { elemPct: 8 }, cost: [[E.light, 5], [E.wind, 3]], gold: 150, level: 6 },
   { id: 'macht', name: 'Rune der Macht', slots: ['weapon'], mods: { powerPct: 5 }, cost: [[E.fire, 6], [E.earth, 4]], gold: 300, level: 11 },
   { id: 'schaerfe', name: 'Rune der Schärfe', slots: ['weapon'], mods: { crit: 4, critDmg: 8 }, cost: [[E.wind, 6], [E.water, 4]], gold: 500, level: 16 },
-  { id: 'sog', name: 'Rune des Sogs', slots: ['weapon'], mods: { lifesteal: 2 }, cost: [[E.dark, 8], [E.water, 4]], gold: 800, level: 22 },
+  { id: 'sog', name: 'Rune des Sogs', slots: ['weapon'], mods: { lifesteal: 1 }, cost: [[E.dark, 8], [E.water, 4]], gold: 800, level: 22 },
   { id: 'vital', name: 'Rune der Lebenskraft', slots: ARMOR, mods: { hpPct: 4 }, cost: [[E.earth, 5], [E.water, 2]], gold: 120, level: 4 },
   { id: 'bollwerk', name: 'Rune des Bollwerks', slots: ARMOR, mods: { defPct: 6 }, cost: [[E.earth, 6]], gold: 120, level: 4 },
   { id: 'geist', name: 'Rune des Geistes', slots: ARMOR, mods: { mpPct: 6, mpRegen: 0.5 }, cost: [[E.light, 4], [E.water, 3]], gold: 160, level: 8 },

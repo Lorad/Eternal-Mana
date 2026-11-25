@@ -112,5 +112,5 @@ export function legendShield(z: Zone, src: Player, q: Player, healed: number) {
   const C = CFG.legend.paladin;
   const cur = q.buffs.find(b => b.id === 'morgenwacht');
   const shield = Math.min(Math.round(q.stats.maxHp * C.cap), Math.round((cur?.shield ?? 0) + healed * C.shield));
-  q.addBuff({ id: 'morgenwacht', name: 'Morgenwacht', glyph: 'shield', icon: 'item_buff_morgenwacht', until: z.game.now + C.dur, mods: {}, shield, desc: 'Ein Schild aus Licht fängt Schaden ab.' });
+  q.addBuff({ id: 'morgenwacht', name: 'Morgenwacht', glyph: 'shield', icon: 'item_buff_morgenwacht', until: z.game.now + C.dur, mods: { powerPct: C.power }, shield, desc: `Ein Schild aus Licht fängt Schaden ab. +${C.power} % Angriff.` });
 }

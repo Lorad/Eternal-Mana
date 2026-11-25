@@ -195,7 +195,7 @@ const AFFIXES: AffixDef[] = [
   { k: 'power', w: 6, v: L => 1 + L * 0.8 }, { k: 'def', w: 6, v: L => 1 + L * 0.6 },
   { k: 'crit', w: 5, v: L => 2.5 + L * 0.06 }, { k: 'critDmg', w: 4, v: L => 9 + L * 0.3 },
   { k: 'speedPct', w: 3, v: () => 4 }, { k: 'cdr', w: 3, v: () => 4 },
-  { k: 'lifesteal', w: 2, v: () => 2 }, { k: 'hpRegen', w: 3, v: L => 0.6 + L * 0.08, round: 10 },
+  { k: 'lifesteal', w: 2, v: () => 1 }, { k: 'hpRegen', w: 3, v: L => 0.6 + L * 0.08, round: 10 },
   { k: 'mpRegen', w: 3, v: L => 0.4 + L * 0.04, round: 10 }, { k: 'elemPct', w: 4, v: () => 7 },
   { k: 'goldPct', w: 2, v: () => 10 }, { k: 'xpPct', w: 2, v: () => 5 },
   // Elementarresistenzen (0.4): nur auf Rüstung und Schmuck, damit Waffen wie bisher würfeln

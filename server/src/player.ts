@@ -30,6 +30,8 @@ export class Player {
   statuses = new Map<StatusId, StatusState>();
   dead = false; lastHurtAt = -99; potionReadyAt = 0; exitImmuneUntil = 0; hazardAt = 0; msgAt = 0;
   god = false; linkdead = false; linkdeadAt = 0;
+  /** 0.8: Schonfrist nach einem Geschosstreffer (CFG.combat.shotGrace) – gilt gegen weitere Geschosse desselben Urhebers */
+  shotGraceUntil = 0; shotBy = '';
   party: Party | null = null;
   dirty = new Set<keyof CharData>();
   pev: GameEvent[] = [];
