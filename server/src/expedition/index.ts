@@ -487,8 +487,22 @@ function returnAll(zone: Zone) {
 // =====================================================================================================================
 //  Einstieg
 // =====================================================================================================================
+/** Faktor auf die Erfahrung gewöhnlicher Gegner je Expedition (EXP_CFG.mobXpVsOld) – einmal aus den Karten berechnet */
+const xpCache = new Map<string, number>();
+function mobXpFactor(id: string): number {
+  let f = xpCache.get(id);
+  if (f === undefined) {
+    const sum = (z: string) => getMap(z).spawns.reduce((a, s) => a + CFG.enemy.xp(s.lvl) * ENEMIES[s.mob].xpMul * (s.elite ? 3 : 1), 0);
+    const x = EXPEDITIONS[id], old = x.legacy ?? 'archiv';
+    f = Math.min(1, (EXP_CFG.mobXpVsOld * sum(old) * (x.legacy ? 1 : sum(id) / sum('exp_ruinen'))) / Math.max(1, sum(id)));
+    xpCache.set(id, f);
+  }
+  return f;
+}
+
 export const Expedition = {
   portals(map: GameMap): Obj[] { return expeditionPortals(map); },
+  mobXp(zone: Zone): number { return mobXpFactor(zone.exp!.exp); },
   /** Zonendefinition der Instanz: Stufen nach Kreis und Schwierigkeitsgrad */
   zoneDef(id: string, diff: Difficulty, kreis: number): ZoneDef {
     const base = ZONES[id], d = EXP_DIFF[diff];

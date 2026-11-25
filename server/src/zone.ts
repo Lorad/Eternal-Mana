@@ -28,7 +28,6 @@ import { Social } from './social';
 import { World } from './world';
 import { Expedition } from './expedition';
 import type { ExpRun } from './expedition/run';
-import { EXP_CFG } from '../../shared/src/data/expeditions';
 
 export interface Obj extends ObjInfo {
   looted?: Set<number>;
@@ -348,7 +347,7 @@ export class Zone {
     const rec = this.recipients(m);
     World.onMobDeath(this, m, rec);
     Home.onKill(this, m, rec); // 0.7: Bestiarium
-    const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (this.exp ? EXP_CFG.mobXp : 1) * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
+    const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (this.exp ? Expedition.mobXp(this) : 1) * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
     for (const p of rec) {
       p.char.kills++; p.sync('kills');
       p.gainXp(xpBase * CFG.enemy.xpLevelPenalty(p.level, m.lvl));

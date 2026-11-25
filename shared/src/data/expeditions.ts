@@ -113,12 +113,13 @@ export interface ExpReq { text: string; cond?: Cond; level?: number; item?: stri
 //  Zahlen
 // =====================================================================================================================
 export const EXP_CFG = {
-  /** Erfahrung je gewöhnlichem Gegner in Expeditionen (die Expedition ist lang – die Geschichte soll nicht davonlaufen) */
-  mobXp: 0.4,
+  /** Erfahrung aus gewöhnlichen Gegnern: alle Gegner einer Expedition zusammen bringen so viel wie die des alten Dungeons
+   *  ihrer Region mal diesen Faktor (die Expedition ist zehnmal so lang – die Geschichte soll trotzdem nicht davonlaufen) */
+  mobXpVsOld: 2,
   /** Faktor auf die Gegnergruppen jedes Abschnitts (Feinabstimmung der Spieldauer, gemessen mit scripts/exp-playtest.ts) */
   groupMul: 1.8,
   /** Abschluss: Erfahrung und Gold als Vielfaches der Boss-Werte; Wiederholungen bringen weniger */
-  clearXp: 1.6, clearGold: 1.4, repeatMul: 0.55,
+  clearXp: 1.2, clearGold: 1.4, repeatMul: 0.55,
   /** Beute des Abschlusses: Teile, Rohstoffe der Region, Chance auf Legendär (zusätzlich zum Raritätswurf) */
   gear: 2, mats: [3, 6] as [number, number], legendary: 0.04, rare: 0.12,
   /** Wöchentliche Herausforderung: Faktor auf Erfahrung und Gold, zusätzliche Teile */
