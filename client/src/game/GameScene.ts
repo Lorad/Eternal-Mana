@@ -61,7 +61,6 @@ const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowsh
 const FLICKER = /^(hub_laterne|campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook|home_sign)/;
 /** [Radius, Farbe, Stärke, Flackern] */
 const LIGHTS: Record<string, [number, number, number, number]> = {
-  hub_laterne: [84, 0xffd89a, 0.9, 0.03], hub_brunnen: [64, 0x70ffe8, 0.5, 0], // 0.9: Quellwarte
   campfire: [100, 0xffb060, 1, 0.07], brazier: [92, 0xffac58, 1, 0.07], lamp: [84, 0xffd89a, 0.9, 0.03], torch: [84, 0xffb870, 0.95, 0.07], wall_torch: [84, 0xffb870, 0.95, 0.07],
   forge: [72, 0xff9040, 0.9, 0.06], d_candles: [48, 0xffd890, 0.7, 0.06], crystal_blue: [52, 0x60c8ff, 0.7, 0], crystal_pink: [52, 0xff80d8, 0.7, 0], crystal_big: [76, 0x80e8ff, 0.85, 0],
   glowshroom: [42, 0x60ffd0, 0.6, 0], d_mushroom_glow: [36, 0x70ffc0, 0.5, 0], ember_vent: [58, 0xff7030, 0.8, 0.06], void_crystal: [54, 0xb070ff, 0.7, 0], rune_stone: [54, 0xffe090, 0.7, 0],
@@ -80,10 +79,10 @@ const LIGHTS: Record<string, [number, number, number, number]> = {
   exp_glut_c: [56, 0xff7a30, 0.7, 0.05], exp_ruinen_c: [30, 0x80c8ff, 0.4, 0], exp_schatten_a: [40, 0xb070ff, 0.5, 0], exp_schatten_c: [44, 0xff80d8, 0.6, 0.03],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]
-  gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92],
+  gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92], quellwarte: [0xffffff, 0x6c7a62],
 };
-const STEP_SFX: Record<string, SfxName> = { gruenwald: 'step_grass', kristall: 'step_stone', glut: 'step_ash', frost: 'step_snow', ruinen: 'step_stone', schatten: 'step_stone' };
-const PORTAL_TINT: Record<string, number> = { gruenwald: 0x80ff90, kristall: 0x70d0ff, glut: 0xff8040, frost: 0xc0f0ff, ruinen: 0xffe080, schatten: 0xb060ff };
+const STEP_SFX: Record<string, SfxName> = { gruenwald: 'step_grass', kristall: 'step_stone', glut: 'step_ash', frost: 'step_snow', ruinen: 'step_stone', schatten: 'step_stone', quellwarte: 'step_stone' };
+const PORTAL_TINT: Record<string, number> = { gruenwald: 0x80ff90, kristall: 0x70d0ff, glut: 0xff8040, frost: 0xc0f0ff, ruinen: 0xffe080, schatten: 0xb060ff, quellwarte: 0x80ffe0 };
 const hexStr = (c: number) => '#' + c.toString(16).padStart(6, '0');
 const elTint = (el: Element) => (el === 'phys' ? 0xffffff : ELEMENT_COLOR[el]);
 

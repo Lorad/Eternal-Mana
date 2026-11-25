@@ -9,7 +9,7 @@
  *   Figuren-Look `npc_<look>`              →  vorhandener Look
  *   Biom `quellwarte` (Boden des Platzes)  →  `gruenwald`
  */
-import { BIOMES, type BiomeId } from '../maps/tiles';
+import type { BiomeId } from '../maps/tiles';
 
 /** Fassaden (80–112 px breit), Brunnen (animiert `_0.._3`), Laterne, Banner (`_0.._3`), Marktstand, Baum, Bank, Blumen */
 export const HUB_FRAME_FALLBACK: Record<string, string> = {
@@ -40,7 +40,7 @@ export const HUB_LOOK_FALLBACK: Record<string, string> = {
   alchemistin: 'haendlerin',
 };
 /** Biom (Bodenmaler) der Quellwarte: `quellwarte`, sobald es den Maler gibt – sonst Grünwald mit Wegen als Pflaster */
-export const HUB_BIOME: BiomeId = (BIOMES as readonly string[]).includes('quellwarte') ? ('quellwarte' as BiomeId) : 'gruenwald';
+export const HUB_BIOME: BiomeId = 'quellwarte'; // Maler vorhanden (client/src/gfx/tiles/quellwarte.ts); vorher: 'gruenwald'
 
 /** Fassaden – sie werden nicht durchsichtig, wenn man dahinter steht (wie die Häuser in Quellhain), und manche rauchen */
 export const HUB_BUILDINGS = new Set(['hub_schmiede', 'hub_haendler', 'hub_alchemie', 'hub_meister', 'hub_lager', 'hub_gasthaus', 'hub_halle', 'hub_gruppe']);
