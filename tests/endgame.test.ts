@@ -6,6 +6,7 @@ import { questPoints } from '../server/src/endgame';
 import { Rift, riftHome } from '../server/src/rift';
 import type { Zone } from '../server/src/zone';
 import { circleFree, lineClear } from '../shared/src/collision';
+import { rarityTable } from '../shared/src/rarity';
 import { CFG, ELEMENTS } from '../shared/src/config';
 import { craftBlock, makeLegendary, makeSetPiece } from '../shared/src/craft';
 import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
@@ -112,8 +113,9 @@ describe('Daten', () => {
     }
     expect(riftPar('thron', 1)).toBeGreaterThan(riftPar('wurzelgruft', 1));
     expect(riftPar('thron', 20)).toBeGreaterThan(riftPar('thron', 1));
-    expect(riftRarity(1)).toEqual(CFG.rift.rarityLow);
-    expect(riftRarity(CFG.rift.maxStufe)).toEqual(CFG.rift.rarityHigh);
+    // 0.9: Tabellen haben die volle Länge (sechs Seltenheiten); „Mythisch“ erst ab CFG.loot.mythic.riftFrom
+    expect(riftRarity(1)).toEqual(rarityTable(CFG.rift.rarityLow));
+    expect(riftRarity(CFG.rift.maxStufe)).toEqual(rarityTable(CFG.rift.rarityHigh, CFG.loot.mythic.riftMax));
     expect(riftRarity(15)[4]).toBeGreaterThan(riftRarity(1)[4]);
     expect(riftRevives(1)).toBe(CFG.rift.revives);
     expect(riftRevives(4)).toBe(CFG.rift.revives + 3 * CFG.rift.revivesPerExtra);

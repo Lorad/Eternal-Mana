@@ -385,7 +385,8 @@ describe('Verzauberung', () => {
 });
 
 describe('Rüstungssets', () => {
-  it('Boni greifen bei 2 und 4 Teilen und verschwinden beim Ablegen', () => {
+  it('Boni greifen bei 2, 4 und allen Teilen und verschwinden beim Ablegen', () => {
+    // 0.9: sechs Teile; 2 = schützend (Aschenglut: Leben und Feuerresistenz), 4 = Fähigkeit der Klasse, 6 = eigene Wirkung
     const c = newCharacter('Setträger', 'krieger');
     c.level = 20;
     const rng = new Rng(21);
@@ -397,29 +398,37 @@ describe('Rüstungssets', () => {
     c.equip.armor = piece('armor');
     const two = computeStats(c);
     expect(two.sets.aschenglut).toBe(2);
-    c.equip.acc1 = piece('ring');
-    c.equip.acc2 = piece('ring');                              // zwei gleiche Teile zählen einmal
+    c.equip.ring1 = piece('ring');
+    c.equip.ring2 = piece('ring');                             // zwei gleiche Teile zählen einmal
     expect(computeStats(c).sets.aschenglut).toBe(3);
-    c.equip.acc2 = piece('amulet');
+    c.equip.amulet = piece('amulet');
     const four = computeStats(c);
     expect(four.sets.aschenglut).toBe(4);
     // Vergleich gegen dieselbe Ausrüstung ohne Set-Kennung
-    const strip = (n: number) => { const d: CharData = JSON.parse(JSON.stringify(c)); let k = 0; for (const s of ['helm', 'armor', 'acc1', 'acc2'] as const) if (k++ >= n) delete d.equip[s]!.set; return computeStats(d); };
+    const strip = (n: number) => { const d: CharData = JSON.parse(JSON.stringify(c)); let k = 0; for (const s of ['helm', 'armor', 'ring1', 'ring2', 'amulet'] as const) if (k++ >= n) delete d.equip[s]!.set; return computeStats(d); };
     const plain = strip(0);
-    expect(strip(1).power).toBe(plain.power);
-    expect(strip(2).power).toBeCloseTo(plain.power * 1.04, 0);  // 2 Teile: +4 % Angriff
-    expect(strip(3).power).toBe(strip(2).power);
+    expect(strip(1).maxHp).toBe(plain.maxHp);
+    expect(strip(2).res.fire).toBe(15);                        // 2 Teile: Feuerresistenz …
+    expect(strip(2).maxHp).toBeGreaterThan(plain.maxHp);       // … und Leben
     expect(plain.res.fire).toBe(0);
-    expect(four.res.fire).toBe(15);                            // 4 Teile: Feuerresistenz
-    expect(four.critDmg).toBeCloseTo(plain.critDmg + 0.15, 5);
-    expect(four.power).toBe(strip(2).power);
+    expect(four.gearFx!.skill.kr_glut.dmg).toBe(25);           // 4 Teile: Glutschneise trifft härter
+    expect(two.gearFx!.skill.kr_glut).toBeUndefined();
+    expect(four.gearFx!.setFull.asche).toBeUndefined();
+    c.equip.gloves = piece('gloves'); c.equip.boots = piece('boots');
+    const six = computeStats(c);
+    expect(six.sets.aschenglut).toBe(6);
+    expect(six.gearFx!.setFull.asche).toBe(1);                  // alle Teile: Aschenregen
     // ablegen: Bonus weg
-    delete c.equip.acc2;
+    delete c.equip.boots;
+    expect(computeStats(c).gearFx!.setFull.asche).toBeUndefined();
+    delete c.equip.amulet; delete c.equip.gloves;
     const three = computeStats(c);
-    expect(three.res.fire).toBe(0);
+    expect(three.res.fire).toBe(15);
+    expect(three.gearFx!.skill.kr_glut).toBeUndefined();
     expect(three.sets.aschenglut).toBe(3);
     delete c.equip.helm; delete c.equip.armor;
     expect(computeStats(c).sets.aschenglut).toBe(1);
+    expect(computeStats(c).res.fire).toBe(0);
     expect(base.res.fire).toBe(0);
     expect(one.power).toBeGreaterThanOrEqual(base.power);
   });

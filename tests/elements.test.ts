@@ -539,7 +539,7 @@ describe('Balance-Leitplanke', () => {
       expect(all.power / base.power, `${cls} ${lvl}`).toBeLessThan(1.25);
       expect(all.maxHp / base.maxHp).toBeLessThan(1.12);
     }
-    expect(SET_PIECES.length).toBe(4);
+    expect(SET_PIECES.length).toBe(6); // 0.9: sechs Teile je Set
     expect(makeSetPiece(new Rng(2), 'hohlekrone', 'ring', 'krieger').set).toBe('hohlekrone');
   });
 });

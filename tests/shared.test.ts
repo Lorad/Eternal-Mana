@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CFG, elementMultiplier } from '../shared/src/config';
 import { CLASSES, CLASS_IDS } from '../shared/src/data/classes';
 import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
-import { BOSS_UNIQUE, ITEMS, canEquip, generateGear, itemMods, itemPrice, sellPrice } from '../shared/src/data/items';
+import { BOSS_UNIQUE, GEN_KINDS, ITEMS, canEquip, generateGear, itemMods, itemPrice, sellPrice } from '../shared/src/data/items';
 import { NPCS, shopStock } from '../shared/src/data/npcs';
 import { QUEST_LIST, QUESTS, questAvailable, questComplete } from '../shared/src/data/quests';
 import { SKILLS, SKILL_LIST, skillsOf } from '../shared/src/data/skills';
@@ -110,6 +110,9 @@ describe('Kampf & Balancing', () => {
       const rng = new Rng(lvl);
       c.equip.weapon = generateGear(rng, lvl, 1, cls, 'weapon');
       c.equip.armor = generateGear(rng, lvl, 1, cls, 'armor');
+      // 0.9: Waffe und Brust teilen ihr Budget mit Zweithand und Handschuhen (der Startausrüstung) – dieselbe Teilausrüstung wie bisher
+      c.equip.offhand = generateGear(rng, lvl, 1, cls, 'offhand');
+      c.equip.gloves = generateGear(rng, lvl, 1, cls, 'gloves');
       const d = computeStats(c);
       const hits = CFG.enemy.hp(lvl) / (d.power * CLASSES[cls].attack.mult * (1 - CFG.combat.mitigation(CFG.enemy.def(lvl), lvl)));
       const taken = d.maxHp / (CFG.enemy.dmg(lvl) * (1 - CFG.combat.mitigation(d.def, lvl)));
@@ -132,7 +135,7 @@ describe('Kampf & Balancing', () => {
     expect(itemMods(b).power!).toBeGreaterThan(itemMods(a).power!);
   });
   it('Händler haben für jede Klasse ein Sortiment', () => {
-    for (const cls of CLASS_IDS) { expect(shopStock('borin', cls, 2).length).toBe(4); expect(shopStock('pim', cls, 12).length).toBeGreaterThan(6); }
+    for (const cls of CLASS_IDS) { expect(shopStock('borin', cls, 2).length).toBe(GEN_KINDS.length); /* 0.9: ein Stück je Ausrüstungsart (acht Arten) */ expect(shopStock('pim', cls, 12).length).toBeGreaterThan(6); }
   });
   it('Questlogik', () => {
     const c = newCharacter('T', 'magier');

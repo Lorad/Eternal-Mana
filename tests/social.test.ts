@@ -11,7 +11,7 @@ import { World } from '../server/src/world';
 import type { Obj, Zone } from '../server/src/zone';
 import { CFG } from '../shared/src/config';
 import { ENEMIES } from '../shared/src/data/enemies';
-import { ITEMS, generateGear, makeStack } from '../shared/src/data/items';
+import { ITEMS, generateGear, isGear, makeStack } from '../shared/src/data/items';
 import { ECHO_FRAG } from '../shared/src/data/materials';
 import { QUESTS } from '../shared/src/data/quests';
 import { RECIPE_LIST, scrollOf } from '../shared/src/data/recipes';
@@ -886,7 +886,7 @@ describe('Gruppenbelohnung und Wertung', () => {
     // jedes Mitglied genau einmal, mit eigenem Inhalt
     const loot = (t: Tester) => { const g0 = t.p.char.gold, inv0 = new Set(t.p.char.inv.map(i => i.uid)); openChest(t, chest); return { gold: t.p.char.gold - g0, items: t.p.char.inv.filter(i => !inv0.has(i.uid)) }; };
     const la = loot(a), lb = loot(b);
-    for (const l of [la, lb]) { expect(l.gold).toBeGreaterThan(0); expect(l.items.some(i => ITEMS[i.base].kind === 'weapon' || ITEMS[i.base].kind === 'helm' || ITEMS[i.base].kind === 'armor' || ITEMS[i.base].kind === 'accessory')).toBe(true); }
+    for (const l of [la, lb]) { expect(l.gold).toBeGreaterThan(0); expect(l.items.some(i => isGear(ITEMS[i.base]))).toBe(true); }
     expect(la.items.find(i => i.rarity >= 1)).toBeTruthy();
     expect(la.items.map(i => i.uid).some(u => lb.items.some(i => i.uid === u))).toBe(false);
     expect(loot(a)).toEqual({ gold: 0, items: [] });
