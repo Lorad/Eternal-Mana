@@ -58,7 +58,8 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
   for (let i = 0; i < EXP_CFG.gear + (weekly ? EXP_CFG.weeklyGear : 0); i++) give(generateGear(r, ilvl, rollRarity(r, w), c.cls));
   const legend = Math.max(0, RARITY_NAME.indexOf('Legendär'));
   if (r.chance(EXP_CFG.legendary * d.rewardMul)) give(generateGear(r, ilvl, Math.max(legend, rollRarity(r, w)), c.cls));
-  if (first || r.chance(0.3)) give(generateBossUnique(r, boss.id, c.cls, r.chance(first ? 0.15 : 0.1)));
+  // Boss-Unikat: beim ersten Sieg die Waffe, danach halb Waffe, halb das benannte Stück für einen der neuen Plätze (0.9)
+  if (first || r.chance(0.3)) give(generateBossUnique(r, boss.id, c.cls, r.chance(first ? 0.15 : 0.1), !first && r.chance(0.5)));
   const bio = BIOME_MATS[x.region];
   if (bio) { give(makeStack(bio.monster, r.int(EXP_CFG.mats[0], EXP_CFG.mats[1]))); give(makeStack(bio.ingredient, r.int(1, 3))); }
   give(makeStack(TIER_MATERIAL[tierOf(ilvl) - 1], r.int(2, 4)));

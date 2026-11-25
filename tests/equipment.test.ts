@@ -12,6 +12,7 @@ import { AFFIX_SCALE, ARMOR_DEF_MUL, CLASS_OFFHAND, GEN_KINDS, ITEMS, baseMods, 
 import { AETHER, BOSS_CORE, ECHO_FRAG, ESSENCE } from '../shared/src/data/materials';
 import { GEAR_KINDS, RECIPES } from '../shared/src/data/recipes';
 import { riftRarity } from '../shared/src/data/rifts';
+import { diffRarity } from '../shared/src/data/expeditions';
 import { SETS, SET_FULL, SET_LIST, SET_PIECES, setCounts } from '../shared/src/data/sets';
 import { SLOT_KINDS, UP10, UPGRADE_BONUS, upgradeBonus } from '../shared/src/data/upgrade';
 import { compareItem, compareTargets, equippedItems, migrateEquip, normSlot, targetSlot } from '../shared/src/equip';
@@ -302,6 +303,14 @@ describe('Mythisch', () => {
     expect(expeditionRarity('albtraum', 'chest')[MYTHIC]).toBe(0);
     expect(expeditionRarity('albtraum', 'boss')[MYTHIC]).toBeGreaterThan(0);
     expect(expeditionRarity('mythisch', 'chest')[MYTHIC]).toBeGreaterThan(0);
+    // die Expeditionen (shared/src/data/expeditions.ts) nutzen dieselben Gewichte für „Mythisch“
+    expect(diffRarity('normal')[MYTHIC]).toBe(0); expect(diffRarity('schwer')[MYTHIC]).toBe(0);
+    expect(diffRarity('albtraum')[MYTHIC]).toBe(expeditionRarity('albtraum', 'boss')[MYTHIC]);
+    expect(diffRarity('mythisch')[MYTHIC]).toBe(expeditionRarity('mythisch', 'boss')[MYTHIC]);
+    expect(diffRarity('mythisch').length).toBe(RARITY_NAME.length);
+    // Beute ohne festgelegte Art fällt für alle zehn Plätze
+    const kinds = new Set<string>(); for (let i = 0; i < 600; i++) kinds.add(slotKind(ITEMS[generateGear(rng, 30, 2, 'magier').base])!);
+    expect([...kinds].sort()).toEqual([...SLOT_KINDS].sort());
   });
   it('Bosstruhe im Neuen Kreis 2 kann Mythisch enthalten, im ersten Durchgang nie', () => {
     const t = sim.join('Mythenjaeger', 'schattenjaeger', 40);

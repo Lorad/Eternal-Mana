@@ -10,6 +10,7 @@
  * Die Karte erzeugt shared/src/maps/expedition.ts aus dem Abschnittsplan, der Server lebt in server/src/expedition/.
  */
 import { CFG, RARITY_NAME } from '../config';
+import { rarityTable } from '../rarity';
 import type { CharData, Element } from '../types';
 import { condOk, type Cond } from './cond';
 import { DIFFICULTIES, DIFFICULTY_NAME, type Difficulty, type DungeonRecord } from './hub';
@@ -172,12 +173,12 @@ export const EXP_DIFF: Record<Difficulty, DiffDef> = {
     noDeathChest: true, timedChest: true, rarity: [0, 0, 15, 45, 40], ilvlPlus: 9, rewardMul: 3, unlockText: 'Nach einem Abschluss auf Albtraum.',
     desc: 'Drei Affixe, Wut nach knapp vier Minuten, die Signatur des Bosses kommt deutlich öfter. Die beste Beute – bis zur höchsten Seltenheit.' },
 };
-/** Raritätsgewichte eines Schwierigkeitsgrads, auf die Zahl der Seltenheiten gebracht (eine neue höchste Seltenheit erbt das Gewicht der bisher höchsten, aber kleiner). */
+/**
+ * Raritätsgewichte eines Schwierigkeitsgrads in voller Länge (RARITY_NAME). „Mythisch“ (0.9) nur auf Albtraum und Mythisch,
+ * mit dem Gewicht aus CFG.loot.mythic.expedition (Endboss) – dieselbe Quelle wie `expeditionRarity` in shared/src/rarity.ts.
+ */
 export function diffRarity(d: Difficulty): number[] {
-  const base = EXP_DIFF[d].rarity, n = RARITY_NAME.length, out: number[] = [];
-  for (let i = 0; i < n; i++) out.push(i < base.length ? base[i] : 0);
-  if (n > base.length) { const top = base[base.length - 1]; out[n - 1] = d === 'mythisch' ? top * 0.5 : d === 'albtraum' ? top * 0.15 : 0; }
-  return out;
+  return rarityTable(EXP_DIFF[d].rarity, CFG.loot.mythic.expedition[d]?.[1] ?? 0);
 }
 /** höchste Seltenheit, die es gibt (Equipment liefert ggf. „Mythisch“) */
 export const TOP_RARITY = () => RARITY_NAME.length - 1;
