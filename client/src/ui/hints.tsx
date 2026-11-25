@@ -38,7 +38,12 @@ export function useHintWatcher() {
         let still = true;
         try { still = cur.when(st); } catch { still = false; }
         if (cur.win && !still) { done(st.hint); l.freeAt = now + GAP_MS; return; }
-        if (!cur.win && hintBlocked(st)) { l.shownAt += 500; return; }
+        if (!cur.win && hintBlocked(st)) {
+          // Ein Fenster liegt darüber: Gehört ein Hinweis in dieses Fenster, geht er vor. Die Karte bleibt ungesehen und kommt später wieder.
+          const w = nextHint(st, settings.hintsSeen, settings.hints && !OFF);
+          if (w?.win) { l.cand = null; l.shownAt = now; l.freeAt = 0; store.set({ hint: w.id }); sfx('ui_tab'); return; }
+          l.shownAt += 500; return;
+        }
         if (now - l.shownAt > SHOW_MS) { done(st.hint); l.freeAt = now + GAP_MS; }
         return;
       }
