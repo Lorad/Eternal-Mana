@@ -27,7 +27,7 @@ function build(cls: ClassId, el: Element, kind: 'story' | 'good' | 'rift', stufe
   if (kind === 'good') return c;
   const ilvl = CFG.rift.ilvl(Math.max(1, stufe - 1));
   for (const s of SLOTS) { const it = c.equip[s]; if (it) rescaleItem(it, ilvl); }
-  c.equip.weapon!.ench = 'echo_macht'; c.equip.helm!.ench = 'echo_wacht'; c.equip.armor!.ench = 'echo_wacht'; c.equip.acc1!.ench = 'echo_einklang';
+  c.equip.weapon!.ench = 'echo_macht'; c.equip.helm!.ench = 'echo_wacht'; c.equip.armor!.ench = 'echo_wacht'; c.equip.ring1!.ench = 'echo_einklang';
   c.quell = { lvl: QUELL_MAX, xp: 0, pts: Object.fromEntries(QUELL_TRACKS.map(t => [t.id, CFG.quell.trackCap])) };
   return c;
 }

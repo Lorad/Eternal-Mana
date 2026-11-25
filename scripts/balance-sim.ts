@@ -45,8 +45,8 @@ export function standardChar(cls: ClassId, lvl: number, rarity = 1): CharData {
   delete c.equip.weapon.element;
   c.equip.helm = generateGear(rng, lvl, rarity, cls, 'helm');
   c.equip.armor = generateGear(rng, lvl, rarity, cls, 'armor');
-  c.equip.acc1 = generateGear(rng, lvl, rarity, cls, 'accessory');
-  c.equip.acc2 = generateGear(rng, lvl, rarity, cls, 'accessory');
+  c.equip.ring1 = generateGear(rng, lvl, rarity, cls, 'accessory');
+  c.equip.amulet = generateGear(rng, lvl, rarity, cls, 'accessory');
   const act = skillsOf(cls).filter(s => s.effects && c.skills[s.id] && !s.effects.some(e => e.k === 'blink' || e.k === 'buff' || e.k === 'heal' || (e.k === 'dash' && e.back))).sort((a, b) => b.reqLevel - a.reqLevel);
   c.hotbar = [0, 1, 2, 3].map(i => act[i]?.id ?? null);
   return c;
@@ -126,11 +126,11 @@ export function investedChar(cls: ClassId, lvl: number, el: Element, legend = fa
   w.element = el; w.elv = lvl >= 25 ? 3 : lvl >= 10 ? 2 : 1;
   if (lvl >= 11) w.ench = 'macht'; else if (lvl >= 6) w.ench = 'fokus';
   if (lvl >= 4) { c.equip.helm!.ench = 'vital'; c.equip.armor!.ench = 'vital'; }
-  c.equip.acc1!.base = `c_ring_${t}`; c.equip.acc2!.base = `c_amulet_${t}`;
-  if (lvl >= 5) c.equip.acc1!.ench = 'eile';
-  if (lvl >= 10) c.equip.acc2!.ench = 'weitsicht';
+  c.equip.ring1!.base = `c_ring_${t}`; c.equip.amulet!.base = `c_amulet_${t}`;
+  if (lvl >= 5) c.equip.ring1!.ench = 'eile';
+  if (lvl >= 10) c.equip.amulet!.ench = 'weitsicht';
   const set = SET_LIST.filter(s => s.ilvl - 2 <= lvl).at(-1);
-  if (set) for (const s of ['helm', 'armor', 'acc1', 'acc2'] as const) c.equip[s]!.set = set.id;
+  if (set) for (const s of ['helm', 'armor', 'ring1', 'amulet'] as const) c.equip[s]!.set = set.id;
   return c;
 }
 function buffUp(lvl: number) {

@@ -2,6 +2,7 @@
  * Weitere Abschnitte des Spieltests: Endspiel (Risse, Prüfung, Neuer Kreis), Lebendige Welt, Stärkequellen, Wirtschaft.
  * Jede Funktion gibt Tabellen aus und legt ihre Zahlen in `out` ab.
  */
+import { SLOTS } from '../../shared/src/types';
 import { CFG } from '../../shared/src/config';
 import { applyTimed } from '../../server/src/craft';
 import { enchantCost, infusePlan, makeLegendary, makeSetPiece, recipeCost } from '../../shared/src/craft';
@@ -238,7 +239,7 @@ function ehp(c: CharData, buffs: string[] = []): number {
 const fullQuell = () => ({ lvl: 60, xp: 0, pts: Object.fromEntries(QUELL_TRACKS.map(t => [t.id, CFG.quell.trackCap])) });
 const setAll = (c: CharData, cls: ClassId, rng: Rng, id: string) => {
   const il = c.equip.helm!.ilvl;
-  for (const [slot, piece] of [['helm', 'helm'], ['armor', 'armor'], ['acc1', 'ring'], ['acc2', 'amulet']] as const) {
+  for (const [slot, piece] of [['helm', 'helm'], ['armor', 'armor'], ['ring1', 'ring'], ['amulet', 'amulet']] as const) {
     const old = c.equip[slot]!, it = makeSetPiece(rng, id, piece, cls, old.rarity);
     // gleiche Stufe, gleiche Seltenheit, gleiche Affixe wie das ersetzte Teil – gemessen wird nur der Setbonus
     it.ilvl = il; it.affixes = old.affixes; it.up = old.up; it.ench = old.ench;
@@ -248,15 +249,15 @@ const setAll = (c: CharData, cls: ClassId, rng: Rng, id: string) => {
 export const LAYERS: Layer[] = [
   { name: 'Set „Hohle Krone“ (4 Teile)', build: (c, cls, rng) => setAll(c, cls, rng, 'hohlekrone') },
   { name: 'Set „Aschenglut“ (4 Teile)', build: (c, cls, rng) => setAll(c, cls, rng, 'aschenglut') },
-  { name: 'Runen (Macht, 2× Lebenskraft, Eile, Weitsicht)', build: c => { c.equip.weapon!.ench = 'macht'; c.equip.helm!.ench = 'vital'; c.equip.armor!.ench = 'vital'; c.equip.acc1!.ench = 'eile'; c.equip.acc2!.ench = 'weitsicht'; } },
-  { name: 'Echo-Runen (Macht, 2× Wacht, Einklang)', build: c => { c.equip.weapon!.ench = 'echo_macht'; c.equip.helm!.ench = 'echo_wacht'; c.equip.armor!.ench = 'echo_wacht'; c.equip.acc1!.ench = 'echo_einklang'; } },
+  { name: 'Runen (Macht, 2× Lebenskraft, Eile, Weitsicht)', build: c => { c.equip.weapon!.ench = 'macht'; c.equip.helm!.ench = 'vital'; c.equip.armor!.ench = 'vital'; c.equip.ring1!.ench = 'eile'; c.equip.amulet!.ench = 'weitsicht'; } },
+  { name: 'Echo-Runen (Macht, 2× Wacht, Einklang)', build: c => { c.equip.weapon!.ench = 'echo_macht'; c.equip.helm!.ench = 'echo_wacht'; c.equip.armor!.ench = 'echo_wacht'; c.equip.ring1!.ench = 'echo_einklang'; } },
   { name: 'Speise + Elixier (Feuerschoten-Spieß, Elixier der Glut)', buff: ['food_spiess', 'elx_power'] },
   { name: 'Festmahl + Elixier der Sieben', buff: ['food_fest', 'elx_sieben'] },
   { name: 'Element eingeschmiedet, Stufe 3 (Feuer; Übungsgegner ohne Schwäche)', build: c => { c.equip.weapon!.element = 'fire'; c.equip.weapon!.elv = 3; } },
   { name: 'Legendäre Waffe (statt der typischen, gleiche Stufe und Verbesserung)', build: (c, cls, rng) => { const w = makeLegendary(rng, cls, 40); w.up = c.equip.weapon!.up; c.equip.weapon = w; } },
   { name: 'Quellstufen (alle 60)', build: c => { c.quell = fullQuell(); } },
-  { name: 'Verbesserung +10 auf allen Teilen (statt +4/+3)', build: c => { for (const s of ['weapon', 'helm', 'armor', 'acc1', 'acc2'] as const) c.equip[s]!.up = 10; } },
-  { name: 'Seltenheit Legendär auf allen Teilen (statt Selten/Ungewöhnlich)', build: (c, cls, rng) => { const g = plausibleChar(cls, 40, { gear: 'gut', seed: rng.int(1, 99) }); for (const s of ['weapon', 'helm', 'armor', 'acc1', 'acc2'] as const) { const it = g.equip[s]!; it.rarity = 4; it.up = c.equip[s]!.up; it.ilvl = c.equip[s]!.ilvl; c.equip[s] = it; } } },
+  { name: 'Verbesserung +10 auf allen Teilen (statt +4/+3; mit Zusatzeigenschaften und Passiven)', build: c => { for (const s of SLOTS) if (c.equip[s]) c.equip[s]!.up = 10; } },
+  { name: 'Seltenheit Legendär auf allen Teilen (statt Selten/Ungewöhnlich)', build: (c, cls, rng) => { const g = plausibleChar(cls, 40, { gear: 'gut', seed: rng.int(1, 99) }); for (const s of SLOTS) { const it = g.equip[s]!; it.rarity = 4; it.up = c.equip[s]!.up; it.ilvl = c.equip[s]!.ilvl; c.equip[s] = it; } } },
   { name: 'Begleiter (Pilzling: +1,5 Leben/s) · Trophäen · Ausgeruht', note: 'kein Kampfwert: Regeneration, Gold, Erfahrung, Ruf' },
 ];
 
@@ -287,7 +288,7 @@ export function kraft(lab: Lab, out: Record<string, unknown>, fast: boolean) {
     void prod;
   }
   // alles zusammen – einmal „Ende der Geschichte“ (was vor den Rissen erreichbar ist), einmal „Endspiel“ (Riss-Stufe 30)
-  const story = (c: CharData, cls: ClassId, rng: Rng) => { setAll(c, cls, rng, 'hohlekrone'); const w = makeLegendary(rng, cls, 40); w.up = c.equip.weapon!.up; w.element = 'fire'; w.elv = 3; w.ench = 'macht'; c.equip.weapon = w; c.equip.helm!.ench = 'vital'; c.equip.armor!.ench = 'vital'; c.equip.acc1!.ench = 'eile'; c.equip.acc2!.ench = 'weitsicht'; };
+  const story = (c: CharData, cls: ClassId, rng: Rng) => { setAll(c, cls, rng, 'hohlekrone'); const w = makeLegendary(rng, cls, 40); w.up = c.equip.weapon!.up; w.element = 'fire'; w.elv = 3; w.ench = 'macht'; c.equip.weapon = w; c.equip.helm!.ench = 'vital'; c.equip.armor!.ench = 'vital'; c.equip.ring1!.ench = 'eile'; c.equip.amulet!.ench = 'weitsicht'; };
   const sAll = CLASS_IDS.map(cls => { const m = measure(cls, (c, rng) => story(c, cls, rng), ['food_spiess', 'elx_power']); return { cls, d: m.dps / base[cls].dps, e: m.ehp / base[cls].ehp }; });
   rows.push(['**Alles vor den Rissen** (Set, Runen, Speise, Elixier, Element 3, Legendäre Waffe)', '**×' + f2(mean(sAll.map(x => x.d))) + '**', '**×' + f2(mean(sAll.map(x => x.e))) + '**', sAll.map(x => f2(x.d)).join(' / ')]);
   const eAll = CLASS_IDS.map(cls => {

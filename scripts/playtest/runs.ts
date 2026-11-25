@@ -112,7 +112,7 @@ export function riftChar(cls: ClassId, stufe: number, gear: RiftGear, seed: numb
   const setHelm = makeSetPiece(rng, 'hohlekrone', 'helm', cls, 2), setArmor = makeSetPiece(rng, 'hohlekrone', 'armor', cls, 2);
   c.equip.helm = setHelm; c.equip.armor = setArmor;
   c.equip.weapon!.element = el; c.equip.weapon!.elv = 2;
-  c.equip.weapon!.ench = 'macht'; c.equip.helm.ench = 'vital'; c.equip.armor.ench = 'vital'; c.equip.acc1!.ench = 'eile'; c.equip.acc2!.ench = 'weitsicht';
+  c.equip.weapon!.ench = 'macht'; c.equip.helm.ench = 'vital'; c.equip.armor.ench = 'vital'; c.equip.ring1!.ench = 'eile'; c.equip.amulet!.ench = 'weitsicht';
   if (gear === 'geschichte') return c;
   const ilvl = CFG.rift.ilvl(Math.max(1, stufe - 1));
   const leg = makeLegendary(rng, cls, 40);
@@ -120,7 +120,7 @@ export function riftChar(cls: ClassId, stufe: number, gear: RiftGear, seed: numb
   c.equip.weapon = leg;
   const ring = makeSetPiece(rng, 'hohlekrone', 'ring', cls, 3), amu = makeSetPiece(rng, 'hohlekrone', 'amulet', cls, 3);
   ring.ench = stufe >= 10 ? 'echo_einklang' : 'eile'; amu.ench = 'weitsicht';
-  c.equip.acc1 = ring; c.equip.acc2 = amu;
+  c.equip.ring1 = ring; c.equip.amulet = amu;
   if (stufe >= 10) { c.equip.helm.ench = 'echo_wacht'; c.equip.armor.ench = 'echo_wacht'; }
   const up = Math.min(8, 4 + Math.floor(stufe / 6));
   for (const s of SLOTS) { const it = c.equip[s]; if (!it) continue; it.rarity = Math.max(it.rarity, 3); it.up = up; rescaleItem(it, ilvl); }

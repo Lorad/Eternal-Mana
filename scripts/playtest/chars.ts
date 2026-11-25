@@ -4,10 +4,10 @@
  */
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
-import { generateGear, makeStack } from '../../shared/src/data/items';
+import { generateGear, makeStack, type GenKind } from '../../shared/src/data/items';
 import { skillsOf } from '../../shared/src/data/skills';
 import { newCharacter } from '../../shared/src/stats';
-import type { CharData, ClassId, ItemInstance } from '../../shared/src/types';
+import type { CharData, ClassId, ItemInstance, Slot } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 
 /** Leiste: die vier Fähigkeiten, die ein Spieler dieser Klasse am ehesten einpackt (in dieser Reihenfolge, soweit schon gelernt) */
@@ -59,12 +59,16 @@ export function gearUp(c: CharData, level: number, gear: Gear, seed: number) {
   const rng = new Rng(seed * 7919 + level * 131 + c.cls.length);
   const [rw, ra, rx, lag, up] = gear === 'karg' ? [1, 1, 1, 3, 0] : gear === 'gut' ? [3, 3, 3, 0, 5] : [2, 2, 1, 1, Math.floor(level / 10)];
   const il = Math.max(1, level - lag);
-  const mk = (kind: 'weapon' | 'helm' | 'armor' | 'accessory', rar: number, acc?: 'ring' | 'amulet'): ItemInstance => { const it = generateGear(rng, il, rar, c.cls, kind, acc); delete it.element; return it; };
+  const mk = (kind: GenKind, rar: number, acc?: 'ring' | 'amulet'): ItemInstance => { const it = generateGear(rng, il, rar, c.cls, kind, acc); delete it.element; return it; };
+  // 0.9: zehn Plätze im selben Verhältnis wie bisher (2 von 5 Teilen in der besseren Seltenheit → 4 von 10: Waffe, Zweithand, Brust, Beine)
+  c.equip = {};
   c.equip.weapon = mk('weapon', rw); c.equip.weapon.up = up;
-  c.equip.helm = mk('helm', rx); c.equip.helm.up = Math.max(0, up - 1);
-  c.equip.armor = mk('armor', ra); c.equip.armor.up = Math.max(0, up - 1);
-  c.equip.acc1 = mk('accessory', rx, 'ring');
-  c.equip.acc2 = mk('accessory', rx, 'amulet');
+  for (const [s, k, r, acc] of [['offhand', 'offhand', rw], ['helm', 'helm', rx], ['armor', 'armor', ra], ['gloves', 'gloves', rx], ['legs', 'legs', ra], ['boots', 'boots', rx],
+    ['amulet', 'accessory', rx, 'amulet'], ['ring1', 'accessory', rx, 'ring'], ['ring2', 'accessory', rx, 'ring']] as [Slot, GenKind, number, ('ring' | 'amulet')?][]) {
+    const it = mk(k, r, acc);
+    if (s !== 'amulet' && s !== 'ring1' && s !== 'ring2') it.up = Math.max(0, up - 1);
+    c.equip[s] = it;
+  }
 }
 
 /** Ein plausibler Charakter dieser Klasse und Stufe. */
