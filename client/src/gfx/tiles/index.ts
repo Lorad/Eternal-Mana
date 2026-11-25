@@ -13,6 +13,7 @@ import { glut } from './glut';
 import { frost } from './frost';
 import { ruinen } from './ruinen';
 import { schatten } from './schatten';
+import { quellwarte } from './quellwarte';
 
 const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   frost,
@@ -21,6 +22,7 @@ const PAINTERS: Partial<Record<BiomeId, BiomePainter>> = {
   kristall,
   glut,
   schatten,
+  quellwarte,
 };
 
 const CH = 32;
