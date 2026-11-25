@@ -4,6 +4,7 @@
  * Echo-Begegnungen, besuchte Orte, verborgene Quests, Kapitel und der Schutz während Filmszenen.
  * Der Client zeigt nur an (client/src/ui/story.tsx, client/src/game/cinematic.ts).
  */
+import { fullKit } from '../../shared/src/equip';
 import { circleFree } from '../../shared/src/collision';
 import { CFG } from '../../shared/src/config';
 import { DOCS } from '../../shared/src/data/chronik';
@@ -332,7 +333,7 @@ export const Story = {
       case 'akt2': // Akt I abgeschlossen, bereit für Kapitel 7
         for (const q of QUEST_LIST) if (q.type === 'main' && !q.chapter) c.quests[q.id] = { s: 'done', p: [], n: 1 };
         while (c.level < 32) { c.xp = CFG.xpToNext(c.level); p.gainXp(0.0001); }
-        for (const k of ['weapon', 'helm', 'armor', 'accessory'] as const) p.give(generateGear(p.zone.rng, c.level, 3, c.cls, k), false);
+        for (const it of Object.values(fullKit(p.zone.rng, c.level, 3, c.cls))) p.give(it!, false); // 0.9: alle zehn Plätze
         p.sync('quests'); return true;
       case 'qa': { const q = QUESTS[a[0]]; if (q) { c.quests[q.id] = { s: 'active', p: q.objectives.map(() => 0) }; p.sync('quests'); p.checkCollectQuests(); } return true; }
       case 'flag': if (a[0]) { if (a[1] === '0') { delete c.flags[a[0]]; p.sync('flags'); } else setFlag(p, a[0], +a[1] || 1); p.checkCollectQuests(); } return true;

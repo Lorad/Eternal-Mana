@@ -9,6 +9,7 @@ import { ITEMS, TIER_MATERIAL, generateGear, itemName, makeStack, rollRarity, ti
 import { SKILLS, skillCd, skillMp, type Effect } from '../../shared/src/data/skills';
 import { ELEM_STATUS, affinityMul, resistFactor } from '../../shared/src/elements';
 import { kreisBossDef, kreisLevel, kreisZoneDef } from '../../shared/src/data/rifts';
+import { mythicKreisBoss, rarityTable } from '../../shared/src/rarity';
 import { NODE_TYPES, ZONES, type ZoneDef } from '../../shared/src/data/zones';
 import { getMap, type GameMap, type MobSpawn } from '../../shared/src/maps/mapgen';
 import { T, TILE } from '../../shared/src/maps/tiles';
@@ -23,6 +24,7 @@ import { chestExtras, nodeBonus, rollMaterials } from './loot';
 import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
 import { legendAttack, legendOnHit, legendShield, tryReaction } from './react';
+import * as GearFx from './gearfx';
 import { Rift, riftStones, type RiftRun } from './rift';
 import { Social } from './social';
 import { World } from './world';
@@ -256,11 +258,13 @@ export class Zone {
     const now = this.game.now;
     let dmg = raw * (o.dot ? 1 : 1 + this.rng.range(-CFG.combat.variance, CFG.combat.variance));
     let crit = false;
-    if (src && !o.dot && !o.extra && this.rng.chance(src.stats.crit + (o.crit ?? 0) + (m.has('expose', now) ? CFG.combat.exposeCrit : 0))) { crit = true; dmg *= src.stats.critDmg; }
+    const cb = src && !o.dot && !o.extra ? GearFx.critBonus(src, now) : null; // 0.9: Stille vor dem Sturm
+    if (src && !o.dot && !o.extra && this.rng.chance(src.stats.crit + (o.crit ?? 0) + (cb?.crit ?? 0) + (m.has('expose', now) ? CFG.combat.exposeCrit : 0))) { crit = true; dmg *= src.stats.critDmg + (cb?.critDmg ?? 0); GearFx.onCrit(src); }
     const adef = m.boss?.def ?? m.def;
     dmg *= affinityMul(el, { element: m.element, weak: m.weakO ?? adef.weak, resist: m.resistO ?? adef.resist });
     if (el !== 'phys' && src) dmg *= (1 + src.stats.elemPct / 100) * (el === src.stats.attackElement ? 1 + CFG.craft.infuseDmg[src.stats.elemLvl] : 1);
     if (m.has('mark', now)) dmg *= CFG.combat.markDmgTaken;
+    if (src) dmg *= GearFx.dealtMul(src); // 0.9: Hohle Krone
     if (src && src.statuses.get('weak') && src.statuses.get('weak')!.until > now) dmg *= CFG.combat.weakDmgDealt;
     if (!o.dot) dmg *= 1 - CFG.combat.mitigation(m.defv, src?.level ?? m.lvl);
     dmg *= m.vuln;
@@ -270,7 +274,8 @@ export class Zone {
     if (src) {
       m.hitters.add(src);
       if (!m.target && !m.boss) { m.target = src; if (m.state === 'idle' || m.state === 'return') m.state = 'chase'; }
-      if (src.stats.lifesteal > 0 && !o.dot) src.heal(dmg * src.stats.lifesteal / 100, false);
+      const ls = GearFx.lifesteal(src);
+      if (ls > 0 && !o.dot) src.heal(dmg * ls / 100, false);
     }
     this.ev({ k: 'dmg', id: m.id, a: dmg, c: crit ? 1 : undefined, el, x: Math.round(m.x), y: Math.round(m.y) });
     if (!o.dot) {
@@ -285,7 +290,7 @@ export class Zone {
       if (o.kb && !m.boss && o.ang !== undefined) { const k = o.kb * (el === 'wind' ? 1.6 : 1); m.kx = Math.cos(o.ang) * k; m.ky = Math.sin(o.ang) * k; }
     }
     if (m.hp <= 0 && m.boss?.spare()) return dmg; // Story-Bosse ergeben sich, statt zu sterben
-    if (m.hp <= 0) this.killMob(m);
+    if (m.hp <= 0) { this.killMob(m); if (src && !o.extra) GearFx.onKill(this, src, m); }
     return dmg;
   }
   hitPlayer(p: Player, raw: number, el: Element, lvl: number, by: string, status?: StatusSpec): number {
@@ -294,7 +299,7 @@ export class Zone {
     if (now < p.iframesUntil) { if (now < p.rollUntil) this.ev({ k: 'txt', x: p.x, y: p.y - 20, s: 'Ausgewichen', col: '#bfe9ff' }); return 0; }
     let dmg = raw * (1 + this.rng.range(-CFG.combat.variance, CFG.combat.variance));
     dmg *= 1 - CFG.combat.mitigation(p.stats.def, lvl);
-    dmg *= resistFactor(p.stats.res[el] ?? 0) * this.mod.dmgTaken;
+    dmg *= resistFactor(p.stats.res[el] ?? 0) * this.mod.dmgTaken * GearFx.takenMul(this, p);
     if (p.statuses.get('mark') && p.statuses.get('mark')!.until > now) dmg *= CFG.combat.markDmgTaken;
     if (p.hasStatus('expose', now)) dmg *= CFG.combat.exposeDmgTaken;
     dmg = Math.max(1, Math.round(dmg));
@@ -310,9 +315,10 @@ export class Zone {
     this.ev({ k: 'dmg', id: p.id, a: dmg, el, pl: 1, x: Math.round(p.x), y: Math.round(p.y) });
     if (status && (status.chance === undefined || this.rng.chance(status.chance))) {
       const dps = status.id === 'burn' ? dmg * CFG.combat.burnTick : status.id === 'poison' ? dmg * CFG.combat.poisonTick : 0;
-      p.statuses.set(status.id, { until: now + status.dur, dps });
+      p.statuses.set(status.id, { until: now + status.dur * GearFx.statusDurMul(p), dps });
     }
     if (p.hp <= 0) this.killPlayer(p, by);
+    else GearFx.afterHurt(this, p, now);
     return dmg;
   }
   killPlayer(p: Player, by: string) {
@@ -437,11 +443,11 @@ export class Zone {
     if (p.dead || p.stunned(now) || now < p.atkReadyAt - 0.06 || now < p.rollUntil) return;
     if (!isFinite(ang)) return;
     const cls = CLASSES[p.char.cls], atk = cls.attack;
-    p.atkReadyAt = now + atk.cooldown;
+    p.atkReadyAt = now + atk.cooldown * GearFx.attackCdMul(p);
     p.combo = now - p.comboAt < CFG.player.comboWindow + atk.cooldown ? (p.combo + 1) % 3 : 0;
     p.comboAt = now;
     const fin = p.combo === 2 && atk.kind === 'arc';
-    const raw = p.stats.power * atk.mult * (fin ? CFG.player.comboFinisherMul : 1);
+    const raw = p.stats.power * atk.mult * (fin ? CFG.player.comboFinisherMul : 1) * GearFx.attackMul(p);
     const el = p.stats.attackElement;
     p.facing = ang; p.setAnim(Anim.Attack, Math.min(0.3, atk.cooldown));
     if (atk.kind === 'arc') {
@@ -464,6 +470,7 @@ export class Zone {
     p.iframesUntil = Math.max(p.iframesUntil, now + CFG.player.dodgeIFrames);
     p.facing = ang;
     this.ev({ k: 'sfx', n: 'dodge', x: p.x, y: p.y });
+    GearFx.onDodge(this, p, now);
   }
 
   playerSkill(p: Player, id: string, ang: number, tx: number, ty: number) {
@@ -474,7 +481,8 @@ export class Zone {
     const cost = skillMp(sk, rank);
     if (p.mp < cost) { p.toast('Nicht genug Mana.', 'bad'); return; }
     p.mp -= cost;
-    const cd = skillCd(sk, rank, p.stats.cdr) * this.mod.cd;
+    const [smDmg, smCd] = GearFx.skillMul(p, id); // 0.9: 4er-Set-Bonus der Klasse
+    const cd = skillCd(sk, rank, p.stats.cdr) * this.mod.cd * smCd;
     p.cds.set(id, now + cd);
     p.send({ t: 'cd', id, cd });
     p.facing = ang;
@@ -482,11 +490,12 @@ export class Zone {
     const el: Element = sk.element === 'phys' ? p.stats.attackElement : sk.element;
     this.ev({ k: 'cast', id: p.id, skill: id, ang, el });
     if (sk.sfx) this.ev({ k: 'sfx', n: sk.sfx, x: p.x, y: p.y });
-    for (const e of sk.effects) this.runEffect(p, e, rank, ang, tx, ty, el, sk.name, sk.glyph);
+    for (const e of sk.effects) this.runEffect(p, e, rank, ang, tx, ty, el, sk.name, sk.glyph, smDmg);
+    GearFx.afterSkill(this, p);
   }
-  private runEffect(p: Player, e: Effect, rank: number, ang: number, tx: number, ty: number, el: Element, name: string, glyph: string) {
+  private runEffect(p: Player, e: Effect, rank: number, ang: number, tx: number, ty: number, el: Element, name: string, glyph: string, dmgMul = 1) {
     const now = this.game.now;
-    const raw = 'mult' in e ? p.stats.power * (e.mult + (e as any).multR * (rank - 1)) : 0;
+    const raw = 'mult' in e ? p.stats.power * (e.mult + (e as any).multR * (rank - 1)) * dmgMul : 0;
     const clampTarget = (max: number): [number, number] => {
       const d = Math.hypot(tx - p.x, ty - p.y);
       if (d <= max || d === 0) return [tx, ty];
@@ -670,7 +679,8 @@ export class Zone {
     const r = this.rng, tier: string = pr.tier, lvl = Math.min(this.def.level[1] + (tier === 'gold' ? 2 : 0), this.ilvlCap);
     const mul = tier === 'wood' ? 1 : tier === 'silver' ? 2.5 : 6;
     p.gainGold(CFG.enemy.gold(lvl) * r.range(4, 7) * mul * (1 + p.stats.goldPct / 100));
-    const w = CFG.loot.chestRarityWeights[tier];
+    // 0.9: Bosstruhen der Neuen Kreise (ab CFG.loot.mythic.kreisBoss) können „Mythisch“ enthalten
+    const w = rarityTable(CFG.loot.chestRarityWeights[tier], pr.boss && tier === 'gold' ? mythicKreisBoss(this.kreis) : 0);
     const n = tier === 'gold' ? 2 : tier === 'silver' || r.chance(0.6) ? 1 : 0;
     for (let i = 0; i < n; i++) p.give(generateGear(r, lvl, rollRarity(r, w), p.char.cls));
     if (pr.bonus) p.give(generateGear(r, lvl + 1, Math.max(2, rollRarity(r, w)), p.char.cls));
@@ -738,6 +748,7 @@ export class Zone {
       const ooc = now - p.lastHurtAt > CFG.player.outOfCombatRegenDelay;
       p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.hpRegen * (ooc ? 4 : 1) * this.mod.heal * dt);
       p.mp = Math.min(p.stats.maxMp, p.mp + p.stats.mpRegen * this.mod.mpRegen * dt);
+      GearFx.tick(p, now); // 0.9: Rindenhaut
       // Zustände
       for (const [id, st] of p.statuses) {
         if (st.until <= now) { p.statuses.delete(id); continue; }

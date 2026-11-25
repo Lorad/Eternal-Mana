@@ -3,6 +3,7 @@
  * Jede Aktion wird hier geprüft (Nähe zu Riss-Stein, Mirelda oder Schmiede, Voraussetzungen, Kosten) – der Client zeigt nur an.
  * Mana-Risse selbst: server/src/rift.ts. Regeln und Daten: shared/src/data/rifts.ts, Zahlen: CFG.rift / CFG.quell / CFG.kreis.
  */
+import { fullKit } from '../../shared/src/equip';
 import { CFG } from '../../shared/src/config';
 import { ITEMS, generateGear, itemName, makeStack, rescaleItem } from '../../shared/src/data/items';
 import { AETHER, ECHO_FRAG } from '../../shared/src/data/materials';
@@ -139,7 +140,7 @@ export function devEndgame(g: Game, p: Player, cmd: string, a: string[]): boolea
     for (const q of QUEST_LIST) if (q.type === 'main') c.quests[q.id] = { s: 'done', p: [], n: 1 };
     if (!c.flags['d:ende']) c.flags['d:ende'] = 1;
     while (c.level < CFG.player.maxLevel) { c.xp = CFG.xpToNext(c.level); p.gainXp(0.0001); }
-    for (const k of ['weapon', 'helm', 'armor', 'accessory', 'accessory'] as const) p.give(generateGear(p.zone.rng, c.level, 3, c.cls, k), false);
+    for (const it of Object.values(fullKit(p.zone.rng, c.level, 3, c.cls))) p.give(it!, false); // 0.9: alle zehn Plätze
     rift(); p.sync('quests', 'flags', 'rift');
     toStone();
   } else if (cmd === 'riss') { rift().stufe = Math.max(1, Math.min(CFG.rift.maxStufe, +a[0] || 1)); p.sync('rift'); }

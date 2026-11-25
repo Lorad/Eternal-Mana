@@ -65,7 +65,7 @@ export function chestExtras(z: Zone, p: Player, tier: string, boss: boolean) {
       const key = `sd:${set.id}`;
       const first = !p.char.flags[key];
       if (first || r.chance(L.setPieceBoss)) {
-        const piece: SetPiece = first ? r.pick(['ring', 'amulet']) : r.weighted([['ring', 3], ['amulet', 3], ['helm', 1], ['armor', 1]] as const);
+        const piece: SetPiece = first ? r.pick(['ring', 'amulet']) : r.weighted([['ring', 3], ['amulet', 3], ['helm', 1], ['armor', 1], ['gloves', 1.5], ['boots', 1.5]] as const); // 0.9: auch Handschutz und Schritt
         p.char.flags[key] = 1; p.sync('flags');
         p.give(makeSetPiece(r, set.id, piece, p.char.cls));
       }
@@ -77,7 +77,7 @@ export function chestExtras(z: Zone, p: Player, tier: string, boss: boolean) {
     }
     return;
   }
-  if (set && r.chance(L.setPieceChest[tier] ?? 0)) p.give(makeSetPiece(r, set.id, r.pick(['ring', 'amulet']), p.char.cls));
+  if (set && r.chance(L.setPieceChest[tier] ?? 0)) p.give(makeSetPiece(r, set.id, r.pick(['ring', 'amulet', 'gloves', 'boots'] as SetPiece[]), p.char.cls));
   if (r.chance(L.scrollChest[tier] ?? 0)) { const s = pickScroll(z, p); if (s) p.give(makeStack(s)); }
 }
 

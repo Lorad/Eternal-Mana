@@ -10,6 +10,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { ITEMS } from '../../shared/src/data/items';
+import { invCap, migrateEquip } from '../../shared/src/equip';
+import { clampRarity } from '../../shared/src/rarity';
+import { LEGACY_SLOTS, SLOTS } from '../../shared/src/types';
 import { sanitizeHome } from '../../shared/src/data/collection';
 import { LOOKS } from '../../shared/src/data/looks';
 import { PETS } from '../../shared/src/data/pets';
@@ -39,10 +42,15 @@ export function sanitizeChar(raw: any): CharData | null {
   if (!c.skills || typeof c.skills !== 'object') c.skills = base.skills;
   if (!Array.isArray(c.hotbar)) c.hotbar = base.hotbar;
   c.hotbar = [0, 1, 2, 3].map(i => (typeof c.hotbar[i] === 'string' && c.skills[c.hotbar[i]!] ? c.hotbar[i] : null));
-  c.inv = (Array.isArray(c.inv) ? c.inv : []).filter(it => it && ITEMS[it.base] && typeof it.uid === 'string').slice(0, CFG.player.invSize);
-  for (const it of c.inv) { it.affixes = Array.isArray(it.affixes) ? it.affixes : []; it.up = num(it.up, 0, 0, CFG.upgrade.max); it.rarity = num(it.rarity, 0, 0, 4); it.ilvl = num(it.ilvl, 1, 1, 99); }
+  // Rucksack: höchstens invSize – plus die Plätze, die eine Überführung der Ausrüstung (0.9) zusätzlich belegen darf
+  c.inv = (Array.isArray(c.inv) ? c.inv : []).filter(it => it && ITEMS[it.base] && typeof it.uid === 'string').slice(0, invCap());
   if (!c.equip || typeof c.equip !== 'object') c.equip = {};
-  for (const s of Object.keys(c.equip) as (keyof CharData['equip'])[]) if (!c.equip[s] || !ITEMS[c.equip[s]!.base]) delete c.equip[s];
+  for (const s of Object.keys(c.equip) as (keyof CharData['equip'])[]) if (!(SLOTS as string[]).includes(s) && !(LEGACY_SLOTS as string[]).includes(s) || !c.equip[s] || !ITEMS[c.equip[s]!.base] || typeof c.equip[s]!.uid !== 'string') delete c.equip[s];
+  // 0.9: zehn Plätze – alte Schmuckplätze acc1/acc2 verlustfrei überführen (shared/src/equip.ts); was keinen Platz findet, kommt in den Rucksack
+  if (typeof raw.eqv !== 'number') delete c.eqv; // Stand von vor 0.9 (newCharacter setzt eqv für neue Charaktere)
+  const moved = migrateEquip(c);
+  c.inv.push(...moved.toBag);
+  for (const it of [...c.inv, ...(Object.values(c.equip) as typeof c.inv)]) { it.affixes = Array.isArray(it.affixes) ? it.affixes : []; it.up = Math.floor(num(it.up, 0, 0, CFG.upgrade.max)); it.rarity = clampRarity(it.rarity); it.ilvl = num(it.ilvl, 1, 1, 99); }
   // 0.4: optionale Felder – alte Stände haben sie nicht, unbekannte Werte werden entfernt
   for (const it of [...c.inv, ...(Object.values(c.equip) as typeof c.inv)]) {
     if (it.elv !== undefined) { if (it.element) it.elv = Math.floor(num(it.elv, 1, 1, 3)); else delete it.elv; }

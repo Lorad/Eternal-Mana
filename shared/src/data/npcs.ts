@@ -1,7 +1,7 @@
 import type { ClassId, ItemInstance } from '../types';
 import { Rng, strHash } from '../util/rng';
 import type { Cond } from './cond';
-import { generateGear, makeStack } from './items';
+import { GEN_KINDS, generateGear, makeStack } from './items';
 import { NPCS_AKT2, TALK_AKT2 } from './npcs_akt2';
 import { NPCS_WELT } from './npcs_welt';
 
@@ -89,7 +89,7 @@ export function shopStock(npcId: string, cls: ClassId, zoneLevel: number): ShopE
   if (gl !== undefined) {
     const lvl = gl < 0 ? zoneLevel : gl;
     const rng = new Rng(strHash(npcId + cls + lvl));
-    for (const kind of ['weapon', 'helm', 'armor', 'accessory'] as const) {
+    for (const kind of GEN_KINDS) { // 0.9: alle Plätze (Schmuck: Ring, Amulett oder Talisman)
       const it = generateGear(rng, lvl, kind === 'accessory' ? 1 : 0, cls, kind);
       delete it.element;
       it.uid = 'shop';

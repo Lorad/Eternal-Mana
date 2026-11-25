@@ -15,6 +15,7 @@ import { ZONES } from '../../shared/src/data/zones';
 import { getMap } from '../../shared/src/maps/mapgen';
 import { newCharacter } from '../../shared/src/stats';
 import type { AttrKey, ClientMsg, ItemInstance, PlayerInfo, ServerInfo, ServerMsg, Slot } from '../../shared/src/types';
+import { potionMul } from './gearfx';
 import { equippedItems, fullKit, normSlot, targetSlot } from '../../shared/src/equip';
 import { upgradeBlock, upgradeCost, upgradePreview } from '../../shared/src/craft';
 import { MOD_LABEL } from '../../shared/src/types';
@@ -467,7 +468,7 @@ export class Game {
     if (u.pet) return Home.useItem(this, p, it);
     if (u.learn || u.buff || u.cleanse) return useSpecial(this, p, it);
     if (this.now < p.potionReadyAt) { p.toast('Tränke sind noch nicht wieder bereit.', 'bad'); return false; }
-    const hp = (u.hp ?? 0) + ((u.hpPct ?? 0) / 100) * p.stats.maxHp, mp = (u.mp ?? 0) + ((u.mpPct ?? 0) / 100) * p.stats.maxMp;
+    const hp = ((u.hp ?? 0) + ((u.hpPct ?? 0) / 100) * p.stats.maxHp) * potionMul(p), mp = (u.mp ?? 0) + ((u.mpPct ?? 0) / 100) * p.stats.maxMp;
     if ((hp === 0 || p.hp >= p.stats.maxHp) && (mp === 0 || p.mp >= p.stats.maxMp)) { p.toast('Das brauchst du gerade nicht.'); return false; }
     p.potionReadyAt = this.now + CFG.player.potionCooldown;
     if (hp) p.heal(hp);

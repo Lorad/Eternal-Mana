@@ -1,3 +1,4 @@
+import { newGearState } from './gearfx';
 import { CFG } from '../../shared/src/config';
 import { ITEMS } from '../../shared/src/data/items';
 import { DERIVED_OBJECTIVES, QUESTS, QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../shared/src/data/quests';
@@ -41,6 +42,8 @@ export class Player {
   story = { dlg: null as { npc: string; topic: string; node: string } | null, cineUntil: 0, cineAt: 0, zone: '', places: new Set<string>() };
   /** Zähler für die Legendäre Waffe des Kriegers (Treffer der Standardangriffe) */
   legendHits = 0;
+  /** 0.9: Zähler und Abklingzeiten der Ausrüstungs-Wirkungen (server/src/gearfx.ts) */
+  gear = newGearState();
   /** 0.7 Zuhause (gesetzt von server/src/home): dauerhafte Werte aus Begleiter und Trophäen; Faktoren für Aufsammelradius, Ruf, Schatzkarten */
   perkMods: Mods = {};
   perk = { pickup: 1, rep: 1, maps: 1 };
