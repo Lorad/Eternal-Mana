@@ -132,3 +132,45 @@ Stand: alle Meilensteine bis 0.8 sind umgesetzt (siehe `PROJECT_STATUS.md` und `
 | 0.6 | **Lebendige Welt:** Ruf und Fraktionen, Ereignisse, seltene Monster, Schätze, Tagesabläufe, Jahreszeiten |
 | 0.7 | **Gemeinsam & Zuhause:** Gruppenverwaltung, Handel, Haus mit Lager, Begleiter, Sammlung, Erscheinungen |
 | 0.8 | Feinschliff: Balance über alle Systeme, Bedienung, Leistung |
+
+## 5. Ausbau ab 0.9: Quellwarte (Hub) und Expeditionen
+
+Ziel: ein zentraler Hub, von dem aus Spieler ihre Abenteuer starten, sich verbessern und einander treffen – und Dungeons,
+die sich wie vollständige Spiellevel anfühlen (normal 15–30 Minuten, große länger). Die offene Welt, die Geschichte und alle
+Systeme bis 0.8 bleiben erhalten; der Hub kommt dazu, er ersetzt nichts. Gemeinsame Namen und Formate: `shared/src/data/hub.ts`.
+
+### 5.1 Grundentscheidungen
+
+- **Die Quellwarte** (`quellwarte`): die alte Wache der Hüter über dem Quellstein-Netz, wieder geöffnet als Basis der
+  Quellgänger – eine kleine, lebendige Stadt. Eine Instanz für alle Spieler (kein Kampf). Erreichbar von Anfang an über jeden
+  Quellstein und über ein Portal in Quellhain; neue Charaktere beginnen weiterhin die Geschichte in Quellhain und werden in der
+  ersten Quest zur Quellwarte geführt.
+- **Einrichtungen** (alle funktionieren): Dungeon-Portal, Schmiede, Ausrüstungshändler (wechselndes Angebot), Alchemie,
+  Fähigkeitenmeister, Lagerhaus (dieselbe Profil-Truhe wie auf dem Hof, ohne Hofkauf erreichbar, erweiterbar), Gasthaus
+  (Geschichten, Nebenquests, Gerüchte über geheime Dungeons, Treffpunkt), Trophäenhalle (Bosse, Erfolge, Bestzeiten,
+  Statistiken, seltene Stücke), Gruppenbereich (Spieler sehen, Gruppen bilden, Bereitschaft, gemeinsam wählen).
+  Die vorhandenen Systeme (Handwerk, Truhe, Gruppe, Sammlung) werden dort angebunden, nicht dupliziert.
+- **Expeditionen** sind die Dungeons des Spiels: je Region eine große, mehrteilige Karte mit Abschnitten (Eingang, Erkundung,
+  Kampfhallen, versteckte Schatzkammer, Rätsel, Mini-Boss, neuer Abschnitt, Elite, Vorbereitungsraum, Bossarena,
+  Belohnungskammer), geheimen Wegen, Schlüsseln, Fallen und eigener Stimmung. Sie lösen die bisherigen kleinen Story-Dungeons
+  ab: Die Dungeon-Eingänge in der Welt führen in die Expedition dieser Region (Schwierigkeit Normal), das Portal im Hub führt
+  in alle freigeschalteten. Die Story-Bosse sind die Endbosse; Quest-Ziele bleiben gültig. Alte Dungeon-Zonen bleiben für
+  Spielstände und die Mana-Risse erhalten.
+- **Schwierigkeitsgrade** Normal, Schwer, Albtraum, Mythisch – nicht nur mehr Leben: neue Gegnermechaniken, zusätzliche
+  Bossangriffe, Zusatzaufgaben, seltenere Belohnungen. Die Mana-Risse (0.5) bleiben und sind über das Portal erreichbar.
+- **Abschluss:** Boss stirbt mit eigener Animation → Arena schließt sich → Belohnungsphase → Statistik → serverseitig
+  gespeichert (genau einmal je Lauf und Spieler, auch bei Verbindungsabbruch) → die Gruppe kehrt gemeinsam durch ein Portal
+  in den Hub zurück → dort Zusammenfassung mit direktem Weg zur Schmiede.
+- **Ausrüstung:** zehn Plätze (Hauptwaffe, Zweithand/Schild, Helm, Brust, Handschuhe, Beine, Schuhe, Amulett, Ring, Ring),
+  sechs Seltenheiten (neu: Mythisch), faire Verbesserung +0 bis +10 ohne Zerstörung oder Rückstufung, Sets mit Boni für
+  2, 4 und alle Teile. Alte Gegenstände werden verlustfrei überführt.
+- **Gruppen:** bis vier Spieler, Anführer, Bereitschaftsprüfung, gemeinsame Auswahl und gemeinsamer Start; jede Gruppe hat
+  ihre Instanz; Wiederverbindung in die laufende Instanz. Beute bleibt persönlich.
+
+### 5.2 Meilensteine
+
+| Version | Inhalt |
+|---|---|
+| 0.9 | Quellwarte mit allen Einrichtungen; eine vollständige Expedition mit Mini-Boss und Endboss; Abschluss und Rückkehr |
+| 0.10 | Alle Expeditionen, Schwierigkeitsgrade, wöchentliche Herausforderung, Bestzeiten; Ausrüstung mit zehn Plätzen |
+| 0.11 | Endgame-Expeditionen, Balance über die neue Länge, Leistung |
