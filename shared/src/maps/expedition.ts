@@ -68,7 +68,7 @@ const TLEN: Record<Transition, [number, number]> = { stairs: [6, 9], bridge: [10
 const narrow = (k: Transition, boss?: boolean) => boss || k === 'gate' || k === 'locked' || k === 'secret' || k === 'tunnel';
 
 /** Einrichtung je Region: [Frame, solide] – erste und zweite Hälfte der Expedition */
-const DRESS: Record<BiomeId, [[string, boolean][], [string, boolean][]]> = {
+const DRESS: Partial<Record<BiomeId, [[string, boolean][], [string, boolean][]]>> = {
   gruenwald: [[['mushrooms', false], ['stump', true], ['d_roots', false], ['bush', true], ['fern', false], ['mushroom_big', false]], [['bones', false], ['d_urn', true], ['stump_moss', true], ['d_skull', false], ['d_sarcophagus', true]]],
   kristall: [[['crystal_blue', true], ['glowshroom', false], ['crystal_shards', false], ['stalagmite', true]], [['crystal_pink', true], ['crystal_teal', true], ['bones', false], ['drip_stone', true]]],
   glut: [[['lava_rock', true], ['skull', false], ['ash_pile', false], ['basalt_column', true]], [['obsidian', true], ['ember_vent', false], ['magma_crack', false], ['ribcage', true]]],
@@ -85,7 +85,7 @@ const ROLE_PROPS: Record<string, [string, boolean][]> = {
   treasure: [['d_sarcophagus', true], ['d_candles', false], ['d_mushroom_glow', false], ['d_crate', true]],
   prep: [['d_candles', false], ['d_table', true], ['d_rack', true]],
 };
-const NODE_OF: Record<BiomeId, string> = { gruenwald: 'herb', kristall: 'crystal', glut: 'ember', frost: 'frost', ruinen: 'rune', schatten: 'void' };
+const NODE_OF: Partial<Record<BiomeId, string>> = { gruenwald: 'herb', kristall: 'crystal', glut: 'ember', frost: 'frost', ruinen: 'rune', schatten: 'void' };
 const RUNE_NAMES = ['Blatt', 'Wurzel', 'Dorn', 'Blüte'];
 export const RUNE_SYMBOLS = ['❦', '⚘', '✶', '❀'];
 
@@ -273,7 +273,7 @@ export function genExpedition(def: ZoneDef): GameMap {
   const mainCount = x.sections.length;
   const levelAt = (n: Node) => Math.round(x.level[0] + (x.level[1] - x.level[0]) * Math.min(1, n.order / Math.max(1, mainCount - 3)));
   const entryOf = (n: Node): [number, number] => { const d = doorPts.get(n.idx)?.[0]; return d ?? center(n); };
-  const dressSet = (n: Node) => DRESS[x.region][n.def.look ?? 0];
+  const dressSet = (n: Node) => (DRESS[x.region] ?? DRESS.gruenwald!)[n.def.look ?? 0];
   let mainGroups = 0, allGroups = 0;
 
   const addGroup = (n: Node, size: number, elite: boolean, anchor?: [number, number]) => {
@@ -432,7 +432,7 @@ export function genExpedition(def: ZoneDef): GameMap {
     if ((role === 'combat' || role === 'elite' || role === 'explore') && hash2(n.idx, 5, def.seed) < (role === 'elite' ? 1 : 0.55)) chest(n, role === 'elite' ? 'silver' : 'wood', role === 'elite' ? { guard: group - 1 } : {});
     if (role === 'mini') chest(n, 'gold', { mini: n.def.mini });
     // seltene Abbaustellen
-    for (let k = 0; k < (n.def.nodes ?? 0); k++) { const c = spot(n, roomy, 60, 1); if (c) { addObj('node', c[0], c[1], undefined, { kind: NODE_OF[x.region], rare: k === 0 && n.def.role !== 'explore' ? 1 : hash2(c[0], c[1], def.seed) < 0.35 ? 1 : 0 }); solidAt(c[0], c[1]); } }
+    for (let k = 0; k < (n.def.nodes ?? 0); k++) { const c = spot(n, roomy, 60, 1); if (c) { addObj('node', c[0], c[1], undefined, { kind: NODE_OF[x.region] ?? 'herb', rare: k === 0 && n.def.role !== 'explore' ? 1 : hash2(c[0], c[1], def.seed) < 0.35 ? 1 : 0 }); solidAt(c[0], c[1]); } }
     // Spur zu einer geheimen Expedition
     if (n.def.discover) { const c = spot(n, roomy, 60, 1); if (c) { addObj('xobj', c[0], c[1], 'discover', { kind: 'discover', exp: n.def.discover, frame: 'rune_stone', label: 'Eine Spur', prompt: 'Die Spur untersuchen', light: [60, 0xffd890, 0.7] }); solidAt(c[0], c[1]); } }
     // Inschrift (Lore-Stelle)
