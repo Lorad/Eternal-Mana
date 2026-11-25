@@ -138,7 +138,7 @@ export class Player {
     this.checkCollectQuests();
   }
 
-  gainGold(n: number) { this.char.gold += Math.max(0, Math.round(n)); this.sync('gold'); }
+  gainGold(n: number) { const g = Math.max(0, Math.round(n)); this.char.gold += g; if (g) { this.char.earned = (this.char.earned ?? 0) + g; this.sync('gold', 'earned'); } } // 0.9: verdientes Gold (Trophäenhalle)
   gainXp(n: number) {
     const c = this.char;
     if (c.level >= CFG.player.maxLevel) { this.gainQuellXp(Math.max(1, Math.round(n * (1 + this.stats.xpPct / 100)))); return; }

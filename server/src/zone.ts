@@ -19,6 +19,8 @@ import { BossCtl } from './boss';
 import { cookFires } from './craft';
 import type { Game } from './game';
 import { Home } from './home';
+import { Hub } from './hub';
+import { effRank } from '../../shared/src/data/hubdata';
 import { chestExtras, nodeBonus, rollMaterials } from './loot';
 import { Player, nextId, type StatusState } from './player';
 import { Story } from './story';
@@ -145,6 +147,7 @@ export class Zone {
     for (const f of cookFires(this.map)) this.objs.set(f.id, f);
     for (const f of riftStones(this.map)) this.objs.set(f.id, f);
     for (const f of Home.signs(this.map)) this.objs.set(f.id, f); // 0.7: Wegweiser zum Hof
+    for (const f of Hub.gates(this.map)) this.objs.set(f.id, f); // 0.9: Tor zur Quellwarte
     if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
     if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);
     if (this.rift) Rift.setup(this);
@@ -468,7 +471,7 @@ export class Zone {
 
   playerSkill(p: Player, id: string, ang: number, tx: number, ty: number) {
     const now = this.game.now;
-    const sk = SKILLS[id], rank = p.char.skills[id] ?? 0;
+    const sk = SKILLS[id], rank = effRank(p.char, id); // 0.9: mit Meisterrängen
     if (!sk || !sk.effects || rank < 1 || sk.cls !== p.char.cls || p.dead || p.stunned(now) || !isFinite(ang + tx + ty)) return;
     if ((p.cds.get(id) ?? 0) > now + 0.05) return;
     const cost = skillMp(sk, rank);
@@ -638,7 +641,7 @@ export class Zone {
         break;
       }
       case 'exit': this.useExit(p, o); break;
-      default: if (!World.interact(this, p, o) && !Home.interact(this, p, o)) Story.interact(this, p, o); // Weltobjekte (0.6) · Hof (0.7) · Chronik, Hüterschrein, Mana-Riss
+      default: if (!World.interact(this, p, o) && !Home.interact(this, p, o) && !Hub.interact(this, p, o)) Story.interact(this, p, o); // Weltobjekte (0.6) · Hof (0.7) · Chronik, Hüterschrein, Mana-Riss
     }
   }
   private checkPuzzle(p: Player) {
@@ -709,7 +712,7 @@ export class Zone {
       for (const p of this.players.values()) p.send({ t: 'env', weather: this.weather });
     }
     this.updatePlayers(dt, now);
-    if (now - this.flowAt > 0.3) { this.flowAt = now; this.buildFlow(); }
+    if (this.mobs.size && now - this.flowAt > 0.3) { this.flowAt = now; this.buildFlow(); } // ohne Gegner (Quellwarte, Hof) keine Wegfelder
     this.updateMobs(dt, now);
     this.boss?.update(dt);
     this.updateProjs(dt);

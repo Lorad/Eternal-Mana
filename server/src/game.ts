@@ -22,6 +22,7 @@ import { devEndgame, handleEndgame, questPoints, questUnlocks } from './endgame'
 import { HOME_AT } from '../../shared/src/data/recipes';
 import { HOME_ID } from '../../shared/src/data/home';
 import { Home } from './home';
+import { Hub } from './hub';
 import { Rift } from './rift';
 import type { AccountRow, Db } from './db';
 import { Player } from './player';
@@ -87,6 +88,7 @@ export class Game {
 
   /** Die Welt-Instanz einer Zone. Jeder Neue Kreis (0.5) hat seine eigene; Kreis 0 liegt wie bisher unter der Zonen-ID. */
   zone(id: string, kreis = 0): Zone {
+    if (ZONES[id]?.kind === 'hub') kreis = 0; // 0.9: die Quellwarte ist EINE Instanz für alle Kreise
     const key = kreis > 0 ? `${id}#k${kreis}` : id;
     let z = this.zones.get(key);
     if (!z) { z = new Zone(this, ZONES[id], { key, kreis }); this.zones.set(key, z); }
@@ -136,6 +138,7 @@ export class Game {
     if ((T.env += dt) >= 15) { T.env = 0; const tod = this.tod(); for (const p of this.players.values()) if (!p.linkdead) p.send({ t: 'env', tod }); }
     World.tickGame(this, dt);
     Home.tick(this, dt);
+    Hub.tick(this, dt); // 0.9: Spaziergänger der Quellwarte, Gruppengesuche
     if ((T.backup += dt) >= CFG.save.backupEveryMin * 60) { T.backup = 0; if (this.players.size) { try { this.db.backup(); } catch (e) { console.error('[backup]', e); } } }
   }
 
@@ -182,6 +185,7 @@ export class Game {
     p.zone.removePlayer(p);
     this.players.delete(p.charId);
     Social.onRemove(this, p, keepSeat);
+    Hub.onRemove(this, p);
   }
 
   onMessage(s: Session, raw: string) {
@@ -241,6 +245,7 @@ export class Game {
       case 'donate': case 'fbuy': case 'wbuy': case 'dig': case 'enc': return World.message(this, p, m);
       case 'rift': case 'quell': case 'kreis': case 'attune': case 'title': return handleEndgame(this, p, m);
       case 'home': return Home.message(this, p, m);
+      case 'hub': return Hub.message(this, p, m); // 0.9: Quellwarte
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': case 'trade': case 'qShare': case 'qShareAns': case 'inspect': return Social.message(this, p, m);
@@ -308,6 +313,7 @@ export class Game {
     p.send({ t: 'entered', char, charId, init: z.initFor(p) });
     World.sendTo(p);
     Home.onEnter(this, p);
+    Hub.onEnter(this, p); // 0.9: Quellwarte von Anfang an erreichbar; Hinweis für ältere Charaktere
     if (!char.flags.intro) { char.flags.intro = 1; this.story(p, 'intro'); }
     this.sysChat(`${p.name} betritt die Welt.`);
     Social.onEnter(this, p);
@@ -367,7 +373,7 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ Infos
-  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0, title: titleName(p.char), ...Home.info(p) }; }
+  playerInfo(p: Player): PlayerInfo { return { id: p.id, name: p.name, cls: p.char.cls, level: p.level, party: p.party?.id ?? 0, title: titleName(p.char), ...Home.info(p), ...Hub.info(this, p) }; }
   broadcastPlayerInfo(p: Player) { for (const q of p.zone.players.values()) if (q !== p) q.pev.push({ k: 'pl+', p: this.playerInfo(p) }); }
   story(p: Player, id: string) { const st = STORY[id]; if (st) p.send({ t: 'story', id, title: st.title, lines: st.lines }); }
   sysChat(s: string) { for (const p of this.players.values()) p.send({ t: 'chat', from: '', s, ch: 'sys' }); }
@@ -414,6 +420,7 @@ export class Game {
     else if (devEndgame(this, p, cmd, a)) { /* Endspiel-Befehle: server/src/endgame.ts */ }
     else if (World.dev(this, p, cmd, a)) { /* Lebendige Welt: server/src/world/index.ts */ }
     else if (Social.dev(this, p, cmd, a)) { /* Gemeinsam: server/src/social/index.ts */ }
+    else if (Hub.dev(this, p, cmd)) { /* Quellwarte: /warte */ }
     else if (Home.dev(this, p, cmd, a)) { /* Zuhause: server/src/home/index.ts – /hof [stufe], /begleiter id|alle, /gewand, /trophaeen, /bestiarium [n] */ }
     else p.toast('Dev: /lvl n, /gold n, /tp zone, /time 0..1, /weather art, /god, /gear r, /item id n, /quest id, /quests, /boss, /kill, /goto x y, /mats gruppe n, /recipes, /legend, /setitem set, /elem element stufe, /status zustand s · Story: /akt2, /qa id, /flag k v, /dec id v, /lore id|all, /mem el|all, /cine id, /npc tag, /obj typ tag · Endspiel: /endspiel, /riss stufe, /risstein, /rissmod id [dungeon] [stufe], /quell n, /echo n, /kreis [n], /pruefung · Welt: /event art, /wboss id, /rare id, /season 0..3, /rep fraktion n, /enc art, /tmap, /welt aus|an · Gemeinsam: /zu name [dx] [dy]');
   }
