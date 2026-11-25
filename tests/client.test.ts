@@ -178,7 +178,8 @@ describe('Hinweise', () => {
   afterAll(() => sim.close());
   const base = (patch: Partial<HintState> = {}): HintState => ({
     screen: 'game', char: null, zone: 'gruenwald', panel: null, craft: null, endgame: null, hof: null, lore: null, cine: null, dlgNode: null, rift: null, world: null,
-    party: [], trade: null, home: null, dead: null, boss: null, target: null, nearStone: false, prompt: null, dialog: null, ...patch,
+    party: [], trade: null, home: null, dead: null, boss: null, target: null, nearStone: false, prompt: null, dialog: null,
+    story: null, sign: null, enc: null, wshop: null, inspect: null, ...patch,
   });
 
   it('haben eindeutige Kennungen, kurze Texte und zeigen nur auf vorhandene Handbuch-Kapitel', () => {
@@ -220,8 +221,17 @@ describe('Hinweise', () => {
     done('handwerk');
     expect(next({ zone: 'wurzelgruft' })).toBe('dungeon');
     done('dungeon');
-    expect(next({ lore: { id: 'brunnenbuch', first: true } })).toBe('chronik');
+    // während ein Schriftstück offen ist, kommt nichts – danach der Hinweis auf die Chronik
+    c.flags['l:brunnenbuch'] = 1;
+    expect(next({ lore: { id: 'brunnenbuch', first: true } })).toBeNull();
+    expect(next()).toBe('chronik');
     expect(seen).toEqual(['start', 'kampf', 'abgeben', 'stufe', 'kochen', 'handwerk', 'dungeon']);
+    // die Einleitung liegt über dem Spiel: Der erste Hinweis wartet, bis sie gelesen ist (sonst liefe seine Zeit ungesehen ab)
+    expect(nextHint(base({ char: { ...c, level: 1, quests: {} }, story: { title: 'x', lines: ['y'] } }), [], true)).toBeNull();
+    // offene Fenster: nur Hinweise, die hineingehören; im Bosskampf nur der zum Bosskampf
+    expect(nextHint(base({ char: { ...c, level: 1, quests: {} }, panel: 'inventory' }), [], true)).toBeNull();
+    expect(nextHint(base({ char: c, craft: { at: 'borin', station: 'forge' } }), [], true)?.win).toBe(true);
+    expect(nextHint(base({ char: c, boss: { id: 1 } as any, zone: 'wurzelgruft' }), [], true)?.id).toBe('boss');
     expect(markSeen(['gibtsnicht', 'start'], 'start')).toEqual(['start']); // alte, unbekannte Kennungen fallen heraus
     expect(markSeen(seen, 'unbekannt')).toEqual(seen);
   });

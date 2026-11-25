@@ -345,6 +345,8 @@ export function TooltipLayer({ root }: { root: () => HTMLElement | null }) {
 }
 
 // ------------------------------------------------------------------ Fenster
+/** Steckplatz für die Hinweiszeile unter dem Fensterkopf (0.8) – ui/index.tsx setzt ihn, damit hier keine Kreis-Einbindung entsteht */
+export const windowSlot: { hint: (() => ComponentChildren) | null } = { hint: null };
 export function Window(p: { title: string; onClose: () => void; children: ComponentChildren; class?: string; icon?: string; wide?: boolean; head?: ComponentChildren; modal?: boolean }) {
   useEffect(() => { sfx('ui_open'); return () => { hideTip(); }; }, []);
   const close = () => { sfx('ui_close'); p.onClose(); };
@@ -358,6 +360,7 @@ export function Window(p: { title: string; onClose: () => void; children: Compon
           <span class="window-gap" />
           <button type="button" class="window-x" aria-label="Schließen" title="Schließen (Esc)" onClick={close}>✕</button>
         </header>
+        {windowSlot.hint?.()}
         <div class="window-body">{p.children}</div>
       </section>
     </div>

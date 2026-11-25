@@ -168,7 +168,7 @@ const ALL = [
   )),
   ch('beute', () => (
     <>
-      <p>Beute ist immer persönlich: Was du siehst, gehört dir. Im Inventar (<K a="inventory" />) legt ein Doppelklick an; der Tooltip vergleicht mit dem, was du trägst. Platz ist für {CFG.player.invSize} Gegenstände.</p>
+      <p>Beute ist immer persönlich: Was du siehst, gehört dir. Im Inventar (<K a="inventory" />) legt ein Doppelklick an; der Tooltip vergleicht mit dem, was du trägst. Der Rucksack fasst {CFG.player.invSize} Gegenstände (Stapel zählen einmal).</p>
       <Facts rows={[
         ['Plätze', 'Waffe, Kopf, Rüstung und zwei Accessoires.'],
         ['Seltenheit', <>{RARITY_NAME.map((n, i) => <><b style={{ color: RARITY_COLOR[i] }}>{n}</b>{i < RARITY_NAME.length - 1 ? ' · ' : ''}</>)} – mit {CFG.loot.affixCount.join('/')} zufälligen Eigenschaften.</>],
@@ -321,7 +321,7 @@ const ALL = [
       ]} />
       <H>Grenzen</H>
       <ul class="tips">
-        <li><b>Chat und Namenseingabe</b> brauchen eine Tastatur.</li>
+        <li><b>Chat</b> braucht eine Tastatur. Einen Namen für den Charakter schlägt „Name würfeln“ vor; Schieberegler stellst du mit links und rechts ein.</li>
         <li><b>Goldbeträge</b> in Handel und Lagertruhe stellst du mit den Knöpfen neben dem Feld ein (±10, ±100, ±1000, alles).</li>
         <li><b>Tasten neu belegen</b> geht nur für die Tastatur; die Gamepad-Belegung ist fest.</li>
         <li>Manche Browser geben Gamepads nur auf „sicheren“ Seiten frei (localhost oder HTTPS).</li>

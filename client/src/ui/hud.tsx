@@ -18,7 +18,7 @@ import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
 import { FLAG_SHIELD, STATUS_BIT, STATUS_MASK, STATUS_NAME } from '../../../shared/src/types';
 import type { CharData, StatusId } from '../../../shared/src/types';
-import { Bar, Btn, ELEMENT_CSS, Face, Icon, Kbd, cx, send, sfx, tipProps, uiScale, useSettings, useTick } from './common';
+import { Bar, Btn, ELEMENT_CSS, Face, Icon, Kbd, cx, fmtNum, send, sfx, tipProps, uiScale, useSettings, useTick } from './common';
 import { HintCard, useHintWatcher } from './hints';
 import { planColumn, type ColumnPlan } from './hudlayout';
 import { PerfOverlay } from './perf';
@@ -121,7 +121,7 @@ function Cooldown({ id }: { id: string }) {
     if (left <= 0) { if (el.style.display !== 'none') { el.style.display = 'none'; el.parentElement?.classList.add('cd-ready'); window.setTimeout(() => el.parentElement?.classList.remove('cd-ready'), 350); } return; }
     if (el.style.display !== 'block') el.style.display = 'block';
     el.style.setProperty('--p', (Math.min(1, left / (cd!.total * 1000)) * 100).toFixed(1) + '%');
-    const t = left > 9950 ? Math.ceil(left / 1000) + '' : (Math.ceil(left / 100) / 10).toFixed(1);
+    const t = left > 9950 ? Math.ceil(left / 1000) + '' : (Math.ceil(left / 100) / 10).toFixed(1).replace('.', ','); // deutsches Dezimalkomma wie überall sonst
     if (txt.current && txt.current.textContent !== t) txt.current.textContent = t;
   }, [cd]);
   return <div ref={ref} class="cd" style={{ display: 'none' }}><span ref={txt} /></div>;
@@ -182,13 +182,13 @@ function XpBar() {
   if (max && qLvl < QUELL_MAX) return (
     <div class="xpbar xpbar-quell" title="Quell-Erfahrung">
       <Bar kind="xp" v={qXp} max={CFG.quell.xpToNext(qLvl)} label={false} class="thin" />
-      <span class="xp-text">Quellstufe {qLvl} · {Math.floor(qXp)} / {CFG.quell.xpToNext(qLvl)} EP</span>
+      <span class="xp-text">Quellstufe {qLvl} · {fmtNum(Math.floor(qXp))} / {fmtNum(CFG.quell.xpToNext(qLvl))} EP</span>
     </div>
   );
   return (
     <div class="xpbar" title="Erfahrung">
       <Bar kind="xp" v={max ? 1 : xp} max={max ? 1 : need} label={false} class="thin" />
-      <span class="xp-text">{max ? 'Höchststufe erreicht' : `Stufe ${level} · ${Math.floor(xp)} / ${need} EP`}</span>
+      <span class="xp-text">{max ? 'Höchststufe erreicht' : `Stufe ${level} · ${fmtNum(Math.floor(xp))} / ${fmtNum(need)} EP`}</span>
     </div>
   );
 }

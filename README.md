@@ -56,7 +56,7 @@ Serverfenster die Adressen an, unter denen das Spiel erreichbar ist – auf dem 
 | Menü / oberstes Fenster schließen | Esc | Start / B |
 
 In Fenstern wählt das Gamepad mit Stick oder Steuerkreuz aus, A bestätigt, B schließt. Was das Gamepad nicht kann (Chat,
-Namen eingeben, Tasten neu belegen), steht im Handbuch unter „Gamepad“.
+Tasten neu belegen), steht im Handbuch unter „Gamepad“.
 
 ## Dokumentation
 

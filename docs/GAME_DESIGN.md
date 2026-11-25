@@ -309,8 +309,9 @@ Das Spiel soll sich von jemandem lernen lassen, der es nie gesehen hat – ohne 
 - **Fenster** passen bei 1280×720, 1000×560 und im Hochformat ins Bild; Kopfzeilen sind einzeilig (Titel · Reiter · Gold ·
   Schließen), im schmalen Fenster stehen die Reiter als eigene Zeile darunter.
 - **Gamepad:** Der Fokus bleibt im obersten Fenster; jedes Fenster ist über das Menü (Start) erreichbar, auch offene
-  Anfragen (Einladung, Handel, geteilte Quest); Beträge lassen sich mit Knöpfen einstellen. Chat, Namenseingabe und das
-  Umbelegen von Tasten brauchen eine Tastatur – das steht auch im Handbuch.
+  Anfragen (Einladung, Handel, geteilte Quest); Beträge lassen sich mit Knöpfen einstellen, Schieberegler mit links und
+  rechts, den Namen eines neuen Charakters schlägt „Name würfeln“ vor. Der Chat und das Umbelegen von Tasten brauchen eine
+  Tastatur – das steht auch im Handbuch.
 - **Verträglichkeit:** „Blitze reduzieren“ ersetzt Bildschirmblitze durch einen weichen Schleier, dämpft Bildschirmwackeln
   und Lichtblitze und nimmt der Oberfläche pulsierende Flächen; „Bildschirmwackeln“ lässt sich getrennt ganz abschalten.
 - **Niedrige Bildrate:** Die eigene Figur bewegt sich bis hinunter zu 4 Bildern pro Sekunde in Echtzeit (und für den Server

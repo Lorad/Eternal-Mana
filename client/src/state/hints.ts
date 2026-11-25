@@ -13,7 +13,7 @@ import type { Action } from './keys';
 import type { UiState } from './store';
 
 /** Ausschnitt des UI-Zustands, den die Hinweise ansehen */
-export type HintState = Pick<UiState, 'screen' | 'char' | 'zone' | 'panel' | 'craft' | 'endgame' | 'hof' | 'lore' | 'cine' | 'dlgNode' | 'rift' | 'world' | 'party' | 'trade' | 'home' | 'dead' | 'boss' | 'target' | 'nearStone' | 'prompt' | 'dialog'>;
+export type HintState = Pick<UiState, 'screen' | 'char' | 'zone' | 'panel' | 'craft' | 'endgame' | 'hof' | 'lore' | 'cine' | 'dlgNode' | 'rift' | 'world' | 'party' | 'trade' | 'home' | 'dead' | 'boss' | 'target' | 'nearStone' | 'prompt' | 'dialog' | 'story' | 'sign' | 'enc' | 'wshop' | 'inspect'>;
 
 /**
  * Kapitel des Handbuchs in ihrer Reihenfolge: [Kennung, Titel]. Die Seiten selbst stehen in ui/handbuch.tsx; dort prüft der
@@ -46,6 +46,8 @@ export interface HintDef {
   text: string;
   /** Kapitel im Handbuch, das mehr dazu sagt */
   topic?: HelpTopicId;
+  /** gehört zu einem offenen Fenster und erscheint darin (als Zeile unter dem Fensterkopf) statt über der Aktionsleiste */
+  win?: boolean;
   when: (s: HintState) => boolean;
 }
 
@@ -75,10 +77,10 @@ export const HINTS: HintDef[] = [
   { id: 'quellstein', title: 'Quellstein', topic: 'welt',
     text: 'Quellsteine heilen, setzen deinen Rückkehrpunkt und erlauben über die Weltkarte ({map}) die Schnellreise zu jedem Stein, den du schon berührt hast.',
     when: s => s.nearStone && !!s.char && Object.keys(s.char.quests).length > 0 },
-  { id: 'kochen', title: 'Kochstelle', topic: 'handwerk',
+  { id: 'kochen', win: true, title: 'Kochstelle', topic: 'handwerk',
     text: 'Am Feuer kochst du Speisen aus den Zutaten der Region. Es wirken immer nur eine Speise und ein Elixier zugleich – dafür lange.',
     when: s => s.craft?.station === 'cooking' },
-  { id: 'handwerk', title: 'Handwerk', topic: 'handwerk',
+  { id: 'handwerk', win: true, title: 'Handwerk', topic: 'handwerk',
     text: 'Links stehen die Rezepte, rechts ihre Kosten. Rot heißt: Davon fehlt noch etwas. „Nur herstellbare“ blendet den Rest aus.',
     when: s => !!s.craft },
   { id: 'dungeon', title: 'Dungeon', topic: 'welt',
@@ -91,9 +93,9 @@ export const HINTS: HintDef[] = [
     text: 'Oben steht, wogegen dein Ziel schwach ist. Trägt ein Gegner den Zustand eines Elements und trifft ihn ein zweites, reagieren beide – etwa Feuer und Wind zum Feuersturm.',
     when: s => !!s.target && s.target.weak.length > 0 && !!s.char && s.char.level >= 4 },
   { id: 'chronik', title: 'Chronik', topic: 'geschichte',
-    text: 'Gefundene Schriftstücke stehen im Questlog ({quests}) unter „Chronik“. Wer liest, bekommt in manchen Gesprächen andere Antworten.',
-    when: s => !!s.lore },
-  { id: 'entscheidung', title: 'Entscheidung', topic: 'geschichte',
+    text: 'Gelesene Schriftstücke stehen im Questlog ({quests}) unter „Chronik“. Wer liest, bekommt in manchen Gesprächen andere Antworten.',
+    when: s => !!s.char && Object.keys(s.char.flags).some(k => k.startsWith('l:')) },
+  { id: 'entscheidung', win: true, title: 'Entscheidung', topic: 'geschichte',
     text: 'Antworten mit „!“ sind Entscheidungen. Sie werden gespeichert und ändern spätere Gespräche – manche auch das Ende.',
     when: s => { const n = s.dlgNode && TOPIC[s.dlgNode.topic]?.nodes[s.dlgNode.node]; return !!n && (n.opts ?? []).some(o => !!o.fx?.decide); } },
   { id: 'riss', title: 'Der Riss-Stein ist erwacht', topic: 'endspiel',
@@ -117,22 +119,22 @@ export const HINTS: HintDef[] = [
   { id: 'hofkauf', title: 'Ein Hof am Waldrand', topic: 'zuhause',
     text: `Mirelda verkauft dir jetzt den Hof (${CFG.home.price} Gold): eine Lagertruhe für alle deine Charaktere, später eigene Stationen, ein Bett und Trophäen.`,
     when: s => !!s.char && s.char.quests[CFG.home.buyQuest]?.s === 'done' && !!s.home && !s.home.owned && s.zone === 'gruenwald' && !s.dialog },
-  { id: 'lager', title: 'Lagertruhe', topic: 'zuhause',
+  { id: 'lager', win: true, title: 'Lagertruhe', topic: 'zuhause',
     text: 'Die Truhe gehört dem Profil: Was hier liegt, erreicht jeder deiner Charaktere. Gegenstand anklicken und hineinlegen – oder Doppelklick.',
     when: s => s.hof?.tab === 'lager' },
-  { id: 'schrank', title: 'Kleiderschrank', topic: 'zuhause',
+  { id: 'schrank', win: true, title: 'Kleiderschrank', topic: 'zuhause',
     text: 'Gewand und Waffenglanz sind reine Optik, aber für Mitspieler sichtbar. Freigeschaltet wird über Ruf, Mana-Risse, die Enden und die Sammlung.',
     when: s => s.hof?.tab === 'schrank' },
   { id: 'begleiter', title: 'Ein Begleiter', topic: 'zuhause',
     text: 'Im Fenster Sammlung ({sammlung}) unter „Begleiter“ nimmst du ihn mit. Begleiter kämpfen nicht, bringen aber einen kleinen Vorteil.',
     when: s => !!s.char && !!s.home && s.home.pets.length > 0 && !s.char.pet && s.panel !== 'sammlung' },
-  { id: 'sammlung', title: 'Sammlung', topic: 'zuhause',
+  { id: 'sammlung', win: true, title: 'Sammlung', topic: 'zuhause',
     text: 'Bestiarium, Fundstücke, Rezepte, Trophäen: Die Sammlung gehört dem Profil. Meilensteine bringen Titel, Lagerplätze und Erscheinungen.',
     when: s => s.panel === 'sammlung' },
   { id: 'gruppe', title: 'Gruppe', topic: 'gemeinsam',
     text: 'Erfahrung und Questziele zählen für alle in der Nähe, Beute würfelt jeder für sich. Im Chat ({chat}) schreibt „/p Text“ nur an die Gruppe.',
     when: s => s.party.length > 1 },
-  { id: 'handel', title: 'Handel', topic: 'gemeinsam',
+  { id: 'handel', win: true, title: 'Handel', topic: 'gemeinsam',
     text: 'Lege Gegenstände und Gold ins Angebot. Erst sperren beide, dann bestätigen beide – jede Änderung hebt die Sperre wieder auf.',
     when: s => !!s.trade },
   { id: 'voll', title: 'Inventar voll', topic: 'beute',
@@ -141,11 +143,20 @@ export const HINTS: HintDef[] = [
 ];
 export const HINT: Record<string, HintDef> = Object.fromEntries(HINTS.map(h => [h.id, h]));
 
-/** Der nächste fällige Hinweis: der erste passende, der noch nicht gezeigt wurde. Im Menü, in Filmszenen und nach dem Tod kommt keiner. */
+/** Liegt gerade ein Fenster oder eine Einblendung über dem Spiel? Dann sieht man die Karte über der Aktionsleiste nicht. */
+export function hintBlocked(s: HintState): boolean {
+  return !!(s.panel || s.dialog || s.craft || s.endgame || s.hof || s.lore || s.trade || s.story || s.sign || s.enc || s.wshop || s.inspect || s.cine || s.dead);
+}
+/**
+ * Der nächste fällige Hinweis: der erste passende, der noch nicht gezeigt wurde. Im Menü, in Filmszenen, während einer
+ * Einblendung der Geschichte und nach dem Tod kommt keiner. Ist ein Fenster offen, kommen nur Hinweise, die in dieses
+ * Fenster gehören (`win`); im Bosskampf nur der zum Bosskampf.
+ */
 export function nextHint(s: HintState, seen: readonly string[], enabled: boolean): HintDef | null {
-  if (!enabled || s.screen !== 'game' || !s.char || s.cine || s.dead) return null;
+  if (!enabled || s.screen !== 'game' || !s.char || s.cine || s.dead || s.story) return null;
+  const blocked = hintBlocked(s);
   for (const h of HINTS) {
-    if (seen.includes(h.id)) continue;
+    if (seen.includes(h.id) || !!h.win !== blocked || (s.boss && h.id !== 'boss')) continue;
     try { if (h.when(s)) return h; } catch { /* unvollständiger Zustand: diesen Hinweis überspringen */ }
   }
   return null;

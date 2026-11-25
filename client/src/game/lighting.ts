@@ -4,6 +4,7 @@
  * Ergebnis: farbige Dunkelheit (Nacht, Höhlen), warme Fackelkreise, kaltes Kristallleuchten – alles im Pixelraster.
  */
 import Phaser from 'phaser';
+import { settings } from '../state/settings';
 
 export interface LightSrc { x: number; y: number; r: number; color: number; i: number; flicker?: number }
 
@@ -28,10 +29,14 @@ export class Lighting {
     rt.setVisible(true).setPosition(ox, oy);
     rt.fill(ambient, 1);
     rt.beginDraw();
+    const calm = settings.reduceFlash ? 0.35 : 1;
     for (let k = 0; k < lights.length; k++) {
       const l = lights[k];
       if (l.x < view.x - l.r || l.x > view.right + l.r || l.y < view.y - l.r || l.y > view.bottom + l.r) continue;
-      const f = l.flicker ? 1 + Math.sin(now / 83 + k * 2.4) * l.flicker + Math.sin(now / 37 + k) * l.flicker * 0.5 : 1;
+      // Flackern: Die Phase hängt am Ort des Lichts (nicht an seiner Stelle in der Liste) – so springt nichts, wenn Lichter ins
+      // Bild kommen oder es verlassen. Mit „Blitze reduzieren“ flackert es nur noch schwach.
+      const ph = l.x * 0.37 + l.y * 0.23, fl = l.flicker ? l.flicker * calm : 0;
+      const f = fl ? 1 + Math.sin(now / 83 + ph * 2.4) * fl + Math.sin(now / 37 + ph) * fl * 0.5 : 1;
       this.stamp.setScale((l.r * f) / 64).setTint(l.color).setAlpha(Math.min(1, l.i));
       rt.batchDraw(this.stamp, l.x - ox, l.y - oy);
     }

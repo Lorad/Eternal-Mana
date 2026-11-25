@@ -102,6 +102,12 @@ function navigate(dx: number, dy: number) {
   if (!all.length) return;
   if (focusIntoScope(all)) return;
   const cur = document.activeElement as HTMLElement;
+  // 0.8: Schieberegler (Lautstärke, Größe der Oberfläche) stellt man mit links/rechts ein, statt weiterzuspringen
+  if (cur instanceof HTMLInputElement && cur.type === 'range' && dx !== 0 && dy === 0) {
+    const step = +cur.step || 1, v = Math.max(+cur.min, Math.min(+cur.max, +cur.value + dx * step));
+    if (v !== +cur.value) { cur.value = String(v); cur.dispatchEvent(new Event('input', { bubbles: true })); audio.playSfx('ui_hover'); }
+    return;
+  }
   const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   let best: HTMLElement | null = null, bs = 1e9;
   for (const el of all) {

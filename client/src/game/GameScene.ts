@@ -152,6 +152,8 @@ export class GameScene extends Phaser.Scene {
     this.objTex = this.textures.get('obj');
     this.fx = new Fx(this);
     this.lighting = new Lighting(this);
+    this.sunAt = 0;
+    live.serverNow = () => performance.now() + (this.timeOffset ?? 0); // einmal je Zone statt einer neuen Funktion je Bild
     this.ctx = { scene: this, gfx: this.gfx, fx: this.fx, text: (x, y, s, c, sz) => this.text(x, y, s, c, sz), shadowAt: (x, y) => this.shadowAt(x, y), clock: () => this.animClock };
     this.applyZoom();
     this.scale.on('resize', this.applyZoom, this);
@@ -315,7 +317,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.flash(ms, (color >> 16) & 255, (color >> 8) & 255, color & 255);
   }
   cineShake(i: number, ms: number) { if (this.ready && settings.screenShake) this.cameras.main.shake(ms, i * (settings.reduceFlash ? FLASH.shakeMul : 1)); }
-  private screenFlashAt = 0;
+  private screenFlashAt = 0; private sunAt = 0;
   /** Blitz über das ganze Bild; mit „Blitze reduzieren“ nur ein weicher Schleier */
   private screenFlash(color: number, ms: number) {
     this.screenFlashAt = performance.now();
@@ -380,8 +382,13 @@ export class GameScene extends Phaser.Scene {
     if (settings.reduceFlash) { i *= FLASH.lightMul; dur = Math.max(dur, FLASH.lightMinMs); }
     this.flashes.push({ x, y, r, color, i, i0: i, until: performance.now() + dur, dur });
   }
+  private lightBuf: LightSrc[] = [];
   private collectLights(now: number): LightSrc[] {
-    const out: LightSrc[] = this.staticLights.slice();
+    // 0.8: ein wiederverwendeter Puffer statt einer Kopie aller festen Lichter je Bild (Glutlande: mehrere hundert) –
+    // übernommen werden nur die, deren Schein ins Bild reicht
+    const out = this.lightBuf; out.length = 0;
+    const view = this.cameras.main.worldView;
+    for (const l of this.staticLights) if (l.x >= view.x - l.r && l.x <= view.right + l.r && l.y >= view.y - l.r && l.y <= view.bottom + l.r) out.push(l);
     const dim = this.map.def.indoor || this.isDay() < 0.6;
     const lr = this.riftDark(); // Riss-Modifikator „Finsternis“: das eigene Licht reicht nur halb so weit
     if (dim) { out.push({ x: this.me.x, y: this.me.y - 10, r: 92 * lr, color: 0xffeccc, i: 0.85 }); for (const p of this.players.values()) out.push({ x: p.x, y: p.y - 10, r: 86 * lr, color: 0xffeccc, i: 0.8 }); }
@@ -1129,8 +1136,7 @@ export class GameScene extends Phaser.Scene {
     this.frameAt = now;
     if (now >= this.hitStopUntil) this.animClock += dt * 1000;
     const st = store.state;
-    live.serverNow = () => performance.now() + (this.timeOffset ?? 0);
-    this.updateSun();
+    if (now - this.sunAt > 250) { this.sunAt = now; this.updateSun(); } // der Sonnenstand ändert sich nicht von Bild zu Bild
     this.updateSelf(now, dt);
     const rt = now + (this.timeOffset ?? 0) - CFG.net.interpDelayMs;
     for (const v of this.players.values()) { this.interp(v, rt); v.setLook(v.info.g); v.draw(now); this.syncPet(v, v.info.pet, dt, now); }

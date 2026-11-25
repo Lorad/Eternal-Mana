@@ -37,11 +37,17 @@ function open() {
     sock.send(JSON.stringify({ t: 'hello', token: getToken(), name: settings.playerName || 'Spieler', v: CFG.version } satisfies ClientMsg));
     clearInterval(pingTimer);
     lastRx = performance.now();
+    let lastTick = lastRx;
     pingTimer = window.setInterval(() => {
       // 0.8: Antwortet der Server lange nicht (Kabel gezogen, Rechner im Ruhezustand), meldet der Browser das oft gar nicht –
       // dann stünde die Welt einfach still. Nach ein paar ausgebliebenen Antworten gilt die Verbindung als verloren.
-      if (performance.now() - lastRx > SILENCE_MS && ws === sock) { try { sock.close(); } catch { /* egal */ } lost(sock); return; }
-      net.send({ t: 'ping', c: performance.now() });
+      // Kam dieser Takt selbst verspätet (die Seite hing beim Laden einer Zone oder lag im Hintergrund), sagt die Stille
+      // nichts über den Server: Dann beginnt die Frist neu, statt eine gesunde Verbindung zu kappen.
+      const now = performance.now(), stalled = now - lastTick > CFG.net.pingIntervalMs * 2.5;
+      lastTick = now;
+      if (stalled || document.hidden) lastRx = now;
+      else if (now - lastRx > SILENCE_MS && ws === sock) { try { sock.close(); } catch { /* egal */ } lost(sock); return; }
+      net.send({ t: 'ping', c: now });
     }, CFG.net.pingIntervalMs);
   };
   sock.onmessage = ev => {

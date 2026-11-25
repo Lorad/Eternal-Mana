@@ -69,8 +69,8 @@ await step('erster Hinweis: zu Mirelda – „Verstanden“ blendet ihn aus', as
 });
 await step('Quest annehmen: Questverfolgung erscheint, Hinweis zum Kämpfen folgt', async () => {
   await cmd('/welt aus'); await has('Lebendige Welt von selbst');     // sonst läuft der Server ohne EM_DEV=1
-  await cmd('/npc mirelda'); await wait(400);
-  await page.keyboard.press('e'); await wait(400);
+  await cmd('/npc mirelda'); await has('Mit Mirelda sprechen');
+  await page.keyboard.press('e'); await page.locator('.dlg').waitFor({ timeout: 5000 });
   await page.getByText('Ein Flüstern im Wasser').first().click(); await wait(250);
   for (let i = 0; i < 6 && await page.getByText('Weiter', { exact: true }).count(); i++) { await page.getByText('Weiter', { exact: true }).first().click(); await wait(220); }
   await page.getByText('Annehmen', { exact: true }).click(); await wait(300);
@@ -126,7 +126,17 @@ await step('Menü: alle Fenster erreichbar; Einstellung „Blitze reduzieren“ 
   await page.locator('.em-root.reduce-flash').waitFor({ timeout: 2000 });
   await shot('06-einstellungen');
   await page.getByText('Blitze reduzieren').click();
-  await page.keyboard.press('Escape'); await wait(200); await page.keyboard.press('Escape'); await gone('.backdrop');
+  await page.keyboard.press('Escape'); await gone('.backdrop');
+});
+await step('Hinweis im Fenster: an der Schmiede steht er unter dem Fensterkopf', async () => {
+  await cmd('/npc borin'); await has('Mit Borin sprechen');
+  await page.keyboard.press('e'); await page.locator('.dlg').waitFor({ timeout: 5000 });
+  await page.getByText('Schmieden, umschmieden').first().click();
+  await page.locator('.win-craft .hint-strip', { hasText: 'Handwerk' }).waitFor({ timeout: 6000 });
+  await shot('06b-hinweis-im-fenster');
+  await page.locator('.hint-strip').getByText('Verstanden', { exact: true }).click();
+  await gone('.hint-strip');
+  await page.keyboard.press('Escape'); await gone('.win-craft');
 });
 await step('Hinweise abschalten und wieder einschalten', async () => {
   await page.keyboard.press('h'); await page.locator('.hb-tab', { hasText: 'Erste Schritte' }).click();

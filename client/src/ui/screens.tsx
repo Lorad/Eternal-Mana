@@ -210,6 +210,8 @@ function CharCard({ c, slot, onNew, onDelete }: { c?: CharSummary; slot: number;
   );
 }
 
+const NAME_A = ['Al', 'Bran', 'Cael', 'Dor', 'El', 'Fen', 'Gar', 'Hel', 'Il', 'Jor', 'Kal', 'Lio', 'Mir', 'Nor', 'Or', 'Ren', 'Sel', 'Tam', 'Val', 'Wyn', 'Yso'];
+const NAME_B = ['a', 'an', 'ara', 'dis', 'en', 'ia', 'ion', 'is', 'la', 'mar', 'na', 'or', 'ra', 'rik', 'ros', 'tha', 'wen', 'wick'];
 function CharCreate({ slot, onBack }: { slot: number; onBack: () => void }) {
   const error = useStore(s => s.error);
   const [cls, setCls] = useState<ClassId>('krieger');
@@ -222,6 +224,8 @@ function CharCreate({ slot, onBack }: { slot: number; onBack: () => void }) {
   useEffect(() => { store.set({ error: null }); }, []);
   useEffect(() => { if (error) setSent(false); }, [error]);
   const create = () => { if (!valid) { sfx('ui_error'); return; } setSent(true); net.createChar(slot, n, cls); };
+  // 0.8: Ein Name ohne Tastatur – wer nur ein Gamepad hat, käme sonst nicht über diesen Bildschirm hinaus
+  const roll = () => { const a = NAME_A[Math.floor(Math.random() * NAME_A.length)], b = NAME_B[Math.floor(Math.random() * NAME_B.length)]; setName(a + b); };
   const maxAttr = 12;
   return (
     <div class="create">
@@ -282,6 +286,7 @@ function CharCreate({ slot, onBack }: { slot: number; onBack: () => void }) {
           <span>Name</span>
           <TextInput value={name} onInput={v => setName(v.slice(0, 16))} maxLength={16} placeholder="2–16 Zeichen" onEnter={create} ariaLabel="Name des Charakters" />
         </label>
+        <Btn onClick={roll} title="Schlägt einen Namen vor – praktisch ohne Tastatur">Name würfeln</Btn>
         <Btn kind="primary" disabled={!valid || sent} onClick={create}>{sent ? 'Wird erschaffen …' : 'Abenteuer beginnen'}</Btn>
       </div>
     </div>

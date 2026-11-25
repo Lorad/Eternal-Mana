@@ -1,6 +1,6 @@
 /** Hinweise im Spiel (0.8): eine kleine Karte über der Aktionsleiste. Regeln und Texte: state/hints.ts. */
 import { useEffect, useRef } from 'preact/hooks';
-import { HINT, hintText, markSeen, nextHint } from '../state/hints';
+import { HINT, hintBlocked, hintText, markSeen, nextHint } from '../state/hints';
 import { settings, updateSettings } from '../state/settings';
 import { openHelp, store, useStore } from '../state/store';
 import { Btn, sfx, useSettings } from './common';
@@ -32,7 +32,13 @@ export function useHintWatcher() {
     const t = window.setInterval(() => {
       const st = store.state, now = performance.now(), l = last.current;
       if (st.hint) {
-        if (!settings.hints || OFF) { store.set({ hint: null }); return; }
+        const cur = HINT[st.hint];
+        if (!settings.hints || OFF || !cur) { store.set({ hint: null }); return; }
+        // Fenster-Hinweis: Das Fenster ist zu → erledigt. Karte im HUD: Solange etwas darüber liegt, läuft ihre Zeit nicht.
+        let still = true;
+        try { still = cur.when(st); } catch { still = false; }
+        if (cur.win && !still) { done(st.hint); l.freeAt = now + GAP_MS; return; }
+        if (!cur.win && hintBlocked(st)) { l.shownAt += 500; return; }
         if (now - l.shownAt > SHOW_MS) { done(st.hint); l.freeAt = now + GAP_MS; }
         return;
       }
@@ -47,11 +53,12 @@ export function useHintWatcher() {
   }, [s.hints]);
 }
 
+/** Karte über der Aktionsleiste – für alles, was nicht in ein Fenster gehört */
 export function HintCard() {
   const id = useStore(s => s.hint);
   const key = useHint();
   const h = id ? HINT[id] : null;
-  if (!h) return null;
+  if (!h || h.win) return null;
   return (
     <div class="hint" role="status" aria-live="polite">
       <i class="hint-mark">i</i>
@@ -65,6 +72,24 @@ export function HintCard() {
           <Btn kind="small" onClick={() => done(h.id)}>Verstanden</Btn>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Zeile unter dem Fensterkopf – für Hinweise, die zu einem offenen Fenster gehören (Handwerk, Lagertruhe, Handel …).
+ * `Window` und das NPC-Gespräch binden sie ein; ohne fälligen Fenster-Hinweis nimmt sie keinen Platz ein.
+ */
+export function WindowHint() {
+  const id = useStore(s => s.hint);
+  const key = useHint();
+  const h = id ? HINT[id] : null;
+  if (!h || !h.win) return null;
+  return (
+    <div class="hint-strip" role="status" aria-live="polite">
+      <i class="hint-mark">i</i>
+      <p><b>{h.title}:</b> {hintText(h, key)}</p>
+      <Btn kind="small" onClick={() => done(h.id)}>Verstanden</Btn>
     </div>
   );
 }

@@ -3,7 +3,8 @@ import { render } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { onSettingsChange, settings } from '../state/settings';
 import { useStore } from '../state/store';
-import { TooltipLayer, clamp, cx, hideTip, uiScale } from './common';
+import { TooltipLayer, clamp, cx, hideTip, uiScale, windowSlot } from './common';
+import { WindowHint } from './hints';
 import { CraftWindow } from './craft';
 import { NpcDialog } from './dialog';
 import { EndgameWindow } from './endgame';
@@ -100,6 +101,7 @@ function Root() {
   );
 }
 
+windowSlot.hint = () => <WindowHint />;
 export function mountUi(root: HTMLElement): void {
   render(<Root />, root);
 }
