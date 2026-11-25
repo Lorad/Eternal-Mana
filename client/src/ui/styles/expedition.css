@@ -10,10 +10,10 @@
 .xp-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .xp-head h3 { margin: 0; font: 700 20px var(--serif); color: var(--gold-hi); }
 .xp-desc { margin: 0; font-size: 13px; line-height: 1.5; color: var(--parch); }
-.xp-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.xp-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); gap: 6px; margin: 0; }
 .xp-facts div { padding: 5px 8px; background: rgba(0, 0, 0, .25); border-radius: 3px; }
 .xp-facts dt { font-size: 11px; color: var(--dim); }
-.xp-facts dd { margin: 0; font: 700 13px var(--serif); color: var(--gold-hi); overflow-wrap: anywhere; }
+.xp-facts dd { margin: 0; font: 700 13px var(--serif); color: var(--gold-hi); hyphens: auto; }
 .xp-reqs { margin: 0; padding: 6px 10px; list-style: none; background: rgba(120, 30, 30, .18); border-left: 3px solid var(--bad); font-size: 12.5px; }
 .xp-reqs li.ok { color: var(--good); } .xp-reqs li.no { color: #ffb0a0; }
 .xp-diffs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }

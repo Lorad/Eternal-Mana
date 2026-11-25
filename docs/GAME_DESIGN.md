@@ -92,6 +92,44 @@ Dungeons werden aus einem festen Seed erzeugt (jeder Dungeon sieht immer gleich 
 Leere Dungeons werden nach 90 Sekunden zurückgesetzt und sind beliebig wiederholbar; der erste Sieg gibt volle, jeder
 weitere 40 % der Boss-Erfahrung, dazu jedes Mal eine goldene Truhe.
 
+## Expeditionen (0.9)
+
+Seit 0.9 sind die Dungeons der sechs Regionen **Expeditionen**: große, mehrteilige Karten (16–21 Abschnitte) für 15–30 Minuten.
+Die Dungeon-Eingänge der Oberwelt führen in die Expedition ihrer Region (Normal, eigene Instanz der Gruppe); das Portal in der
+Quellwarte (bis dahin: das kleine Portal in Quellhain) führt in alle freigeschalteten. Die alten Dungeons oben bleiben für die
+Mana-Risse erhalten.
+
+| Expedition | Region | Stufe | Endboss | Signatur | Ereignis | Mini-Bosse |
+|---|---|---|---|---|---|---|
+| Die Wurzeltiefe | Grünwald | 5 | Dornenmutter | Dornenknospen schützen sie – erst die Knospen | Hinterhalt (vier Wellen) | Sporenkönig Pfifferling, Borkenmutter |
+| Die Singende Tiefe | Kristallhöhlen | 10 | Kristallkoloss | Ansturm in eine Prismensäule locken | Finsternis (drei Lichtsteine) | Glasmaul, Glimmerkönigin |
+| Die Gießerei der Ersten | Glutlande | 15 | Ignarok | Glut steigt – Kühlkette ziehen, sonst Ausbruch | Einsturz-Jagd über den Steg | Schlackenvogt, Mutter Asche |
+| Der Webstuhl aus Eis | Frostgebirge | 20 | Ysolde | „Halt still“ – wer sich bewegt, friert ein | Flut (drei Ventile) | Reifriese Hjalmar, Die Weiße Wache |
+| Die Unteren Archive | Verlorene Ruinen | 25 | Der Archivar | „Eintrag“ am Tintenfass streichen | Hinterhalt | Kustos Vierzehn, Die Fußnote |
+| Der Hof der Hohlen Krone | Schattenreich | 30 | Der Hohle König | bei Maelis’ wanderndem Licht stehen | Einsturz-Jagd | Ritter ohne Krone, Die Mahrkönigin |
+| Die Gestrichenen Seiten (geheim) | Verlorene Ruinen | 34 | Der Erste Schreiber | wie der Archivar | Finsternis | Die Fußnote, Kustos Vierzehn |
+
+- **Abschnitte** nach einem Plan je Expedition: Eingang, Erkundung, Gegnergruppen, Kampfhallen, Fallen (Stacheln, Geschoss-Statuen,
+  Gift, brüchiger Boden), Schlüssel und verschlossene Tür, Rätsel (Fackeln, Hebel, Platten, neu: **Runenscheiben**), ein zweiter Teil
+  mit anderer Einrichtung und Gegnermischung, Erwachte, Rastplatz (Kontrollpunkt und Heilung), Arena, Belohnungskammer. Dazu
+  Seitenflügel mit Mini-Bossen (mindestens einer freiwillig), eine Schatzkammer hinter einer rissigen Wand, seltene Abbaustellen,
+  ein verborgenes Ausrüstungsversteck, Inschriften und die Chronik-Dokumente des alten Dungeons. Übergänge: Treppe, Brücke über
+  einen Abgrund, Tor, Stollen, verschlossene Tür.
+- **Endbosse:** Phasen bei 60 % und 25 % mit kurzem Filmmoment (unverwundbar, Worte, die Arena verändert sich), eigene Arena je Region,
+  eine Signaturmechanik, die man lernen muss.
+- **Schwierigkeitsgrade:** Normal → Schwer (nach einem Normal-Abschluss; Erwachte mit einem Affix, mehr Gegner, zusätzlicher Bossangriff,
+  Truhe ohne Tod) → Albtraum (Stufe 40 und Schwer geschafft; zwei Affixe, Helfer je Bossphase, Wut nach fünf Minuten, Truhe unter der
+  Richtzeit) → Mythisch (nach Albtraum; drei Affixe, Wut nach knapp vier Minuten, Signatur öfter). Beute je Grad besser, bis zur
+  höchsten Seltenheit (`RARITY_NAME.length`).
+- **Abschluss:** Belohnung genau einmal je Lauf und Charakter (Erfahrung, Gold, zwei Ausrüstungsteile, Rohstoffe der Region,
+  Boss-Unikat beim ersten Mal, Trophäe je erstem Abschluss eines Grades, selten der besondere Fund der Expedition, Chance auf
+  Legendär), Statistik, gemeinsame Rückkehr durch ein Portal (oder nach 60 Sekunden), Zusammenfassung mit Weg zur Schmiede.
+  Bestzeiten und Abschlüsse je Grad, Geheimnisse und Mini-Bosse stehen in `CharData.expeditions`.
+- **Wochenherausforderung:** je ISO-Woche eine Expedition, ein Grad und zwei Modifikatoren; einmal je Woche anderthalbfache
+  Belohnung und zwei Teile mehr.
+- **Erfahrung:** Alle Gegner einer Expedition zusammen bringen doppelt so viel wie die des alten Dungeons ihrer Region – eine
+  Expedition auf Normal hebt bei empfohlener Stufe um gut zwei Stufen.
+
 ## Bosse
 
 Jeder Boss hat drei Phasen (bei 66 % und 33 % Leben) und eigene Mechaniken:
