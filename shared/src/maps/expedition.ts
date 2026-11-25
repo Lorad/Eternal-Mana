@@ -13,7 +13,7 @@
  *                 Schatzkammern sind nur durch ihre geheime Wand erreichbar.
  * Was der Server zur Laufzeit braucht (Abschnitte, Mini-Bosse, Rätsel, Ereignisse), steht in `GameMap.exp`.
  */
-import { EXPEDITIONS, MINIS, type ExpEvent, type ExpeditionDef, type PuzzleKind, type SectionDef, type Transition } from '../data/expeditions';
+import { EXPEDITIONS, EXP_CFG, MINIS, type ExpEvent, type ExpeditionDef, type PuzzleKind, type SectionDef, type Transition } from '../data/expeditions';
 import { NODE_TYPES, ZONES, type ZoneDef } from '../data/zones';
 import { Rng, hash2, noise2 } from '../util/rng';
 import type { DecorSpawn, GameMap, MobSpawn, ObjSpawn, Room } from './mapgen';
@@ -64,7 +64,7 @@ const SIZE: Record<string, [number, number, number, number]> = {
   // [Breite min, max, Höhe min, max] für einen Abschnitt, der nach Norden/Süden erreicht wird
   hall: [28, 32, 17, 20], corridor: [8, 9, 22, 28], cavern: [22, 27, 17, 21], chamber: [11, 14, 9, 11], grotto: [26, 31, 19, 22], arena: [30, 30, 20, 20],
 };
-const TLEN: Record<Transition, [number, number]> = { stairs: [5, 7], bridge: [9, 12], gate: [3, 5], tunnel: [6, 10], locked: [3, 5], secret: [3, 4] };
+const TLEN: Record<Transition, [number, number]> = { stairs: [6, 9], bridge: [10, 14], gate: [3, 5], tunnel: [8, 12], locked: [3, 5], secret: [3, 4] };
 const narrow = (k: Transition, boss?: boolean) => boss || k === 'gate' || k === 'locked' || k === 'secret' || k === 'tunnel';
 
 /** Einrichtung je Region: [Frame, solide] – erste und zweite Hälfte der Expedition */
@@ -426,7 +426,8 @@ export function genExpedition(def: ZoneDef): GameMap {
     }
     // Gegner
     const sizeOf = () => (n.def.shape === 'corridor' ? rng.int(3, 4) : n.def.shape === 'chamber' ? rng.int(3, 4) : rng.int(4, 5));
-    for (let k = 0; k < (n.def.groups ?? 0); k++) addGroup(n, sizeOf(), k < (n.def.elites ?? 0));
+    const nG = Math.round((n.def.groups ?? 0) * (role === 'mini' || role === 'puzzle' || role === 'key' ? 1 : EXP_CFG.groupMul));
+    for (let k = 0; k < nG; k++) addGroup(n, sizeOf(), k < (n.def.elites ?? 0));
     // Truhen in Kampfabschnitten
     if ((role === 'combat' || role === 'elite' || role === 'explore') && hash2(n.idx, 5, def.seed) < (role === 'elite' ? 1 : 0.55)) chest(n, role === 'elite' ? 'silver' : 'wood', role === 'elite' ? { guard: group - 1 } : {});
     if (role === 'mini') chest(n, 'gold', { mini: n.def.mini });

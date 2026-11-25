@@ -163,7 +163,7 @@ export function ExpHud() {
       <div class="exp-hud-top"><b>{x?.name}</b><small>{DIFFICULTY_NAME[r.diff]}</small><span class="exp-clock"><span ref={clock}>{fmtSec(r.t)}</span>{r.par ? <small> / {fmtSec(r.par)}</small> : null}</span></div>
       <div class="exp-sec">{r.sec}</div>
       <div class="exp-goal">▸ {r.goal}</div>
-      {r.event && <div class="exp-event">{r.event.text}: Welle {r.event.wave}/{r.event.waves}</div>}
+      {r.event && <div class="exp-event">{r.event.text}{r.event.waves ? ` ${r.event.wave}/${r.event.waves}` : ''}</div>}
       {r.enrage !== undefined && <div class={cx('exp-enrage', r.enrage <= 0 && 'on')}>{r.enrage > 0 ? `Wut in ${fmtSec(r.enrage)}` : 'Der Boss rast!'}</div>}
       <div class="exp-foot">
         <span title="Geheimnisse">✦ {r.secrets[0]}/{r.secrets[1]}</span>

@@ -117,7 +117,7 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
       }
       const L = lead().p;
       if (Math.hypot(L.x - lastPos.x, L.y - lastPos.y) > 20) { lastPos = { x: L.x, y: L.y }; lastProg = now; }
-      if (now - lastProg > 45 && t.k !== 'boss' && !(waitUntil && now < waitUntil + 5)) { stuck++; if (process.env.EM_DEBUG) console.log('hängt bei', t.k, (t as any).why ?? (t as any).sec?.id ?? '', Math.round(L.x / TILE), Math.round(L.y / TILE)); next(); continue; }
+      if (((now - lastProg > 45 && !(waitUntil && now < waitUntil + 5)) || now - taskAt > (t.k === 'event' ? 240 : 150)) && t.k !== 'boss') { stuck++; if (process.env.EM_DEBUG) console.log('hängt bei', t.k, (t as any).why ?? (t as any).sec?.id ?? '', Math.round(L.x / TILE), Math.round(L.y / TILE)); next(); continue; }
       switch (t.k) {
         case 'go': {
           if (bots.every(b => b.p.dead || Math.hypot(b.p.x - t.x, b.p.y - t.y) < 28)) { next(); break; }
@@ -128,6 +128,16 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
           const left = [...z.mobs.values()].filter(m => !m.dead && !m.boss && inSec(t.sec, m.x, m.y, -1) && (t.k !== 'mini' || run.miniMobs.has(m.id) || m.awake));
           const ev = t.k === 'event' ? run.events.get(t.sec.id) : undefined;
           if (t.k === 'event' && ev && ev.state === 'idle') { for (const b of bots) if (!b.p.dead) goal(b, (t.sec.cx + 0.5) * TILE, (t.sec.cy + 0.5) * TILE); break; }
+          // Finsternis und Flut: Lichtsteine entzünden, Ventile schließen (nach kurzem Umsehen)
+          if (ev && ev.state === 'running' && (ev.kind === 'darkness' || ev.kind === 'flood')) {
+            const todo = [...z.objs.values()].filter(o => o.props?.sec === t.sec.id && (o.props?.kind === 'lightstone' || o.props?.kind === 'valve') && o.state === 0);
+            if (todo.length && now - ev.at > T.look + 3) {
+              const o = todo.reduce((a, c) => (Math.hypot(c.x - L.x, c.y - L.y) < Math.hypot(a.x - L.x, a.y - L.y) ? c : a));
+              if (Math.hypot(o.x - L.x, o.y - L.y) < 30) { for (const b of bots) if (Math.hypot(b.p.x - o.x, b.p.y - o.y) < 40) b.send({ t: 'interact', id: o.id }); }
+              else for (const b of bots) if (!b.p.dead) goal(b, o.x, o.y + 14);
+              break;
+            }
+          }
           if (!left.length && (!ev || ev.state === 'done')) { next(); break; }
           if (!left.length) break; // nächste Welle
           for (const b of bots) if (!b.p.dead) { const m = left.reduce((a, c) => (Math.hypot(c.x - b.p.x, c.y - b.p.y) < Math.hypot(a.x - b.p.x, a.y - b.p.y) ? c : a)); if (Math.hypot(m.x - b.p.x, m.y - b.p.y) > 60) goal(b, m.x, m.y); else b.goto = null; }

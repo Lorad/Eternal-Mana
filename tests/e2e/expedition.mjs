@@ -143,6 +143,7 @@ await step('Portal in der Belohnungskammer, gemeinsame Rückkehr, Zusammenfassun
 await step('Bestzeit im Auswahlfenster, Schwer ist jetzt frei', async () => {
   await a.cmd('/portal'); await a.wait(800);
   await a.page.keyboard.press('e');
+  await a.page.locator('.xp-list .craft-row', { hasText: 'Die Wurzeltiefe' }).click();
   await a.has('Bestzeit'); await a.has('1× abgeschlossen');
   await a.shot('24-bestzeit');
   await a.esc();
@@ -163,6 +164,7 @@ await step('Zweiter Spieler, Gruppe bilden', async () => {
 await step('Bereitschaftsprüfung: Anführung wählt, Mitglied sieht den Stand und meldet sich bereit', async () => {
   await a.cmd('/portal'); await a.wait(900);
   await a.page.keyboard.press('e'); await a.has('Die Wurzeltiefe');
+  await a.page.locator('.xp-list .craft-row', { hasText: 'Die Wurzeltiefe' }).click();
   await a.page.getByRole('button', { name: 'Gruppe zur Bereitschaft rufen' }).click();
   await b.has('Bereitschaft', 8000);
   await b.shot('25-bereitschaft-mitglied');

@@ -351,12 +351,14 @@ function tickEvent(zone: Zone, ev: EventState, now: number) {
       ev.mobs.add(m);
     }
   }
-  if (ev.kind === 'flood' && now >= ev.next && ev.wave < 16) {
-    ev.next = now + 2.2;
+  if (ev.kind === 'flood' && now >= ev.next) {
+    ev.next = now + 1.8;
+    ev.pools = ev.pools.filter(id => zone.fx.has(id));
+    if (ev.pools.length >= 9) return;
     for (let t = 0; t < 20; t++) {
       const x = (zone.rng.int(s.x0 + 1, s.x1 - 1) + 0.5) * TILE, y = (zone.rng.int(s.y0 + 1, s.y1 - 1) + 0.5) * TILE;
       if (!circleFree(zone.solidWalk, x, y, 6) || [...zone.objs.values()].some(o => o.props?.kind === 'valve' && Math.hypot(o.x - x, o.y - y) < 40)) continue;
-      const f = zone.addFx({ kind: 'zone', x, y, r: 34, el: 'water', dur: 999, until: now + 999, tick: 0.6, nextTick: now + 1, hostile: true, raw: CFG.enemy.dmg(zone.def.level[1]) * 0.3, lvl: zone.def.level[1], status: { id: 'slow', dur: 1.2 }, by: 'Schmelzwasser' });
+      const f = zone.addFx({ kind: 'zone', x, y, r: 28, el: 'water', dur: 14, until: now + 14, tick: 0.6, nextTick: now + 1, hostile: true, raw: CFG.enemy.dmg(zone.def.level[1]) * 0.3, lvl: zone.def.level[1], status: { id: 'slow', dur: 1.2 }, by: 'Schmelzwasser' });
       ev.pools.push(f.id); ev.wave++;
       break;
     }
