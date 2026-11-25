@@ -288,10 +288,13 @@ export function rollRarity(rng: Rng, weights: readonly number[]): number {
   return rng.weighted(w.map((x, i) => [i, x] as const));
 }
 
-/** Würfelt die Affixe eines Ausrüstungsteils (auch beim Umschmieden). `base` = Grundgegenstand (bestimmt Platz und Stärke). */
-export function rollAffixes(rng: Rng, ilvl: number, rarity: number, cls: ClassId, base: string): [ModKey, number][] {
+/**
+ * Würfelt die Affixe eines Ausrüstungsteils (auch beim Umschmieden). `base` = Grundgegenstand (bestimmt Platz und Stärke).
+ * Aufrufe aus der Zeit vor 0.9 übergeben stattdessen `true` (Waffe) oder `false` (Rüstung/Schmuck, gerechnet wie die Beine).
+ */
+export function rollAffixes(rng: Rng, ilvl: number, rarity: number, cls: ClassId, base: string | boolean): [ModKey, number][] {
   const out: [ModKey, number][] = [];
-  const kind = slotKind(ITEMS[base]) ?? 'weapon', weapon = kind === 'weapon';
+  const kind: SlotKind = typeof base === 'boolean' ? (base ? 'weapon' : 'legs') : slotKind(ITEMS[base]) ?? 'weapon', weapon = kind === 'weapon';
   const n = CFG.loot.affixCount[rarity] ?? 0, scale = AFFIX_SCALE[kind];
   const used = new Set<ModKey>();
   const pool = AFFIXES.filter(a => !OFF_CLASS[cls].includes(a.k) && !(weapon && a.armorOnly))
