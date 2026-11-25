@@ -111,7 +111,7 @@ export class GameScene extends Phaser.Scene {
   private mobs = new Map<number, MobView>();
   private dying: MobView[] = [];
   private objs = new Map<number, ObjView>();
-  private drops = new Map<number, { d: DropInfo; s: Phaser.GameObjects.Image; label?: Phaser.GameObjects.Text }>();
+  private drops = new Map<number, { d: DropInfo; s: Phaser.GameObjects.Image; label?: Phaser.GameObjects.Text; loop?: Phaser.Time.TimerEvent }>();
   private projs = new Map<number, { p: ProjInfo; s: Phaser.GameObjects.Image; x: number; y: number; born: number; trail: number; anim: string; n: number; tint: number }>();
   private zfx = new Map<number, { z: ZoneFx; g: Phaser.GameObjects.Graphics; born: number; rune?: Phaser.GameObjects.Image }>();
   // lokale Simulation
@@ -593,14 +593,23 @@ export class GameScene extends Phaser.Scene {
   private addDrop(d: DropInfo) {
     const f = d.kind === 'gold' ? 'drop_gold' : /^(potion|food|elx_)/.test(d.icon) ? 'drop_potion' : d.icon === 'key' ? 'drop_key' : /^(mat|tro_|tmap_)/.test(d.icon) || d.icon === 'gem' || d.icon === 'scroll' || d.icon === 'recipe' || (d.icon === 'charm' && d.rarity === 0) ? 'drop_bag' : 'drop_gear';
     const s = this.add.image(d.x, d.y, 'obj', f).setOrigin(0.5, 1).setDepth(d.y);
-    const col = [0, 0x70e070, 0x60b0ff, 0xd090ff, 0xffb040][d.rarity];
-    let label: Phaser.GameObjects.Text | undefined;
+    const col = [0, 0x70e070, 0x60b0ff, 0xd090ff, 0xffb040, 0x40f0d4][d.rarity] ?? 0x40f0d4;
+    let label: Phaser.GameObjects.Text | undefined, loop: Phaser.Time.TimerEvent | undefined;
     if (d.rarity >= 1 && d.kind === 'item') {
       label = this.text(d.x, d.y - 14, d.name, hexStr(col), 7).setOrigin(0.5, 1);
       this.fx.play(this.fx.pick('pillar'), d.x, d.y, { originY: 1, tint: col, add: true, alpha: 0.7, scale: 0.6, depth: d.y - 1, fps: 14 }, this.animClock);
     }
+    // 0.9: Mythisch – ein Lichtstrahl, der stehen bleibt (wiederholte Säule) und funkelt, bis die Beute aufgehoben ist
+    if (d.rarity >= 5 && d.kind === 'item') {
+      this.ring(d.x, d.y - 4, 30, col, 600);
+      this.burst(this.stars, 18, d.x, d.y - 8, col);
+      loop = this.time.addEvent({ delay: 900, loop: true, callback: () => {
+        this.fx.play(this.fx.pick('pillar'), d.x, d.y, { originY: 1, tint: col, add: true, alpha: 0.9, scale: 1.1, depth: d.y - 1, fps: 12 }, this.animClock);
+        this.burst(this.stars, 3, d.x, d.y - 12, 0xc8fff6);
+      } });
+    }
     this.tweens.add({ targets: s, y: d.y - 10, duration: 180, yoyo: true, ease: 'Quad.out' });
-    this.drops.set(d.id, { d, s, label });
+    this.drops.set(d.id, { d, s, label, loop });
   }
   private addZoneFx(z: ZoneFx) {
     const g = this.add.graphics().setDepth(2);
@@ -665,7 +674,7 @@ export class GameScene extends Phaser.Scene {
     const d = this.drops.get(id);
     if (!d) return;
     this.drops.delete(id);
-    d.label?.destroy();
+    d.label?.destroy(); d.loop?.remove();
     if (got) {
       this.tweens.add({ targets: d.s, x: this.me.x, y: this.me.y - 10, alpha: 0, duration: 160, onComplete: () => d.s.destroy() });
       this.fx.play(this.fx.pick('sparkle'), d.d.x, d.d.y - 6, { tint: 0xffe890, add: true }, this.animClock);

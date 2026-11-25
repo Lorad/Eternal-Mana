@@ -11,15 +11,23 @@
 
 /* ---------------------------------------------------------------- Inventar */
 .inv { display: grid; grid-template-columns: 210px auto minmax(240px, 1fr); gap: 16px; align-items: start; }
-.doll { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.doll { display: grid; grid-template-columns: 54px minmax(0, 1fr) 54px; gap: 6px; align-items: start; }
+.doll-col { display: flex; flex-direction: column; gap: 3px; }
+.doll-col li { display: flex; flex-direction: column; align-items: center; gap: 0; border-radius: 3px; }
+.doll-label { font-size: 10px; line-height: 12px; color: var(--faint); white-space: nowrap; }
+.doll-col li.on .doll-label { color: var(--gold-hi); }
+.doll-mid { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 18px; text-align: center; min-width: 0; }
+.doll-col.right { grid-column: 3; grid-row: 1; }
+.doll-col.left { grid-column: 1; grid-row: 1; }
 .doll .char-stage { width: 84px; height: 100px; margin: 0; flex: none; }
-.doll-name { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.doll-set { font-size: 11px; color: var(--good); line-height: 1.2; }
+.doll-name { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; max-width: 100%; }
 .doll-name b { font: 700 16px var(--serif); color: var(--gold-hi); overflow: hidden; text-overflow: ellipsis; }
 .equip-list { display: flex; flex-direction: column; gap: 5px; }
 .equip-list li { display: flex; align-items: center; gap: 9px; padding: 2px; border-radius: 3px; min-width: 0; }
 .equip-list li .grow { line-height: 1.25; }
 .equip-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.rc0 { color: #c9c9c9; } .rc1 { color: #5fd35f; } .rc2 { color: #4aa3ff; } .rc3 { color: #c77dff; } .rc4 { color: #ffb02e; }
+.rc0 { color: #c9c9c9; } .rc1 { color: #5fd35f; } .rc2 { color: #4aa3ff; } .rc3 { color: #c77dff; } .rc4 { color: #ffb02e; } .rc5 { color: #3ff0d4; }
 .inv-grid { display: grid; grid-template-columns: repeat(8, 54px); gap: 4px; padding: 6px; background: rgba(6, 7, 13, .55); border: 2px solid #07080e; box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }
 .inv-grid.sm { grid-template-columns: repeat(10, 42px); }
 .inv-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }

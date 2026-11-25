@@ -8,7 +8,8 @@ import { knowsRecipe } from '../../../shared/src/craft';
 import { ITEMS } from '../../../shared/src/data/items';
 import { LEGEND_TEXT } from '../../../shared/src/data/materials';
 import { ENCHANTS, RECIPES } from '../../../shared/src/data/recipes';
-import { SETS, SET_PIECES, SET_PIECE_NAME, setCounts } from '../../../shared/src/data/sets';
+import { SETS, SET_FULL, SET_PIECES, SET_PIECE_NAME, setPiecesWorn, skill4Text } from '../../../shared/src/data/sets';
+import { CLASSES } from '../../../shared/src/data/classes';
 import { tradeBlock } from '../../../shared/src/social';
 import { MOD_LABEL } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey, Mods } from '../../../shared/src/types';
@@ -27,8 +28,9 @@ export function ItemExtras({ item: it, char }: { item: ItemInstance; char: CharD
   const learn = b.use?.learn ? RECIPES[b.use.learn] : undefined;
   const bound = tradeBlock(it); // 0.7: gebundene Gegenstände lassen sich nicht handeln
   if (!lvl && !ench && !set && !b.legend && !learn && !bound) return null;
-  const n = set && char ? setCounts(char)[set.id] ?? 0 : 0;
-  const worn = (piece: string) => !!char && Object.values(char.equip).some(e => e?.set === set?.id && (piece === 'helm' ? e.base.startsWith('h_') : piece === 'armor' ? e.base.startsWith('a_') : e.base.startsWith('c_' + piece)));
+  const wornSet = set && char ? setPiecesWorn(char)[set.id] : undefined;
+  const n = wornSet?.size ?? 0;
+  const worn = (piece: string) => !!wornSet?.has(piece as any);
   return (
     <>
       {b.kind === 'weapon' && lvl > 0 && (
@@ -40,10 +42,11 @@ export function ItemExtras({ item: it, char }: { item: ItemInstance; char: CharD
       {b.legend && <div class="tip-legend">★ {LEGEND_TEXT[b.legend]}</div>}
       {set && (
         <div class="tip-set">
-          <div class="tip-set-h">Set: {set.name} <span>({n} / 4 angelegt)</span></div>
+          <div class="tip-set-h">Set: {set.name} <span>({n} / {SET_FULL} angelegt)</span></div>
           <div class="tip-set-pieces">{SET_PIECES.map(p => <span class={worn(p) ? 'on' : undefined}>{SET_PIECE_NAME[p]}</span>)}</div>
           <div class={n >= 2 ? 'tip-set-b on' : 'tip-set-b'}>(2) {modsLine(set.bonus2)}</div>
-          <div class={n >= 4 ? 'tip-set-b on' : 'tip-set-b'}>(4) {modsLine(set.bonus4)}</div>
+          <div class={n >= 4 ? 'tip-set-b on' : 'tip-set-b'}>(4) {char ? skill4Text(set, char.cls) : Object.keys(set.skill4).map(c => CLASSES[c as keyof typeof CLASSES].name).join(', ') + ': je eine Fähigkeit wird stärker.'}{Object.keys(set.bonus4).length ? ' ' + modsLine(set.bonus4) : ''}</div>
+          <div class={n >= SET_FULL ? 'tip-set-b on' : 'tip-set-b'}>({SET_FULL}) {set.full.name}: {set.full.text}</div>
         </div>
       )}
       {learn && char && <div class={knowsRecipe(char, learn) ? 'tip-req' : 'tip-req good'}>{knowsRecipe(char, learn) ? 'Dieses Rezept kennst du bereits.' : 'Noch nicht gelernt.'}</div>}
