@@ -323,6 +323,7 @@
 .is-narrow .win-quests .window-body { display: block; }
 .is-narrow .qp-list { max-height: 200px; }
 .is-narrow .inv-grid { grid-template-columns: repeat(8, 54px); justify-content: center; }
+.is-narrow .doll { max-width: 340px; margin: 0 auto; }
 .is-narrow .inv-grid.sm { grid-template-columns: repeat(auto-fill, 42px); }
 .is-narrow .tree-wrap { overflow-x: auto; }
 .is-narrow .tree { margin: 0 auto; }
