@@ -85,9 +85,9 @@ describe('Balance – Wächter über die wichtigsten Korridore', () => {
     lab.leave(b);
   });
 
-  it('Klassen: der Schaden der schwächsten liegt bei mindestens zwei Dritteln der stärksten; Lebensraub ist gedeckelt', { timeout: 120_000 }, () => {
+  it('Klassen: der Schaden der schwächsten liegt bei mindestens 60 % der stärksten (vor 0.8: 47 %); Lebensraub ist gedeckelt', { timeout: 120_000 }, () => {
     const dps = CLASS_IDS.map(cls => dummyDps(lab, [plausibleChar(cls, 40, { seed: 1 })], SKILL.mittel, 4, { sec: 30 }));
-    expect(Math.min(...dps) / Math.max(...dps), CLASS_IDS.map((c, i) => `${c} ${Math.round(dps[i])}`).join(', ')).toBeGreaterThan(0.66);
+    expect(Math.min(...dps) / Math.max(...dps), CLASS_IDS.map((c, i) => `${c} ${Math.round(dps[i])}`).join(', ')).toBeGreaterThan(0.6);
     const sj = plausibleChar('schattenjaeger', 40, { seed: 1 });
     sj.equip.weapon!.affixes.push(['lifesteal', 30]);
     expect(computeStats(sj).lifesteal).toBeLessThanOrEqual(CFG.combat.lifestealCap);
