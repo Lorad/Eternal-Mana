@@ -11,7 +11,7 @@ import type { QuestDef } from '../../../shared/src/data/quests';
 import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
-import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, itemIconKey, modEntries, send, sfx } from './common';
+import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtNum, hideTip, itemIconKey, modEntries, send, sfx, windowSlot } from './common';
 import { StationOptions } from './craft';
 import { KreisOption } from './endgame';
 import { HomeOption } from './home';
@@ -113,6 +113,7 @@ function Dialog({ npc }: { npc: string }) {
           {wide && <span class="dlg-gold">Dein Gold <Gold n={char.gold} /></span>}
           <button type="button" class="window-x" aria-label="Schließen" title="Schließen" onClick={close}>✕</button>
         </header>
+        {windowSlot.hint?.()}
         <div class="dlg-body">{body}</div>
       </section>
     </div>

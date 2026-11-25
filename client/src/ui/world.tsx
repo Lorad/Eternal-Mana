@@ -20,7 +20,7 @@ import { routineState } from '../../../shared/src/data/routines';
 import { TROPHIES, trophyOf } from '../../../shared/src/data/worlditems';
 import { ZONES } from '../../../shared/src/data/zones';
 import { getMap } from '../../../shared/src/maps/mapgen';
-import type { CharData, WorldEventInfo } from '../../../shared/src/types';
+import type { CharData, WorldEventInfo, WorldInfo } from '../../../shared/src/types';
 import { activeTreasure, treasureHint } from '../../../shared/src/world';
 import { Btn, Gold, Icon, ItemSlot, Portrait, Tabs, Window, closePanel, cx, fmtNum, send, sfx, useTick } from './common';
 
@@ -58,19 +58,44 @@ function EventRow({ e, here }: { e: WorldEventInfo; here: boolean }) {
     </li>
   );
 }
+/**
+ * 0.8: Was die rechte HUD-Spalte von der Welt zeigt. `here` = Ereignisse dieser Zone, `far` = Weltbosse anderswo – aber nur
+ * in Regionen, die für die eigene Stufe in Reichweite sind (ein Neuling muss nicht wissen, was im Schattenreich umgeht),
+ * `hint` = Hinweis der aktiven Schatzkarte.
+ */
+export function hudEvents(world: WorldInfo | null, zone: string, char: CharData | null): { here: WorldEventInfo[]; far: WorldEventInfo[]; hint: string | null } {
+  const evs = world?.ev ?? [];
+  const lvl = char?.level ?? 1;
+  const here = evs.filter(e => e.zone === zone);
+  const far = evs.filter(e => e.zone !== zone && e.boss && lvl >= (ZONES[e.zone]?.level[0] ?? 1) - 3);
+  let hint: string | null = null;
+  if (char && char.flags[`tk:${zone}`] && ZONES[zone]?.kind === 'overworld') { const m = getMap(zone), s = activeTreasure(char, m); if (s) hint = treasureHint(m, s); }
+  return { here, far, hint };
+}
+/** Ereignisse dieser Zone und der Hinweis der Schatzkarte (rechte HUD-Spalte, über der Questverfolgung) */
 export function EventTracker() {
   const world = useStore(s => s.world);
   const zone = useStore(s => s.zone);
-  const flags = useStore(s => s.char?.flags);
-  const char = store.state.char;
-  const evs = (world?.ev ?? []).filter(e => e.zone === zone || e.boss);
-  let hint: string | null = null;
-  if (char && flags && flags[`tk:${zone}`] && ZONES[zone]?.kind === 'overworld') { const m = getMap(zone), s = activeTreasure(char, m); if (s) hint = treasureHint(m, s); }
-  if (!evs.length && !hint) return null;
+  const char = useStore(s => s.char);
+  const { here, hint } = hudEvents(world, zone, char);
+  if (!here.length && !hint) return null;
   return (
     <ul class="evt" aria-label="Ereignisse">
-      {evs.map(e => <EventRow key={e.id} e={e} here={e.zone === zone} />)}
+      {here.map(e => <EventRow key={e.id} e={e} here />)}
       {hint && <li class="ev-row map"><i class="ev-glyph">✗</i><div class="grow"><b>Schatzkarte</b><span>{hint}</span></div></li>}
+    </ul>
+  );
+}
+/** Weltbosse in anderen Regionen: eine kurze Zeile je Boss, höchstens `max` (unterste Zeilen der rechten Spalte) */
+export function FarEvents({ max }: { max: number }) {
+  const world = useStore(s => s.world);
+  const zone = useStore(s => s.zone);
+  const char = useStore(s => s.char);
+  const far = hudEvents(world, zone, char).far.slice(0, Math.max(0, max));
+  if (!far.length) return null;
+  return (
+    <ul class="evt evt-far" aria-label="Weltbosse in anderen Regionen">
+      {far.map(e => <li key={e.id} class="ev-row boss far"><i class="ev-glyph">☠</i><b class="grow">{e.name}<small> · {ZONES[e.zone]?.name}</small></b><Countdown until={e.until} /></li>)}
     </ul>
   );
 }

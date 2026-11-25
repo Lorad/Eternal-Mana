@@ -18,7 +18,7 @@ import { ZONES } from '../../../shared/src/data/zones';
 import { tradeBlock } from '../../../shared/src/social';
 import { SLOTS, SLOT_NAME } from '../../../shared/src/types';
 import type { ItemInstance, PartyMember, TradeSide } from '../../../shared/src/types';
-import { Bar, Btn, ELEMENT_CSS, Face, Gold, ItemSlot, Portrait, SLOT_ICON, Window, cx, fmtNum, send, sfx } from './common';
+import { AmountSteps, Bar, Btn, ELEMENT_CSS, Face, Gold, ItemSlot, Portrait, SLOT_ICON, TextInput, Window, cx, fmtNum, send, sfx } from './common';
 
 const S = CFG.social;
 /** Re-Render zweimal je Sekunde (für Restzeiten) */
@@ -179,6 +179,19 @@ function OfferSide({ title, side, mine, onRemove }: { title: string; side: Trade
     </div>
   );
 }
+/** 0.8: Im Handel verdeckt das Fenster den Chat – hier stehen die letzten Zeilen und ein eigenes Eingabefeld. */
+function TradeChat() {
+  const chat = useStore(s => s.chat);
+  const [text, setText] = useState('');
+  const submit = () => { const s = text.trim(); if (s) { send({ t: 'chat', s: s.slice(0, 200) }); sfx('chat'); } setText(''); };
+  const lines = chat.filter(l => l.ch !== 'sys').slice(-3);
+  return (
+    <div class="trade-chat">
+      {lines.length > 0 && <div class="trade-chat-log">{lines.map(l => <div key={l.id} class={'chat-line ch-' + l.ch}>{l.ch === 'party' && <i>[Gruppe] </i>}<b>{l.from}: </b>{l.s}</div>)}</div>}
+      <div class="row"><div class="grow"><TextInput value={text} onInput={setText} onEnter={submit} maxLength={200} placeholder="Nachricht … (Enter sendet, /p Text nur an die Gruppe)" ariaLabel="Chat-Nachricht" /></div><Btn kind="small" disabled={!text.trim()} onClick={submit}>Senden</Btn></div>
+    </div>
+  );
+}
 export function TradeWindow() {
   const tr = useStore(s => s.trade);
   const at = useStore(s => s.tradeAt);
@@ -229,6 +242,8 @@ export function TradeWindow() {
               <input class="input" type="number" min={1} max={picked.qty ?? 1} value={pick.n} aria-label="Menge"
                 onInput={e => setPick({ uid: pick.uid, n: Math.max(1, Math.min(picked.qty ?? 1, Math.floor(Number((e.target as HTMLInputElement).value) || 1))) })}
                 onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') { send({ t: 'trade', a: 'add', uid: pick.uid, qty: pick.n }); setPick(null); } }} onKeyUp={e => e.stopPropagation()} />
+              <Btn kind="small" ariaLabel="eins weniger" disabled={pick.n <= 1} onClick={() => setPick({ uid: pick.uid, n: Math.max(1, pick.n - 1) })}>−</Btn>
+              <Btn kind="small" ariaLabel="eins mehr" disabled={pick.n >= (picked.qty ?? 1)} onClick={() => setPick({ uid: pick.uid, n: Math.min(picked.qty ?? 1, pick.n + 1) })}>+</Btn>
               <Btn kind="small" onClick={() => setPick({ uid: pick.uid, n: picked.qty ?? 1 })}>Alle</Btn>
               <Btn kind="small" onClick={() => { send({ t: 'trade', a: 'add', uid: pick.uid, qty: pick.n }); setPick(null); }}>Anbieten</Btn>
               {offered.has(pick.uid) && <Btn kind="small" onClick={() => { send({ t: 'trade', a: 'remove', uid: pick.uid }); setPick(null); }}>Zurücknehmen</Btn>}
@@ -241,7 +256,9 @@ export function TradeWindow() {
               onInput={e => setGold((e.target as HTMLInputElement).value)} onBlur={sendGold}
               onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') sendGold(); }} onKeyUp={e => e.stopPropagation()} />
             <Btn kind="small" onClick={sendGold}>Setzen</Btn>
+            <AmountSteps value={Math.max(0, Math.floor(Number(gold) || 0))} max={char.gold} onChange={v => { setGold(v ? String(v) : ''); if (v !== tr.me.gold) send({ t: 'trade', a: 'gold', gold: v }); }} />
           </div>
+          <TradeChat />
         </div>
         <div class="trade-foot">
           <div class="note grow">Erst sperren beide, dann bestätigen beide. Jede Änderung hebt die Sperren wieder auf. Getauscht wird in einem Zug – oder gar nicht. Gebundene Gegenstände (ausgegraut) lassen sich nicht handeln.</div>

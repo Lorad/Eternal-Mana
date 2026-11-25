@@ -15,6 +15,9 @@ import { bus } from '../state/bus';
 import { store, type CineView } from '../state/store';
 
 const queue: string[] = [];
+/** 0.8: Überspringen braucht zwei Tastendrücke – ein versehentliches Esc soll keine Szene kosten. Bis dahin gilt die Nachfrage. */
+const SKIP_ASK_MS = 3500;
+let skipAsk = 0;
 let running: { id: string; cancelled: boolean } | null = null;
 /** offene Wartepunkte des laufenden Schritts (werden beim Überspringen sofort aufgelöst) */
 const pending = new Set<() => void>();
@@ -83,9 +86,23 @@ export const cinematic = {
   },
   /** Nächste Textzeile (Bestätigen). */
   next() { confirm?.(); },
-  /** Bricht die laufende und alle wartenden Szenen ab. */
+  /**
+   * Überspringen mit Nachfrage: Der erste Aufruf fragt nur (die Oberfläche zeigt „Nochmal drücken“), der zweite innerhalb
+   * von dreieinhalb Sekunden bricht ab. Rückgabe: true = abgebrochen.
+   */
+  askSkip(): boolean {
+    if (!running) return false;
+    const now = performance.now();
+    if (now < skipAsk) { skipAsk = 0; this.skip(); return true; }
+    skipAsk = now + SKIP_ASK_MS;
+    set({ skipAsk: true });
+    window.setTimeout(() => { if (running && performance.now() >= skipAsk) set({ skipAsk: false }); }, SKIP_ASK_MS + 50);
+    return false;
+  },
+  /** Bricht die laufende und alle wartenden Szenen sofort ab (Zonenwechsel, Verbindung weg, bestätigtes Überspringen). */
   skip() {
     if (!running) return;
+    skipAsk = 0;
     queue.length = 0;
     running.cancelled = true;
     for (const f of [...pending]) f();
@@ -93,5 +110,6 @@ export const cinematic = {
   get active() { return !!running; },
 };
 bus.on('cine:play', (id: string) => cinematic.play(id));
-bus.on('cine:skip', () => cinematic.skip());
+bus.on('cine:skip', () => cinematic.askSkip());
+bus.on('cine:next', () => cinematic.next());
 bus.on('net:left', () => cinematic.skip());

@@ -16,11 +16,17 @@ Browser (Client)                               Node.js (Server, ein Prozess)
 
 | Ordner | Inhalt |
 |---|---|
-| `shared/src` | `config.ts` (Balancing), `types.ts` (Protokoll, Spielstand), `stats.ts`, `collision.ts`, `data/` (Klassen, Skills, Items, Gegner, Zonen, NPCs, Quests, Texte), `maps/` (Kacheln, Generator) |
-| `server/src` | `index.ts` (HTTP + WebSocket, Konsole), `game.ts` (Sitzungen, Charakteraktionen, Gruppen), `zone.ts` (Simulation), `boss.ts`, `player.ts`, `db.ts`, `tailscale.ts` |
-| `client/src` | `game/` (Phaser-Szene, Licht, Effekte, Eingabe), `ui/` (Menüs, HUD), `gfx/` (Zeichenprogramme, Geländemaler, Laufzeit-Lader), `audio/` (Synthese, Musik), `net/`, `state/` |
+| `shared/src` | `config.ts` (Balancing), `types.ts` (Protokoll, Spielstand), `stats.ts`, `collision.ts`, `craft.ts`, `elements.ts`, `social.ts`, `world.ts` (Regeln, die Server und Oberfläche gemeinsam benutzen), `data/` (Klassen, Skills, Items, Gegner, Zonen, NPCs, Quests, Rezepte, Risse, Fraktionen, Ereignisse, Hof, Begleiter, Sammlung, Texte), `maps/` (Kacheln, Generator) |
+| `server/src` | `index.ts` (HTTP + WebSocket, Konsole), `game.ts` (Sitzungen, Charakteraktionen), `zone.ts` (Simulation), `boss.ts`, `player.ts`, `db.ts`, `tailscale.ts`; je Ausbau ein Modul mit EINEM Einstieg: `craft.ts`/`react.ts`/`loot.ts` (0.3), `story.ts` (0.4), `rift.ts`/`endgame.ts`/`echo.ts` (0.5), `world/` (0.6), `home/` und `social/` (0.7) |
+| `client/src` | `game/` (Phaser-Szene, Licht, Effekte, Eingabe, Bewegung, Filmszenen), `ui/` (Menüs, HUD, Fenster, Handbuch), `gfx/` (Zeichenprogramme, Geländemaler, Laufzeit-Lader), `audio/` (Synthese, Musik), `net/`, `state/` (Zustand, Einstellungen, Tasten, Hinweise) |
 | `client/public/assets`, `assets/tiled`, `tools/` | exportierte Grafiken, Tiled-Karten, Asset-Pipeline |
-| `tests/` | Logiktests, Server-Integrationstests mit Bot-Clients, Browser-Test |
+| `launcher/` | Launcher und Patcher (reines JavaScript, läuft vor dem ersten `npm install`) |
+| `scripts/` | Start und Stopp, Messungen (`load-check.ts`, `perf-browser.mjs`), Simulationen (`balance-sim.ts`, `rift-sim.ts`, `world-income.ts`), `e2e-all.mjs`, `mapdump.ts` |
+| `tests/` | Logiktests, Server-Integrationstests mit Bot-Clients, Client-Logik ohne Browser, Browser-Durchläufe (`tests/e2e/`) |
+
+Zu den Versionsvermerken: Ausgeliefert wurden Handwerk und Elemente als 0.3 und Akt II als 0.4 (`docs/CHANGELOG.md`). Im Code
+tragen beide teils vertauschte Vermerke („Handwerk (0.4)“, „Story (ab 0.3)“), weil sie gleichzeitig entstanden – maßgeblich
+ist das Changelog.
 
 ## Architekturentscheidungen
 
@@ -30,10 +36,14 @@ Browser (Client)                               Node.js (Server, ein Prozess)
 2. **Autoritativer Server.** Der Client sendet Absichten (`atk`, `skill`, `dodge`, `interact`, `buy` …). Treffer, Schaden,
    Zustände, Beute, Erfahrung, Quests, Inventar und Handel berechnet ausschließlich der Server.
 3. **Bewegung: Client-Vorhersage mit Server-Prüfung.** Der eigene Charakter bewegt sich sofort lokal (gleicher
-   Kollisionscode aus `shared/`) und meldet 20-mal pro Sekunde seine Position. Der Server prüft Geschwindigkeit
-   (Bewegungsbudget) und Kollision; bei Verstoß schickt er `pos` mit neuer Epoche, ältere Meldungen verfallen. Vom Server
-   erzwungene Bewegungen (Sturmangriff, Teleport) laufen über denselben Mechanismus. Alle anderen Entitäten werden aus
-   Snapshots mit 110 ms Verzögerung interpoliert.
+   Kollisionscode aus `shared/`) und meldet bis zu 20-mal pro Sekunde seine Position. Der Server prüft Geschwindigkeit
+   (Bewegungsbudget: je Meldung höchstens 0,3 s Zuwachs, Deckel 0,6 s Laufweg) und Kollision; bei Verstoß schickt er `pos`
+   mit neuer Epoche, ältere Meldungen verfallen. Vom Server erzwungene Bewegungen (Sturmangriff, Teleport) laufen über
+   denselben Mechanismus. Alle anderen Entitäten werden aus Snapshots mit 110 ms Verzögerung interpoliert.
+   Seit 0.8 rechnet der Client mit der wirklich vergangenen Zeit (`client/src/game/motion.ts`): Ein Bild holt bis zu 0,25 s
+   in Teilschritten von 1/60 s nach, jeder Teilschritt entscheidet für seinen Zeitpunkt zwischen Rolle, Lauf und Stand.
+   Damit läuft die Figur bis hinunter zu 4 Bildern pro Sekunde in Echtzeit und bleibt im Budget des Servers; darunter
+   (und nach einem Hänger) verfällt der Rest, statt zu springen.
 4. **Deterministische Karten.** Server und Client erzeugen jede Zone aus derselben Definition und demselben Seed. Karten
    werden nie übertragen; nur Objektzustände (Tür offen, Truhe geplündert) gehen über das Netz.
 5. **Snapshots + Ereignisse.** Pro Tick (50 ms) erhält jeder Spieler die Positionen aller Spieler und der *wachen* Gegner
@@ -84,7 +94,7 @@ Snapshots.
 - **Instanzen:** Jede Zone existiert einmal pro Server. Oberwelt-Gegner erscheinen nach 75 s neu; leere Dungeons werden
   nach 90 s verworfen und frisch erzeugt.
 
-## Handwerk und Elemente (0.4)
+## Handwerk und Elemente (0.3)
 
 - **Daten:** `shared/src/data/materials.ts` (Rohstoffe, Verbrauchsgüter, Legendäre Waffen, Beutetabellen),
   `recipes.ts` (Stationen, Rezepte, Verzauberungen, Kochstellen), `sets.ts`; `shared/src/elements.ts` (Zustand je Element,
@@ -214,9 +224,41 @@ Snapshots.
   - `ambient.ts` – Wetter, Wolken- und Blätterschatten, Nebel, Lichtstrahlen, Kleintiere, Wasserglitzern, Fußspuren.
   - Pixelgenauigkeit: ganzzahliger Kamerazoom (Sichtfeld ca. 640 × 360 Weltpixel), Nearest-Neighbour, gerundete Positionen.
 - **Eingabe:** Tastatur, Maus und Gamepad API werden auf Aktionen abgebildet (frei belegbar); Gamepads steuern Menüs über
-  räumliche Fokus-Navigation.
+  räumliche Fokus-Navigation – der Fokus bleibt dabei im obersten Fenster (`focusScope` in `game/input.ts`).
 - **Leistung:** keine Re-Renders der Oberfläche pro Frame (schmale Store-Abos; Minimap liest Positionsdaten direkt),
-  Bodentexturen statt Tausender Kachel-Sprites, Snapshots nur für wache Gegner.
+  Bodentexturen statt Tausender Kachel-Sprites, Snapshots nur für wache Gegner. Beim Zonenwechsel wird die Szene neu
+  gestartet; Bodentexturen der alten Zone werden freigegeben, bevor die neuen entstehen.
+
+## Bedienung, Leistung und Fehlerwege (0.8)
+
+- **Tasten** (`client/src/state/keys.ts`, ohne Browser testbar): Aktionen, Bezeichnungen, Standardbelegung und Gruppen an
+  EINER Stelle – Einstellungen und Handbuch zeigen dieselbe Liste. `sanitizeKeys` bringt alte gespeicherte Belegungen auf den
+  Stand (neue Aktionen bekommen ihre Standardtaste nur, wenn sie noch frei ist), `bindKey` nimmt eine neu vergebene Taste der
+  alten Aktion weg, `keyConflicts`/`unboundActions` für die Anzeige. Esc löst immer „Menü / Schließen“ aus.
+- **Fensterstapel:** `closeTop` (`state/store.ts`) schließt in fester Reihenfolge von oben nach unten (Filmszene → Dokument →
+  … → Fenster → Chat); jedes Fenster seit 0.3 hängt dort drin. `togglePanel`/`openHelp` schließen, was nicht daneben stehen darf.
+- **Hinweise** (`state/hints.ts` Regeln und Texte, `ui/hints.tsx` Anzeige): `nextHint(Zustand, gesehen, an)` liefert den
+  ersten fälligen Hinweis; gesehen wird in `Settings.hintsSeen` vermerkt und wandert mit den Einstellungen ans Profil
+  (`settings`-Nachricht). Jeder Hinweis nennt ein Kapitel aus `HELP_TOPICS`; der Übersetzer prüft in `ui/handbuch.tsx`, dass es
+  zu jeder Kennung eine Seite gibt. `?hinweise=aus` in der Adresse schaltet sie für einen Seitenaufruf ab (Browser-Durchläufe).
+- **Handbuch** (`ui/handbuch.tsx`): Seiten als Funktionen über `CFG` und die Datentabellen – keine abgeschriebenen Zahlen.
+- **HUD:** `ui/hudlayout.ts` (`planColumn`) rechnet aus Fensterhöhe und dem, was oben steht (Karte, Riss-Anzeige, Ereignisse),
+  wie viele Quests die Questverfolgung zeigt und wann sie einklappt; `state/hud.ts` hält den Schalter. Die Kopfzeile aller
+  Fenster ist ein einziger Baustein (`Window` in `ui/common.tsx`, Regeln in `ui/styles/feinschliff.css`).
+- **Blitze reduzieren** (`Settings.reduceFlash`): `GameScene.screenFlash`/`softFlash`/`flash`/`shake` und die Klasse
+  `reduce-flash` an der Wurzel der Oberfläche. Unabhängig davon blitzt ein reiner Elementwechsel eines Bosses höchstens alle
+  vier Sekunden über das ganze Bild.
+- **Filmszenen:** `cinematic.askSkip` – der erste Druck fragt nach, der zweite überspringt; Interagieren, Enter und Leertaste
+  blättern, auch wenn der Knopf den Fokus verloren hat.
+- **Fehlerwege:** `net.ts` behandelt Fehler des Servers auf jedem Bildschirm (im Spiel als Meldung, beim Laden mit Rückweg in
+  die Charakterauswahl), erkennt eine verstummte Verbindung nach 9 s ohne Antwort und vergleicht nach jeder Anmeldung die
+  Version des Servers mit der geladenen (`UiState.stale` → Leiste „Neue Version“). `GameScene.update` fängt Fehler eines
+  einzelnen Bildes ab (sonst fordert Phaser kein weiteres Bild an und das Spiel steht) und meldet wiederholte als Leiste
+  (`UiState.fatal`, `ui/trouble.tsx`). Scheitert der Aufbau einer Zone oder dauert das Laden über 15 s, bietet der
+  Ladebildschirm „Erneut versuchen“ und „Zum Hauptmenü“ an. Der Server meldet ein gescheitertes Speichern dem Spieler
+  (`Game.savePlayer` liefert `false`; keine `saved`-Bestätigung mehr).
+- **Leistungsanzeige** (F3, `ui/perf.tsx`): Bilder pro Sekunde, mittlere und längste Bildzeit, Ping, Meldungen und kB je
+  Sekunde, Zahl der Gegner/Spieler/Objekte/Geschosse, gezeichnete Objekte, Texturen, Speicher (wo der Browser ihn nennt).
 
 ## Launcher und Patcher (launcher/)
 
@@ -237,7 +279,7 @@ Reines JavaScript ohne Abhängigkeiten, damit der Launcher auch vor dem ersten `
 - Der Spielserver läuft als unsichtbarer Kindprozess; gestoppt wird er über `/api/stop`. Der Launcher-Prozess endet, sobald
   sein Fenster geschlossen ist und kein von ihm gestarteter Server mehr läuft.
 
-## Story-Engine (ab 0.3)
+## Story-Engine (0.4)
 
 Die Geschichte ist Daten plus eine kleine, serverseitig geprüfte Engine. Inhalte liegen in `shared/src/data/`:
 `quests_akt2.ts` (Akt II), `dialoge.ts` (Dialogbäume), `chronik.ts` (Schriftstücke), `story.ts` (Kapitel, Entscheidungen,
@@ -330,5 +372,17 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
   volles Inventar, zweiter Charakter desselben Profils, Verbindungsabbruch, Absturz und Neustart, beschädigter Stand), Ausbau
   und Stationen je Stufe, Bett, Trophäen, jeder Begleiter mit Quelle und Wirkung, Sammlung und Meilensteine, Nachtrag für alte
   Spielstände, Erscheinungen samt Rückfall, Neuer Kreis.
+- `tests/client.test.ts` – Client-Logik ohne Browser (0.8): Bewegung bei 4 bis 60 Bildern pro Sekunde (reine Rechnung und
+  gegen den echten Server: kein Zurücksetzen, auch mit Ausweichrolle), Tastenbelegung (keine Konflikte, Gruppen vollständig,
+  Wegnehmen, alte Einstellungen), Hinweise (Reihenfolge der ersten Schritte, einmalig, abschaltbar, Kapitel vorhanden),
+  Rangfolge der rechten HUD-Spalte, gescheitertes Speichern.
 - `scripts/balance-sim.ts` – Kampfsimulation für Vorher/Nachher-Vergleiche (`--ausbau` rechnet den Handwerks-Ausbau mit).
-- `tests/e2e/smoke.mjs` – Browser-Durchlauf mit Playwright: Menü → Charakter erstellen → Welt → bewegen → angreifen.
+- **Browser-Durchläufe** (`tests/e2e/*.mjs`, Playwright): `smoke` (Menü → Charakter → Welt → bewegen → angreifen),
+  `erste-schritte` (neuer Spieler: Hinweise, Handbuch, neue Tasten, Menü, Einstellungen, Verbindungsabriss), `fenster` (jedes
+  Fenster und das HUD bei 1280×720, 1000×560 und 600×900: im Bild, Kopfzeile einzeilig, nichts ragt hinaus, keine Überdeckung),
+  `endgame`, `welt`, `zuhause`, `coop` (zwei Browser). **`npm run test:e2e:all`** (`scripts/e2e-all.mjs`) startet für jeden
+  Durchlauf einen eigenen Server mit leerer Datenbank und Dev-Befehlen (ab acht Kernen mehrere nebeneinander, `EM_JOBS`) und
+  meldet je Skript bestanden/gescheitert; einzelne Skripte: `npm run test:e2e:all -- coop welt`.
+- **Messwerkzeuge:** `scripts/load-check.ts` (Server: Taktdauer und Snapshot-Größe mit Bots), `scripts/perf-browser.mjs`
+  (Browser: Ladezeit und übertragene Menge, Speicher nach drei Reisen durch alle Zonen, Skriptzeit je Bild in den vollsten
+  Lagen, Bewegung bei gedrosselter Bildrate).

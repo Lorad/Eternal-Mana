@@ -1,7 +1,8 @@
 /** Eingabe: Tastatur, Maus und Gamepad auf abstrakte Aktionen abgebildet. */
 import { audio } from '../audio';
 import { bus } from '../state/bus';
-import { settings, type Action } from '../state/settings';
+import { toggleTracker } from '../state/hud';
+import { settings, updateSettings, type Action } from '../state/settings';
 import { closeTop, store, togglePanel, uiBlocksGame, type Panel } from '../state/store';
 
 const down = new Set<string>();
@@ -12,7 +13,7 @@ let padHeld = new Set<Action>();
 let navCooldown = 0;
 export const pointer = { x: 0, y: 0, onCanvas: false };
 
-const PANEL_ACTIONS: Partial<Record<Action, Panel>> = { inventory: 'inventory', character: 'character', skills: 'skills', quests: 'quests', map: 'map', party: 'party', ruf: 'ruf', sammlung: 'sammlung' };
+const PANEL_ACTIONS: Partial<Record<Action, Panel>> = { inventory: 'inventory', character: 'character', skills: 'skills', quests: 'quests', map: 'map', party: 'party', ruf: 'ruf', sammlung: 'sammlung', help: 'help' };
 
 function typing(): boolean {
   const el = document.activeElement as HTMLElement | null;
@@ -27,9 +28,18 @@ function trigger(a: Action) {
   const st = store.state;
   if (a === 'menu') { if (!closeTop() && st.screen === 'game') togglePanel('menu'); return; }
   if (st.screen !== 'game') return;
+  if (st.cine) {
+    // 0.8: Der „Weiter“-Knopf hat den Fokus – dann erledigt der Browser Enter und Leertaste selbst; sonst blättern diese Aktionen
+    const onButton = (document.activeElement as HTMLElement | null)?.tagName === 'BUTTON';
+    if ((a === 'interact' || a === 'attack') || (!onButton && (a === 'chat' || a === 'dodge'))) bus.emit('cine:next');
+    return;
+  }
   if (a === 'chat') { if (!st.chatOpen && !(st.cine || st.story || st.lore || st.dialog || st.sign)) store.set({ chatOpen: true }); return; } // Enter bestätigt in Gesprächen und Filmszenen, statt den Chat zu öffnen
   const panel = PANEL_ACTIONS[a];
   if (panel) { togglePanel(panel); audio.playSfx(store.state.panel ? 'ui_open' : 'ui_close'); return; }
+  // 0.8: Schalter, die keine Spielaktion sind
+  if (a === 'tracker') { toggleTracker(); audio.playSfx('ui_tab'); return; }
+  if (a === 'perf') { updateSettings({ perfOverlay: !settings.perfOverlay }); return; }
   pressedNow.add(a);
 }
 
@@ -42,7 +52,10 @@ export function initInput(canvasParent: HTMLElement) {
     if (e.code === 'Tab' || e.code === 'Space' || e.code.startsWith('Arrow')) { if (store.state.screen === 'game' && !uiBlocksGame()) e.preventDefault(); }
     if (e.repeat) return;
     down.add(e.code);
-    for (const a of actionsFor(e.code)) trigger(a);
+    const acts = actionsFor(e.code);
+    if (/^F\d+$/.test(e.code) && acts.length) e.preventDefault();          // F1/F3 sollen nicht die Hilfe oder Suche des Browsers öffnen
+    if (e.code === 'Escape' && !acts.includes('menu')) acts.push('menu');  // 0.8: Esc schließt immer – auch wenn „Menü“ umbelegt wurde
+    for (const a of acts) trigger(a);
   });
   window.addEventListener('keyup', e => down.delete(e.code));
   window.addEventListener('blur', () => down.clear());
@@ -61,12 +74,40 @@ export function initInput(canvasParent: HTMLElement) {
   bus.on('ui:interact', () => pressedNow.add('interact'));
 }
 
+const FOCUSABLE = 'button:not([disabled]), input, select, [tabindex="0"]';
+/**
+ * 0.8: Womit das Gamepad gerade arbeitet – das oberste Fenster (letzte Ebene im Dokument), sonst die ganze Oberfläche.
+ * Ohne diese Eingrenzung wanderte der Fokus in das HUD hinter einem Fenster.
+ */
+function focusScope(): HTMLElement | null {
+  const layers = document.querySelectorAll<HTMLElement>('#ui .backdrop, #ui .death, #ui .story, #ui .lore-layer, #ui .cine, #ui .pmenu, #ui .reconnect, #ui .fatal');
+  for (let i = layers.length - 1; i >= 0; i--) if (layers[i].offsetParent !== null || layers[i].getClientRects().length) return layers[i];
+  return document.getElementById('ui');
+}
+function focusables(): HTMLElement[] {
+  const scope = focusScope();
+  return scope ? [...scope.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(el => el.offsetParent !== null) : [];
+}
+/** Setzt den Fokus in das oberste Fenster, falls er woanders (oder nirgends) liegt: zuerst der Hauptknopf, sonst das erste Element. */
+function focusIntoScope(all: HTMLElement[]): boolean {
+  const cur = document.activeElement as HTMLElement | null;
+  if (cur && all.includes(cur)) return false;
+  const first = all.find(el => el.classList.contains('btn-primary')) ?? all.find(el => !el.classList.contains('window-x')) ?? all[0];
+  first?.focus({ preventScroll: true });
+  return true;
+}
 /** Räumliche Fokus-Navigation für Gamepads in Menüs. */
 function navigate(dx: number, dy: number) {
-  const all = [...document.querySelectorAll<HTMLElement>('#ui button:not([disabled]), #ui input, #ui select, #ui [tabindex="0"]')].filter(el => el.offsetParent !== null);
+  const all = focusables();
   if (!all.length) return;
-  const cur = document.activeElement as HTMLElement | null;
-  if (!cur || !all.includes(cur)) { all[0].focus(); return; }
+  if (focusIntoScope(all)) return;
+  const cur = document.activeElement as HTMLElement;
+  // 0.8: Schieberegler (Lautstärke, Größe der Oberfläche) stellt man mit links/rechts ein, statt weiterzuspringen
+  if (cur instanceof HTMLInputElement && cur.type === 'range' && dx !== 0 && dy === 0) {
+    const step = +cur.step || 1, v = Math.max(+cur.min, Math.min(+cur.max, +cur.value + dx * step));
+    if (v !== +cur.value) { cur.value = String(v); cur.dispatchEvent(new Event('input', { bubbles: true })); audio.playSfx('ui_hover'); }
+    return;
+  }
   const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   let best: HTMLElement | null = null, bs = 1e9;
   for (const el of all) {
@@ -92,7 +133,8 @@ export function pollInput(dtMs: number) {
   const dz = (v: number) => (Math.abs(v) < 0.22 ? 0 : v);
   let ax = dz(pad.axes[0] ?? 0), ay = dz(pad.axes[1] ?? 0);
   const b = (i: number) => !!pad!.buttons[i]?.pressed;
-  const inMenu = store.state.screen !== 'game' || uiBlocksGame();
+  // 0.8: auch das kleine Spieler-Menü (Gruppe, Handel, Ansehen) wird mit dem Gamepad wie ein Fenster bedient
+  const inMenu = store.state.screen !== 'game' || uiBlocksGame() || !!store.state.playerMenu;
   const dpx = (b(15) ? 1 : 0) - (b(14) ? 1 : 0), dpy = (b(13) ? 1 : 0) - (b(12) ? 1 : 0);
   let any = ax !== 0 || ay !== 0;
   for (let i = 0; i < pad.buttons.length; i++) {
@@ -101,7 +143,7 @@ export function pollInput(dtMs: number) {
     if (now) any = true;
     if (!now || was) continue;
     if (inMenu) {
-      if (i === 0) (document.activeElement as HTMLElement | null)?.click?.();
+      if (i === 0) { const all = focusables(); if (!focusIntoScope(all)) (document.activeElement as HTMLElement | null)?.click?.(); }
       else if (i === 1 || i === 9) trigger('menu');
       else if (i >= 12 && i <= 15) { navigate(dpx, dpy); navCooldown = 220; }
       continue;
@@ -110,6 +152,7 @@ export function pollInput(dtMs: number) {
   }
   if (any && store.state.inputMode !== 'pad') store.set({ inputMode: 'pad' });
   if (inMenu) {
+    if (store.state.inputMode === 'pad' && !typing()) { const all = focusables(); if (all.length) focusIntoScope(all); } // Fenster geht auf → Fokus hinein
     navCooldown -= dtMs;
     if (navCooldown <= 0 && (Math.abs(ax) > 0.5 || Math.abs(ay) > 0.5)) { navigate(Math.abs(ax) > Math.abs(ay) ? Math.sign(ax) : 0, Math.abs(ay) >= Math.abs(ax) ? Math.sign(ay) : 0); navCooldown = 200; }
     return;

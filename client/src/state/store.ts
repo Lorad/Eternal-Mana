@@ -7,7 +7,7 @@ export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 's
 export interface Toast { id: number; s: string; kind: 'info' | 'good' | 'bad' | 'loot' | 'quest' | 'story'; icon?: string; item?: ItemInstance }
 export interface ChatLine { id: number; from: string; s: string; ch: 'all' | 'party' | 'sys' }
 /** Sichtbarer Zustand einer laufenden Filmszene (gesteuert von game/cinematic.ts) */
-export interface CineView { id: string; bars: boolean; title: { s: string; sub?: string } | null; line: { who?: string; s: string } | null; fade: number; fadeMs: number }
+export interface CineView { id: string; bars: boolean; title: { s: string; sub?: string } | null; line: { who?: string; s: string } | null; fade: number; fadeMs: number; /** 0.8: Nachfrage „wirklich überspringen?“ läuft */ skipAsk?: boolean }
 
 export interface UiState {
   /** boot = Grafik wird erzeugt · menu = Hauptmenü · chars = Charakterauswahl · loading = Zone lädt · game = im Spiel */
@@ -94,6 +94,19 @@ export interface UiState {
   /** Reiter, mit dem das Fenster „Sammlung“ aufgeht */
   sammlungTab: string;
   saved: number;                   // Zeitstempel der letzten Speicherbestätigung
+  // ---- Feinschliff (0.8)
+  /** Questverfolgung in dieser Zone von Hand aufgeklappt, obwohl sie sich (Mana-Riss, Bosskampf) von selbst einklappt */
+  trackerOpen: boolean;
+  /** gerade gezeigter Hinweis (ID aus state/hints.ts) */
+  hint: string | null;
+  /** Kapitel, mit dem das Handbuch aufgeht */
+  helpTab: string;
+  /** Zone ließ sich nicht aufbauen: Meldung auf dem Ladebildschirm mit Ausweg */
+  loadFail: string | null;
+  /** schwerer Fehler im Spiel selbst: bleibt als Leiste stehen, bis neu geladen oder weggeklickt wird */
+  fatal: string | null;
+  /** der Server läuft mit einer anderen Version als dieser Browser geladen hat (nach einem Update) */
+  stale: string | null;
 }
 
 const state: UiState = {
@@ -106,6 +119,7 @@ const state: UiState = {
   tod: 0.4, weather: 'clear', inputMode: 'kbm', saved: 0, world: null, worldAt: 0, enc: null, wshop: null,
   trade: null, tradeAt: 0, tradeReq: null, qOffers: [], inspect: null, playerMenu: null,
   home: null, heim: null, hof: null, sammlungTab: 'uebersicht',
+  trackerOpen: false, hint: null, helpTab: 'start', loadFail: null, fatal: null, stale: null,
 };
 
 const listeners = new Set<() => void>();
@@ -147,6 +161,11 @@ export function pushToast(s: string, kind: Toast['kind'] = 'info', icon?: string
 let chatId = 1;
 export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
   store.set({ chat: [...state.chat.slice(-60), { id: chatId++, from, s, ch }] });
+}
+/** Öffnet das Handbuch (0.8), auf Wunsch gleich mit einem bestimmten Kapitel. */
+export function openHelp(tab?: string) {
+  if (state.screen !== 'game' || state.cine || state.trade) return;
+  store.set({ ...(tab ? { helpTab: tab } : {}), panel: 'help', dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null, inspect: null, playerMenu: null });
 }
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {

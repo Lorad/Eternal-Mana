@@ -4,7 +4,8 @@
 
 - **Node.js 22.13 oder neuer** (LTS-Installer von https://nodejs.org/). Prüfen: `node -v`.
   Der Server nutzt das in Node eingebaute SQLite – es müssen keine nativen Module kompiliert werden.
-- Ein aktueller Browser (Chrome, Edge, Firefox, Safari).
+- Ein aktueller Browser (Chrome, Edge, Firefox, Safari) mit eingeschalteter Hardwarebeschleunigung.
+- Zum Spielen Tastatur und Maus oder ein Gamepad. Eine Touch-Steuerung gibt es nicht.
 - Für Multiplayer über das Internet: Tailscale auf allen beteiligten Geräten (siehe [TAILSCALE_SETUP.md](TAILSCALE_SETUP.md)).
 
 ## 2. Starten
@@ -31,7 +32,7 @@ Das Skript prüft die Node-Version, installiert beim ersten Mal die Abhängigkei
 fehlt oder veraltet ist, und startet den Server. Im Fenster steht dann zum Beispiel:
 
 ```
-  ETERNAL MANA – Server v0.1.0 läuft
+  ETERNAL MANA – Server v0.8.0 läuft
   Dieser Rechner         http://localhost:7777
   Heimnetz (eth0)        http://192.168.178.20:7777
   Tailscale-IP           http://100.101.102.103:7777
@@ -39,6 +40,9 @@ fehlt oder veraltet ist, und startet den Server. Im Fenster steht dann zum Beisp
 ```
 
 Spiel öffnen: `start-client.bat` bzw. `./start-client.sh` – oder die Adresse von Hand in den Browser eingeben.
+
+Im Hauptmenü führt **Spielen** auf den Server, von dem die Seite geladen wurde; **Handbuch** erklärt jedes System des Spiels
+auf einer Seite (im Spiel: Taste H oder F1).
 
 ## 3. Beenden
 
@@ -68,7 +72,8 @@ Die Werte lassen sich auch per Umgebungsvariable überschreiben: `EM_PORT`, `EM_
 
 Alles liegt in `data/`:
 
-- `data/eternal-mana.db` – die SQLite-Datenbank mit Profilen und Charakteren.
+- `data/eternal-mana.db` – die SQLite-Datenbank: Profile mit ihren Einstellungen, Charaktere, je Profil der Hof (Lagertruhe,
+  Trophäen, Begleiter, Erscheinungen, Sammlung) und der Zustand der Welt (Jahreszeit, Termine der Weltbosse).
 - `data/backups/` – automatische Sicherungen: bei jedem Serverstart, alle 15 Minuten während gespielt wird und beim
   Beenden. Es werden die letzten 20 automatischen Backups aufbewahrt. Manuelle Backups (`backup` im Serverfenster oder
   `npm run backup`) werden nie automatisch gelöscht.
@@ -79,11 +84,15 @@ Alles liegt in `data/`:
 (vorhandene Dateien `eternal-mana.db-wal` und `-shm` löschen), Server starten.
 
 **Schutz vor beschädigten Ständen** (automatisch):
-- Jeder Charakter wird mit Prüfsumme gespeichert. Stimmt sie beim Laden nicht, greift der Server auf einen der letzten
-  fünf Charakter-Snapshots zurück (alle fünf Minuten angelegt).
+- Jeder Charakter und jeder Hof wird mit Prüfsumme gespeichert. Stimmt sie beim Laden nicht, greift der Server auf einen der
+  letzten fünf Snapshots zurück (alle fünf Minuten angelegt).
 - Beim Start wird die Datenbank auf Integrität geprüft. Ist die Datei defekt, wird sie beiseitegelegt
   (`eternal-mana.db.defekt-…`) und das jüngste Backup eingespielt.
-- Gespeichert wird automatisch alle 30 Sekunden, bei jedem Zonenwechsel, Questabschluss, Bosssieg und beim Trennen.
+- Gespeichert wird automatisch alle 30 Sekunden, bei jedem Zonenwechsel, Questabschluss, Bosssieg, Handel, jeder Bewegung in
+  der Lagertruhe und beim Trennen.
+- Kann der Server einmal nicht schreiben (Datenträger voll, Datei gesperrt), steht das im Serverfenster (`[save] Fehler …`)
+  und die betroffenen Spieler bekommen eine Meldung, statt weiter „gespeichert“ zu lesen. Der Stand bleibt im Speicher des
+  Servers und wird beim nächsten Versuch geschrieben – den Server in dieser Lage nicht hart beenden.
 
 **Profil-Schlüssel:** Der Browser merkt sich einen zufälligen Profil-Schlüssel; an ihm hängen deine Charaktere auf dem
 Server. Unter *Einstellungen → Profil* kannst du ihn anzeigen und in einem anderen Browser/Gerät eintragen. Behandle ihn
@@ -103,6 +112,8 @@ erst ein, wenn alles vollständig geladen ist. Danach installiert er bei Bedarf 
 - In einer Entwickler-Kopie (`git clone`) überschreibt der Launcher nichts; er spult nur per `git pull --ff-only` vor, wenn
   es keine lokalen Änderungen gibt.
 - Protokoll bei Problemen: `.patcher/launcher.log`.
+- Wer das Spiel während einer Aktualisierung noch im Browser offen hat, bekommt nach dem Neustart des Servers die Meldung
+  „Neue Version“ mit dem Knopf **Seite neu laden** – erst danach passen Browser und Server wieder zusammen.
 
 **Von Hand:**
 
@@ -121,4 +132,10 @@ Von Hand: `npm install && npm run build && npm start`.
 | Browser zeigt „Client wurde noch nicht gebaut“ | `npm run build` ausführen (macht das Startskript normalerweise selbst). |
 | Freunde erreichen den Server nicht | [TAILSCALE_SETUP.md](TAILSCALE_SETUP.md), Abschnitt Fehlersuche. |
 | Kein Ton | Einmal ins Spiel klicken (Browser geben Ton erst nach einer Eingabe frei); Lautstärke in den Einstellungen prüfen. |
-| Ruckeln | In den Einstellungen Beleuchtung und Wetter abschalten; Hardwarebeschleunigung im Browser aktivieren. |
+| Ruckeln | F3 zeigt Bilder pro Sekunde, Bildzeit und Verzögerung. In den Einstellungen Beleuchtung und Wetter abschalten; Hardwarebeschleunigung im Browser aktivieren. Die eigene Figur läuft auch bei niedriger Bildrate in Echtzeit. |
+| Zu viele Blitze, zu viel Wackeln | Einstellungen → „Blitze reduzieren“ (dazu getrennt: „Bildschirmwackeln“). |
+| „Verbindung verloren – verbinde neu …“ | Das Spiel verbindet von selbst wieder; der Charakter bleibt 30 Sekunden geschützt stehen. Läuft der Server noch? Nach einem Neustart des Servers geht es am letzten gespeicherten Stand weiter. |
+| „Neue Version“ / „Etwas ist schiefgegangen“ | **Seite neu laden.** Der Spielstand liegt beim Server und geht dabei nicht verloren. |
+| „Das Spiel konnte nicht gestartet werden“ | Eine Grafikdatei fehlt oder ist beschädigt: im Launcher „Dateien prüfen“, sonst `npm run build`, dann neu laden. |
+| Gamepad wird nicht erkannt | Einmal eine Taste am Gamepad drücken. Manche Browser geben Gamepads nur auf „sicheren“ Seiten frei (localhost oder HTTPS, siehe [TAILSCALE_SETUP.md](TAILSCALE_SETUP.md)). |
+| Charaktere fehlen in einem anderen Browser | Sie hängen am Profil-Schlüssel (Abschnitt 5): Einstellungen → Profil → Schlüssel übernehmen. |

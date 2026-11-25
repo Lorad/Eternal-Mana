@@ -141,7 +141,21 @@ export class Game {
 
   // ------------------------------------------------------------------ Speichern
   /** 0.7: Der Profil-Stand (Hof, Lagertruhe, Sammlung) wird in derselben Transaktion mitgeschrieben, wenn er sich geändert hat. */
-  savePlayer(p: Player) { try { Home.save(this, p); } catch (e) { console.error('[save] Fehler bei', p.name, e); } }
+  /**
+   * Speichert einen Charakter. Rückgabe: true = geschrieben. Scheitert es (Datenträger voll, Datei gesperrt), erfährt es der
+   * Spieler – höchstens einmal je Minute –, statt weiter „gespeichert“ zu lesen (0.8). Der Stand bleibt im Speicher und wird
+   * beim nächsten Versuch geschrieben.
+   */
+  savePlayer(p: Player): boolean {
+    try { Home.save(this, p); return true; }
+    catch (e) {
+      console.error('[save] Fehler bei', p.name, e);
+      const last = this.saveFailAt.get(p.charId) ?? -1e9;
+      if (this.now - last >= 60) { this.saveFailAt.set(p.charId, this.now); p.toast('Der Server konnte deinen Spielstand nicht speichern. Er versucht es weiter – sag bitte dem Gastgeber Bescheid (Speicherplatz? Serverfenster).', 'bad'); }
+      return false;
+    }
+  }
+  private saveFailAt = new Map<number, number>();
   saveAll() { for (const p of this.players.values()) this.savePlayer(p); World.save(this); }
   saveZonePlayers(z: Zone) { for (const p of z.players.values()) this.savePlayer(p); }
 
@@ -230,7 +244,7 @@ export class Game {
       case 'teleport': return this.teleport(p, m.zone);
       case 'chat': return this.chat(p, String(m.s ?? '').slice(0, 200));
       case 'party': case 'trade': case 'qShare': case 'qShareAns': case 'inspect': return Social.message(this, p, m);
-      case 'save': this.savePlayer(p); p.send({ t: 'saved' }); return;
+      case 'save': if (this.savePlayer(p)) p.send({ t: 'saved' }); else p.toast('Speichern fehlgeschlagen.', 'bad'); return;
       case 'sortInv': {
         const order = ['weapon', 'helm', 'armor', 'accessory', 'consumable', 'material', 'quest'];
         p.char.inv.sort((a, b) => order.indexOf(ITEMS[a.base].kind) - order.indexOf(ITEMS[b.base].kind) || b.rarity - a.rarity || b.ilvl - a.ilvl || a.base.localeCompare(b.base));

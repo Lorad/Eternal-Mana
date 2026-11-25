@@ -174,14 +174,12 @@
 .invite b { color: var(--gold-hi); }
 
 /* ---------------------------------------------------------------- schmale / niedrige Fenster */
-.is-short .qt-q:nth-child(n+3), .is-short .qt-more { display: none; }
 .is-short .zone-banner b { font-size: 34px; }
 .is-narrow .hud-tl { width: 230px; }
 .is-narrow .hud-tr { width: 170px; }
 .is-narrow .mm-frame { width: 116px; height: 116px; }
 .is-narrow .mm-frame canvas { width: 108px !important; height: 108px !important; }
 .is-narrow .qt { width: 170px; }
-.is-narrow .qt-q:nth-child(n+3), .is-narrow .qt-more { display: none; }
 .is-narrow .hud-tc { top: 190px; max-width: calc(100% - 24px); }
 .is-narrow .hud-bl { bottom: 96px; max-width: calc(100% - 80px); width: 300px; }
 .is-narrow .hud-br { bottom: 96px; max-width: 60%; }

@@ -36,7 +36,7 @@ export function CineOverlay() {
           <Btn kind="primary" class="cine-next" autofocus onClick={() => cinematic.next()} sound={null}>Weiter</Btn>
         </div>
       )}
-      <button type="button" class="cine-skip" onClick={() => { sfx('ui_close'); cinematic.skip(); }}>Überspringen</button>
+      <button type="button" class={cx('cine-skip', c.skipAsk && 'ask')} onClick={() => { sfx('ui_close'); cinematic.askSkip(); }}>{c.skipAsk ? 'Nochmal drücken: Szene überspringen' : 'Überspringen (Esc)'}</button>
     </div>
   );
 }

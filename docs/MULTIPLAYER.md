@@ -5,8 +5,8 @@ Spielwelt; alle anderen verbinden sich mit dem Browser.
 
 ## So spielt ihr zusammen
 
-1. **Gastgeber:** Server starten (`start-server.bat` / `./start-server.sh`). Die Adressen stehen im Serverfenster und im
-   Spiel in der Charakterauswahl unter „Server“.
+1. **Gastgeber:** Server starten – im Launcher mit „Server starten“ oder mit `start-server.bat` / `./start-server.sh`. Die
+   Adressen stehen im Launcher bzw. im Serverfenster und im Spiel in der Charakterauswahl unter „Freunde einladen“.
 2. **Mitspieler:** Die Tailscale-Adresse des Gastgebers im Browser öffnen, z. B. `http://100.101.102.103:7777`.
    Einrichtung von Tailscale: [TAILSCALE_SETUP.md](TAILSCALE_SETUP.md). Im selben Heimnetz genügt die Heimnetz-Adresse.
 3. Namen eingeben, **Spielen**, Charakter erstellen, Welt betreten.
@@ -69,7 +69,10 @@ existiert auf deinem eigenen Server nicht (und umgekehrt).
 4. Der Server tauscht in einem Zug und speichert beide Charaktere sofort gemeinsam – oder es passiert gar nichts
    (z. B. wenn einem der Platz im Inventar fehlt).
 
-Abgebrochen wird der Handel durch Weggehen, Zonenwechsel, Tod, Verbindungsabriss oder „Abbrechen“. Nicht handelbar
+Das Handelsfenster hat eine eigene Chatzeile (der gewöhnliche Chat liegt dahinter). Beträge und Mengen lassen sich auch mit
+Knöpfen einstellen (+10, +100, +1000, alles) – so geht Handeln auch mit dem Gamepad.
+
+Abgebrochen wird der Handel durch Weggehen, Zonenwechsel, Tod, Verbindungsabriss, Esc oder „Abbrechen“. Nicht handelbar
 („Gebunden“, steht im Tooltip): Questgegenstände, Legendäre Waffen, Trophäen sowie Rezepte, die es nur für Ruf oder aus der
 Prüfung der Sieben gibt. Angelegtes muss vorher abgelegt werden. Gehandelt wird nur aus dem Rucksack – die Lagertruhe des
 Hofs und alles, was dem Profil gehört (Begleiter, Erscheinungen, Sammlung), ist für den Handel unerreichbar. Einen
@@ -77,13 +80,17 @@ Hofs und alles, was dem Profil gehört (Begleiter, Erscheinungen, Sammlung), ist
 
 ## Verbindung
 
-- Die Anzeige im HUD zeigt die Verzögerung (Ping) in Millisekunden.
-- Bricht die Verbindung ab, versucht das Spiel selbstständig, sie wiederherzustellen. Dein Charakter bleibt bis zu
-  30 Sekunden unverwundbar an Ort und Stelle – in der Gruppe, im Dungeon oder Mana-Riss, an derselben Position. Meldest du
-  dich in dieser Zeit wieder an (auch nach einem Neuladen der Seite), geht es genau dort weiter.
+- Die Anzeige im HUD zeigt die Verzögerung (Ping) in Millisekunden; F3 blendet dazu Bilder pro Sekunde und Datenmenge ein.
+- Bricht die Verbindung ab – oder antwortet der Server neun Sekunden lang nicht –, versucht das Spiel selbstständig, sie
+  wiederherzustellen, und sagt das auch: Eine Meldung zählt die Schonfrist herunter und bietet den Weg ins Hauptmenü an. Dein
+  Charakter bleibt bis zu 30 Sekunden unverwundbar an Ort und Stelle – in der Gruppe, im Dungeon oder Mana-Riss, an derselben
+  Position. Meldest du dich in dieser Zeit wieder an (auch nach einem Neuladen der Seite), geht es genau dort weiter.
 - Danach wird der Charakter gespeichert und aus der Welt genommen. Dein **Platz in der Gruppe bleibt 5 Minuten frei**: Betrittst
   du die Welt in dieser Zeit wieder, bist du sofort wieder Mitglied; steckt die Gruppe in einem Mana-Riss, folgst du ihr am Riss-Stein.
-- Wer die Welt bewusst verlässt (Charakterauswahl), verlässt auch die Gruppe. Nach einem Neustart des Servers gibt es keine Gruppen mehr.
+- Wer die Welt bewusst verlässt (Charakterauswahl), verlässt auch die Gruppe. Nach einem Neustart des Servers gibt es keine Gruppen mehr;
+  die Charaktere stehen am letzten gespeicherten Ort, laufende Dungeons und Mana-Risse beginnen neu.
+- Wurde der Server dabei aktualisiert, meldet jeder noch offene Browser „Neue Version“ – Seite neu laden.
+- Einladungen, Handelsanfragen und geteilte Quests erscheinen oben im Bild; mit dem Gamepad nimmt man sie im Menü (Start) an.
 - Ein Profil kann nur einmal gleichzeitig angemeldet sein. Öffnest du das Spiel in einem zweiten Fenster, wird das erste
   abgemeldet; Charakter und Gruppe bleiben.
 
@@ -100,5 +107,6 @@ Hofs und alles, was dem Profil gehört (Begleiter, Erscheinungen, Sammlung), ist
 
 ## Server verwalten
 
-Im Serverfenster: `players` (Liste), `say <Text>` (Durchsage), `save`, `backup`, `stop`.
+Im Serverfenster: `players` (Liste), `say <Text>` (Durchsage), `save`, `backup`, `stop`. Wer den Server über den Launcher
+gestartet hat, beendet ihn dort oder mit `stop-server.bat` / `./stop-server.sh`; gespeichert wird in jedem Fall vorher.
 Dungeons setzen sich 90 Sekunden, nachdem der letzte Spieler sie verlassen hat, zurück und können erneut gespielt werden.

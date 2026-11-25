@@ -21,7 +21,7 @@ import { LEARNABLE } from '../../../shared/src/data/recipes';
 import { TITLES, ownedTitles } from '../../../shared/src/data/rifts';
 import { recipeLabel } from '../../../shared/src/craft';
 import type { CharData, HomeData, ItemInstance } from '../../../shared/src/types';
-import { Bar, Btn, Confirm, ELEMENT_CSS, Gold, Icon, ItemDetails, ItemSlot, Tabs, TextInput, Window, closePanel, cx, fmtMod, fmtNum, modEntries, send, sfx, tipProps } from './common';
+import { AmountSteps, Bar, Btn, Confirm, ELEMENT_CSS, Gold, Icon, ItemDetails, ItemSlot, Tabs, TextInput, Window, closePanel, cx, fmtMod, fmtNum, modEntries, send, sfx, tipProps } from './common';
 import { CostList } from './craft';
 
 const useHome = (): HomeData => useStore(s => s.home) ?? EMPTY_HOME;
@@ -147,6 +147,7 @@ function Lager({ char, home }: { char: CharData; home: HomeData }) {
         <div class="hof-gold">
           <span class="inv-gold">In der Truhe <Gold n={home.gold} /></span>
           <TextInput class="hof-gold-in" value={gold} onInput={setGold} placeholder="Betrag" maxLength={8} ariaLabel="Goldbetrag" />
+          <AmountSteps value={g} max={Math.max(char.gold, home.gold)} onChange={v => setGold(v ? String(v) : '')} />
           <Btn kind="small" disabled={!g || !char.gold} onClick={() => { send({ t: 'home', a: 'gold', n: g }); setGold(''); }}>Einlagern</Btn>
           <Btn kind="small" disabled={!g || !home.gold} onClick={() => { send({ t: 'home', a: 'gold', n: -g }); setGold(''); }}>Abheben</Btn>
         </div>
