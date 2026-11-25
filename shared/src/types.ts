@@ -105,6 +105,15 @@ export interface CharData {
   rest?: number;
   /** Stand, bis zu dem dieser Charakter in die Sammlung des Profils eingetragen ist (fehlt = noch nie: Nachtrag beim Betreten) */
   cv?: number;
+  // ---- 0.9 Quellwarte (optional; Regeln in shared/src/data/hubdata.ts)
+  /** Meisterränge je Fähigkeit (wirken, solange die Fähigkeit voll ausgebaut ist) */
+  mastery?: Record<string, number>;
+  /** insgesamt verdientes Gold (Trophäenhalle; zählt ab 0.9) */
+  earned?: number;
+  /** Ausrüstungshändler: gekaufte Tagesware (Tag, Indizes) und Wochenstück (Woche, gekauft) */
+  hubShop?: { day: number; got: number[]; week: number; wgot?: number };
+  /** Expeditionen: Fortschritt je Dungeon (schreiben nur die Expeditionen; Format: DungeonRecord in data/hub.ts) */
+  expeditions?: Record<string, import('./data/hub').DungeonRecord>;
 }
 
 /**
@@ -123,6 +132,8 @@ export interface HomeData {
   pets: string[]; looks: string[];
   /** Sammlung: Siege je Gegnerart · Gesehenes (`i:` Gegenstand, `f:` Fundstück, `r:` Rezept, `t:` Trophäe) · ausgezahlte Meilensteine */
   kills: Record<string, number>; seen: Record<string, number>; ms: string[];
+  /** 0.9: im Lagerhaus der Quellwarte gekaufte zusätzliche Reihen der Truhe */
+  rows?: number;
 }
 
 export interface Derived {
@@ -165,7 +176,8 @@ export type SnapPlayer = [number, number, number, number, number, number, number
 export type SnapMob = [number, number, number, number, number, number, number];
 
 export interface PlayerInfo { id: number; name: string; cls: ClassId; level: number; party: number; /** Titel hinter dem Namen (0.5) */ title?: string;
-  /** 0.7: aktiver Begleiter, Gewand und Waffenglanz */ pet?: string; g?: string; w?: string }
+  /** 0.7: aktiver Begleiter, Gewand und Waffenglanz */ pet?: string; g?: string; w?: string;
+  /** 0.9: hängt ein Gruppengesuch aus (Ziel, LFG_GOALS in data/hubdata.ts) */ lfg?: string }
 export interface MobInfo { id: number; mob: string; lvl: number; maxHp: number; boss?: boolean; elite?: boolean; x: number; y: number; hp: number; name?: string; /** Einfärbung (Boss-Echos, 0.5) */ tint?: number }
 export interface ObjInfo { id: number; type: string; x: number; y: number; state: number; tag?: string; props?: Record<string, any> }
 export interface DropInfo { id: number; x: number; y: number; kind: 'gold' | 'item'; icon: string; rarity: number; name: string }
@@ -292,6 +304,9 @@ export type ClientMsg =
   // ---- Zuhause (0.7): eine Nachricht, `a` = Aktion. buy (bei Mirelda) · go (am Wegweiser; `owner` = Spieler-ID eines Gruppenmitglieds) · leave ·
   //      put/take (`uid`, `n`) · gold (`n` > 0 einlagern, < 0 abheben) · sort · upgrade · trophy (`slot`, `id`) · pet (`id`) · look (`g`, `w`) · sleep
   | { t: 'home'; a: string; id?: string; uid?: string; n?: number; slot?: number; owner?: number; g?: string; w?: string; npc?: string }
+  // ---- Quellwarte (0.9): eine Nachricht, `a` = Aktion. stock · buy (`idx`, `day`, `lvl`) · master (`id`) · row · lfg (`goal`, `note`; ohne goal = abhängen) ·
+  //      board (Gesuche abrufen) · go (zur Quellwarte, nur am Quellstein/Tor)
+  | { t: 'hub'; a: string; idx?: number; day?: number; lvl?: number; id?: string; goal?: string; note?: string }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -374,6 +389,8 @@ export type ServerMsg =
   | { t: 'inspect'; i: InspectInfo }
   // ---- Zuhause (0.7): geänderte Teile des Profil-Stands (wie `char`); `note` = Hinweise der Sammlung (der Client zeigt sie wie Toasts)
   | { t: 'home'; h: Partial<HomeData>; note?: { s: string; kind: 'info' | 'good' | 'story'; icon?: string }[] }
+  // ---- Quellwarte (0.9): ein Fenster öffnen (nach Interaktion mit einem Objekt der Warte), Angebot des Händlers, Gruppengesuche
+  | { t: 'hub'; open?: string; stock?: HubStock; lfg?: LfgEntry[] }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 
@@ -384,3 +401,9 @@ export interface ServerInfo {
   addresses: { label: string; url: string; kind: 'local' | 'lan' | 'tailscale' }[];
   tailscale: { available: boolean; ip?: string; dns?: string };
 }
+
+// ---- Quellwarte (0.9)
+/** Ausrüstungshändler: Angebot für genau diesen Charakter (`got` = schon gekauft, `weekly` = Wochenstück); `next`/`nextWeek` = Sekunden bis zum Wechsel */
+export interface HubStock { day: number; week: number; lvl: number; next: number; nextWeek: number; offers: { item: ItemInstance; price: number; got?: 1; weekly?: 1 }[] }
+/** Gruppengesuch am Brett: wer, was, wie groß die Gruppe ist, wo und seit wie vielen Sekunden */
+export interface LfgEntry { id: number; name: string; cls: ClassId; level: number; goal: string; note?: string; size: number; lead: boolean; zone: string; sec: number }
