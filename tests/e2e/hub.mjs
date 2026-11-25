@@ -41,7 +41,9 @@ const use = async () => { await page.keyboard.press('e'); await wait(500); };
 const zone = () => page.evaluate(() => window.__em.game.scene.getScene('game').map?.id);
 /** Stellt die Figur vor ein Objekt der Szene (NPC oder Objekt der Warte) und wartet auf die Aufforderung */
 async function goTo(type, t, prompt) {
-  const p = await page.evaluate(([type, t]) => { const sc = window.__em.game.scene.getScene('game'); for (const v of sc.objs.values()) if (v.o.type === type && v.o.tag === t) return { x: v.o.x, y: v.o.y }; return null; }, [type, t]);
+  const find = ([type, t]) => { const sc = window.__em.game.scene.getScene('game'); for (const v of sc.objs.values()) if (v.o.type === type && v.o.tag === t) return { x: v.o.x, y: v.o.y }; return null; };
+  await page.waitForFunction(find, [type, t], { timeout: 10000 }).catch(() => {});
+  const p = await page.evaluate(find, [type, t]);
   if (!p) throw new Error(`${type} ${t} nicht in der Szene`);
   await cmd(`/goto ${p.x} ${p.y + 16}`); await wait(500);
   if (prompt) await has(prompt);

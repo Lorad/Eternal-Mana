@@ -211,8 +211,9 @@ export function genHub(def: ZoneDef): GameMap {
     id: def.id, def, w, h, tiles, solid, biome: def.biome, dungeon: false, seed, decor, objects, spawns: [], rooms: [],
     start, entries: { gruenwald: sp([L.gate[0], L.gate[1] - 2]) }, safe: [{ x: (w * TILE) / 2, y: (h * TILE) / 2, r: w * TILE }],
     labels: [
-      { x: PX * TILE, y: (PY - 8) * TILE, name: 'Portalplatz' }, { x: L.fountain.x * TILE, y: (L.fountain.y + 5) * TILE, name: 'Quellbrunnen' },
-      ...HUB_HOUSES.map(b => ({ x: b.cx * TILE + 8, y: (b.by - 6) * TILE, name: FAC_LABEL[b.fac] })),
+      { x: PX * TILE + 8, y: (PY - 8) * TILE, name: 'Portalplatz' }, { x: L.fountain.x * TILE + 8, y: (L.fountain.y - 3) * TILE, name: 'Brunnen' },
+      { x: L.arrival.x * TILE + 8, y: (L.arrival.y + 3) * TILE, name: 'Ankunft' },
+      ...HUB_HOUSES.map(b => ({ x: b.cx * TILE + 8, y: (b.by - 1) * TILE, name: FAC_LABEL[b.fac] })),
     ],
   };
 }
