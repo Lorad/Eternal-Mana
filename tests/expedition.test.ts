@@ -21,7 +21,7 @@ function atPortal(t: Tester) {
 }
 function unlockAll(t: Tester) {
   t.p.char.flags['z:gruenwald'] = 1; t.p.char.quests.m_wurzel = { s: 'active', p: [0] };
-  for (const x of EXPEDITION_LIST) for (const r of x.unlock) { if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] }; }
+  for (const x of EXPEDITION_LIST) if (!x.secret) for (const r of x.unlock) { if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] }; }
 }
 const expZone = (t: Tester): Zone | null => (t.p.zone.exp ? t.p.zone : null);
 function killBoss(t: Tester) {
@@ -32,7 +32,7 @@ function killBoss(t: Tester) {
   for (let i = 0; i < 40 && !b.mob.dead; i++) { b.mob.invuln = false; b.mob.vuln = 1; z.hitMob(b.mob, t.p, b.mob.maxHp, 'phys'); sim.step(0.1); }
   expect(b.mob.dead).toBe(true);
 }
-function startSolo(t: Tester, diff: 'normal' | 'schwer' = 'normal', id = 'exp_gruenwald') { unlockAll(t); atPortal(t); t.send({ t: 'exp', a: 'select', id, diff }); return t.p.zone; }
+function startSolo(t: Tester, diff: 'normal' | 'schwer' = 'normal', id = 'exp_gruenwald') { unlockAll(t); if (EXPEDITIONS[id].secret) { t.p.char.flags['xs:' + id] = 1; t.p.char.flags['b:hohlkoenig'] = 1; } atPortal(t); t.send({ t: 'exp', a: 'select', id, diff }); return t.p.zone; }
 
 describe('Expeditionen – Karten', () => {
   it('jede Expedition ist gültig und vollständig spielbar (Weg über Schlüssel, Türen, Rätsel bis zur Arena; Geheimes nur durch die Wand)', () => {
@@ -63,6 +63,17 @@ describe('Expeditionen – Freischaltung', () => {
     t.p.char.expeditions = { exp_gruenwald: { clears: { normal: 1 } } };
     expect(diffBlock(t.p.char, 'exp_gruenwald', 'schwer')).toBeNull();
     expect(diffBlock(t.p.char, 'exp_gruenwald', 'albtraum')).toMatch(/Stufe/);
+  });
+  it('geheime Expedition: unsichtbar, bis die Spur in den Unteren Archiven gefunden ist', () => {
+    const t = sim.join('Geheim', 'magier', 34);
+    unlockAll(t); t.p.char.flags['b:hohlkoenig'] = 1;
+    expect(expUnlock(t.p.char, 'exp_gestrichen').visible).toBe(false);
+    const z = startSolo(t, 'normal', 'exp_ruinen');
+    const o = [...z.objs.values()].find(x => x.props?.kind === 'discover')!;
+    expect(o.props!.exp).toBe('exp_gestrichen');
+    t.p.x = o.x; t.p.y = o.y + 14;
+    t.send({ t: 'interact', id: o.id });
+    expect(expUnlock(t.p.char, 'exp_gestrichen')).toMatchObject({ ok: true, visible: true });
   });
   it('ohne Freischaltung kein Betreten', () => {
     const t = sim.join('Zu', 'krieger');

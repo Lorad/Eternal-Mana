@@ -432,6 +432,8 @@ export function genExpedition(def: ZoneDef): GameMap {
     if (role === 'mini') chest(n, 'gold', { mini: n.def.mini });
     // seltene Abbaustellen
     for (let k = 0; k < (n.def.nodes ?? 0); k++) { const c = spot(n, roomy, 60, 1); if (c) { addObj('node', c[0], c[1], undefined, { kind: NODE_OF[x.region], rare: k === 0 && n.def.role !== 'explore' ? 1 : hash2(c[0], c[1], def.seed) < 0.35 ? 1 : 0 }); solidAt(c[0], c[1]); } }
+    // Spur zu einer geheimen Expedition
+    if (n.def.discover) { const c = spot(n, roomy, 60, 1); if (c) { addObj('xobj', c[0], c[1], 'discover', { kind: 'discover', exp: n.def.discover, frame: 'rune_stone', label: 'Eine Spur', prompt: 'Die Spur untersuchen', light: [60, 0xffd890, 0.7] }); solidAt(c[0], c[1]); } }
     // Inschrift (Lore-Stelle)
     if (n.def.lore) { const c = spot(n, roomy, 60, 1); if (c) { addObj('sign', c[0], c[1], 'lore', { text: n.def.lore }); solidAt(c[0], c[1]); } }
     // Einrichtung

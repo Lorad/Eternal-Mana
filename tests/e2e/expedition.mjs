@@ -65,7 +65,7 @@ const enter = async p => {
   await p.wait(600);
 };
 /** einen Abschnitt ansehen: hinspringen, Gegner in der Nähe beseitigen, Bild machen */
-const visit = async (p, sec, n, kill = true) => { await p.cmd('/expgo ' + sec); await p.wait(900); if (kill) { await p.cmd('/kill'); await p.wait(500); } await p.shot(n); };
+const visit = async (p, sec, n, kill = true) => { await p.cmd('/expgo ' + sec + ' mitte'); await p.wait(900); if (kill) { await p.cmd('/kill'); await p.wait(500); } await p.shot(n); };
 
 console.log('Eternal Mana – Expeditionen gegen ' + url);
 // =================================================================== allein
@@ -107,18 +107,16 @@ await step('Abschnitte ansehen (Erkundung, Grotte, Halle, Fallen, Rätsel, Tiefe
   await visit(a, 'runenbruecke', '11-runenbruecke');
   await visit(a, 'dornensaal', '12-elite');
   await visit(a, 'rast', '13-rast', false);
-  await a.has('Letzte Rast', 4000).catch(() => {});
 }, [a]);
 await step('Geheime Schatzkammer: hinter der rissigen Wand', async () => { await visit(a, 'gruftschatz', '14-schatzkammer', false); }, [a]);
 await step('Mini-Boss: Bossleiste mit Namen', async () => {
-  await a.cmd('/expgo sporenhof'); await a.wait(800);
+  await a.cmd('/expgo sporenhof mitte'); await a.wait(800);
   await a.page.mouse.move(700, 330); await a.page.mouse.down(); await a.wait(2500); await a.page.mouse.up();
   await a.page.locator('.boss-bar, .bossbar, [class*=boss]').first().waitFor({ timeout: 8000 });
   await a.shot('15-miniboss');
 }, [a]);
 await step('Endboss: Arena, Signatur, Phasen 2 und 3', async () => {
-  await a.cmd('/expgo wurzelherz'); await a.wait(600);
-  await a.cmd('/expgo wurzelherz'); await a.wait(2500);
+  await a.cmd('/expgo wurzelherz mitte'); await a.wait(3000);
   await a.has('Dornenknospen', 8000);
   await a.shot('16-boss-phase1');
   await a.cmd('/expphase 2'); await a.wait(2500); await a.shot('17-boss-phase2');
@@ -178,8 +176,7 @@ await step('Bereitschaftsprüfung: Anführung wählt, Mitglied sieht den Stand u
   await both(p => p.shot('26-gruppe-eingang'));
 }, [a, b]);
 await step('Zu zweit zum Boss, Sieg, Abschluss für beide, gemeinsame Rückkehr', async () => {
-  await a.cmd('/expgo wurzelherz'); await b.cmd('/expgo wurzelherz'); await a.wait(600);
-  await a.cmd('/expgo wurzelherz'); await b.cmd('/expgo wurzelherz'); await a.wait(2500);
+  await a.cmd('/expgo wurzelherz mitte'); await b.cmd('/expgo wurzelherz mitte'); await a.wait(2500);
   await both(p => p.shot('27-gruppe-boss'));
   await a.cmd('/expsieg');
   await both(p => p.has('Expedition abgeschlossen', 12000));

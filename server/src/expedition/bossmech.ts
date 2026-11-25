@@ -6,7 +6,7 @@
  * BossCtl ruft die Haken über dieselbe Schnittstelle wie bei den Boss-Echos auf (EchoMech in echo.ts).
  */
 import { TILE } from '../../../shared/src/maps/tiles';
-import { EXP_CFG, EXP_DIFF } from '../../../shared/src/data/expeditions';
+import { EXPEDITIONS, EXP_CFG, EXP_DIFF } from '../../../shared/src/data/expeditions';
 import { Anim } from '../../../shared/src/types';
 import type { Element } from '../../../shared/src/types';
 import type { BossCtl } from '../boss';
@@ -290,6 +290,7 @@ export function expBossMech(zone: Zone, bossId: string): EchoMech {
       s.invulnUntil = 0; s.enraged = false; s.t = 0; s.adds.clear();
       const m0 = k.boss.mob; if (baseDmg.has(m0)) { m0.baseDmg = baseDmg.get(m0)!; m0.dmg = m0.baseDmg; } else baseDmg.set(m0, m0.baseDmg);
       zone.exp!.bossAt = zone.game.now;
+      const tint = EXPEDITIONS[zone.exp!.exp].bossTint; if (tint) k.boss.mob.tint = tint;
       if (sig) { for (const p of k.players()) p.toast(sig.hint, 'story'); sig.start?.(k, s); }
       if (d.bossAdds > 1) k.summon(zone.map.def.mobs[0]?.[0] ?? 'moosling', 1);
     },

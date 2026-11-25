@@ -51,6 +51,8 @@ export interface SectionDef {
   event?: ExpEvent;
   /** seltene Abbaustellen, verborgenes Ausrüstungsversteck, Inschrift (Lore-Stelle) */
   nodes?: number; cache?: boolean; lore?: string;
+  /** Spur zu einer geheimen Expedition (wer sie berührt, hat sie entdeckt) */
+  discover?: string;
   /** optionale Flügel, die von hier abzweigen */
   side?: SectionDef[];
   /** Schatzkammer hinter einer geheimen Wand */
@@ -96,6 +98,8 @@ export interface ExpeditionDef {
   unlock: ExpReq[];
   /** geheime Expedition: steht erst in der Liste, wenn sie entdeckt ist */
   secret?: boolean;
+  /** Endboss unter anderem Namen und mit eigener Farbe (gleiche Muster wie `boss`) */
+  bossName?: string; bossTint?: number;
   /** seltene Beute nur aus dieser Expedition (Gegenstand) */
   rare: string;
   dark: number;
@@ -377,7 +381,7 @@ export const EXPEDITION_LIST: ExpeditionDef[] = [
       S({ id: 'pforte', name: 'Die Pförtnerloge', shape: 'chamber', role: 'entrance' }),
       S({ id: 'regalgang', name: 'Der Regalgang', shape: 'corridor', role: 'explore', via: 'stairs', groups: 3, nodes: 2, lore: 'Ein Zettel im Regal: „Signatur fehlt. Buch fehlt. Regal fehlt? – Nein, Regal da.“' }),
       S({ id: 'lesesaal', name: 'Der Lesesaal', shape: 'hall', role: 'combat', via: 'gate', groups: 7, elites: 1,
-        secret: S({ id: 'verbotenes', name: 'Die verbotene Abteilung', shape: 'chamber', role: 'treasure', via: 'secret', cache: true, lore: 'Ein Katalog der gestrichenen Namen. Der erste Eintrag ist ausradiert. So gründlich, dass das Papier durchscheint.' }) }),
+        secret: S({ id: 'verbotenes', name: 'Die verbotene Abteilung', shape: 'chamber', role: 'treasure', via: 'secret', cache: true, discover: 'exp_gestrichen', lore: 'Ein Katalog der gestrichenen Namen. Der erste Eintrag ist ausradiert. So gründlich, dass das Papier durchscheint.' }) }),
       S({ id: 'kartei', name: 'Die Kartei', shape: 'chamber', role: 'puzzle', via: 'tunnel', puzzle: 'levers', groups: 1 }),
       S({ id: 'magazin', name: 'Das Magazin', shape: 'cavern', role: 'event', via: 'gate', event: 'ambush', groups: 2,
         side: [S({ id: 'kustodie', name: 'Die Kustodie', shape: 'hall', role: 'mini', via: 'gate', mini: 'xm_kustos', groups: 2 })] }),
@@ -418,6 +422,33 @@ export const EXPEDITION_LIST: ExpeditionDef[] = [
       S({ id: 'letztes_licht', name: 'Das letzte Licht', shape: 'chamber', role: 'prep', via: 'tunnel', look: 1 }),
       S({ id: 'thronsaal', name: 'Der Thronsaal', shape: 'arena', role: 'boss', via: 'gate', look: 1 }),
       S({ id: 'kronschrein', name: 'Der Kronschrein', shape: 'chamber', role: 'reward', via: 'gate', look: 1 }),
+    ],
+  }),
+  // =================================================================== GEHEIM: DIE GESTRICHENEN SEITEN
+  X({
+    id: 'exp_gestrichen', name: 'Die Gestrichenen Seiten', subtitle: 'Was der Windhüter löschen ließ', region: 'ruinen', parent: 'ruinen', secret: true,
+    boss: 'archivar', bossName: 'Der Erste Schreiber', bossTint: 0xffc890, level: [33, 36], rec: 34, seed: 97101, dark: 0.6, mapPos: [60, 10], event: 'darkness', arena: 'grid', rare: 'xr_tintenstein',
+    desc: 'Hinter der verbotenen Abteilung liegt ein Archiv, das es nicht gibt: Seiten über Aetherion, mit so viel Mühe gestrichen, dass die Striche selbst zu Wänden wurden. Und jemand schreibt dort noch.',
+    intro: 'Auf dem Boden, in sehr kleiner Schrift, immer wieder dasselbe Wort, immer wieder durchgestrichen. Man kann es fast lesen.',
+    mobs: [[['fluchgeist', 4], ['arkanauge', 3], ['skelettkrieger', 2], ['schattenwandler', 2]],
+      [['runenwaechter', 2], ['fluchgeist', 3], ['nachtmahr', 2], ['leerenbrut', 2]]],
+    unlock: [boss('hohlkoenig', 'Der Hohle König'), { text: 'Den verborgenen Zugang entdeckt (eine Spur in den Unteren Archiven)', cond: { flag: 'xs:exp_gestrichen' } }],
+    sections: [
+      S({ id: 'randnotiz', name: 'Die Randnotiz', shape: 'chamber', role: 'entrance' }),
+      S({ id: 'streichgang', name: 'Der Streichgang', shape: 'corridor', role: 'explore', via: 'stairs', groups: 3, nodes: 1, lore: 'Jeder Stein hier ist ein Wort. Jedes Wort ist durchgestrichen. Die Striche sind sorgfältig. Sie sind sehr, sehr sorgfältig.' }),
+      S({ id: 'palimpsest', name: 'Das Palimpsest', shape: 'hall', role: 'combat', via: 'gate', groups: 7, elites: 1,
+        side: [S({ id: 'fussnote2', name: 'Die verschwiegene Fußnote', shape: 'cavern', role: 'mini', via: 'tunnel', mini: 'xm_klageweib', groups: 2 })] }),
+      S({ id: 'tintensee', name: 'Der Tintensee', shape: 'grotto', role: 'explore', via: 'bridge', groups: 5, nodes: 2,
+        secret: S({ id: 'erste_seite', name: 'Die erste Seite', shape: 'chamber', role: 'treasure', via: 'secret', cache: true, lore: '„Sein Name war —“. Mehr steht nicht da. Der Rest ist so gründlich ausradiert, dass man darunter den Tisch sieht.' }) }),
+      S({ id: 'zensur', name: 'Die Zensurkammer', shape: 'chamber', role: 'key', via: 'tunnel', groups: 2, elites: 1, key: true }),
+      S({ id: 'leere_zeilen', name: 'Die leeren Zeilen', shape: 'cavern', role: 'event', via: 'locked', event: 'darkness', look: 1, groups: 2 }),
+      S({ id: 'satzspiegel', name: 'Der Satzspiegel', shape: 'chamber', role: 'puzzle', via: 'gate', puzzle: 'runes', look: 1, groups: 1 }),
+      S({ id: 'register', name: 'Das Register', shape: 'hall', role: 'elite', via: 'stairs', look: 1, groups: 7, elites: 2,
+        side: [S({ id: 'kustodie2', name: 'Die zweite Kustodie', shape: 'hall', role: 'mini', via: 'gate', mini: 'xm_kustos', look: 1, groups: 2 })] }),
+      S({ id: 'loeschgang', name: 'Der Löschgang', shape: 'corridor', role: 'trap', via: 'tunnel', look: 1, groups: 2, traps: ['collapse', 'turrets', 'spikes'] }),
+      S({ id: 'schreibpult', name: 'Am Schreibpult', shape: 'chamber', role: 'prep', via: 'gate', look: 1 }),
+      S({ id: 'urschrift', name: 'Die Urschrift', shape: 'arena', role: 'boss', via: 'gate', look: 1 }),
+      S({ id: 'nachwort', name: 'Das Nachwort', shape: 'chamber', role: 'reward', via: 'gate', look: 1 }),
     ],
   }),
 ];

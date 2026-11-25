@@ -495,7 +495,8 @@ export const Expedition = {
   },
   bossDef(zone: Zone): BossDef {
     const run = zone.exp!, d = EXP_DIFF[run.diff], b = kreisBossDef(BOSSES[EXPEDITIONS[run.exp].boss], run.kreis);
-    return { ...b, level: levelFor(run, BOSSES[EXPEDITIONS[run.exp].boss].level), hpMul: b.hpMul * d.hpMul, dmgMul: b.dmgMul * d.dmgMul };
+    const x = EXPEDITIONS[run.exp], lvl = levelFor(run, Math.max(BOSSES[x.boss].level, x.level[1] + 1));
+    return { ...b, name: x.bossName ?? b.name, level: lvl, hpMul: b.hpMul * d.hpMul, dmgMul: b.dmgMul * d.dmgMul };
   },
   bossMech(zone: Zone, bossId: string): EchoMech { return expBossMech(zone, bossId); },
   setup,
@@ -516,7 +517,7 @@ export const Expedition = {
         run.where.set(p.charId, s.id);
         if (!run.seen.has(s.id)) {
           run.seen.add(s.id);
-          if (s.role !== 'entrance') for (const q of zone.players.values()) q.send({ t: 'toast', s: `${s.secret ? 'Geheimnis: ' : ''}${s.name}`, kind: 'info', icon: 'map' });
+          if (s.role !== 'entrance') for (const q of zone.players.values()) q.send({ t: 'toast', s: `${s.secret ? 'Geheimnis: ' : 'Abschnitt: '}${s.name}`, kind: 'info' });
           if (s.role === 'prep' && zone.map.exp!.checkpoint) run.checkpoint = zone.map.exp!.checkpoint;
         }
         sendInfo(zone, p);
@@ -591,6 +592,13 @@ export const Expedition = {
         }
         case 'rune': return puzzleInteract(zone, p, o);
         case 'chain': case 'ink': return mechInteract(zone, p, o);
+        case 'discover': {
+          const id = String(pr.exp ?? ''), k = 'xs:' + id;
+          if (!EXPEDITIONS[id]) return true;
+          if (!p.char.flags[k]) { p.char.flags[k] = 1; p.sync('flags'); p.toast(`Eine geheime Expedition ist entdeckt: ${EXPEDITIONS[id].name}. Am Expeditionsportal steht sie jetzt in der Liste.`, 'story'); p.pev.push({ k: 'sfx', n: 'secret' }); }
+          else p.toast('Die Spur kennst du schon.', 'info');
+          return true;
+        }
         case 'lightstone': case 'valve': return eventInteract(zone, p, o);
       }
       return true;
@@ -787,11 +795,18 @@ export const Expedition = {
     if (cmd === 'expphase' && p.zone.boss?.active) { const b = p.zone.boss, f = [0, 1, 0.58, 0.23][Math.max(1, Math.min(3, +a[0] || 2))]; b.mob.hp = Math.max(1, Math.round(b.mob.maxHp * f)); return true; }
     if (cmd === 'expgo' && p.zone.exp) {
       const s = p.zone.map.exp!.sections.find(x => x.id === a[0]) ?? p.zone.map.exp!.sections.find(x => x.role === (a[0] ?? 'boss'));
-      if (s) { p.x = s.entry.x; p.y = s.entry.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
+      if (s) {
+        let x = s.entry.x, y = s.entry.y;
+        if (a[1] === 'mitte') { // nächste freie Stelle nahe der Mitte
+          const cx = (s.cx + 0.5) * TILE, cy = (s.cy + 1.5) * TILE;
+          for (let r = 0; r < 120; r += 8) { let hit = false; for (let k = 0; k < 12 && !hit; k++) { const nx = cx + Math.cos(k / 2) * r, ny = cy + Math.sin(k / 2) * r; if (circleFree(p.zone.solidWalk, nx, ny, CFG.player.radius + 1)) { x = nx; y = ny; hit = true; } } if (hit) break; }
+        }
+        p.x = x; p.y = y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch });
+      }
       else p.toast('Abschnitte: ' + p.zone.map.exp!.sections.map(x => x.id).join(', '));
       return true;
     }
-    if (cmd === 'expsieg' && p.zone.boss && p.zone.exp) { const b = p.zone.boss; if (!b.active) { const a2 = p.zone.map.bossRoom!; p.x = (a2.cx + 0.5) * TILE; p.y = (a2.cy + 3) * TILE; } p.zone.hitMob(b.mob, p, 1e9, 'phys'); return true; }
+    if (cmd === 'expsieg' && p.zone.boss && p.zone.exp) { const b = p.zone.boss; if (!b.active) { const a2 = p.zone.map.bossRoom!; p.x = (a2.cx + 0.5) * TILE; p.y = (a2.cy + 3) * TILE; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); (b as any).start(); } b.mob.invuln = false; b.mob.vuln = 1; p.zone.hitMob(b.mob, p, 1e9, 'phys'); return true; }
     return false;
   },
   dumpInfo: runInfo,
