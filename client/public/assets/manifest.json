@@ -44,6 +44,13 @@
    "cols": 43,
    "rows": 3
   },
+  "npc_alchemistin": {
+   "file": "sprites/chars/npc_alchemistin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
   "npc_archaeologin": {
    "file": "sprites/chars/npc_archaeologin.png",
    "fw": 32,
@@ -93,8 +100,22 @@
    "cols": 43,
    "rows": 3
   },
+  "npc_haendler_hub": {
+   "file": "sprites/chars/npc_haendler_hub.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
   "npc_haendlerin": {
    "file": "sprites/chars/npc_haendlerin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_hallenwart": {
+   "file": "sprites/chars/npc_hallenwart.png",
    "fw": 32,
    "fh": 40,
    "cols": 43,
@@ -121,6 +142,20 @@
    "cols": 43,
    "rows": 3
   },
+  "npc_lagerverwalter": {
+   "file": "sprites/chars/npc_lagerverwalter.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_meister": {
+   "file": "sprites/chars/npc_meister.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
   "npc_nomade": {
    "file": "sprites/chars/npc_nomade.png",
    "fw": 32,
@@ -135,6 +170,13 @@
    "cols": 43,
    "rows": 3
   },
+  "npc_schmiedin": {
+   "file": "sprites/chars/npc_schmiedin.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
   "npc_vael": {
    "file": "sprites/chars/npc_vael.png",
    "fw": 32,
@@ -144,6 +186,13 @@
   },
   "npc_wache": {
    "file": "sprites/chars/npc_wache.png",
+   "fw": 32,
+   "fh": 40,
+   "cols": 43,
+   "rows": 3
+  },
+  "npc_wirtin": {
+   "file": "sprites/chars/npc_wirtin.png",
    "fw": 32,
    "fh": 40,
    "cols": 43,
@@ -587,7 +636,7 @@
   "obj": {
    "file": "atlases/obj.png",
    "json": "atlases/obj.json",
-   "frames": 675
+   "frames": 744
   },
   "fx": {
    "file": "atlases/fx.png",
@@ -597,7 +646,7 @@
   "icons": {
    "file": "atlases/icons.png",
    "json": "atlases/icons.json",
-   "frames": 434
+   "frames": 454
   }
  },
  "liquids": {
@@ -633,6 +682,12 @@
   },
   "schatten": {
    "file": "liquids/schatten.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 8
+  },
+  "quellwarte": {
+   "file": "liquids/quellwarte.png",
    "fw": 64,
    "fh": 64,
    "frames": 8
