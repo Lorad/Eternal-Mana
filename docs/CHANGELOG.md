@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0 – Feinschliff
+
+- Spieltest mit Spielermodell (`scripts/playtest.ts`, `scripts/playtest/*`): drei Spielertypen, ganze Dungeon- und
+  Riss-Durchläufe, Bosse allein und zu zweit, Tempo, Wirtschaft, Stärkequellen, Weltinhalte. Abstimmung von Gegnerwerten,
+  Bossen, Fähigkeiten, Legendären Waffen, Rissen und Neuem Kreis; Deckel für Heilung und Lebensraub; Schonfrist nach
+  Geschosstreffern. Wächter-Tests `tests/balance.test.ts`, Balance-Abschnitt in `docs/GAME_DESIGN.md`.
+- Handbuch (aus Spieldaten erzeugt), Hinweise beim ersten Kontakt, HUD-Rangfolge, einheitliche Fensterköpfe, Gamepad in allen
+  Fenstern, „Blitze reduzieren“, Leistungsanzeige, Fehlerwege bei Verbindungsverlust.
+- Eigene Bewegung in Echtzeit auch unter 20 Bildern pro Sekunde.
+- `npm run test:e2e:all`: alle Browser-Durchläufe mit je eigenem Server; neue Durchläufe `erste-schritte` und `fenster`;
+  Leistungsmessung im Browser (`scripts/perf-browser.mjs`).
+- Grafik: 30 Trophäen-Miniaturen, Hof-Objekte, Symbole, überarbeitete Begleiter, Gewänder und Objekte.
+- Dokumentation auf dem Stand 0.3–0.8.
+
 ## 0.7.1 – Gemeinsam
 
 - Gruppenverwaltung ausgelagert nach `server/src/social/party.ts`: Anführer, Ernennen, Entfernen, Auflösen, Einladungsfrist,

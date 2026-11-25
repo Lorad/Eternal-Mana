@@ -122,6 +122,8 @@ Bewusst schlank: wenige Währungen, keine Berufsstufen, alles über Rezepte, Roh
 
 ## 4. Meilensteine
 
+Stand: alle Meilensteine bis 0.8 sind umgesetzt (siehe `PROJECT_STATUS.md` und `docs/CHANGELOG.md`).
+
 | Version | Inhalt |
 |---|---|
 | 0.3 | **Handwerk & Elemente:** Rohstoffe, Stationen, Rezepte, Sets, Legendäre Waffen, Verzauberung, Resistenzen, Zustände, Reaktionen |

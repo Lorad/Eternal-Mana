@@ -3,6 +3,46 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.8.0 – Feinschliff
+_25.11.2026_
+
+### Hilfe im Spiel
+- **Handbuch** (Taste **H**): erklärt jedes System auf einer Seite; Zahlen stammen direkt aus den Spieldaten.
+- **Hinweise:** Wenn ein System zum ersten Mal wichtig wird, erscheint ein kurzer Hinweis – über der Aktionsleiste oder im passenden Fenster. Lassen sich jederzeit abschalten.
+- Die Tastenbelegung in den Einstellungen enthält alle neuen Tasten.
+
+### Bedienung
+- Aufgeräumtes HUD: Karte, Riss, Quests und Ereignisse teilen sich die rechte Spalte nach Wichtigkeit; die Questverfolgung lässt sich mit **T** einklappen.
+- Einheitliche Fensterköpfe; alle Fenster passen auch auf kleine Bildschirme.
+- **Gamepad** in allen neuen Fenstern, mit Schiebereglern für Mengen.
+- Neue Einstellung **„Blitze reduzieren“**: weichere Blitze, kaum Wackeln – auch bei Aetherions Elementwechseln.
+- Leistungsanzeige mit **F3**.
+
+### Technik
+- Auf langsamen Rechnern (unter 20 Bildern pro Sekunde) läuft die eigene Figur jetzt in Echtzeit statt verlangsamt.
+- Verbindungsabbrüche und ein neu gestarteter Server führen zu einer klaren Meldung mit Ausweg statt zu einem stehenden Bild.
+- Weniger Arbeit je Bild in vollen Szenen.
+
+### Balance
+- Ein Spieltest mit Spielermodell hat die ganze Reise gemessen; die Zahlen sind danach abgestimmt.
+- **Gegner halten mehr aus und treffen härter** – gewöhnliche Gegner fielen vorher nach ein, zwei Treffern. Elitegegner sind deutlich zäher.
+- **Bosse** dauern lang genug für alle drei Phasen. Sorgfältig gespielt ist jeder Story-Boss allein zu schaffen, nichts ist unausweichlich.
+- **Vael und Aetherion** sind schärfer; Spiralen haben jetzt immer eine Lücke.
+- Salven treffen nur noch einmal statt mit jedem Geschoss. Heilzauber und Lebensraub sind gedeckelt.
+- **Legendäre Waffen** angeglichen: Magier und Paladin stärker, Waldläufer etwas schwächer.
+- **Mana-Risse:** Schaden steigt gleichmäßiger, Richtzeiten sind knapper, Boss-Echos sind echte Gegner. Ein höherer Neuer Kreis ist deutlich spürbar.
+- Weltbosse und seltene Monster sind zäher.
+
+### Grafik
+- Ausgestellte Trophäen stehen als kleine Figuren auf den Ständern.
+- Eigene Symbole für die Boss- und Wegzeichen-Trophäen, den Pilzling und „Ausgeruht“; neuer Wegweiser, Bauplätze und Begleiterplatz auf dem Hof.
+- Begleiter überarbeitet: Moosling hebt sich vom Gras ab, Runenkäfer sieht wie ein Käfer aus, Schritte passen zur Strecke.
+- Gewänder überarbeitet: deutlichere Motive, Schatten-Gewänder auf dunklem Boden sichtbar.
+- Fundstein, Sternsplitter und Alchemietisch neu gezeichnet.
+
+### Behoben
+- Ein Hinweis im Fenster konnte von einer noch wartenden Hinweiskarte blockiert werden.
+
 ## 0.7.1 – Gemeinsam
 _25.11.2026_
 
