@@ -531,6 +531,7 @@ const DUNGEON_DECOR: Record<BiomeId, [string, boolean][]> = {
   frost: [['ice_spike', true], ['snow_rock', true], ['bones', false], ['frozen_bush', true]],
   ruinen: [['urn', true], ['rubble', true], ['pillar_broken', true], ['bones', false]],
   schatten: [['void_crystal', true], ['tombstone', true], ['bones', false], ['floating_shard', false]],
+  quellwarte: [], // Hub: kein Dungeon
 };
 
 /** Einrichtungsgegenstände je Raumrolle: [Frame, solide] */

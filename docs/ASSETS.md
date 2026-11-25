@@ -21,6 +21,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `char_schattenjaeger` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `char_waldlaeufer` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_aelteste` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_alchemistin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_archaeologin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_bergfrau` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_echo` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
@@ -28,14 +29,20 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `npc_fellhaendlerin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_geist` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_gelehrter` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_haendler_hub` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_haendlerin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_hallenwart` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_jaegerin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_kind` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_kraemer` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_lagerverwalter` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_meister` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_nomade` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_schmied` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_schmiedin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_vael` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 | `npc_wache` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
+| `npc_wirtin` | 32×40 | 129 | idle 4, walk 6, run 6, attack 4, heavy 5, dodge 4, hit 2, cast 4, interact 3, death 5 |
 
 ## Spritesheets: mobs
 
@@ -110,7 +117,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `char_waldlaeufer_schatten` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
 | `char_waldlaeufer_wald` | `char_waldlaeufer` | 32×40 | 129 | 16.1 kB |
 
-## Atlas: obj (675 Frames, 2048×375)
+## Atlas: obj (744 Frames, 2048×463)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -131,6 +138,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `birch_bare` | 36×64 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `birdhouse` | 16×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `bones` | 16×10 | 1 | Weltdeko · Modul `objects/kristall.ts` |
+| `boss_seal` | 16×32 | 4 (`_0…_3`) | Weltdeko · Modul `objects/hub.ts` |
 | `boulder_wall` | 16×28 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `bounty_board` | 36×36 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `brazier` | 16×28 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/common.ts` |
@@ -150,6 +158,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `cave_moss` | 16×10 | 1 | interaktives Objekt · Modul `objects/kristall.ts` |
 | `chain_pillar` | 20×52 | 1 | Weltdeko · Modul `objects/schatten.ts` |
 | `charred_stump` | 18×16 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `checkpoint` | 24×40 | 4 (`_0…_3`) | Weltdeko · Modul `objects/hub.ts` |
 | `chest_buried` | 22×18 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `chest_gold_closed` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `chest_gold_mid` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
@@ -161,6 +170,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `chest_wood_mid` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `chest_wood_open` | 20×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `clover` | 16×12 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `collapse_floor` | 16×16 | 3 (`_0…_2`) | Weltdeko · Modul `objects/hub.ts` |
 | `crate` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `crit_bird_fly` | 12×12 | 4 (`_0…_3`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
 | `crit_bird_idle` | 12×12 | 2 (`_0…_1`) | Kleintier (Umgebung) · Modul `objects/gruenwald.ts` |
@@ -246,6 +256,25 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `drop_key` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `drop_potion` | 14×14 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `ember_vent` | 16×20 | 4 (`_0…_3`) | Weltdeko · Modul `objects/glut.ts` |
+| `exp_frost_a` | 22×44 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_frost_b` | 24×32 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_frost_c` | 24×30 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_glut_a` | 30×26 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_glut_b` | 32×16 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_glut_c` | 24×32 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_gruenwald_a` | 38×30 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_gruenwald_b` | 20×34 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_gruenwald_c` | 20×42 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_kristall_a` | 26×54 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_kristall_b` | 32×26 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_kristall_c` | 24×44 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_ruinen_a` | 28×40 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_ruinen_b` | 18×38 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_ruinen_c` | 20×30 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_schatten_a` | 24×42 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_schatten_b` | 20×42 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `exp_schatten_c` | 22×42 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `expedition_portal` | 64×80 | 6 (`_0…_5`) | Weltdeko · Modul `objects/hub.ts` |
 | `eye_stalk` | 14×28 | 4 (`_0…_3`) | Weltdeko · Modul `objects/schatten.ts` |
 | `fence_h` | 16×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `fence_post` | 8×18 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
@@ -277,6 +306,27 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `house_c` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `house_shelf` | 26×38 | 1 | Weltdeko · Modul `objects/common.ts` |
 | `house_table` | 32×24 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `hub_alchemie` | 88×104 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_bank` | 30×18 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_banner` | 20×54 | 4 (`_0…_3`) | Weltdeko · Modul `objects/hub.ts` |
+| `hub_baum` | 44×68 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_blumen` | 32×16 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_brunnen` | 64×52 | 4 (`_0…_3`) | Weltdeko · Modul `objects/hub.ts` |
+| `hub_faesser` | 24×20 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_gasthaus` | 112×104 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_gruppe` | 96×80 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_haendler` | 96×90 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_halle` | 112×100 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_kisten` | 28×24 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_kuebel` | 18×22 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_lager` | 104×88 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_laterne` | 14×42 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_meister` | 104×96 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_poller` | 8×13 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_schmiede` | 96×92 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_stand` | 50×42 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_statue` | 24×44 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `hub_wegweiser` | 24×38 | 1 | Weltdeko · Modul `objects/hub.ts` |
 | `hueterschrein` | 32×48 | 4 (`_0…_3`) | Weltdeko · Modul `objects/common.ts` |
 | `ice_crack` | 24×14 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `ice_crystal` | 20×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
@@ -345,12 +395,14 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `plate_down` | 16×16 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `plate_up` | 16×16 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `portal` | 40×56 | 8 (`_0…_7`) | interaktives Objekt · Modul `objects/common.ts` |
+| `portal_small` | 32×44 | 4 (`_0…_3`) | interaktives Objekt · Modul `objects/hub.ts` |
 | `prayer_flags` | 48×40 | 4 (`_0…_3`) | Weltdeko · Modul `objects/frost.ts` |
 | `puddle_cave` | 20×12 | 1 | Weltdeko · Modul `objects/kristall.ts` |
 | `push_block` | 16×22 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `quellstein` | 32×52 | 6 (`_0…_5`) | interaktives Objekt · Modul `objects/common.ts` |
 | `quellstein_off` | 32×52 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `reeds` | 16×26 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `reward_altar` | 40×36 | 1 | Weltdeko · Modul `objects/hub.ts` |
 | `ribcage` | 30×22 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `riss_stein` | 28×44 | 4 (`_0…_3`) | Weltdeko · Modul `objects/common.ts` |
 | `rock_cave_l` | 36×30 | 1 | Weltdeko · Modul `objects/kristall.ts` |
@@ -368,6 +420,8 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `scarecrow` | 24×40 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `scorched_bush` | 20×16 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `seal_pedestal` | 24×32 | 1 | interaktives Objekt · Modul `objects/common.ts` |
+| `secret_wall` | 16×32 | 1 | Weltdeko · Modul `objects/hub.ts` |
+| `secret_wall_open` | 16×32 | 1 | Weltdeko · Modul `objects/hub.ts` |
 | `shadow_spire` | 20×48 | 1 | Weltdeko · Modul `objects/schatten.ts` |
 | `shadow_spire_l` | 36×72 | 1 | Weltdeko · Modul `objects/schatten.ts` |
 | `shard` | 16×26 | 6 (`_0…_5`) | interaktives Objekt · Modul `objects/common.ts` |
@@ -554,7 +608,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `void_mote` | 5×5 | 3 (`_0…_2`) | Wetter/Umgebung |
 | `weak` | 16×16 | 2 (`_0…_1`) | Effekt |
 
-## Atlas: icons (434 Frames, 501×551)
+## Atlas: icons (454 Frames, 501×576)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -562,6 +616,9 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_armor_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_armor_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_axe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_boots_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_boots_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_boots_robe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_bosskey` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_bow` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_buff_ausgeruht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -584,6 +641,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_elx_sieben` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_speed` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_elx_stern` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_focus` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_beeren` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_eintopf` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -597,6 +655,9 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_food_tee` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_food_wette` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_gem` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_gloves_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_gloves_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_gloves_robe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_gold` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_hammer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_helm_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -608,6 +669,9 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_leg_paladin` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_leg_schattenjaeger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_leg_waldlaeufer` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_legs_heavy` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_legs_light` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_legs_robe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_aether` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_ashclaw` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_berry` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -642,6 +706,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_mat_void` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_weave` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_wood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_offdagger` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_pet_pilzling` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_cleanse` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_elixir` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -649,6 +714,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_potion_hp4` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_mp` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_mp4` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_quiver` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_recipe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_ring` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_robe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -660,6 +726,13 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_seal_water` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_seal_wind` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_shard` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_shield` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_slot_amulet` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_slot_boots` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_slot_gloves` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_slot_legs` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_slot_offhand` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_slot_ring` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_staff` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_sword` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tmap_frost` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -668,6 +741,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_tmap_kristall` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tmap_ruinen` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tmap_schatten` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tome` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_altvater_reif` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_aschenmaul` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_b_aetherion` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -1003,6 +1077,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `liquids/kristall.png` | 64×64 | 8 |
 | `liquids/glut.png` | 64×64 | 8 |
 | `liquids/schatten.png` | 64×64 | 8 |
+| `liquids/quellwarte.png` | 64×64 | 8 |
 
 ## Overlays (256×256, nahtlos)
 
