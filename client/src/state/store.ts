@@ -1,6 +1,6 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, EncDialog, ExpLobbyInfo, ExpResult, ExpRunInfo, HomeData, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, HubStock, LfgEntry, ExpLobbyInfo, ExpResult, ExpRunInfo, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
 import { bus } from './bus';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf' | 'sammlung';
@@ -107,6 +107,12 @@ export interface UiState {
   fatal: string | null;
   /** der Server läuft mit einer anderen Version als dieser Browser geladen hat (nach einem Update) */
   stale: string | null;
+  // ---- Quellwarte (0.9)
+  /** offenes Fenster einer Einrichtung der Quellwarte: Reiter (haendler, meister, lager, geruechte, gesuche, halle, karte) */
+  hubWin: { tab: string } | null;
+  /** Angebot des Ausrüstungshändlers (vom Server) und Gruppengesuche am Brett (`lfgAt` = performance.now() beim Empfang) */
+  hubStock: HubStock | null;
+  lfg: LfgEntry[]; lfgAt: number;
   // ---- Expeditionen (0.9; Oberfläche: ui/expedition.tsx)
   /** Auswahlfenster am Portal offen (`stone` = am Portal geöffnet) */
   expWin: { at: boolean } | null;
@@ -131,6 +137,7 @@ const state: UiState = {
   trade: null, tradeAt: 0, tradeReq: null, qOffers: [], inspect: null, playerMenu: null,
   home: null, heim: null, hof: null, sammlungTab: 'uebersicht',
   trackerOpen: false, hint: null, helpTab: 'start', loadFail: null, fatal: null, stale: null,
+  hubWin: null, hubStock: null, lfg: [], lfgAt: 0,
   expWin: null, expLobby: null, expRun: null, expRunAt: 0, expResult: null, expSummary: null, expParty: null, expWeekly: null,
 };
 
@@ -177,13 +184,13 @@ export function pushChat(from: string, s: string, ch: ChatLine['ch']) {
 /** Öffnet das Handbuch (0.8), auf Wunsch gleich mit einem bestimmten Kapitel. */
 export function openHelp(tab?: string) {
   if (state.screen !== 'game' || state.cine || state.trade) return;
-  store.set({ ...(tab ? { helpTab: tab } : {}), panel: 'help', dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null, inspect: null, playerMenu: null });
+  store.set({ ...(tab ? { helpTab: tab } : {}), panel: 'help', dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null, inspect: null, playerMenu: null, hubWin: null });
 }
 /** Öffnet/schließt ein Fenster (gleiches Fenster erneut = schließen). */
 export function togglePanel(p: Panel) {
   if (state.screen !== 'game' || state.cine) return;
   if (state.trade) return; // erst den Handel beenden
-  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null, inspect: null, playerMenu: null });
+  store.set({ panel: state.panel === p ? null : p, dialog: null, sign: null, craft: null, lore: null, endgame: null, wshop: null, hof: null, inspect: null, playerMenu: null, hubWin: null });
 }
 /** Schließt das oberste offene Element. Gibt true zurück, wenn etwas geschlossen wurde. */
 export function closeTop(): boolean {
@@ -197,6 +204,7 @@ export function closeTop(): boolean {
   if (state.enc) { store.set({ enc: null }); return true; }
   if (state.wshop) { store.set({ wshop: null }); return true; }
   if (state.hof) { store.set({ hof: null }); return true; }
+  if (state.hubWin) { store.set({ hubWin: null }); return true; }
   if (state.craft) { store.set({ craft: null }); return true; }
   if (state.expResult) { store.set({ expResult: null }); return true; }
   if (state.expWin) { store.set({ expWin: null }); return true; }
@@ -209,5 +217,5 @@ export function closeTop(): boolean {
 }
 /** true, wenn ein Fenster offen ist, das Spieleingaben (Angriff usw.) blockieren soll */
 export function uiBlocksGame(): boolean {
-  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.hof || state.trade || state.inspect || state.expWin || state.expResult);
+  return !!(state.panel || state.dialog || state.craft || state.endgame || state.sign || state.story || state.chatOpen || state.dead || state.cine || state.lore || state.enc || state.wshop || state.hof || state.trade || state.inspect || state.hubWin || state.expWin || state.expResult);
 }

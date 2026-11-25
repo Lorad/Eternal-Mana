@@ -15,6 +15,7 @@ import { invCap, migrateEquip } from '../../shared/src/equip';
 import { clampRarity } from '../../shared/src/rarity';
 import { LEGACY_SLOTS, SLOTS } from '../../shared/src/types';
 import { sanitizeHome } from '../../shared/src/data/collection';
+import { sanitizeHubChar } from '../../shared/src/data/hubdata';
 import { LOOKS } from '../../shared/src/data/looks';
 import { PETS } from '../../shared/src/data/pets';
 import { FACTIONS, backfillRep } from '../../shared/src/data/factions';
@@ -97,6 +98,7 @@ export function sanitizeChar(raw: any): CharData | null {
   }
   if (c.rest !== undefined) { c.rest = num(c.rest, 0); if (!c.rest) delete c.rest; }
   if (c.cv !== undefined) { c.cv = Math.floor(num(c.cv, 0, 0, 99)); if (!c.cv) delete c.cv; }
+  sanitizeHubChar(c); // 0.9: Quellwarte – Meisterränge, verdientes Gold, Händlerkäufe
   if (!ZONES[c.zone]) { c.zone = 'gruenwald'; c.x = 0; c.y = 0; }
   if (!c.respawn || !ZONES[c.respawn.zone]) c.respawn = { zone: 'gruenwald', x: 0, y: 0 };
   const d = computeStats(c);

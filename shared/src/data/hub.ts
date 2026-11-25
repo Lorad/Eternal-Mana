@@ -18,9 +18,9 @@ export const HUB_ZONE = 'quellwarte';
  */
 export type HubSpot = 'ankunft' | 'portal' | 'rueckkehr';
 export const HUB_SPOTS: Record<HubSpot, [number, number]> = {
-  ankunft: [40, 52],
-  portal: [40, 22],
-  rueckkehr: [40, 27],
+  ankunft: [38, 53],
+  portal: [38, 19],
+  rueckkehr: [38, 24],
 };
 
 /** Die Einrichtungen der Quellwarte (Schlüssel für Karte, NPCs, Hinweise und Handbuch). */

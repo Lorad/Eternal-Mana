@@ -50,7 +50,7 @@ describe('Daten', () => {
   });
   it('jede Station hat einen NPC in der Welt, Kochstellen stehen frei und erreichbar', () => {
     const placed = new Set<string>();
-    for (const z of ZONE_LIST) for (const o of getMap(z.id).objects) if (o.type === 'npc') placed.add(o.tag!);
+    for (const z of Object.values(ZONES)) for (const o of getMap(z.id).objects) if (o.type === 'npc') placed.add(o.tag!); // 0.9: auch die Quellwarte
     for (const npc in STATION_NPCS) { expect(NPCS[npc], npc).toBeTruthy(); expect(placed.has(npc), npc).toBe(true); }
     for (const st of ['forge', 'alchemy', 'cooking', 'enchant'] as const) expect(Object.values(STATION_NPCS).some(l => l.includes(st))).toBe(true);
     for (const zid in COOK_SPOTS) {

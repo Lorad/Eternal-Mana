@@ -23,6 +23,7 @@ import { Zone, type Mob, type Obj } from '../zone';
 import { absorb, onDirty, onKill, refresh, unlockLook, unlockPet } from './collect';
 import { OWNER, acc, flush, homeOf, touch } from './state';
 import { stashMessage } from './storage';
+import { atFacility } from '../hub';
 
 type HomeMsg = Extract<ClientMsg, { t: 'home' }>;
 const H = CFG.home;
@@ -153,6 +154,7 @@ function handle(g: Game, p: Player, m: HomeMsg) {
     }
     case 'leave': if (OWNER.has(z)) toQuellhain(g, p); return;
     case 'put': case 'take': case 'gold': case 'sort':
+      if (atFacility(p, 'lager')) return stashMessage(g, p, m); // 0.9: dieselbe Truhe im Lagerhaus der Quellwarte – ohne Hof
       if (!atOwn(p)) return reject(p, OWNER.has(z) ? 'Fremde Truhen öffnet man nicht. Mirelda hätte dazu eine Meinung.' : 'Die Lagertruhe steht auf deinem Hof.');
       if (!near(p, 'stash')) return reject(p, 'Dafür musst du an der Lagertruhe stehen.');
       return stashMessage(g, p, m);

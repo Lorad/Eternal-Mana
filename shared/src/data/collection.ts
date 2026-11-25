@@ -167,7 +167,10 @@ export function milestoneProgress(h: HomeData, m: Milestone): number { return m.
 /** Meilensteine, die erreicht, aber noch nicht ausgezahlt sind */
 export function dueMilestones(h: HomeData): Milestone[] { return MILESTONES.filter(m => !h.ms.includes(m.id) && milestoneProgress(h, m) >= m.need); }
 /** Plätze der Lagertruhe: Ausbaustufe plus Meilensteine der Sammlung */
-export function stashSlots(h: HomeData): number { let n = baseSlots(h); for (const id of h.ms) n += MILESTONE[id]?.slots ?? 0; return n; }
+export function stashSlots(h: HomeData): number {
+  let n = baseSlots(h); for (const id of h.ms) n += MILESTONE[id]?.slots ?? 0;
+  return n + Math.max(0, Math.min(CFG.hub.lager.rowsMax, Math.floor(h.rows ?? 0))) * CFG.hub.lager.row; // 0.9: Reihen aus dem Lagerhaus der Quellwarte
+}
 
 // Titel der Sammlung hängen sich in das Titelsystem ein (0.5). Ein Charakter führt sie, sobald das Profil den Meilenstein
 // erreicht hat – der Server spiegelt das als Flag `sm:<meilenstein>` in jeden Charakter des Profils.
@@ -205,5 +208,7 @@ export function sanitizeHome(raw: any): HomeData {
   }
   const stands = Array.isArray(raw.stands) ? raw.stands : [];
   h.stands = Array.from({ length: CFG.home.stands[HOME_MAX] }, (_, i) => (typeof stands[i] === 'string' && HOME_TROPHY[stands[i]] && h.seen[trophySeen(stands[i])] ? stands[i] : ''));
+  const rows = Math.floor(num(raw.rows, 0, 0, CFG.hub.lager.rowsMax)); // 0.9: Lagerhaus der Quellwarte
+  if (rows > 0) h.rows = rows;
   return h;
 }

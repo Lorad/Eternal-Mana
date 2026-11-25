@@ -20,6 +20,7 @@ export const STATION_NPCS: Record<string, StationId[]> = {
   borin: ['forge'], hedda: ['forge'], rakhan: ['forge', 'cooking'], pim: ['forge', 'alchemy'],
   sella: ['alchemy'], ayla: ['cooking'], jorund: ['cooking'],
   fenwick: ['enchant'], liora: ['enchant'],
+  gunda: ['forge'], irmela: ['alchemy'], // 0.9: Schmiede und Alchemie der Quellwarte
 };
 /** Stations-Kennung für Lagerfeuer in der Welt (statt einer NPC-ID) */
 export const FIRE = 'fire';

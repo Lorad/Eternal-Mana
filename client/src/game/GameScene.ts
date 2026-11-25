@@ -43,6 +43,8 @@ import { Lighting, daylight, lerpC, mulC, skyColor, type LightSrc } from './ligh
 import { HOME_TROPHY } from '../../../shared/src/data/home';
 import { glowColor } from '../../../shared/src/data/looks';
 import { HOME_AT } from '../../../shared/src/data/recipes';
+import { HUB_BUILDINGS, HUB_FRAME_FALLBACK, HUB_SMOKE, hubLook } from '../../../shared/src/data/hubart';
+import { effRank } from '../../../shared/src/data/hubdata';
 import { PetView } from './pets';
 import { expArtFallback } from './expart';
 import { openExpedition } from '../ui/expedition';
@@ -58,7 +60,7 @@ const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
 const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags|mana_surge|star_shard|lore_|hub_blumen|boss_seal|exp_schatten_b)/;
 /** Flammen flackern schnell, alles andere wiegt sich langsam */
-const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook|home_sign)/;
+const FLICKER = /^(hub_laterne|campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook|home_sign)/;
 /** [Radius, Farbe, Stärke, Flackern] */
 const LIGHTS: Record<string, [number, number, number, number]> = {
   campfire: [100, 0xffb060, 1, 0.07], brazier: [92, 0xffac58, 1, 0.07], lamp: [84, 0xffd89a, 0.9, 0.03], torch: [84, 0xffb870, 0.95, 0.07], wall_torch: [84, 0xffb870, 0.95, 0.07],
@@ -79,10 +81,10 @@ const LIGHTS: Record<string, [number, number, number, number]> = {
   exp_glut_c: [56, 0xff7a30, 0.7, 0.05], exp_ruinen_c: [30, 0x80c8ff, 0.4, 0], exp_schatten_a: [40, 0xb070ff, 0.5, 0], exp_schatten_c: [44, 0xff80d8, 0.6, 0.03],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]
-  gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92],
+  gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92], quellwarte: [0xffffff, 0x6c7a62],
 };
-const STEP_SFX: Record<string, SfxName> = { gruenwald: 'step_grass', kristall: 'step_stone', glut: 'step_ash', frost: 'step_snow', ruinen: 'step_stone', schatten: 'step_stone' };
-const PORTAL_TINT: Record<string, number> = { gruenwald: 0x80ff90, kristall: 0x70d0ff, glut: 0xff8040, frost: 0xc0f0ff, ruinen: 0xffe080, schatten: 0xb060ff };
+const STEP_SFX: Record<string, SfxName> = { gruenwald: 'step_grass', kristall: 'step_stone', glut: 'step_ash', frost: 'step_snow', ruinen: 'step_stone', schatten: 'step_stone', quellwarte: 'step_stone' };
+const PORTAL_TINT: Record<string, number> = { gruenwald: 0x80ff90, kristall: 0x70d0ff, glut: 0xff8040, frost: 0xc0f0ff, ruinen: 0xffe080, schatten: 0xb060ff, quellwarte: 0x80ffe0 };
 const hexStr = (c: number) => '#' + c.toString(16).padStart(6, '0');
 const elTint = (el: Element) => (el === 'phys' ? 0xffffff : ELEMENT_COLOR[el]);
 
@@ -184,9 +186,12 @@ export class GameScene extends Phaser.Scene {
   };
 
   /** Löst einen Deko-Namen in einen Atlas-Frame auf (animierte Varianten `_0..n` haben Vorrang). */
-  private resolveFrame(f: string, alt = true): { frame: string; n: number } | null {
-    if (this.objTex.has(f + '_0')) return { frame: f + '_0', n: this.countFrames(f) };
-    if (this.objTex.has(f)) return { frame: f, n: 0 };
+  /** Frame im Objekt-Atlas; `base` = Name ohne Animationsnummer. 0.9: Fehlt ein Frame, springen die Rückfälle ein – Quellwarte (data/hubart.ts), Expeditionen (game/expart.ts). */
+  private resolveFrame(f: string, alt = true): { frame: string; n: number; base: string } | null {
+    if (this.objTex.has(f + '_0')) return { frame: f + '_0', n: this.countFrames(f), base: f };
+    if (this.objTex.has(f)) return { frame: f, n: 0, base: f };
+    const fb = HUB_FRAME_FALLBACK[f];
+    if (fb) return this.resolveFrame(fb);
     if (alt) for (const c of expArtFallback(f)) { const r = this.resolveFrame(c, false); if (r) return r; } // 0.9: Expeditionsgrafik mit Rückfall (game/expart.ts)
     return null;
   }
@@ -245,15 +250,15 @@ export class GameScene extends Phaser.Scene {
       if (flat && r.n > 1) { r.frame = `${d.f}_${(Math.floor(d.x) * 7 + Math.floor(d.y) * 13) % r.n}`; r.n = 0; }
       const s = this.add.image(d.x, d.y, 'obj', r.frame).setOrigin(0.5, 1).setDepth(flat ? 3 : d.y);
       const fh = s.height, fw = s.width;
-      const flick = FLICKER.test(d.f);
-      if (r.n > 1) this.animDecor.push({ s, base: d.f, n: r.n, period: flick ? 110 : 300, off: flick ? (d.x * 7 + d.y * 13) % 440 : d.x * 5 + d.y * 3, last: 0 });
+      const flick = FLICKER.test(d.f) || FLICKER.test(r.base);
+      if (r.n > 1) this.animDecor.push({ s, base: r.base, n: r.n, period: flick ? 110 : 300, off: flick ? (d.x * 7 + d.y * 13) % 440 : d.x * 5 + d.y * 3, last: 0 });
       if (!flat && fh >= 14 && !NO_SHADOW.test(d.f)) this.decorShadows.push({ s: makeShadow(this, 'obj', r.frame, 1), x: d.x, y: d.y, indoor: { rot: 0, len: 0, alpha: 0 } });
-      if (fh >= 60 && !d.f.startsWith('house') && d.f !== 'cabin') {
+      if (fh >= 60 && !d.f.startsWith('house') && d.f !== 'cabin' && !HUB_BUILDINGS.has(d.f)) {
         this.fadeDecor.push({ s, hw: fw * 0.42, h: fh });
         if (d.f.startsWith('tree') && bigCount++ % 5 === 0) rayAnchors.push({ x: d.x, y: d.y });
       }
-      if (d.f === 'house_a' || d.f === 'house_c' || d.f === 'cabin') this.smokeSpots.push({ x: d.x + 18, y: d.y - fh + 8 });
-      const L = LIGHTS[d.f];
+      if (d.f === 'house_a' || d.f === 'house_c' || d.f === 'cabin' || HUB_SMOKE.has(d.f)) this.smokeSpots.push({ x: d.x + 18, y: d.y - fh + 8 });
+      const L = LIGHTS[d.f] ?? LIGHTS[r.base];
       if (L && L[0] > 0) {
         const ly = d.y - Math.min(fh * 0.6, 22);
         this.staticLights.push({ x: d.x, y: ly, r: L[0], color: L[1], i: L[2], flicker: L[3] });
@@ -419,9 +424,11 @@ export class GameScene extends Phaser.Scene {
   private addPlayer(p: PlayerInfo) {
     if (p.id === this.me.info.id) { this.me.info = p; return; }
     const old = this.players.get(p.id);
-    if (old) { old.info = p; old.label?.setText(p.title ? `${p.name} · ${p.title}` : p.name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff'); return; }
+    // 0.9: ⚑ = hängt ein Gruppengesuch aus (Quellwarte)
+    const tag = (q: PlayerInfo) => (q.lfg ? '⚑ ' : '') + (q.title ? `${q.name} · ${q.title}` : q.name), col = (q: PlayerInfo) => (this.inMyParty(q) ? '#9dffb0' : q.lfg ? '#ffd98a' : '#e8f4ff');
+    if (old) { old.info = p; old.label?.setText(tag(p)).setColor(col(p)); return; }
     const v = new PlayerView(this.ctx, p, false);
-    v.label?.setText(p.title ? `${p.name} · ${p.title}` : p.name).setColor(this.inMyParty(p) ? '#9dffb0' : '#e8f4ff');
+    v.label?.setText(tag(p)).setColor(col(p));
     v.x = -999; v.y = -999;
     this.players.set(p.id, v);
   }
@@ -445,7 +452,7 @@ export class GameScene extends Phaser.Scene {
     switch (o.type) {
       case 'npc': {
         const def = NPCS[o.tag!];
-        const key = 'npc_' + (def?.look ?? 'wache');
+        const key = 'npc_' + hubLook(def?.look ?? 'wache', k => this.textures.exists(k)); // 0.9: Looks der Quellwarte mit Rückfall
         const s = this.add.sprite(o.x, o.y + 6, key, '0').setOrigin(0.5, 37 / 40).setDepth(o.y);
         const sh = makeShadow(this, key, '0', 37 / 40); sh.setData('x', o.x).setData('y', o.y + 6);
         v.shadows.push(sh);
@@ -481,6 +488,14 @@ export class GameScene extends Phaser.Scene {
         break;
       }
       // ---- Lebendige Welt (0.6): Objekte der Ereignisse und Begegnungen – Frame aus dem Objekt-Atlas, optional Beschriftung und Licht
+      case 'qobj': { // 0.9: Objekte der Quellwarte (Bretter, Truhe, Vitrine, Tore) – Frame mit Rückfall, Beschriftung, Licht
+        const f = pr.frame ? this.resolveFrame(pr.frame) : null;
+        if (f) { img(o.x, o.y + 8, f.frame, undefined, true); (v as any).anim = f.n > 1 ? f.base : null; }
+        if (pr.frame === 'portal' && pr.light) v.parts[0]?.setTint(pr.light[1]);
+        if (pr.label) v.label = this.text(o.x, o.y - (pr.frame === 'portal' ? 52 : f ? 34 : 36), pr.label, '#ffe9a8', 7).setOrigin(0.5, 1);
+        if (pr.light) { v.light = pr.light; v.glow = this.add.image(o.x, o.y - 10, 'fx', 'glow').setScale(pr.light[0] / 110).setTint(pr.light[1]).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }
+        break;
+      }
       case 'wobj': case 'hobj': case 'xobj': { // 0.7: Hof-Objekte · 0.9: Expeditionen (Portal, Rastplatz, Runenscheiben, Siegel …) (Truhe, Stationen, Trophäenständer …) – gleiche Darstellung, Aussehen vom Server
         // 0.8: Trophäenständer – leer zeigt er nur das Kissen; eine ausgestellte Trophäe liegt als Miniatur `trophy_<id>` darauf
         // (gibt es für sie keine Miniatur, bleibt der Ständer mit Pokal).
@@ -1358,7 +1373,7 @@ export class GameScene extends Phaser.Scene {
       if (!input.pressed(('skill' + (i + 1)) as any)) continue;
       const id = c.hotbar[i];
       if (!id) continue;
-      const sk = SKILLS[id], rank = c.skills[id] ?? 0;
+      const sk = SKILLS[id], rank = effRank(c, id); // 0.9: mit Meisterrängen
       const cd = st.cds[id];
       if (!sk || rank < 1) continue;
       if (cd && cd.until > now + 60) { audio.playSfx('ui_error', { volume: 0.5 }); continue; }
@@ -1436,6 +1451,7 @@ export class GameScene extends Phaser.Scene {
         case 'rift': if (this.countFrames('void_rift') > 1) v.parts[0].setFrame(anim('void_rift', 120, 4)); v.parts[0].y = o.y + 8 + Math.sin(now / 260) * 2; break;
         case 'lore': if (!o.state && v.glow) v.glow.setAlpha(0.35 + 0.15 * Math.sin(now / 300 + o.id)); break;
         case 'riftstone': if (this.countFrames('riss_stein') > 1) v.parts[0].setFrame(anim('riss_stein', 170, 4)); if (v.glow) v.glow.setAlpha(0.3 + 0.15 * Math.sin(now / 340)); break;
+        case 'qobj': { const a: string | null = (v as any).anim; if (a && v.parts[0]) v.parts[0].setFrame(anim(a, 120, 4)); break; }
         case 'wobj': case 'hobj': case 'xobj': {
           const fr0: string | undefined = o.props?.frame, s0 = v.parts[0];
           if (!fr0 || !s0) break;
@@ -1503,7 +1519,7 @@ export class GameScene extends Phaser.Scene {
         case 'npc': text = `Mit ${NPCS[o.tag!]?.name ?? '???'} sprechen`; break;
         // ---- Lebendige Welt (0.6)
         case 'wobj': if (o.props?.prompt && !(o.props.hide1 && o.state)) text = o.props.prompt; break;
-        case 'hobj': case 'xobj': if (o.props?.prompt) text = o.props.prompt; break;
+        case 'hobj': case 'qobj': case 'xobj': if (o.props?.prompt) text = o.props.prompt; break;
         case 'dig': text = 'Hier graben'; break;
         case 'chest': if (!o.state) text = 'Truhe öffnen'; break;
         case 'door': if (!o.state) text = o.props?.locked && !o.props?.unlocked ? 'Tür aufschließen' : 'Tür öffnen'; break;

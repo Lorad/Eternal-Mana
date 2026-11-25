@@ -3,6 +3,7 @@
  * (shared/src/config.ts und shared/src/data/*) – ändert sich dort etwas, steht es hier von selbst richtig.
  * Erreichbar über das Menü, die Taste „Handbuch“ (Standard H oder F1) und aus jedem Hinweis heraus.
  */
+import { HubHelp } from './hub';
 import type { ComponentChildren } from 'preact';
 import { CFG, ELEMENTS, ELEMENT_NAME, RARITY_COLOR, RARITY_NAME, strongAgainst } from '../../../shared/src/config';
 import { LORE_DOCS } from '../../../shared/src/data/chronik';
@@ -296,6 +297,7 @@ const ALL = [
       </div>
     </>
   )),
+  ch('quellwarte', () => <HubHelp />),
   ch('gemeinsam', () => (
     <>
       <p>Bis zu {CFG.social.partyMax} Spieler bilden eine Gruppe (<K a="party" />). Neben einem Mitspieler öffnet <K a="interact" /> (oder ein Klick auf die Figur) ein kleines Menü: Ansehen, Handeln, Einladen. Gegner haben je weiterem Spieler in der Nähe {pct(CFG.enemy.hpPerExtraPlayer)} mehr Leben, Bosse {pct(CFG.enemy.bossHpPerExtraPlayer)}.</p>

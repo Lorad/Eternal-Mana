@@ -210,6 +210,26 @@ Snapshots.
 - **Werkzeuge:** Dev-Befehle `/hof [stufe]`, `/begleiter <id|alle>`, `/gewand`, `/trophaeen`, `/bestiarium [n]`;
   `tests/e2e/zuhause.mjs` (Browser-Durchlauf).
 
+## Quellwarte (0.9)
+
+- **Daten und Regeln:** `shared/src/data/hub.ts` (gemeinsamer Vertrag: Zone, `HUB_SPOTS`, Einrichtungen, `DungeonRecord`),
+  `hubdata.ts` (Einrichtungen, Händler-Angebot je Tag/Woche, Meisterränge, Lagerhaus-Regale, Gruppengesuche, `sanitizeHubChar`),
+  `rumours.ts` (Gerüchtebrett – jedes Gerücht zeigt auf ein vorhandenes Ziel, `rumourTarget`), `hall.ts` (Trophäenhalle aus
+  Flags, Sammlung und `CharData.expeditions`), `npcs_hub.ts`, `quests_hub.ts`, `dialoge_hub.ts`, `hubart.ts` (EINZIGE Stelle des
+  Grafik-Rückfalls). Karte: `shared/src/maps/hubgen.ts` (von Hand gesetzt). Zahlen: `CFG.hub`.
+- **Zone:** `HUB_ZONE_DEF` (`kind: 'hub'`, nicht in `ZONE_LIST`), EINE Instanz für alle – `Game.zone` gibt für den Hub immer Kreis 0
+  zurück; leer wird sie nicht verworfen. Keine Gegner, keine Wegfelder (`Zone.update` baut sie nur, wenn es Gegner gibt).
+- **Server:** `server/src/hub/index.ts` ist der einzige Einstieg (Nachricht `hub` mit Aktion `a`: stock, buy, master, row, lfg,
+  board, halle; Objekte vom Typ `qobj`; Tor in Quellhain als Server-Objekt; Hinweis für alte Charaktere; Gruppengesuche im
+  Speicher; `PlayerInfo.lfg`). `walkers.ts` lässt die Leute der Warte über `omv` laufen. Haken in den Kernklassen: `Game.route`,
+  `Game.enter`, `Game.tick`, `Game.playerInfo`, `Zone.interact` (Kette), `Zone.playerSkill` (`effRank`), `Player.gainGold`
+  (`CharData.earned`), `Home` (Truhe auch im Lagerhaus). Schmiede und Alchemie sind Stationen (`STATION_NPCS`), Verbessern und
+  Zurücksetzen NPC-Dienste – nichts davon ist nachgebaut.
+- **Spielstand (optional):** `CharData.mastery`, `.earned`, `.hubShop`, `.expeditions`; `HomeData.rows`; Flags `qw:neu`/`qw:alt`.
+- **Oberfläche:** `client/src/ui/hub.tsx` (Fenster der Einrichtungen, Gesprächsoptionen, Handbuch-Kapitel, Reise auf der Weltkarte),
+  `styles/hub.css`; die Szene stellt `qobj` dar und zeigt ⚑ über Spielern mit Gesuch.
+- **Werkzeuge:** Dev-Befehl `/warte`; `tests/hub.test.ts`, `tests/e2e/hub.mjs`; `npx tsx scripts/load-check.ts 16 60 --hub`.
+
 ## Client
 
 - **GameScene** (`client/src/game/`): malt den Boden einmalig in 512-px-Kacheln auf Canvas-Texturen, legt die animierte

@@ -16,6 +16,7 @@ export const CELL = 4;
 
 interface Pal { ground: string; ground2: string; path: string; floor: string; wall: string; wallFace: string; liquid: string; liquidHi: string; bridge: string; hazard: string; void: string }
 const PALS: Record<string, Pal> = {
+  quellwarte: { ground: '#8d8574', ground2: '#4d8a3e', path: '#b9a27a', floor: '#c8bfa6', wall: '#3a3a44', wallFace: '#26262e', liquid: '#3a9ab8', liquidHi: '#7fd8ee', bridge: '#9a948a', hazard: '#8a5a34', void: '#0a0d14' }, // 0.9: Pflaster der Quellwarte
   gruenwald: { ground: '#4d8a3e', ground2: '#3c7636', path: '#cfae6e', floor: '#8f8a7c', wall: '#1d4428', wallFace: '#12301c', liquid: '#3878c8', liquidHi: '#6fb0ee', bridge: '#9a6a3a', hazard: '#8a5a34', void: '#0a0d14' },
   kristall: { ground: '#4a4a6c', ground2: '#5b4f84', path: '#8e88ae', floor: '#6c6a8a', wall: '#1b1930', wallFace: '#0f0e1e', liquid: '#2a9cbc', liquidHi: '#7fe0f0', bridge: '#8a6a4a', hazard: '#b868f0', void: '#07070e' },
   glut: { ground: '#5c4138', ground2: '#49302c', path: '#a07e5c', floor: '#6c5a56', wall: '#231513', wallFace: '#140b0a', liquid: '#f07020', liquidHi: '#ffc04a', bridge: '#7a6a5a', hazard: '#c0481e', void: '#0a0606' },

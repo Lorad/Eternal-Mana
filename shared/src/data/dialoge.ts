@@ -5,6 +5,7 @@
  */
 import type { Cond } from './cond';
 import { LIED_COND, type DlgNode, type DlgOpt, type DlgTopic } from './story';
+import { TOPICS_HUB } from './dialoge_hub';
 
 const T = (t: DlgTopic) => t;
 const END = (s = 'Das genügt für heute.'): DlgOpt => ({ s });
@@ -190,5 +191,6 @@ export const TOPICS: DlgTopic[] = [
   T({ id: 'fenwick_name', npc: 'fenwick', label: 'Aetherion', if: { done: 'm_name' },
     nodes: { start: { lines: ['Ae-the-ri-on. Ich habe es in vier alten Sprachen nachgeschlagen. In keiner bedeutet es etwas. In allen vieren klingt es wie Ausatmen.', 'Weißt du, was mich um den Schlaf bringt? Wir sagen „Mana“. Die allerälteste Glosse, die ich kenne, übersetzt es mit „was er uns leiht“. Ich habe das „er“ immer für einen Schreibfehler gehalten.'] } } }),
 ];
+TOPICS.push(...TOPICS_HUB); // Quellwarte (0.9)
 export const TOPIC: Record<string, DlgTopic> = Object.fromEntries(TOPICS.map(t => [t.id, t]));
 export function topicsOf(npc: string): DlgTopic[] { return TOPICS.filter(t => t.npc === npc); }

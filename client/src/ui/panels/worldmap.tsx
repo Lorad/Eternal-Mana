@@ -3,11 +3,12 @@ import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { useStore } from '../../state/store';
 import { RANK_NAMES, factionOfZone, rankIn } from '../../../../shared/src/data/factions';
-import { WORLD_LINKS, ZONES, ZONE_LIST } from '../../../../shared/src/data/zones';
+import { HUB_ZONE_DEF, WORLD_LINKS, ZONES, ZONE_LIST } from '../../../../shared/src/data/zones';
 import type { ZoneDef } from '../../../../shared/src/data/zones';
 import { Btn, Tabs, Window, closePanel, cx, send, sfx } from '../common';
 import { ZoneMapCanvas } from '../mapview';
 import { HomeTravel } from '../home';
+import { HubTravel } from '../hub';
 
 const VW = 400, VH = 300;
 const P = (z: ZoneDef) => [z.mapPos[0] * (VW / 100), z.mapPos[1] * (VH / 100)] as const;
@@ -86,6 +87,12 @@ function WorldMap({ sel, onSel }: { sel: string; onSel: (z: string) => void }) {
           </button>
         );
       })}
+      {/* 0.9: die Quellwarte – kein Gebiet, aber jeder Quellstein kennt sie */}
+      <button type="button" class={cx('wnode', 'hub', HUB_ZONE_DEF.id === zone && 'here', HUB_ZONE_DEF.id === sel && 'sel', 'stone')}
+        style={{ left: HUB_ZONE_DEF.mapPos[0] + '%', top: HUB_ZONE_DEF.mapPos[1] + '%' }} aria-label={HUB_ZONE_DEF.name} onClick={() => { sfx('ui_click'); onSel(HUB_ZONE_DEF.id); }}>
+        <i class="wnode-dot" />
+        <span class="wnode-label"><b>Quellwarte</b><small>Treffpunkt</small></span>
+      </button>
     </div>
   );
 }
@@ -105,6 +112,17 @@ function ZoneInfo({ id }: { id: string }) {
   const here = id === zone;
   const travel = () => { send({ t: 'teleport', zone: id }); closePanel(); };
   const parent = z.parent ? ZONES[z.parent] : null;
+  if (z.kind === 'hub') return (
+    <div class="winfo card">
+      <div class="qp-type">Treffpunkt · kein Kampf</div>
+      <h3 class="qp-name">{z.name}</h3>
+      <p class="winfo-sub">{z.subtitle}</p>
+      {here && <div class="pill gold-pill">Du bist hier</div>}
+      <p class="note">Schmiede, Händler, Alchemie, Fähigkeitenmeister, Lagerhaus, Gasthaus, Trophäenhalle, Gruppen – und das Portal in die Expeditionen. Jeder Quellstein reist hierher.</p>
+      <div class="winfo-travel"><HubTravel /></div>
+      <HomeTravel />
+    </div>
+  );
   return (
     <div class="winfo card">
       {known ? (
@@ -131,6 +149,7 @@ function ZoneInfo({ id }: { id: string }) {
           <p class="note">Diesen Ort hast du noch nicht betreten. Folge den Wegen auf der Karte.</p>
         </>
       )}
+      <HubTravel />
       <HomeTravel />
       <p class={cx('note', 'winfo-hint', nearStone && 'on')}>
         {nearStone ? 'Du stehst an einem Quellstein: Wähle eine Region mit aktiviertem Quellstein und reise sofort dorthin.' : 'Schnellreise: Stelle dich an einen Quellstein und öffne die Karte. Reisen kannst du zu jedem Quellstein, den du schon berührt hast.'}

@@ -108,12 +108,12 @@ function handle(m: ServerMsg) {
       resumed = true; resumeChar = m.charId;
       store.set({ char: m.char, charId: m.charId, myId: m.init.you, zone: m.init.zone, screen: 'loading', dead: null, boss: null, target: null, craft: null, tod: m.init.tod, weather: m.init.weather, cds: {}, buffs: [], panel: null, dialog: null, dlgNode: null, lore: null,
         rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, heim: m.init.heim ?? null, hof: null,
-        trade: null, tradeReq: null, qOffers: [], inspect: null, playerMenu: null, invite: null, trackerOpen: false, loadFail: null });
+        trade: null, tradeReq: null, qOffers: [], inspect: null, playerMenu: null, invite: null, trackerOpen: false, loadFail: null, hubWin: null });
       bus.emit('net:entered', m.init);
       break;
     case 'zone':
       store.set({ zone: m.init.zone, myId: m.init.you, screen: 'loading', boss: null, target: null, craft: null, dead: null, tod: m.init.tod, weather: m.init.weather, dialog: null, dlgNode: null, lore: null, sign: null, keys: 0,
-        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null, heim: m.init.heim ?? null, hof: null, inspect: null, playerMenu: null, trackerOpen: false, loadFail: null });
+        rift: m.init.rift ?? null, riftAt: performance.now(), kreis: m.init.kreis ?? 0, endgame: null, enc: null, wshop: null, heim: m.init.heim ?? null, hof: null, hubWin: null, inspect: null, playerMenu: null, trackerOpen: false, loadFail: null });
       bus.emit('net:zone', m.init);
       break;
     case 'pos': bus.emit('net:pos', m); break;
@@ -149,6 +149,12 @@ function handle(m: ServerMsg) {
     case 'qOffer': store.set({ qOffers: [...st.qOffers.filter(o => o.id !== m.id), ...(m.sec > 0 ? [{ id: m.id, from: m.from, until: performance.now() + m.sec * 1000 }] : [])] }); break;
     case 'inspect': store.set({ inspect: m.i, playerMenu: null }); break;
     // ---- Zuhause (0.7): geänderte Teile des Profil-Stands; Hinweise der Sammlung erscheinen wie Toasts
+    case 'hub': // 0.9: Quellwarte – Fenster öffnen, Händlerangebot, Gruppengesuche
+      if (m.stock) store.set({ hubStock: m.stock });
+      if (m.lfg) store.set({ lfg: m.lfg, lfgAt: performance.now() });
+      if (m.open === 'truhe') store.set({ hof: { tab: 'lager' }, hubWin: null, dialog: null, panel: null, prompt: null });
+      else if (m.open) store.set({ hubWin: { tab: m.open === 'vitrine' ? 'halle' : m.open }, dialog: null, panel: null, prompt: null, craft: null, hof: null });
+      break;
     case 'home': store.set({ home: { ...(st.home ?? emptyHome()), ...m.h } }); for (const x of m.note ?? []) pushToast(x.s, x.kind, x.icon); break;
     case 'env': store.set({ ...(m.weather !== undefined ? { weather: m.weather } : {}), ...(m.tod !== undefined ? { tod: m.tod } : {}) }); bus.emit('net:env'); break;
     case 'online': store.set({ online: m.players }); break;
