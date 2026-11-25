@@ -60,14 +60,25 @@ function bosse(lab: Lab) {
     for (const sk of [SKILL.sorgsam, SKILL.mittel, SKILL.achtlos]) for (const cls of CLASS_IDS) rows.push(measureBoss(lab, stop, [cls], sk, n));
     const b = BOSSES[stop.boss];
     console.log(`**${b.name}** (Stufe ${b.level}, ${f0(CFG.enemy.hp(b.level) * b.hpMul)} Leben) – Spieler auf Stufe ${stop.level}, typische Ausrüstung, 6 Heiltränke\n`);
-    table(['Klasse', 'Sieg sorgfältig', 'Sieg durchschn.', 'Sieg unachtsam', 'Dauer (s)', 'Tränke', 'Schaden (× eigenes Leben)', 'woran es liegt (Schaden je Kampf, durchschn.)'],
+    table(['Klasse', 'Sieg sorgfältig', 'Sieg durchschn.', 'Sieg unachtsam', 'Dauer (s)', 'Tränke', 'Schaden (× eigenes Leben): sorgfältig / durchschn. / unachtsam', 'woran es liegt (Schaden je Kampf, durchschn.)'],
       CLASS_IDS.map(cls => {
         const g = (s: string) => rows.find(r => r.boss === stop.boss && r.cls === cls && r.skill === s)!;
         const m = g('mittel');
-        return [CN[cls], pct(g('sorgsam').win), pct(m.win), pct(g('achtlos').win), f0(m.time || m.loseTime), f1(m.potions), f1(m.taken), m.top.map(([k, v]) => `${k} ${v}`).join(', ')];
+        return [CN[cls], pct(g('sorgsam').win), pct(m.win), pct(g('achtlos').win), f0(m.time || m.loseTime), f1(m.potions), `${f1(g('sorgsam').taken)} / ${f1(m.taken)} / ${f1(g('achtlos').taken)}`, m.top.map(([k, v]) => `${k} ${v}`).join(', ')];
       }));
   }
   out.bosse = rows;
+  // Überblick und der Fall „nur die Hauptlinie“ (Spieler kommt mit niedrigerer Stufe an)
+  console.log('## Bosse der Geschichte – Überblick\n');
+  const low = pacing(0, 35), lrows: BossRow[] = [];
+  BOSS_STOPS.forEach((stop, i) => { for (const cls of CLASS_IDS) lrows.push(measureBoss(lab, stop, [cls], SKILL.mittel, fast ? 2 : 5, { level: low[i].atBoss })); });
+  table(['Boss', 'Stufe Boss / Spieler', 'Sieg sorgfältig', 'Sieg durchschn.', 'Sieg unachtsam', 'Dauer (s)', 'Dauer schnellste / langsamste Klasse', 'Tränke', 'nur Hauptlinie: Spielerstufe · Sieg durchschn. · Dauer'],
+    BOSS_STOPS.map((stop, i) => {
+      const g = (s: string) => rows.filter(r => r.boss === stop.boss && r.skill === s), m = g('mittel'), t = m.filter(r => r.time > 0).map(r => r.time), l = lrows.filter(r => r.boss === stop.boss);
+      return [BOSSES[stop.boss].name, `${BOSSES[stop.boss].level} / ${stop.level}`, pct(mean(g('sorgsam').map(r => r.win))), pct(mean(m.map(r => r.win))), pct(mean(g('achtlos').map(r => r.win))), f0(mean(t)), `${f0(Math.min(...t))} / ${f0(Math.max(...t))}`, f1(mean(m.map(r => r.potions))),
+        `${low[i].atBoss} · ${pct(mean(l.map(r => r.win)))} · ${f0(mean(l.filter(r => r.time > 0).map(r => r.time)))} s`];
+    }));
+  out.bosseHauptlinie = lrows;
   console.log('## Bosse der Geschichte – zu zweit (durchschnittliche Spieler)\n');
   const duos: ClassId[][] = [['krieger', 'magier'], ['paladin', 'schattenjaeger'], ['waldlaeufer', 'waldlaeufer']];
   const drows: BossRow[] = [];

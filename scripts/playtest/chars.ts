@@ -74,7 +74,10 @@ export function plausibleChar(cls: ClassId, level: number, o: CharOpt = {}): Cha
   gearUp(c, level, o.gear ?? 'typisch', o.seed ?? 1);
   const t = potionTier(level), [hp, mp] = o.potions ?? [6, 3];
   c.inv = [];
-  if (hp) c.inv.push(makeStack(`potion_hp${t}`, hp));
+  // ab Akt II braut man sich Quellheiltränke (Rezept von Anfang an bekannt, Zutaten aus dem Schattenreich): die Hälfte des Vorrats
+  const strong = level >= 34 ? Math.floor(hp / 2) : 0;
+  if (strong) c.inv.push(makeStack('potion_hp4', strong));
+  if (hp - strong) c.inv.push(makeStack(`potion_hp${t}`, hp - strong));
   if (mp) c.inv.push(makeStack(`potion_mp${t}`, mp));
   return c;
 }

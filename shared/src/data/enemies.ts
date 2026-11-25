@@ -159,10 +159,10 @@ export const BOSSES: Record<string, BossDef> = {
   hohlkoenig: { id: 'hohlkoenig', name: 'Der Hohle König', title: 'Morvain, letzter Quellhüter', element: 'dark', level: 33, hpMul: 56, dmgMul: 1.5, defMul: 1.6, radius: 18, speed: 60, seal: 'seal_dark', xp: 12000, gold: 4000, weak: ['fire'],
     intro: '„Ich habe die Quelle nicht gestohlen. Ich habe sie getrunken, damit sie in mir weiterlebt. Du willst sie zurück? Dann hol sie dir.“' },
   // ---- Akt II (0.3): Beide werden nicht getötet. Vael ergibt sich; bei Aetherion endet der Albtraum, nicht das Wesen.
-  vael: { id: 'vael', name: 'Vael', title: 'Hüter der Dunkelheit', element: 'dark', weak: ['fire'], resist: ['water'], level: 38, hpMul: 78, dmgMul: 1.85, defMul: 1.5, radius: 16, speed: 58, seal: 'q_wachzeichen', xp: 8000, gold: 2500,
+  vael: { id: 'vael', name: 'Vael', title: 'Hüter der Dunkelheit', element: 'dark', weak: ['fire'], resist: ['water'], level: 38, hpMul: 78, dmgMul: 2.1, defMul: 1.5, radius: 16, speed: 58, seal: 'q_wachzeichen', xp: 8000, gold: 2500,
     spared: 0.1, outro: '„Genug. Genug, ich bitte Euch. … Bestanden.“',
     intro: '„Ich bitte um Verzeihung für das, was jetzt kommt. Es ist nicht persönlich. Es ist gründlich.“' },
-  aetherion: { id: 'aetherion', name: 'Aetherion', fightName: 'Die Große Stille', title: 'Albtraum des Träumers', element: 'earth', level: 40, hpMul: 84, dmgMul: 1.9, defMul: 1.6, radius: 22, speed: 36, seal: 'q_herzton', xp: 12000, gold: 5000,
+  aetherion: { id: 'aetherion', name: 'Aetherion', fightName: 'Die Große Stille', title: 'Albtraum des Träumers', element: 'earth', level: 40, hpMul: 84, dmgMul: 2.2, defMul: 1.6, radius: 22, speed: 36, seal: 'q_herzton', xp: 12000, gold: 5000,
     spared: 0.04, awaken: 'erwachen', calm: true, outro: '… ♪ … Die Große Stille bricht. Darunter ist jemand wach.',
     intro: 'Die Nacht am Quellrand beginnt von vorn: Asche, sieben Schatten, ein erhobener Hammer. Diesmal stehst du mittendrin.' },
 };

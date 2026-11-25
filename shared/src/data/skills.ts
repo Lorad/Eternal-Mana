@@ -116,10 +116,10 @@ export const SKILL_LIST: SkillDef[] = [
   // ============================================================ PALADIN
   S({ id: 'pa_lichtschlag', cls: 'paladin', name: 'Lichtschlag', glyph: 'smite', element: 'light', maxRank: 5, reqLevel: 1, pos: [1, 0],
     desc: 'Ein geweihter Hammerschlag. Heilt dich für einen Teil des Schadens.', mp: 8, cd: 3.5, anim: 'attack', sfx: 'cast_light',
-    effects: [{ k: 'arc', range: 36, arc: 130, mult: 2.4, multR: 0.34, kb: 60, healSelf: 0.06 }] }),
+    effects: [{ k: 'arc', range: 36, arc: 130, mult: 2.4, multR: 0.34, kb: 60, healSelf: 0.03 }] }),
   S({ id: 'pa_heilung', cls: 'paladin', name: 'Heilendes Licht', glyph: 'heal', element: 'light', maxRank: 5, reqLevel: 3, requires: 'pa_lichtschlag', pos: [0, 1],
-    desc: 'Heilt dich und alle Verbündeten in der Nähe.', mp: 22, cd: 10, anim: 'cast', sfx: 'heal',
-    effects: [{ k: 'heal', party: 150, mult: 0.6, multR: 0.1 }] }),
+    desc: 'Heilt dich und alle Verbündeten in der Nähe.', mp: 22, cd: 12, anim: 'cast', sfx: 'heal',
+    effects: [{ k: 'heal', party: 150, mult: 0.5, multR: 0.08 }] }),
   S({ id: 'pa_schild', cls: 'paladin', name: 'Schildwall', glyph: 'shield', element: 'earth', maxRank: 5, reqLevel: 5, requires: 'pa_lichtschlag', pos: [2, 1],
     desc: 'Umgibt die Gruppe mit einem Schild, der Schaden absorbiert, und erhöht die Verteidigung.', mp: 20, cd: 22, anim: 'cast', sfx: 'buff',
     effects: [{ k: 'buff', id: 'schildwall', party: 150, dur: 8, mods: { defPct: 25 }, modsR: { defPct: 5 }, shield: 0.18, shieldR: 0.04 }] }),
