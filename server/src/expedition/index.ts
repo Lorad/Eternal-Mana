@@ -498,7 +498,7 @@ export const Expedition = {
   bossDef(zone: Zone): BossDef {
     const run = zone.exp!, d = EXP_DIFF[run.diff], b = kreisBossDef(BOSSES[EXPEDITIONS[run.exp].boss], run.kreis);
     const x = EXPEDITIONS[run.exp], lvl = levelFor(run, Math.max(BOSSES[x.boss].level, x.level[1] + 1));
-    return { ...b, name: x.bossName ?? b.name, level: lvl, hpMul: b.hpMul * d.hpMul, dmgMul: b.dmgMul * d.dmgMul };
+    return { ...b, name: x.bossName ?? b.name, level: lvl, hpMul: b.hpMul * d.hpMul / EXP_DIFF.normal.hpMul, dmgMul: b.dmgMul * d.dmgMul };
   },
   bossMech(zone: Zone, bossId: string): EchoMech { return expBossMech(zone, bossId); },
   setup,

@@ -99,7 +99,13 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
   const bounds = { x0: (room.x0 + 1.6) * TILE, y0: (room.y0 + 1.6) * TILE, x1: (room.x1 - 0.6) * TILE, y1: (room.y1 - 0.6) * TILE };
   const lead = () => bots.find(b => !b.p.dead) ?? bots[0];
   const sendAll = (o: Obj) => { for (const b of bots) if (Math.hypot(b.p.x - o.x, b.p.y - o.y) < 40) b.send({ t: 'interact', id: o.id }); };
-  const goal = (b: Bot, gx: number, gy: number) => { const path = navs[bots.indexOf(b)].path(b.p.x, b.p.y, gx, gy); b.goto = path ? path[Math.min(path.length - 1, 3)] : { x: gx, y: gy }; };
+  const goal = (b: Bot, gx: number, gy: number) => {
+    const nav = navs[bots.indexOf(b)];
+    let path = nav.path(b.p.x, b.p.y, gx, gy);
+    // steht der Bot am Rand einer Wasser- oder Wandkachel, beginnt der Weg auf der Nachbarkachel
+    for (const [dx, dy] of [[0, -8], [0, 8], [-8, 0], [8, 0], [-8, -8], [8, 8], [-8, 8], [8, -8]]) { if (path) break; path = nav.path(b.p.x + dx, b.p.y + dy, gx, gy); }
+    b.goto = path ? path[Math.min(path.length - 1, 3)] : { x: gx, y: gy };
+  };
   const next = () => { const t = tasks[ti]; const key = t.k === 'go' ? 'Weg' : t.k === 'clear' ? 'Kampf' : t.k === 'boss' ? 'Boss' : t.k === 'mini' ? 'Mini-Boss' : t.k === 'event' ? 'Hinterhalt' : t.k === 'puzzle' ? 'Rätsel' : 'Erkunden'; byRole[key] = (byRole[key] ?? 0) + (game.now - taskAt); ti++; taskAt = game.now; waitUntil = 0; lastProg = game.now; };
   for (;;) {
     const now = game.now;

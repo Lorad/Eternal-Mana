@@ -195,7 +195,7 @@ const SIG: Record<string, Signature> = {
         if (w.hit.has(p) || p.dead) continue;
         if (Math.hypot(p.x - x, p.y - y) > 6 || t < p.rollUntil) {
           w.hit.add(p);
-          z.hitPlayer(p, m.dmg * 2.2, 'water', k.boss.def.level, 'Stillstand', { id: 'freeze', dur: 1.6 });
+          z.hitPlayer(p, m.dmg * 1.6, 'water', k.boss.def.level, 'Stillstand', { id: 'freeze', dur: 1.2 });
           z.ev({ k: 'txt', x: p.x, y: p.y - 26, s: 'Bewegt!', col: '#9fe8ff' });
         }
       }

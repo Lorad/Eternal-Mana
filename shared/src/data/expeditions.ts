@@ -114,9 +114,9 @@ export interface ExpReq { text: string; cond?: Cond; level?: number; item?: stri
 // =====================================================================================================================
 export const EXP_CFG = {
   /** Erfahrung je gewöhnlichem Gegner in Expeditionen (die Expedition ist lang – die Geschichte soll nicht davonlaufen) */
-  mobXp: 0.5,
+  mobXp: 0.4,
   /** Faktor auf die Gegnergruppen jedes Abschnitts (Feinabstimmung der Spieldauer, gemessen mit scripts/exp-playtest.ts) */
-  groupMul: 1.4,
+  groupMul: 1.8,
   /** Abschluss: Erfahrung und Gold als Vielfaches der Boss-Werte; Wiederholungen bringen weniger */
   clearXp: 1.6, clearGold: 1.4, repeatMul: 0.55,
   /** Beute des Abschlusses: Teile, Rohstoffe der Region, Chance auf Legendär (zusätzlich zum Raritätswurf) */
@@ -158,16 +158,16 @@ export interface DiffDef {
   desc: string;
 }
 export const EXP_DIFF: Record<Difficulty, DiffDef> = {
-  normal: { id: 'normal', lvlPlus: 0, lvlMin: 0, hpMul: 1, dmgMul: 1, elite: 0.06, affixes: 0, extra: 0, bossExtra: false, enrage: 0, bossAdds: 0, sigFaster: 1,
+  normal: { id: 'normal', lvlPlus: 0, lvlMin: 0, hpMul: 1.25, dmgMul: 1, elite: 0.06, affixes: 0, extra: 0, bossExtra: false, enrage: 0, bossAdds: 0, sigFaster: 1,
     noDeathChest: false, timedChest: false, rarity: [10, 40, 35, 13, 2], ilvlPlus: 0, rewardMul: 1, unlockText: 'Von Anfang an.',
     desc: 'Die Expedition, wie die Geschichte sie kennt.' },
-  schwer: { id: 'schwer', lvlPlus: 3, lvlMin: 0, hpMul: 1.4, dmgMul: 1.25, elite: 0.12, affixes: 1, extra: 0.25, bossExtra: true, enrage: 0, bossAdds: 0, sigFaster: 1,
+  schwer: { id: 'schwer', lvlPlus: 3, lvlMin: 0, hpMul: 1.75, dmgMul: 1.25, elite: 0.12, affixes: 1, extra: 0.25, bossExtra: true, enrage: 0, bossAdds: 0, sigFaster: 1,
     noDeathChest: true, timedChest: false, rarity: [0, 20, 45, 28, 7], ilvlPlus: 3, rewardMul: 1.5, unlockText: 'Nach einem Abschluss auf Normal.',
     desc: 'Erwachte mit einem Affix, mehr Gegner je Gruppe, der Boss kennt einen Angriff mehr. Truhe für einen Lauf ohne Tod.' },
-  albtraum: { id: 'albtraum', lvlPlus: 6, lvlMin: 42, hpMul: 2.1, dmgMul: 1.55, elite: 0.18, affixes: 2, extra: 0.4, bossExtra: true, enrage: 300, bossAdds: 2, sigFaster: 1.25,
+  albtraum: { id: 'albtraum', lvlPlus: 6, lvlMin: 42, hpMul: 2.6, dmgMul: 1.55, elite: 0.18, affixes: 2, extra: 0.4, bossExtra: true, enrage: 300, bossAdds: 2, sigFaster: 1.25,
     noDeathChest: true, timedChest: true, rarity: [0, 0, 35, 45, 20], ilvlPlus: 6, rewardMul: 2.2, unlockText: 'Ab Stufe 40, nach einem Abschluss auf Schwer.',
     desc: 'Erwachte mit zwei Affixen, Helfer in jeder Bossphase, der Boss wird nach fünf Minuten wütend. Zusätzlich eine Truhe unter der Richtzeit.' },
-  mythisch: { id: 'mythisch', lvlPlus: 9, lvlMin: 45, hpMul: 3, dmgMul: 1.9, elite: 0.26, affixes: 3, extra: 0.55, bossExtra: true, enrage: 220, bossAdds: 3, sigFaster: 1.6,
+  mythisch: { id: 'mythisch', lvlPlus: 9, lvlMin: 45, hpMul: 3.75, dmgMul: 1.9, elite: 0.26, affixes: 3, extra: 0.55, bossExtra: true, enrage: 220, bossAdds: 3, sigFaster: 1.6,
     noDeathChest: true, timedChest: true, rarity: [0, 0, 15, 45, 40], ilvlPlus: 9, rewardMul: 3, unlockText: 'Nach einem Abschluss auf Albtraum.',
     desc: 'Drei Affixe, Wut nach knapp vier Minuten, die Signatur des Bosses kommt deutlich öfter. Die beste Beute – bis zur höchsten Seltenheit.' },
 };
