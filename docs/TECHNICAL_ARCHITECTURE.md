@@ -381,8 +381,8 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
   `erste-schritte` (neuer Spieler: Hinweise, Handbuch, neue Tasten, Menü, Einstellungen, Verbindungsabriss), `fenster` (jedes
   Fenster und das HUD bei 1280×720, 1000×560 und 600×900: im Bild, Kopfzeile einzeilig, nichts ragt hinaus, keine Überdeckung),
   `endgame`, `welt`, `zuhause`, `coop` (zwei Browser). **`npm run test:e2e:all`** (`scripts/e2e-all.mjs`) startet für jeden
-  Durchlauf einen eigenen Server mit leerer Datenbank und Dev-Befehlen, lässt zwei nebeneinander laufen und meldet je Skript
-  bestanden/gescheitert; einzelne Skripte: `npm run test:e2e:all -- coop welt`.
+  Durchlauf einen eigenen Server mit leerer Datenbank und Dev-Befehlen (ab acht Kernen mehrere nebeneinander, `EM_JOBS`) und
+  meldet je Skript bestanden/gescheitert; einzelne Skripte: `npm run test:e2e:all -- coop welt`.
 - **Messwerkzeuge:** `scripts/load-check.ts` (Server: Taktdauer und Snapshot-Größe mit Bots), `scripts/perf-browser.mjs`
   (Browser: Ladezeit und übertragene Menge, Speicher nach drei Reisen durch alle Zonen, Skriptzeit je Bild in den vollsten
   Lagen, Bewegung bei gedrosselter Bildrate).

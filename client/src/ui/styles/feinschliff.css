@@ -51,6 +51,10 @@
 .is-narrow .menubar { display: grid; grid-template-columns: repeat(2, 36px); }
 .is-narrow .hint { position: absolute; left: 50%; bottom: 330px; transform: translateX(-50%); }
 .is-narrow .qt-head { font-size: 10.5px; }
+/* schmales Fenster: alle Blöcke der rechten Spalte so breit wie die Spalte – nichts ragt nach links hinaus und wird abgeschnitten */
+.is-narrow .hud-tr { width: 190px; }
+.is-narrow .hud-tr .evt, .is-narrow .hud-tr .qt, .is-narrow .hud-tr .rift-hud { width: 100%; }
+.is-narrow .ev-row { font-size: 12px; padding: 4px 7px; }
 .em-root.is-cine .hud > .reconnect { visibility: visible; }
 .reconnect { max-width: min(560px, calc(100% - 24px)); }
 .reconnect-acts { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }

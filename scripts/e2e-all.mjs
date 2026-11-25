@@ -6,9 +6,9 @@
 // Die Adresse trägt `?hinweise=aus`: Die Hinweise des Spiels (0.8) bleiben aus, damit keine Karte über einem Knopf liegt –
 // nur tests/e2e/erste-schritte.mjs prüft sie ausdrücklich und ruft die Seite ohne diesen Zusatz auf.
 //
-//   npm run test:e2e:all                  alle Skripte, zwei nebeneinander
+//   npm run test:e2e:all                  alle Skripte (ab acht Kernen mehrere nebeneinander)
 //   npm run test:e2e:all -- coop welt     nur Skripte, deren Name passt
-//   EM_JOBS=1 npm run test:e2e:all        nacheinander (langsame Rechner)      EM_KEEP=1  Ausgaben auch bei Erfolg zeigen
+//   EM_JOBS=2 npm run test:e2e:all        Zahl der gleichzeitigen Durchläufe      EM_KEEP=1  Ausgaben auch bei Erfolg zeigen
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -20,7 +20,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'tests/e2e');
 const want = process.argv.slice(2).filter(a => !a.startsWith('-'));
 const scripts = fs.readdirSync(dir).filter(f => f.endsWith('.mjs') && (!want.length || want.some(w => f.includes(w)))).sort();
-const jobs = Math.max(1, Math.min(scripts.length, Number(process.env.EM_JOBS) || 2));
+// Jeder Durchlauf zeichnet ein Spiel (ohne Grafikkarte in Software) und braucht dafür mehrere Kerne: unter acht Kernen einer nach
+// dem anderen, sonst je vier Kerne einer – zu viele nebeneinander machen die Durchläufe langsam und ihre Wartezeiten unzuverlässig.
+const jobs = Math.max(1, Math.min(scripts.length, Number(process.env.EM_JOBS) || Math.floor(os.cpus().length / 4) || 1, 4));
 const TIMEOUT_MS = (Number(process.env.EM_TIMEOUT) || 900) * 1000;
 if (!scripts.length) { console.error('Kein passendes Skript in tests/e2e.'); process.exit(2); }
 
@@ -71,7 +73,7 @@ async function one(file) {
   return { file, ok: res.code === 0, sec, out: res.out };
 }
 
-console.log(`Eternal Mana – ${scripts.length} Browser-Durchläufe, ${jobs} nebeneinander (je ein eigener Server mit leerer Datenbank)`);
+console.log(`Eternal Mana – ${scripts.length} Browser-Durchläufe, ${jobs === 1 ? 'nacheinander' : jobs + ' nebeneinander'} (je ein eigener Server mit leerer Datenbank)`);
 const t0 = Date.now();
 // die langen Durchläufe zuerst, damit am Ende nicht einer allein läuft
 const LONG = ['coop.mjs', 'welt.mjs', 'zuhause.mjs', 'fenster.mjs', 'endgame.mjs'];

@@ -73,9 +73,16 @@ await step('Quest annehmen: Questverfolgung erscheint, Hinweis zum Kämpfen folg
   await page.keyboard.press('e'); await page.locator('.dlg').waitFor({ timeout: 5000 });
   await page.getByText('Ein Flüstern im Wasser').first().click(); await wait(250);
   for (let i = 0; i < 6 && await page.getByText('Weiter', { exact: true }).count(); i++) { await page.getByText('Weiter', { exact: true }).first().click(); await wait(220); }
-  await page.getByText('Annehmen', { exact: true }).click(); await wait(300);
-  await page.keyboard.press('Escape');
-  await page.locator('.qt-q', { hasText: 'Ein Flüstern im Wasser' }).waitFor({ timeout: 4000 });
+  await page.getByText('Annehmen', { exact: true }).click(); await wait(800);
+  // die Annahme kann eine Filmszene auslösen: Ein Esc fragt nur nach, das zweite überspringt
+  if (await state(() => !!window.__em.store.state.cine)) {
+    await page.keyboard.press('Escape');
+    await page.locator('.cine-skip.ask').waitFor({ timeout: 3000 });
+    if (!(await state(() => !!window.__em.store.state.cine))) throw new Error('ein einzelnes Esc hat die Filmszene beendet');
+    await page.keyboard.press('Escape'); await gone('.cine');
+  }
+  if (await page.locator('.dlg').count()) await page.keyboard.press('Escape');
+  await page.locator('.qt-q', { hasText: 'Ein Flüstern im Wasser' }).waitFor({ timeout: 8000 });
   await hint('Kämpfen');
   await shot('02-kampfhinweis');
 });
