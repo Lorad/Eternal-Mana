@@ -54,7 +54,7 @@ const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
 const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags|mana_surge|star_shard|lore_)/;
 /** Flammen flackern schnell, alles andere wiegt sich langsam */
-const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook)/;
+const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook|home_sign)/;
 /** [Radius, Farbe, Stärke, Flackern] */
 const LIGHTS: Record<string, [number, number, number, number]> = {
   campfire: [100, 0xffb060, 1, 0.07], brazier: [92, 0xffac58, 1, 0.07], lamp: [84, 0xffd89a, 0.9, 0.03], torch: [84, 0xffb870, 0.95, 0.07], wall_torch: [84, 0xffb870, 0.95, 0.07],
@@ -436,8 +436,12 @@ export class GameScene extends Phaser.Scene {
       }
       // ---- Lebendige Welt (0.6): Objekte der Ereignisse und Begegnungen – Frame aus dem Objekt-Atlas, optional Beschriftung und Licht
       case 'wobj': case 'hobj': { // 0.7: Hof-Objekte (Truhe, Stationen, Trophäenständer …) – gleiche Darstellung, Aussehen vom Server
-        const fr: string | undefined = pr.frame, f = fr ? this.resolveFrame(fr) : null;
+        // 0.8: Trophäenständer – leer zeigt er nur das Kissen; eine ausgestellte Trophäe liegt als Miniatur `trophy_<id>` darauf
+        // (gibt es für sie keine Miniatur, bleibt der Ständer mit Pokal).
+        const mini = pr.tro && this.objTex.has('trophy_' + pr.tro) ? 'trophy_' + pr.tro : null;
+        const fr: string | undefined = pr.frame === 'trophy_stand' && (mini || !pr.tro) && this.objTex.has('trophy_stand_empty') ? 'trophy_stand_empty' : pr.frame, f = fr ? this.resolveFrame(fr) : null;
         if (f) img(o.x, o.y + 8, f.frame, FLAT.test(fr!) ? 3 : undefined, !NO_SHADOW.test(fr!) && !fr!.startsWith('pet_'));
+        if (mini) img(o.x, o.y - 14, mini, o.y + 8.5, false);
         if (pr.label) v.label = this.text(o.x, o.y - (f ? 30 : 36), pr.label, '#bfe9ff', 7).setOrigin(0.5, 1);
         if (pr.light) { v.light = pr.light; v.glow = this.add.image(o.x, o.y - 8, 'fx', 'glow').setScale(pr.light[0] / 110).setTint(pr.light[1]).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(o.y + 1); }
         break;

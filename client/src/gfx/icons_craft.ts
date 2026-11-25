@@ -604,7 +604,7 @@ export function iconTile(p: Px, r: Ramp): void {
   p.px([1, 1, 22, 1, 1, 22, 22, 22], r[0]);
 }
 /** Zeichnet fn mit dunklem Schlagschatten (1px nach unten rechts und Kontur) auf die Kachel */
-const onTile = (p: Px, sh: number, fn: Fn): void => {
+export const onTile = (p: Px, sh: number, fn: Fn): void => {
   const q = new Px(24, 24); fn(q);
   for (const [dx, dy] of [[1, 1], [0, 1], [1, 0], [-1, 0], [0, -1]] as const) for (let y = 2; y < 22; y++) for (let x = 2; x < 22; x++) if (q.get(x - dx, y - dy) >>> 24) p.set(x, y, sh);
   for (let y = 2; y < 22; y++) for (let x = 2; x < 22; x++) { const c = q.get(x, y); if (c >>> 24) p.set(x, y, c); }

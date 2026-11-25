@@ -280,17 +280,25 @@ function rug(p: Px): void {
 }
 
 // ---------------------------------------------------------------- Trophäenständer
-function trophyStand(p: Px): void {
-  // Sockel: Fuß, Schaft mit Füllung und Messingschild, Deckplatte
+/** Sockel: Fuß, Schaft mit Füllung und Messingschild, Deckplatte */
+function standBase(p: Px, plate = true): void {
   part(p, (l) => {
     l.rect(3, 29, 14, 4, W[2]); l.rect(3, 29, 14, 1, W[4]); l.rect(3, 32, 14, 1, W[0]); l.rect(15, 30, 2, 3, W[1]); l.rect(2, 32, 16, 1, W[1]);
     l.rect(5, 16, 10, 13, MARK); planks(l, 5, 16, 10, 13, { ramp: W, pw: 5, vertical: true, seed: 3, mark: MARK, worn: 0.3 });
     l.rect(7, 19, 6, 8, W[1]); l.rect(8, 20, 5, 7, W[2]); l.rect(8, 26, 5, 1, W[3]);
-    l.rect(8, 21, 4, 3, Y[2]); l.rect(8, 21, 4, 1, Y[4]); l.px([9, 22, 10, 22], Y[0]); l.set(11, 23, Y[1]);
+    if (plate) { l.rect(8, 21, 4, 3, Y[2]); l.rect(8, 21, 4, 1, Y[4]); l.px([9, 22, 10, 22], Y[0]); l.set(11, 23, Y[1]); }
     l.rect(3, 13, 14, 3, W[3]); l.rect(3, 13, 14, 1, W[4]); l.rect(3, 15, 14, 1, W[1]); l.rect(4, 16, 12, 1, W[0]);
   });
-  // Samtkissen mit Quasten
-  part(p, (l) => { l.rrect(4, 10, 12, 4, P.red[2]); l.rect(5, 10, 10, 1, P.red[3]); l.rect(5, 13, 10, 1, P.red[1]); l.rect(13, 11, 2, 2, P.red[1]); l.px([4, 13, 15, 13], Y[3]); l.px([3, 14, 16, 14], Y[2]); l.set(6, 11, P.red[4]); });
+}
+/** Samtkissen mit Quasten; `dent`: Mulde, in der eine Trophäe liegt oder liegen wird */
+function standCushion(p: Px, dent = false): void {
+  part(p, (l) => {
+    l.rrect(4, 10, 12, 4, P.red[2]); l.rect(5, 10, 10, 1, P.red[3]); l.rect(5, 13, 10, 1, P.red[1]); l.rect(13, 11, 2, 2, P.red[1]); l.px([4, 13, 15, 13], Y[3]); l.px([3, 14, 16, 14], Y[2]); l.set(6, 11, P.red[4]);
+    if (dent) { l.rect(7, 11, 6, 1, P.red[1]); l.rect(8, 12, 5, 1, P.red[3]); l.px([7, 10, 12, 10], P.red[2]); }
+  });
+}
+function trophyStand(p: Px): void {
+  standBase(p); standCushion(p);
   // Pokal mit Henkeln und Quellstein
   part(p, (l) => {
     l.rect(8, 9, 4, 1, Y[1]); l.rect(9, 7, 2, 2, Y[2]); l.set(9, 7, Y[4]);
@@ -299,6 +307,26 @@ function trophyStand(p: Px): void {
     l.rect(9, 3, 2, 2, TL[3]); l.set(9, 3, WHITE); l.set(10, 4, TL[1]);
   });
   sparkle(p, 13, 1, WGOLD);
+}
+/** Leerer Ständer: nur das Kissen – darauf liegt im Spiel die Miniatur der ausgestellten Trophäe (`trophy_<id>`, cm_hof.ts). */
+function trophyStandEmpty(p: Px): void { standBase(p); standCushion(p, true); }
+/** Gesperrter Ständer (Ausbaustufe fehlt): Sockel unter einem Staubtuch, verschnürt, mit kleinem Vorhängeschloss. */
+function trophyStandLocked(p: Px): void {
+  standBase(p, false);
+  const L: Ramp = [mix(C[0], S[0], 0.4), mix(C[1], S[2], 0.35), mix(C[2], S[3], 0.3), mix(C[3], S[4], 0.25), C[4]];
+  part(p, (l) => {
+    // Tuch: liegt flach über der Deckplatte, fällt in Falten bis über den Schaft
+    const hem = [25, 27, 26, 24, 26, 28, 27, 25, 24, 26, 27, 25, 26, 28, 26, 24];
+    for (let x = 2; x <= 17; x++) for (let y = 10 + (x === 2 || x === 17 ? 2 : x === 3 || x === 16 ? 1 : 0); y <= hem[x - 2]; y++) {
+      const fold = (x + 1) % 4, top = y < 13;
+      l.set(x, y, top ? L[x < 8 ? 4 : x > 13 ? 2 : 3] : L[fold === 0 ? 1 : fold === 1 ? 3 : x > 13 ? 1 : 2]);
+    }
+    l.rect(4, 10, 12, 1, L[4]); l.rect(3, 13, 14, 1, L[1]);
+    for (let x = 2; x <= 17; x++) l.set(x, hem[x - 2], L[0]);
+  });
+  // Schnur und Schloss
+  part(p, (l) => { l.rect(2, 17, 16, 1, P.tan[2]); for (let x = 3; x < 18; x += 3) l.set(x, 17, P.tan[4]); l.px([2, 18, 17, 18], P.tan[1]); });
+  part(p, (l) => { l.px([9, 16, 10, 16, 8, 17, 11, 17], IRON[3]); l.rect(8, 18, 4, 4, Y[2]); l.rect(8, 18, 4, 1, Y[4]); l.rect(11, 19, 1, 3, Y[1]); l.rect(9, 20, 2, 1, DARK); l.set(8, 19, Y[3]); });
 }
 
 export function cmHome(out: Frames): void {
@@ -311,4 +339,6 @@ export function cmHome(out: Frames): void {
   one(out, 'house_shelf', 26, 38, houseShelf, false);
   one(out, 'rug', 40, 26, rug, false);
   one(out, 'trophy_stand', 20, 34, trophyStand, false);
+  one(out, 'trophy_stand_empty', 20, 34, trophyStandEmpty, false);
+  one(out, 'trophy_stand_locked', 20, 34, trophyStandLocked, false);
 }

@@ -110,7 +110,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `char_waldlaeufer_schatten` | `char_waldlaeufer` | 32×40 | 129 | 16.0 kB |
 | `char_waldlaeufer_wald` | `char_waldlaeufer` | 32×40 | 129 | 15.8 kB |
 
-## Atlas: obj (635 Frames, 2048×371)
+## Atlas: obj (675 Frames, 2048×375)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -121,8 +121,12 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `barrel` | 16×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `basalt_cluster` | 40×40 | 1 | Weltdeko · Modul `objects/glut.ts` |
 | `basalt_column` | 20×44 | 1 | Weltdeko · Modul `objects/glut.ts` |
+| `bauplatz_a` | 32×24 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `bauplatz_b` | 32×24 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `bauplatz_c` | 32×24 | 1 | Weltdeko · Modul `objects/common.ts` |
 | `bed` | 26×41 | 1 | Weltdeko · Modul `objects/common.ts` |
 | `beehive` | 16×22 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `begleiterplatz` | 32×26 | 1 | Weltdeko · Modul `objects/common.ts` |
 | `bench` | 28×16 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `birch_bare` | 36×64 | 1 | Weltdeko · Modul `objects/frost.ts` |
 | `birdhouse` | 16×44 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
@@ -267,6 +271,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `glowshroom_big` | 20×30 | 4 (`_0…_3`) | Weltdeko · Modul `objects/kristall.ts` |
 | `grave` | 16×20 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `haystack` | 28×24 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
+| `home_sign` | 30×38 | 4 (`_0…_3`) | Weltdeko · Modul `objects/common.ts` |
 | `house_a` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `house_b` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `house_c` | 80×100 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
@@ -403,7 +408,39 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `tree_oak2` | 88×104 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `tree_pine` | 56×96 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
 | `tree_willow` | 96×104 | 4 (`_0…_3`) | Weltdeko · Modul `objects/gruenwald.ts` |
+| `trophy_altvater_reif` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_aschenmaul` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_aetherion` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_archivar` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_dornenmutter` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_hohlkoenig` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_ignarok` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_kristallkoloss` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_vael` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_b_ysolde` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_borkenkoenig` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_fliegenhut` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_glucke` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_guenther` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_hohlprinz` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_ende1` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_ende2` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_ende3` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_riss10` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_riss20` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_riss30` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_m_sieben` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_meister_russ` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_moosgrimm` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_niemand` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_nordlicht` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_quill` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_sockel` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
 | `trophy_stand` | 20×34 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_stand_empty` | 20×34 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_stand_locked` | 20×34 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_stunde` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
+| `trophy_tante_echo` | 16×16 | 1 | Weltdeko · Modul `objects/common.ts` |
 | `turret` | 16×26 | 1 | interaktives Objekt · Modul `objects/common.ts` |
 | `twisted_tree` | 56×80 | 4 (`_0…_3`) | Weltdeko · Modul `objects/schatten.ts` |
 | `urn` | 14×18 | 1 | Weltdeko · Modul `objects/ruinen.ts` |
@@ -517,7 +554,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `void_mote` | 5×5 | 3 (`_0…_2`) | Wetter/Umgebung |
 | `weak` | 16×16 | 2 (`_0…_1`) | Effekt |
 
-## Atlas: icons (411 Frames, 501×526)
+## Atlas: icons (434 Frames, 501×551)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -527,6 +564,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_axe` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_bosskey` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_bow` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_buff_ausgeruht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_buff_einklang` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_buff_morgenwacht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_charm` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -604,6 +642,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_mat_void` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_weave` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_mat_wood` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_pet_pilzling` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_cleanse` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_elixir` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_potion_hp` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -631,11 +670,26 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_tmap_schatten` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_altvater_reif` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_aschenmaul` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_aetherion` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_archivar` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_dornenmutter` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_hohlkoenig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_ignarok` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_kristallkoloss` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_vael` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_b_ysolde` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_borkenkoenig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_fliegenhut` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_glucke` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_guenther` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_hohlprinz` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_ende1` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_ende2` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_ende3` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_riss10` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_riss20` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_riss30` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_tro_m_sieben` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_meister_russ` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_moosgrimm` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_niemand` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
@@ -644,6 +698,12 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `item_tro_sockel` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_stunde` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_tro_tante_echo` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uni_archivar` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uni_dornenmutter` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uni_hohlkoenig` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uni_ignarok` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uni_kristallkoloss` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
+| `item_uni_ysolde` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_uq_brunnenmuenze` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_uq_docht` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |
 | `item_uq_feuerstein` | 24×24 | 1 | Gegenstands-Icon (Inventar, Händler, Beute) |

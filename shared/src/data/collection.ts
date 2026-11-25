@@ -78,7 +78,7 @@ const PIECE_ICON: Record<SetPiece, string> = { helm: 'helm_heavy', armor: 'armor
 export const FINDS: Find[] = [
   ...Object.values(ITEMS).filter(b => b.legend).map((b): Find => ({ id: 'leg:' + b.legend, name: b.name, group: 'Legendäre Waffen', how: 'Aus sechs Bosskernen geschmiedet (Borin oder Rakhan)', icon: b.icon })),
   ...SET_LIST.flatMap(s => SET_PIECES.map((p): Find => ({ id: `set:${s.id}:${p}`, name: setPieceName(s, p), group: 'Set: ' + s.name, how: `${BOSSES[s.boss].name} und die Truhen seines Dungeons – oder schmieden`, icon: PIECE_ICON[p] }))),
-  ...Object.keys(BOSS_UNIQUE).map((b): Find => ({ id: 'uni:' + b, name: `Unikat: ${BOSSES[b].name}`, group: 'Boss-Unikate', how: `Aus der Truhe hinter ${BOSSES[b].name}`, icon: 'sword' })),
+  ...Object.keys(BOSS_UNIQUE).map((b): Find => ({ id: 'uni:' + b, name: `Unikat: ${BOSSES[b].name}`, group: 'Boss-Unikate', how: `Aus der Truhe hinter ${BOSSES[b].name}`, icon: 'uni_' + b })),
 ];
 /** Fundstück-Kennung eines Gegenstands (oder undefined) */
 export function findOf(it: ItemInstance): string | undefined {

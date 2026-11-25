@@ -4,6 +4,7 @@ import { P, Ramp, INK, WHITE, mix } from './palette';
 import type { ElementKey } from './spec';
 import { CRAFT_FLAT, CRAFT_GLOW, CRAFT_ICONS, iconTile } from './icons_craft';
 import { WORLD_GLOW, WORLD_ICONS } from './icons_world';
+import { HOME_FLAT, HOME_GLOW, HOME_ICONS } from './icons_home';
 
 type Fn = (p: Px) => void;
 const blade = (p: Px, x0: number, y0: number, x1: number, y1: number, r: Ramp = P.steel) => { p.line(x0, y0, x1, y1, r[3], 3); p.line(x0, y0, x1, y1, r[4], 2); p.line(x0 + 2, y0 + 1, x1 + 2, y1 + 1, r[2]); };
@@ -121,8 +122,8 @@ export function iconPx(key: string, element: ElementKey = 'phys'): Px {
     for (let i = 0; i < q.d.length; i++) if (q.d[i]) q.d[i] = mix(WHITE, r[4], ((i / 24) | 0) > 13 ? 0.45 : 0.1);
     ins(q, 0, 0);
   } else {
-    const k = key.startsWith('item_') ? key.slice(5) : key, fn = ITEMS[k] ?? CRAFT_ICONS[k] ?? WORLD_ICONS[k];
-    if (fn) { fn(p); if (!CRAFT_FLAT.has(k)) p.outline(INK); (CRAFT_GLOW[k] ?? WORLD_GLOW[k])?.(p); } else { p.rrect(3, 3, 18, 18, P.stone[2]); p.rect(11, 6, 2, 8, WHITE); p.rect(11, 16, 2, 2, WHITE); p.outline(INK); }
+    const k = key.startsWith('item_') ? key.slice(5) : key, fn = ITEMS[k] ?? CRAFT_ICONS[k] ?? WORLD_ICONS[k] ?? HOME_ICONS[k];
+    if (fn) { fn(p); if (!CRAFT_FLAT.has(k) && !HOME_FLAT.has(k)) p.outline(INK); (CRAFT_GLOW[k] ?? WORLD_GLOW[k] ?? HOME_GLOW[k])?.(p); } else { p.rrect(3, 3, 18, 18, P.stone[2]); p.rect(11, 6, 2, 8, WHITE); p.rect(11, 16, 2, 2, WHITE); p.outline(INK); }
   }
   return p;
 }

@@ -61,14 +61,14 @@ function look(h: HomeData, kind: string, idx: number): Record<string, any> {
     case 'stash': return { frame: 'stash_chest', prompt: 'Lagertruhe öffnen', ui: 'lager' };
     case 'wardrobe': return { frame: 'house_shelf', prompt: 'Kleiderschrank öffnen', ui: 'schrank' };
     case 'table': return { frame: 'house_table', prompt: 'Baupläne ansehen', ui: 'ausbau' };
-    case 'stable': return { frame: 'haystack', prompt: 'Nach den Begleitern sehen', ui: 'begleiter' };
-    case 'bed': return hasBed(h) ? { frame: 'bed', prompt: 'Schlafen', ui: 'bett' } : bau('woodpile', 3);
-    case 'forge': return hasStations(h) ? { frame: 'forge', prompt: 'Schmieden', station: 'forge', light: [72, 0xff9040, 0.9] } : bau('woodpile', 2);
-    case 'alchemy': return hasStations(h) ? { frame: 'station_alchemy', prompt: 'Tränke und Elixiere brauen', station: 'alchemy', light: [30, 0x70ffd8, 0.4] } : bau('crate', 2);
-    case 'cooking': return hasStations(h) ? { frame: 'station_cook', prompt: 'Kochen', station: 'cooking', light: [82, 0xffb060, 0.95] } : bau('barrel', 2);
-    case 'enchant': return hasStations(h) ? { frame: 'station_enchant', prompt: 'Ausrüstung verzaubern', station: 'enchant', light: [56, 0x80c0ff, 0.7] } : bau('crate', 2);
+    case 'stable': return { frame: 'begleiterplatz', prompt: 'Nach den Begleitern sehen', ui: 'begleiter' };
+    case 'bed': return hasBed(h) ? { frame: 'bed', prompt: 'Schlafen', ui: 'bett' } : bau('bauplatz_a', 3);
+    case 'forge': return hasStations(h) ? { frame: 'forge', prompt: 'Schmieden', station: 'forge', light: [72, 0xff9040, 0.9] } : bau('bauplatz_a', 2);
+    case 'alchemy': return hasStations(h) ? { frame: 'station_alchemy', prompt: 'Tränke und Elixiere brauen', station: 'alchemy', light: [30, 0x70ffd8, 0.4] } : bau('bauplatz_b', 2);
+    case 'cooking': return hasStations(h) ? { frame: 'station_cook', prompt: 'Kochen', station: 'cooking', light: [82, 0xffb060, 0.95] } : bau('bauplatz_c', 2);
+    case 'enchant': return hasStations(h) ? { frame: 'station_enchant', prompt: 'Ausrüstung verzaubern', station: 'enchant', light: [56, 0x80c0ff, 0.7] } : bau('bauplatz_b', 2);
     case 'stand': {
-      if (idx >= homeStands(h)) return { frame: 'fence_post' };
+      if (idx >= homeStands(h)) return { frame: 'trophy_stand_locked' };
       const t = HOME_TROPHY[h.stands[idx]];
       if (!t || !ownsTrophy(h, t.id)) return { frame: 'trophy_stand', prompt: 'Trophäenständer (leer)', ui: 'trophaeen' };
       return { frame: 'trophy_stand', label: t.name, prompt: `Trophäe ansehen: ${t.name}`, ui: 'trophaeen', tro: t.id, light: [36, TROPHY_CATS.find(c => c.id === t.cat)!.color, 0.55] };
@@ -114,7 +114,7 @@ export const atOwn = (p: Player) => OWNER.get(p.zone)?.acc === p.accountId;
 function applyRest(p: Player) {
   const left = (p.char.rest ?? 0) - p.char.playtime;
   if (left <= 1) { if (p.char.rest !== undefined) { delete p.char.rest; p.sync('rest'); } return; }
-  p.addBuff({ id: 'rest', name: 'Ausgeruht', glyph: 'p_vit', icon: 'item_food_tee', until: p.zone.game.now + left, mods: { xpPct: H.rest.xpPct }, shield: 0, keep: true,
+  p.addBuff({ id: 'rest', name: 'Ausgeruht', glyph: 'p_vit', icon: 'item_buff_ausgeruht', until: p.zone.game.now + left, mods: { xpPct: H.rest.xpPct }, shield: 0, keep: true,
     desc: `Ausgeruht – +${H.rest.xpPct} % Erfahrung (auch für Quellstufen). Gilt nur, während du spielst.` });
 }
 
@@ -224,7 +224,7 @@ function handle(g: Game, p: Player, m: HomeMsg) {
       p.hp = p.stats.maxHp; p.mp = p.stats.maxMp;
       z.ev({ k: 'fx', n: 'heal', x: p.x, y: p.y, el: 'light' });
       p.pev.push({ k: 'sfx', n: 'heal' });
-      p.toast(`Ausgeruht: +${H.rest.xpPct} % Erfahrung für ${Math.round(sec / 60)} Minuten Spielzeit.`, 'good', 'item_food_tee');
+      p.toast(`Ausgeruht: +${H.rest.xpPct} % Erfahrung für ${Math.round(sec / 60)} Minuten Spielzeit.`, 'good', 'item_buff_ausgeruht');
       return;
     }
   }
@@ -291,7 +291,7 @@ export const Home = {
   signs(map: GameMap): Obj[] {
     if (map.id !== HOME_SIGN.zone) return [];
     const s = signSpot();
-    return s ? [{ id: nextId(), type: 'hobj', x: s.x, y: s.y, state: 0, tag: 'weg', props: { sid: 'heimweg', kind: 'weg', ...NONE, frame: 'lamp', label: 'Hof am Waldrand', prompt: 'Zum Hof am Waldrand', ui: 'weg', light: [84, 0xffd89a, 0.9] } }] : [];
+    return s ? [{ id: nextId(), type: 'hobj', x: s.x, y: s.y, state: 0, tag: 'weg', props: { sid: 'heimweg', kind: 'weg', ...NONE, frame: 'home_sign', label: 'Hof am Waldrand', prompt: 'Zum Hof am Waldrand', ui: 'weg', light: [84, 0xffd89a, 0.9] } }] : [];
   },
   init(z: Zone, p: Player): ZoneInit['heim'] {
     const o = OWNER.get(z);

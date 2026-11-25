@@ -276,7 +276,7 @@ function starShard(p: Px, f: number): void {
 }
 
 // ---------------------------------------------------------------- Grabstelle, vergrabene Truhe
-function soil(p: Px, cx: number, cy: number, rx: number, ry: number, seed: number): void {
+export function soil(p: Px, cx: number, cy: number, rx: number, ry: number, seed: number): void {
   for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
     const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry, d = u * u + v * v, n = rnd2(x, y, seed), n2 = rnd2(x >> 1, y >> 1, seed + 1);
     if (d > 1 - n * 0.3) continue;

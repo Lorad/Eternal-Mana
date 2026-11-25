@@ -118,29 +118,29 @@ export interface HomeTrophy {
 }
 const flag = (k: string) => (c: CharData) => !!c.flags[k];
 const BOSS_TROPHY: Record<string, [string, string, string]> = {
-  dornenmutter: ['Dorn der Dornenmutter', 'seal_earth', 'Er sticht noch. Aus Prinzip.'],
-  kristallkoloss: ['Splitter des Kolosses', 'seal_light', 'Wiegt mehr, als er sollte, und summt, wenn niemand hinhört.'],
-  ignarok: ['Schlackenschuppe', 'seal_fire', 'Von Ignarok. Als Untersetzer ungeeignet – Borin hat es probiert.'],
-  ysolde: ['Ysoldes Webschiffchen', 'seal_water', 'Der Faden daran ist aus Eis und reißt nicht. Inga hat schon gefragt, was er kostet.'],
-  archivar: ['Leeres Blatt des Archivars', 'seal_wind', 'Es steht nichts darauf. Das war die ganze Arbeit.'],
-  hohlkoenig: ['Zacke der Hohlen Krone', 'seal_dark', 'Morvains. Man stellt sie nicht aus, um zu prahlen.'],
-  vael: ['Vaels Laterne', 'potion_mp', 'Geliehen. Er sagt, tausend Jahre lang habe sie niemand ausgemacht, und du sollst nicht der Erste sein.'],
-  aetherion: ['Ein Ton des Wiegenlieds', 'shard', 'Im Glas. Wenn es still ist, summt es vier Töne und hört vor dem fünften auf.'],
+  dornenmutter: ['Dorn der Dornenmutter', 'tro_b_dornenmutter', 'Er sticht noch. Aus Prinzip.'],
+  kristallkoloss: ['Splitter des Kolosses', 'tro_b_kristallkoloss', 'Wiegt mehr, als er sollte, und summt, wenn niemand hinhört.'],
+  ignarok: ['Schlackenschuppe', 'tro_b_ignarok', 'Von Ignarok. Als Untersetzer ungeeignet – Borin hat es probiert.'],
+  ysolde: ['Ysoldes Webschiffchen', 'tro_b_ysolde', 'Der Faden daran ist aus Eis und reißt nicht. Inga hat schon gefragt, was er kostet.'],
+  archivar: ['Leeres Blatt des Archivars', 'tro_b_archivar', 'Es steht nichts darauf. Das war die ganze Arbeit.'],
+  hohlkoenig: ['Zacke der Hohlen Krone', 'tro_b_hohlkoenig', 'Morvains. Man stellt sie nicht aus, um zu prahlen.'],
+  vael: ['Vaels Laterne', 'tro_b_vael', 'Geliehen. Er sagt, tausend Jahre lang habe sie niemand ausgemacht, und du sollst nicht der Erste sein.'],
+  aetherion: ['Ein Ton des Wiegenlieds', 'tro_b_aetherion', 'Im Glas. Wenn es still ist, summt es vier Töne und hört vor dem fünften auf.'],
 };
 const ENDE_TROPHY: [string, string, string][] = [
-  ['Versiegelter Krug', 'potion_elixir', 'Ende „Versiegeln“ – das Wasser darin wird über Jahrhunderte weniger. Man sieht es nicht. Man weiß es nur.'],
-  ['Offenes Fenster', 'mat_ess_wind', 'Ende „Befreien“ – ein Fensterflügel ohne Fenster. Es zieht trotzdem.'],
-  ['Stimmgabel in Fis', 'mat_ess_light', 'Ende „Das Lied vollenden“ – Fenwick behauptet, sie antworte, wenn man sie anschlägt. Er schlägt sie oft an.'],
+  ['Versiegelter Krug', 'tro_m_ende1', 'Ende „Versiegeln“ – das Wasser darin wird über Jahrhunderte weniger. Man sieht es nicht. Man weiß es nur.'],
+  ['Offenes Fenster', 'tro_m_ende2', 'Ende „Befreien“ – ein Fensterflügel ohne Fenster. Es zieht trotzdem.'],
+  ['Stimmgabel in Fis', 'tro_m_ende3', 'Ende „Das Lied vollenden“ – Fenwick behauptet, sie antworte, wenn man sie anschlägt. Er schlägt sie oft an.'],
 ];
 export const HOME_TROPHIES: HomeTrophy[] = [
   ...TROPHIES.map(([id, name, icon, desc], i): HomeTrophy => ({ id, name, cat: i < 12 ? 'jagd' : 'welt', icon, desc,
     how: i < 12 ? 'Trophäe eines seltenen Monsters (benutzen, um sie aufzunehmen)' : 'Trophäe eines Weltbosses (benutzen, um sie aufzunehmen)', has: flag(`tr:${id}`) })),
   ...Object.keys(BOSS_TROPHY).map((b): HomeTrophy => ({ id: 'b_' + b, name: BOSS_TROPHY[b][0], cat: 'boss', icon: BOSS_TROPHY[b][1], desc: BOSS_TROPHY[b][2],
     how: `${BOSSES[b].name} ${BOSSES[b].spared !== undefined ? 'bestehen' : 'besiegen'}`, has: flag(`b:${b}`) })),
-  ...[10, 20, 30].map((n, i): HomeTrophy => ({ id: 'm_riss' + n, name: ['Riss-Scherbe', 'Riss-Spiegel', 'Der zugenähte Riss'][i], cat: 'zeichen', icon: 'mat_void',
+  ...[10, 20, 30].map((n, i): HomeTrophy => ({ id: 'm_riss' + n, name: ['Riss-Scherbe', 'Riss-Spiegel', 'Der zugenähte Riss'][i], cat: 'zeichen', icon: 'tro_m_riss' + n,
     desc: ['Ein Stück Nichts mit scharfen Kanten.', 'Zeigt dich, wie du vor dem Riss warst. Etwas ausgeruhter.', 'Stufe dreißig. Jemand hat die Naht sehr sorgfältig gesetzt. Du warst das.'][i],
     how: `Mana-Riss der Stufe ${n} abschließen`, has: c => riftDone(c) >= n })),
-  { id: 'm_sieben', name: 'Sieben Kerzen', cat: 'zeichen', icon: 'seal_dark', desc: 'Eine für jeden Sitz. Die siebte brennt am längsten.', how: 'Die Prüfung der Sieben bestehen', has: c => (c.rift?.trial ?? 0) > 0 },
+  { id: 'm_sieben', name: 'Sieben Kerzen', cat: 'zeichen', icon: 'tro_m_sieben', desc: 'Eine für jeden Sitz. Die siebte brennt am längsten.', how: 'Die Prüfung der Sieben bestehen', has: c => (c.rift?.trial ?? 0) > 0 },
   ...ENDE_TROPHY.map(([name, icon, desc], i): HomeTrophy => ({ id: 'm_ende' + (i + 1), name, cat: 'zeichen', icon, desc, how: i === 2 ? 'Ein Ende, das nicht auf dem Wegweiser steht' : 'Die Geschichte zu Ende erzählen', has: c => seenEndings(c).includes(i + 1) })),
 ];
 export const HOME_TROPHY: Record<string, HomeTrophy> = Object.fromEntries(HOME_TROPHIES.map(t => [t.id, t]));

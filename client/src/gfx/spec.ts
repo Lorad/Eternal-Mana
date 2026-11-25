@@ -273,6 +273,11 @@ export const ITEM_ICONS = [
   'food_stern', 'food_kresse', 'food_fladen', 'food_wette',
   'uq_brunnenmuenze', 'uq_schichtmarke', 'uq_feuerstein', 'uq_wettschein', 'uq_fundnummer', 'uq_docht',
   'uq_kompass', 'uq_pfennig',
+  // Zuhause (icons_home.ts): Boss-Trophäen `tro_b_`, Wegzeichen `tro_m_`, Wappen der Boss-Unikate `uni_`.
+  'tro_b_dornenmutter', 'tro_b_kristallkoloss', 'tro_b_ignarok', 'tro_b_ysolde', 'tro_b_archivar', 'tro_b_hohlkoenig', 'tro_b_vael', 'tro_b_aetherion',
+  'tro_m_riss10', 'tro_m_riss20', 'tro_m_riss30', 'tro_m_sieben', 'tro_m_ende1', 'tro_m_ende2', 'tro_m_ende3',
+  'pet_pilzling', 'buff_ausgeruht',
+  'uni_dornenmutter', 'uni_kristallkoloss', 'uni_ignarok', 'uni_ysolde', 'uni_archivar', 'uni_hohlkoenig',
 ] as const;
 
 /**

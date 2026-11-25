@@ -232,7 +232,7 @@ function Trophies({ home, slot }: { home: HomeData; slot: number }) {
           return (
             <button type="button" class={cx('hof-stand', sel === i && 'on', locked && 'locked')} disabled={locked} onClick={() => { sfx('ui_click'); setSel(i); }}
               {...tipProps(() => <div class="tip-text"><b>{locked ? 'Noch kein Ständer' : t ? t.name : `Ständer ${i + 1} (leer)`}</b>{locked ? 'Mehr Ständer bringt der Ausbau des Hofs.' : t?.desc}</div>)}>
-              <Sprite k="obj" f={locked ? 'fence_post' : 'trophy_stand'} scale={2} />
+              <Sprite k="obj" f={locked ? 'trophy_stand_locked' : 'trophy_stand_empty'} scale={2} />
               {t && !locked && <Icon k={'item_' + t.icon} size={24} class="hof-stand-icon" />}
               <span>{locked ? '—' : i + 1}</span>
             </button>
