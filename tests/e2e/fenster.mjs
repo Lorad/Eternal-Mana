@@ -126,9 +126,10 @@ try {
   await page.getByText('Überspringen').click(); await wait(500);
   await cmd('/welt aus');
   await page.getByText('Lebendige Welt von selbst').first().waitFor({ timeout: 5000 }); // sonst läuft der Server ohne EM_DEV=1
-  await cmd('/endspiel'); await wait(1500);
-  await cmd('/hof 3'); await wait(3000);              // führt auf den Hof (Zonenwechsel)
-  await cmd('/tp gruenwald'); await wait(3500);
+  await cmd('/endspiel'); await wait(2500);
+  const inZone = id => page.waitForFunction(z => window.__em.store.state.screen === 'game' && window.__em.game.scene.getScene('game').map?.def.id === z, id, { timeout: 60000 }).then(() => wait(600));
+  await cmd('/hof 3'); await inZone('heim');           // führt auf den Hof (Zonenwechsel)
+  await cmd('/tp gruenwald'); await inZone('gruenwald');
   for (const c of ['/god', '/riss 22', '/quell 7', '/echo 40', '/gold 60000', '/trophaeen', '/begleiter alle', '/gewand', '/bestiarium', '/lore all', '/recipes', '/legend', '/gear 4', '/mats ore 30', '/rep quellhain 5000', '/time 0.5']) await cmd(c);
   // vier laufende Quests für die Questverfolgung
   for (const q of ['s_tobi', 's_pilze', 's_woelfe', 'r_gruenwald', 's_splitter1']) await cmd('/qa ' + q);

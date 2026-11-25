@@ -15,7 +15,8 @@ Geräte in diesem Netz erreichbar – **ohne Portfreigabe am Router und ohne öf
 
 1. Tailscale von https://tailscale.com/download installieren und anmelden.
 2. Prüfen, dass Tailscale verbunden ist (Symbol in der Taskleiste bzw. `tailscale status`).
-3. `start-server.bat` / `./start-server.sh` starten. Im Serverfenster erscheinen die Zeilen
+3. Den Server starten – im Launcher („Server starten“) oder mit `start-server.bat` / `./start-server.sh`. Im Launcher bzw. im
+   Serverfenster erscheinen die Zeilen
    **Tailscale-IP** (z. B. `http://100.101.102.103:7777`) und – wenn MagicDNS aktiv ist – **Tailscale MagicDNS**
    (z. B. `http://mein-pc.tail1234.ts.net:7777`). Dieselben Adressen stehen im Spiel in der Charakterauswahl.
 4. Diese Adresse an die Mitspieler schicken.
@@ -88,8 +89,9 @@ Fehlt Tailscale, startet der Server trotzdem und meldet „Tailscale wurde nicht
 
 | Symptom | Prüfen |
 |---|---|
-| Serverfenster zeigt keine Tailscale-Adresse | Läuft Tailscale und ist angemeldet? `tailscale status`. Danach Server neu starten. |
+| Keine Tailscale-Adresse im Launcher, im Serverfenster oder in der Charakterauswahl | Läuft Tailscale und ist angemeldet? `tailscale status`. Danach Server neu starten. |
 | Mitspieler: „Seite nicht erreichbar“ | Beide Geräte im selben Tailnet bzw. Gerät geteilt? `tailscale ping <gastgeber>` vom Mitspieler aus. Firewall des Gastgebers (siehe oben). ACLs. |
 | MagicDNS-Name funktioniert nicht | Stattdessen die 100.x.y.z-Adresse nutzen oder MagicDNS in der Admin-Konsole aktivieren. |
-| Verbindung bricht ab | Das Spiel verbindet sich automatisch neu; der Charakter bleibt 30 Sekunden geschützt in der Welt stehen. |
+| Verbindung bricht ab | Das Spiel verbindet sich automatisch neu und zeigt das an; der Charakter bleibt 30 Sekunden geschützt in der Welt stehen, der Platz in der Gruppe 5 Minuten frei. |
+| Mitspieler sieht „Neue Version“ | Der Gastgeber hat aktualisiert, während der Browser noch offen war: Seite neu laden. |
 | Hohe Verzögerung | `tailscale status` zeigt, ob die Verbindung „direct“ ist oder über ein Relay („relay“) läuft. Relay ist langsamer; oft hilft es, UDP im Heimrouter nicht zu blockieren. |

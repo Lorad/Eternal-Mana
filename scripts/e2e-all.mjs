@@ -3,6 +3,8 @@
 // Jeder Durchlauf bekommt seinen EIGENEN, frisch gestarteten Server (eigener Port, leere Datenbank im Temp-Ordner,
 // Dev-Befehle an) – so stören sie sich nicht (Tageszeit, Ereignisse, Jahreszeit sind serverweit) und laufen nebeneinander.
 // Am Ende steht je Skript bestanden/gescheitert mit Dauer; Rückgabewert 1, sobald eines scheitert.
+// Die Adresse trägt `?hinweise=aus`: Die Hinweise des Spiels (0.8) bleiben aus, damit keine Karte über einem Knopf liegt –
+// nur tests/e2e/erste-schritte.mjs prüft sie ausdrücklich und ruft die Seite ohne diesen Zusatz auf.
 //
 //   npm run test:e2e:all                  alle Skripte, zwei nebeneinander
 //   npm run test:e2e:all -- coop welt     nur Skripte, deren Name passt
@@ -19,7 +21,7 @@ const dir = path.join(root, 'tests/e2e');
 const want = process.argv.slice(2).filter(a => !a.startsWith('-'));
 const scripts = fs.readdirSync(dir).filter(f => f.endsWith('.mjs') && (!want.length || want.some(w => f.includes(w)))).sort();
 const jobs = Math.max(1, Math.min(scripts.length, Number(process.env.EM_JOBS) || 2));
-const TIMEOUT_MS = (Number(process.env.EM_TIMEOUT) || 600) * 1000;
+const TIMEOUT_MS = (Number(process.env.EM_TIMEOUT) || 900) * 1000;
 if (!scripts.length) { console.error('Kein passendes Skript in tests/e2e.'); process.exit(2); }
 
 const run = (cmd, args, opts = {}) => new Promise(res => {
@@ -56,7 +58,7 @@ async function one(file) {
   else {
     let child, timedOut = false;
     const timer = setTimeout(() => { timedOut = true; child?.kill('SIGKILL'); }, TIMEOUT_MS);
-    res = await run(process.execPath, [path.join('tests/e2e', file)], { env: { ...process.env, EM_URL: `http://127.0.0.1:${port}` }, stdio: ['ignore', 'pipe', 'pipe'], onProc: p => (child = p) });
+    res = await run(process.execPath, [path.join('tests/e2e', file)], { env: { ...process.env, EM_URL: `http://127.0.0.1:${port}/?hinweise=aus` }, stdio: ['ignore', 'pipe', 'pipe'], onProc: p => (child = p) });
     clearTimeout(timer);
     if (timedOut) res = { code: 1, out: res.out + `\nAbgebrochen nach ${TIMEOUT_MS / 1000} s.` };
   }
@@ -71,7 +73,9 @@ async function one(file) {
 
 console.log(`Eternal Mana – ${scripts.length} Browser-Durchläufe, ${jobs} nebeneinander (je ein eigener Server mit leerer Datenbank)`);
 const t0 = Date.now();
-const queue = [...scripts], results = [];
+// die langen Durchläufe zuerst, damit am Ende nicht einer allein läuft
+const LONG = ['coop.mjs', 'welt.mjs', 'zuhause.mjs', 'fenster.mjs', 'endgame.mjs'];
+const queue = [...scripts].sort((a, b) => (LONG.indexOf(a) + 99) % 99 - (LONG.indexOf(b) + 99) % 99), results = [];
 await Promise.all(Array.from({ length: jobs }, async () => { for (let f; (f = queue.shift()); ) results.push(await one(f)); }));
 results.sort((a, b) => a.file.localeCompare(b.file));
 const bad = results.filter(r => !r.ok);

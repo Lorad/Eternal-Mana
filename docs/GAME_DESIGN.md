@@ -6,6 +6,29 @@ Ein klassisches Action-RPG in schräger Draufsicht: kurze, knackige Echtzeitkäm
 Ausweichrolle zählen; eine zusammenhängende Welt aus sechs Landstrichen; Dungeons mit Schlüsseln, Fallen, Rätseln und
 Bossen, die man allein oder zu viert bestreitet. Welt, Figuren, Geschichte, Grafik und Musik sind eigenständig.
 
+Aus der ersten, etwa sechsstündigen Geschichte (0.1) ist mit den Versionen 0.3 bis 0.7 ein großes Rollenspiel geworden.
+Der Leitgedanke dabei: **wenige Währungen, keine Berufsstufen, alles ist verbunden** – Rohstoffe kommen aus Biomen,
+Dungeons, Bossen und Ereignissen und fließen in Handwerk und Verbesserungen; Ruf, Sammlung und Geschichte schalten Rezepte,
+Begleiter und Erscheinungen frei. Die verbindliche Leitlinie des Ausbaus (mit der ganzen Handlung) ist `docs/ROADMAP.md`.
+
+## Überblick der Systeme
+
+| System | seit | Wo man ihm begegnet | Abschnitt |
+|---|---|---|---|
+| Kampf, Klassen, Stufen, Beute, sechs Regionen und Dungeons (Akt I) | 0.1 | von der ersten Minute an | Welt · Dungeons · Bosse · Klassen · Kampf · Beute |
+| Handwerk an vier Stationen, Sets, Legendäre Waffen, Runen | 0.3 | Schmiede, Alchemistin, Lagerfeuer, Gelehrte – als Zeile im Gespräch | Handwerk |
+| Schwächen, Resistenzen, Zustände je Element, Reaktionen | 0.3 | Zielanzeige oben im Bild, Bossleiste | Elemente |
+| Akt II, Gespräche mit Auswahl, Entscheidungen, Filmszenen, Chronik | 0.4 | nach dem Hohlen König wieder in Quellhain; Chronik im Questlog | Geschichte |
+| Mana-Risse, Boss-Echos, Prüfung der Sieben, Quellstufen, Neuer Kreis | 0.5 | Riss-Stein in Quellhain, Knopf unter dem eigenen Rahmen | Endspiel |
+| Ruf, Ereignisse, Weltbosse, seltene Monster, Schätze, Tagesläufe, Jahreszeiten | 0.6 | Fenster „Ruf und Welt“ (U), Anzeige rechts im Bild, Karte | Lebendige Welt |
+| Hof mit Lagertruhe, Trophäen, Begleiter, Sammlung, Erscheinungen | 0.7 | Mirelda, Wegweiser in Quellhain, Fenster „Sammlung“ (B) | Zuhause |
+| Gruppenverwaltung, Handel, Quest teilen, Gruppentruhe, Ansehen | 0.7.1 | Fenster „Gruppe“ (P), Menü an jedem Mitspieler | Gemeinsam |
+| Handbuch, Hinweise, einheitliches HUD, Gamepad in allen Fenstern, „Blitze reduzieren“ | 0.8 | Taste H, Menü, Einstellungen | Bedienung und Hilfen |
+
+Was der Spieler selbst nachlesen kann, steht im **Handbuch** im Spiel (Taste H) – dessen Zahlen stammen aus denselben
+Tabellen wie die Spielregeln (`shared/src/config.ts`, `shared/src/data/*`) und können deshalb nicht veralten. Dieses Dokument
+beschreibt Absicht und Zusammenhang; wo es Zahlen nennt, ist im Zweifel der Code maßgeblich.
+
 ## Geschichte
 
 Unter der Welt entspringt die **Ewige Quelle**; aus ihr fließt das Mana der sechs Elemente. Sechs Siegel halten sie im
@@ -15,8 +38,19 @@ erfährt dabei, was die Chroniken verschweigen: Es gab einen siebten Hüter. **M
 Tochter Maelis zu retten. Seither sitzt er als **Hohler König** im Schattenreich und hält die Quelle in sich fest, damit
 Maelis' Echo nicht vergeht. Ihn zu besiegen bringt das Wasser zurück – und lässt Maelis gehen.
 
-Erzählt wird über Questdialoge (jeder NPC hat eine eigene Stimme), Story-Einblendungen bei jedem Siegel, Inschriften in
-der Welt und Zwischenrufe der Bosse. 18 Hauptquests, 14 Nebenquests, 6 wiederholbare Aufträge, 1 wiederholbare Gruppenquest.
+**Akt II (ab 0.4, Kapitel 7–10 und Epilog):** Mit den sechs Siegeln am Brunnen hat der Quellgänger – ohne es zu wissen –
+sechs der sieben Mana-Kristalle wieder vereint. Die Quelle *ist* ein Wesen: **Aetherion**, der Träumer am Grund. **Vael**, der
+letzte der Ersten Hüter, bewacht seinen Schlaf seit tausend Jahren und prüft den Spieler, statt ihn zu töten. Unter dem
+Brunnen liegt der **Quellgrund** und darin das **Herz der Quelle**; der Kampf dort richtet sich gegen Aetherions Albtraum,
+nicht gegen das Wesen. Am Ende steht eine Entscheidung mit drei Ausgängen (versiegeln, befreien – und ein verborgener dritter
+für alle, die die Hüter-Erinnerungen, Fenwicks Lied und Maelis’ Wiegenlied gefunden haben). Sie bleibt gespeichert und
+verändert Epilog und Gespräche.
+
+Erzählt wird über Questdialoge (jede Figur hat eine eigene Stimme), **Gesprächsthemen mit Auswahl** (der Server führt den
+Gesprächsbaum; Antworten mit „!“ sind Entscheidungen), **Filmszenen** mit Kapitelkarten (überspringbar – erst beim zweiten
+Tastendruck; wer zuschaut, ist geschützt), die **Chronik** (Schriftstücke in der Welt, gesammelt im Questlog), Inschriften und
+Zwischenrufe der Bosse. Umfang: 88 Quests (32 Haupt-, 49 Nebenquests samt Charakter- und Geheimquests, 6 wiederholbare
+Aufträge, 1 Gruppenquest), 6 Entscheidungen, 25 Filmszenen, 49 Chronik-Dokumente, 22 Figuren mit Gespräch.
 
 ## Welt
 
@@ -28,6 +62,11 @@ der Welt und Zwischenrufe der Bosse. 18 Hauptquests, 14 Nebenquests, 6 wiederhol
 | Frostgebirge | 16–20 | Schnee, Eis, Schneestürme | Gletscherdom · Ysolde | nach „Der Schlackenwurm“ |
 | Verlorene Ruinen | 21–25 | antike Stadt der Hüter | Archiv der Stille · Der Archivar | nach „Die Frostweberin“ |
 | Schattenreich | 26–30 | Kehrseite der Quelle | Thron der Leere · Der Hohle König | nach „Archiv der Stille“ |
+| ↳ Vaels Wacht (Akt II) | 34–36 | Dungeon im Schattenreich | Vael, Hüter der Dunkelheit | Kapitel 9 |
+| Quellgrund (Akt II) | 35–38 | unter dem Brunnen von Quellhain | Herz der Quelle (38–40) · Aetherion / „Die Große Stille“ | Kapitel 10 |
+
+Die Höchststufe ist 40. Danach füllt Erfahrung Quellstufen (Endspiel), und in einem Neuen Kreis steigen die Stufen aller
+Gebiete mit.
 
 Jedes Gebiet hat eigene Bodengrafik und Deko, vier eigene Gegnertypen, eigenes Musikstück und Ambiente, eigenes Wetter,
 einen Rohstoff, ein Lager mit NPCs und Quellstein, bewachte Truhen an besonderen Orten, fünf versteckte Quellsplitter und
@@ -65,6 +104,11 @@ Jeder Boss hat drei Phasen (bei 66 % und 33 % Leben) und eigene Mechaniken:
 | Ysolde | Wasser | teleportiert; Eisfächer, verlangsamende Schneefelder, Eislanzen auf jeden Spieler, Spiegelbilder, „Absoluter Stillstand“: raumweiter Angriff, nur in zwei Lichtkreisen überlebt man |
 | Der Archivar | Wind | rotierendes Strahlenkreuz, schwächende Kugeln, Schachbrett-Einschläge, Dreifachspirale, „Löschung“ mit sicheren Zonen |
 | Der Hohle König | Dunkelheit | Phase 1 Duellant mit Sturmhieben; Phase 2 wechselt reihum durch fünf Elemente (und damit seine Schwäche) mit je eigenem Angriff; Phase 3 Leere: Raumangriff mit Lichtkreisen, Vierfachspirale, Leerenbrut |
+| Vael (Akt II) | Dunkelheit | eine Prüfung, kein Kampf auf Leben und Tod: Er wird nicht getötet und bleibt danach in Ruhepose stehen |
+| Aetherion – „Die Große Stille“ (Akt II) | wechselnd | wandert durch alle sechs Elemente und damit durch Schwächen und Angriffe; auch er stirbt nicht |
+
+Wechselt ein Boss nur das Element, blitzt nicht jedes Mal das ganze Bild: Den Bildschirmblitz gibt es beim Phasenwechsel und
+sonst höchstens alle paar Sekunden; mit „Blitze reduzieren“ (Einstellungen) bleibt nur ein weicher Schleier.
 
 ## Klassen
 
@@ -97,7 +141,7 @@ Affixen, sechs Materialstufen. Bosse lassen benannte Elementarwaffen für die ei
 Ausrüstung bis +10 gegen Gold und den Rohstoff der passenden Stufe; ab +4 kann ein Versuch scheitern (Material weg,
 Gegenstand bleibt). Händler verkaufen Tränke und Grundausrüstung.
 
-## Handwerk (ab 0.4)
+## Handwerk (0.3)
 
 Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohstoffe, Gold, Stufe und die richtige Station.
 
@@ -125,7 +169,7 @@ Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohst
   und häufiger · Waldläufer *Echosehne* – kritische Treffer prallen ab · Paladin *Morgenwacht* – Heilungen legen Schilde ·
   Schattenjäger *Zwielichtfänge* – gezeichnete Ziele detonieren.
 
-## Elemente (ab 0.4)
+## Elemente (0.3)
 
 - **Schwächen und Resistenzen:** Zusätzlich zum Kreislauf hat jeder Boss und fast jeder Gegner ausdrückliche Schwächen
   (×1,25) und manche Resistenzen (×0,8, auch gegen physischen Schaden). Die Zielanzeige oben im Bild und die Bossleiste
@@ -142,7 +186,7 @@ Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohst
   (z. B. Krieger Feuersturm/Sandsturm, Magier Dampf/Frost/Feuersturm, Waldläufer Sandsturm/Frost, Paladin
   Zwielicht/Quellsegen, Schattenjäger Fäulnis/Zwielicht).
 
-## Endspiel (ab 0.5)
+## Endspiel (0.5)
 
 Für Charaktere, die die Geschichte abgeschlossen haben. Wenige Mechaniken, die in Handwerk, Sets, Legendäre Waffen und
 Elemente zurückfließen.
@@ -179,7 +223,29 @@ Elemente zurückfließen.
   Quellsteine beginnen neu. Die gesehenen Enden und die Entscheidungen jedes Kreises bleiben vermerkt. Quests geben ab
   dem zweiten Kreis Echo-Fragmente statt Punkten. **Gruppen spielen in der Welt des Mitglieds mit dem niedrigsten Kreis.**
 
-## Zuhause (ab 0.7)
+## Lebendige Welt (0.6)
+
+Die Oberwelt ist nicht nur Kulisse zwischen zwei Dungeons. Alles hier belohnt persönlich – niemand nimmt jemandem etwas weg –
+und läuft nur in Zonen, in denen gerade jemand ist.
+
+- **Ruf bei sechs Fraktionen**, eine je Region (Übersicht: Fenster „Ruf und Welt“, Taste U). Quests, Ereignisse, seltene
+  Monster, gehobene Schätze, Begegnungen und gespendete Rohstoffe bringen Ruf. Fünf Ränge (Fremd, Bekannt, Geachtet, Vertraut,
+  Unentbehrlich) öffnen die Vorräte der Fraktion, Rezepte, einen Titel, ein einmaliges Schmuckstück und einen Nachlass bei
+  allen Händlern der Region. Alte Spielstände bekommen den Ruf für erledigte Quests einmalig gutgeschrieben.
+- **Ereignisse:** Mana-Woge, Sternenregen (nachts), die Fahrende Händlerin, Stolleneinsturz, Aschesturm, Schneesturmjagd –
+  angesagt, rechts im Bild mit Ziel und Restzeit, auf der Karte markiert. Der Beitrag jedes Beteiligten bestimmt seine Stufe
+  der Belohnung (Bronze, Silber, Gold).
+- **Weltbosse** (Moosgrimm, Aschenmaul, Feldwebel Niemand) ziehen durch je zwei Regionen und werden mit jedem Mitkämpfer zäher.
+  Die Anzeige rechts nennt Weltbosse anderer Regionen nur, wenn sie für die eigene Stufe in Reichweite sind.
+- **Seltene Monster:** zwölf benannte Geschöpfe mit eigener Besonderheit, manche nur nachts, bei bestimmtem Wetter oder zu
+  einer Jahreszeit; jedes hinterlässt eine Trophäe.
+- **Schatzkarten:** im Inventar benutzen, dem Hinweis rechts im Bild folgen, an der Stelle graben.
+- **Begegnungen am Weg:** Hinterhalt, verirrter Reisender, verletztes Tier, Duell.
+- **Tagesabläufe und Jahreszeiten:** Dorfbewohner gehen mittags essen und abends heim (und bedienen trotzdem). Vier
+  Jahreszeiten zu je 20 Minuten verändern Wetter, Licht, Abbaustellen und was sich draußen zeigt. Die Uhr der Jahreszeiten
+  läuft nur, während der Server läuft.
+
+## Zuhause (0.7)
 
 Ein Ort, an dem zusammenläuft, was die anderen Systeme abwerfen. Alles hier gehört dem Profil, nicht dem einzelnen Charakter.
 
@@ -208,6 +274,49 @@ Ein Ort, an dem zusammenläuft, was die anderen Systeme abwerfen. Alles hier geh
 - **Erscheinungen:** *Gewand* (fünf Varianten des Klassen-Sprites: Wald, Frost, Glut, Schatten, Gold) und *Waffenglanz*
   (neun Farben für Hieb und Geschoss) – freigeschaltet über Ruf, Riss-Stufen, Enden und die Sammlung, angelegt am
   Kleiderschrank eines Hofs, für andere Spieler sichtbar. Rein kosmetisch.
+
+## Gemeinsam (0.7.1)
+
+Bis zu vier Spieler bilden eine Gruppe; beliebig viele teilen sich einen Server. Die Regeln im Einzelnen stehen in
+[MULTIPLAYER.md](MULTIPLAYER.md) – hier nur die Grundsätze:
+
+- **Beute ist immer persönlich** (jeder würfelt für sich, passend zur eigenen Klasse); Erfahrung, Kill-Zähler, Questziele,
+  Ereignisse und Weltbosse zählen für alle Gruppenmitglieder in der Nähe.
+- **Die Gruppe hat einen Anführer** (lädt ein, entfernt, ernennt, öffnet Mana-Risse); die Führung geht von selbst weiter,
+  wenn er ausfällt. Ein Platz bleibt nach einem Verbindungsabriss fünf Minuten frei.
+- **Handel** ist ein Tausch in einem Zug mit Sperren und Bestätigen auf beiden Seiten; gebundene Gegenstände (Quest, Legendäre
+  Waffen, Trophäen, manche Rezepte) und alles, was dem Profil gehört, sind ausgenommen.
+- **Quest teilen**, **Gruppentruhe** nach Dungeon- und Riss-Bossen, **Ansehen** anderer Spieler, **Besuch auf dem Hof**.
+- Gegner werden mit jedem weiteren Spieler in der Nähe zäher; Reaktionen aus den Elementen zweier Spieler wirken stärker.
+
+## Bedienung und Hilfen (0.8)
+
+Das Spiel soll sich von jemandem lernen lassen, der es nie gesehen hat – ohne Tutorial-Wand.
+
+- **Hinweise** (`client/src/state/hints.ts`): eine kurze Karte über der Aktionsleiste in dem Moment, in dem ein System zum
+  ersten Mal wichtig wird – der erste Auftrag, der erste Kampf, Stufenaufstieg, neue Ausrüstung, Quellstein, Station,
+  Dungeon, Boss, Schwächen, Chronik, Entscheidung, Riss-Stein, Quellpunkt, Ereignis, Ruf, Schatzkarte, Hofkauf, Lagertruhe,
+  Kleiderschrank, Begleiter, Sammlung, Gruppe, Handel, volles Inventar. Jeder erscheint einmal je Profil, lässt sich
+  wegklicken, führt auf Wunsch ins passende Kapitel des Handbuchs und verschwindet nach kurzer Zeit von selbst. Abschaltbar
+  in den Einstellungen.
+- **Handbuch** (Taste H oder F1, Menü, Hauptmenü; `client/src/ui/handbuch.tsx`): 15 Kapitel, je System eine Seite. Zahlen,
+  Listen und Namen kommen aus den Spieldaten.
+- **Tasten:** alle Aktionen in vier Gruppen (Bewegung, Kampf, Fenster, Sonstiges), frei belegbar; eine Taste gehört immer
+  nur einer Aktion, Esc schließt immer das oberste Fenster. Neu: Handbuch, Questverfolgung ein-/ausklappen, Leistungsanzeige.
+- **HUD mit Rangfolge:** Die rechte Spalte zeigt von oben nach unten Karte → Riss-Anzeige → Ereignisse hier →
+  Questverfolgung → Weltbosse anderswo. Die Questverfolgung zeigt nur offene Ziele, nimmt den Platz, der übrig bleibt, und
+  klappt im Mana-Riss und im Bosskampf von selbst zu einer Zeile zusammen (Taste T oder ein Klick klappt sie auf).
+- **Fenster** passen bei 1280×720, 1000×560 und im Hochformat ins Bild; Kopfzeilen sind einzeilig (Titel · Reiter · Gold ·
+  Schließen), im schmalen Fenster stehen die Reiter als eigene Zeile darunter.
+- **Gamepad:** Der Fokus bleibt im obersten Fenster; jedes Fenster ist über das Menü (Start) erreichbar, auch offene
+  Anfragen (Einladung, Handel, geteilte Quest); Beträge lassen sich mit Knöpfen einstellen. Chat, Namenseingabe und das
+  Umbelegen von Tasten brauchen eine Tastatur – das steht auch im Handbuch.
+- **Verträglichkeit:** „Blitze reduzieren“ ersetzt Bildschirmblitze durch einen weichen Schleier, dämpft Bildschirmwackeln
+  und Lichtblitze und nimmt der Oberfläche pulsierende Flächen; „Bildschirmwackeln“ lässt sich getrennt ganz abschalten.
+- **Niedrige Bildrate:** Die eigene Figur bewegt sich bis hinunter zu 4 Bildern pro Sekunde in Echtzeit (und für den Server
+  gültig); die Leistungsanzeige (F3) hilft beim Eingrenzen.
+- **Wenn etwas schiefgeht**, gibt es immer eine Meldung und einen Weg weiter: Verbindung weg, Server neu gestartet oder
+  aktualisiert, Speichern gescheitert, Zone oder Grafik nicht ladbar, Fehler in der Darstellung.
 
 ## Balancing
 

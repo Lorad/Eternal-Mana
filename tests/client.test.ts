@@ -303,3 +303,41 @@ describe('Rangfolge der rechten HUD-Spalte', () => {
     }
   });
 });
+
+// =====================================================================================================================
+describe('Fehlerwege', () => {
+  const sim = new Sim();
+  afterAll(() => sim.close());
+
+  it('meldet ein gescheitertes Speichern, statt es zu bestätigen', () => {
+    const t = sim.join('Sparer', 'krieger');
+    t.msgs.length = 0; t.toasts.length = 0;
+    t.send({ t: 'save' });
+    expect(t.msgs.some(m => m.t === 'saved')).toBe(true);
+
+    const orig = sim.db.saveChar;
+    const quiet = console.error;
+    console.error = () => {};                                            // der Server protokolliert den Fehler – hier gewollt
+    try {
+      sim.db.saveChar = () => { throw new Error('Datenträger voll'); };
+      t.msgs.length = 0; t.toasts.length = 0;
+      t.send({ t: 'save' });
+      expect(t.msgs.some(m => m.t === 'saved'), 'trotz Fehler bestätigt').toBe(false);
+      expect(t.toasts.join(' | ')).toMatch(/konnte deinen Spielstand nicht speichern/);
+      expect(t.toasts.join(' | ')).toMatch(/Speichern fehlgeschlagen/);
+      // die ausführliche Meldung kommt höchstens einmal je Minute – auch wenn jeder Versuch scheitert
+      t.toasts.length = 0;
+      t.send({ t: 'save' }); t.send({ t: 'save' });
+      expect(t.toasts.filter(s => /konnte deinen Spielstand/.test(s)).length).toBe(0);
+      expect(sim.game.savePlayer(t.p)).toBe(false);
+    } finally { sim.db.saveChar = orig; console.error = quiet; }
+
+    // sobald der Datenträger wieder schreibt, geht alles weiter wie zuvor – der Stand im Speicher ist nicht verloren
+    t.p.char.gold = 4242;
+    t.msgs.length = 0;
+    t.send({ t: 'save' });
+    expect(t.msgs.some(m => m.t === 'saved')).toBe(true);
+    sim.leave(t);
+    expect(sim.reenter(t).p.char.gold).toBe(4242);
+  });
+});

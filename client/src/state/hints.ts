@@ -118,7 +118,7 @@ export const HINTS: HintDef[] = [
     text: `Mirelda verkauft dir jetzt den Hof (${CFG.home.price} Gold): eine Lagertruhe für alle deine Charaktere, später eigene Stationen, ein Bett und Trophäen.`,
     when: s => !!s.char && s.char.quests[CFG.home.buyQuest]?.s === 'done' && !!s.home && !s.home.owned && s.zone === 'gruenwald' && !s.dialog },
   { id: 'lager', title: 'Lagertruhe', topic: 'zuhause',
-    text: 'Die Truhe gehört dem Profil: Was hier liegt, erreicht jeder deiner Charaktere. Gegenstand anklicken und „In die Truhe legen“ – oder Doppelklick.',
+    text: 'Die Truhe gehört dem Profil: Was hier liegt, erreicht jeder deiner Charaktere. Gegenstand anklicken und hineinlegen – oder Doppelklick.',
     when: s => s.hof?.tab === 'lager' },
   { id: 'schrank', title: 'Kleiderschrank', topic: 'zuhause',
     text: 'Gewand und Waffenglanz sind reine Optik, aber für Mitspieler sichtbar. Freigeschaltet wird über Ruf, Mana-Risse, die Enden und die Sammlung.',

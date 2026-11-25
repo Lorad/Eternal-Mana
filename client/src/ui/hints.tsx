@@ -10,6 +10,11 @@ import { useHint } from './hud';
 const SHOW_MS = 18000;
 /** Pause zwischen zwei Hinweisen */
 const GAP_MS = 6000;
+/**
+ * `?hinweise=aus` in der Adresse schaltet die Hinweise für diesen Seitenaufruf ab, ohne die Einstellung zu ändern –
+ * so laufen die Browser-Durchläufe (tests/e2e, über scripts/e2e-all.mjs) unbeeinflusst von Karten, die sich über Knöpfe legen.
+ */
+const OFF = typeof location !== 'undefined' && /[?&]hinweise=aus\b/.test(location.search);
 
 function done(id: string) {
   if (store.state.hint === id) store.set({ hint: null });
@@ -27,13 +32,13 @@ export function useHintWatcher() {
     const t = window.setInterval(() => {
       const st = store.state, now = performance.now(), l = last.current;
       if (st.hint) {
-        if (!settings.hints) { store.set({ hint: null }); return; }
+        if (!settings.hints || OFF) { store.set({ hint: null }); return; }
         if (now - l.shownAt > SHOW_MS) { done(st.hint); l.freeAt = now + GAP_MS; }
         return;
       }
       if (l.shownAt && !l.freeAt) l.freeAt = now + GAP_MS;   // gerade weggeklickt: kurze Pause
       if (now < l.freeAt) return;
-      const h = nextHint(st, settings.hintsSeen, settings.hints);
+      const h = nextHint(st, settings.hintsSeen, settings.hints && !OFF);
       // erst zeigen, wenn die Bedingung zwei Abfragen lang gilt – kurze Zwischenzustände lösen nichts aus
       if (h && l.cand === h.id) { l.cand = null; l.shownAt = now; l.freeAt = 0; store.set({ hint: h.id }); sfx('ui_tab'); }
       else l.cand = h?.id ?? null;

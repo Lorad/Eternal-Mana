@@ -36,18 +36,21 @@ function open() {
     retry = 0;
     sock.send(JSON.stringify({ t: 'hello', token: getToken(), name: settings.playerName || 'Spieler', v: CFG.version } satisfies ClientMsg));
     clearInterval(pingTimer);
-    pingTimer = window.setInterval(() => net.send({ t: 'ping', c: performance.now() }), CFG.net.pingIntervalMs);
+    lastRx = performance.now();
+    pingTimer = window.setInterval(() => {
+      // 0.8: Antwortet der Server lange nicht (Kabel gezogen, Rechner im Ruhezustand), meldet der Browser das oft gar nicht –
+      // dann stünde die Welt einfach still. Nach ein paar ausgebliebenen Antworten gilt die Verbindung als verloren.
+      if (performance.now() - lastRx > SILENCE_MS && ws === sock) { try { sock.close(); } catch { /* egal */ } lost(sock); return; }
+      net.send({ t: 'ping', c: performance.now() });
+    }, CFG.net.pingIntervalMs);
   };
   sock.onmessage = ev => {
-    rxBytes += typeof ev.data === 'string' ? ev.data.length : 0; rxMsgs++;
+    rxBytes += typeof ev.data === 'string' ? ev.data.length : 0; rxMsgs++; lastRx = performance.now();
     try { handle(JSON.parse(ev.data)); } catch (e) { console.error('Nachricht fehlerhaft', e); }
   };
   sock.onclose = ev => {
-    if (ws !== sock) return;
-    ws = null;
-    clearInterval(pingTimer);
-    if (ev.code === 4000) { wantOpen = false; store.set({ conn: 'offline', screen: 'menu', error: 'Dieses Profil wurde in einem anderen Fenster angemeldet.' }); bus.emit('net:left'); return; }
-    if (wantOpen) scheduleRetry(); else store.set({ conn: 'offline' });
+    if (ev.code === 4000 && ws === sock) { ws = null; clearInterval(pingTimer); wantOpen = false; store.set({ conn: 'offline', screen: 'menu', error: 'Dieses Profil wurde in einem anderen Fenster angemeldet.' }); bus.emit('net:left'); return; }
+    lost(sock);
   };
   sock.onerror = () => { /* onclose folgt */ };
 }
@@ -58,6 +61,16 @@ window.setInterval(() => {
   live.perf.inKb = rxBytes / 1024 / sec; live.perf.snaps = rxMsgs / sec;
   rxBytes = 0; rxMsgs = 0; rxAt = now;
 }, 1000);
+/** so lange darf der Server schweigen (er antwortet sonst alle zwei Sekunden auf ein Ping und schickt 20 Meldungen je Sekunde) */
+const SILENCE_MS = 9000;
+let lastRx = 0;
+/** Die Verbindung `sock` ist weg (geschlossen oder verstummt): neu verbinden, falls gewünscht. */
+function lost(sock: WebSocket) {
+  if (ws !== sock) return;
+  ws = null;
+  clearInterval(pingTimer);
+  if (wantOpen) scheduleRetry(); else store.set({ conn: 'offline' });
+}
 function scheduleRetry() {
   retry++;
   store.set({ conn: 'reconnecting' });
@@ -160,6 +173,8 @@ export const net = {
   },
   send(m: ClientMsg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); },
   get connected() { return !!ws && ws.readyState === 1; },
+  /** Kappt die Verbindung, als wäre sie abgerissen – das Spiel verbindet danach von selbst neu (für die Browser-Durchläufe). */
+  dropForTest() { const s = ws; if (s) { try { s.close(); } catch { /* egal */ } lost(s); } },
   createChar(slot: number, name: string, cls: ClassId) { store.set({ error: null }); net.send({ t: 'charCreate', slot, name, cls }); },
   deleteChar(id: number) { net.send({ t: 'charDelete', id }); },
   enter(id: number) { resumeChar = id; store.set({ screen: 'loading' }); net.send({ t: 'enter', id }); },
