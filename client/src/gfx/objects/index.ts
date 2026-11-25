@@ -8,6 +8,7 @@ import { gruenwaldObjects } from './gruenwald';
 import { kristallObjects } from './kristall';
 import { ruinenObjects } from './ruinen';
 import { schattenObjects } from './schatten';
+import { hubObjects } from './hub';
 
 /** Herkunft jedes Frames (für den Asset-Katalog): Framename → Modul */
 export const objSource = new Map<string, string>();
@@ -22,6 +23,7 @@ export function buildObjects(): Sheet {
   add('frost', frostObjects());
   add('ruinen', ruinenObjects());
   add('schatten', schattenObjects());
+  add('hub', hubObjects());
   // Animierte v2-Frames (`name_0..n`) ersetzen gleichnamige Einzelbilder aus v1
   for (const n of [...merged.keys()]) if (merged.has(n + '_0')) { merged.delete(n); objSource.delete(n); }
   return atlasSheet([...merged], 2048);
