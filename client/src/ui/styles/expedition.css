@@ -72,7 +72,7 @@
 .xr-feats.small span { font-size: 11px; }
 .xr-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; max-height: 220px; overflow-y: auto; }
 .xr-item { display: flex; align-items: center; gap: 6px; padding: 3px 6px; background: rgba(0, 0, 0, .25); border-left: 3px solid var(--c); font-size: 12.5px; color: var(--c); }
-.exp-summary { position: absolute; left: 16px; top: 168px; width: 400px; background: linear-gradient(180deg, #1c2030, #12141e); max-width: calc(100% - 32px); display: flex; flex-direction: column; gap: 7px; padding: 10px 14px; z-index: 40; pointer-events: auto; border-top: 3px solid var(--gold); }
+.exp-summary { position: absolute; left: 50%; bottom: 118px; transform: translateX(-50%); width: 420px; background: linear-gradient(180deg, #1c2030, #12141e); max-width: calc(100% - 32px); display: flex; flex-direction: column; gap: 7px; padding: 10px 14px; z-index: 40; pointer-events: auto; border-top: 3px solid var(--gold); }
 .exp-summary-head { display: flex; align-items: center; justify-content: space-between; font: 700 15px var(--serif); color: var(--gold-hi); }
 .is-narrow .xp, .is-portrait .xp { grid-template-columns: 1fr; }
 .is-narrow .xp-facts, .is-narrow .xp-diffs, .is-narrow .xr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
