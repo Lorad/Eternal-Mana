@@ -16,12 +16,12 @@ import { distToSegment, lineClear, moveCircle } from '../../shared/src/collision
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
 import { SKILLS, skillMp } from '../../shared/src/data/skills';
-import { T } from '../../shared/src/maps/tiles';
+import { T, TILE } from '../../shared/src/maps/tiles';
 import type { ClientMsg } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import type { Game, Session } from '../../server/src/game';
 import type { Player } from '../../server/src/player';
-import type { Mob } from '../../server/src/zone';
+import type { Mob, Zone } from '../../server/src/zone';
 
 export interface Skill {
   id: string; name: string;
@@ -51,6 +51,35 @@ interface Threat {
 const DIRS = 12, STEP = 0.05, NSTEP = 24, PROJ_STEPS = 16;
 const MARGIN = 5;
 
+/** Wegfindung über das Kachelraster der Karte (Breitensuche; Türen gelten als offen). */
+export class Nav {
+  private w: number; private h: number;
+  constructor(private z: Zone) { this.w = z.map.w; this.h = z.map.h; }
+  private free(tx: number, ty: number) { return tx >= 0 && ty >= 0 && tx < this.w && ty < this.h && this.z.map.solid[ty * this.w + tx] === 0; }
+  /** Kachelweg (Breitensuche, Türen gelten als offen); Rückgabe: Punkte in Pixeln vom Start zum Ziel */
+  path(fx: number, fy: number, tx: number, ty: number): { x: number; y: number }[] | null {
+    const w = this.w, sx = Math.floor(fx / TILE), sy = Math.floor(fy / TILE), gx = Math.floor(tx / TILE), gy = Math.floor(ty / TILE);
+    const prev = new Int32Array(w * this.h).fill(-1);
+    const q = [gy * w + gx];
+    prev[q[0]] = q[0];
+    for (let k = 0; k < q.length; k++) {
+      const i = q[k], x = i % w, y = (i / w) | 0;
+      if (x === sx && y === sy) break;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+        const nx = x + dx, ny = y + dy, ni = ny * w + nx;
+        if (!this.free(nx, ny) || prev[ni] >= 0) continue;
+        if (dx && dy && (!this.free(x + dx, y) || !this.free(x, y + dy))) continue;
+        prev[ni] = i; q.push(ni);
+      }
+    }
+    let i = sy * w + sx;
+    if (prev[i] < 0) return null;
+    const out: { x: number; y: number }[] = [];
+    for (let guard = 0; guard < 4000; guard++) { out.push({ x: ((i % w) + 0.5) * TILE, y: (((i / w) | 0) + 0.5) * TILE }); if (prev[i] === i) break; i = prev[i]; }
+    return out;
+  }
+}
+
 export class Bot {
   rng: Rng;
   /** Wahrnehmung: Schlüssel der Gefahr → Zeitpunkt, ab dem der Bot sie kennt (Infinity = übersehen) */
@@ -59,6 +88,8 @@ export class Bot {
   private lastProjSeen = -99;
   private moveLockUntil = 0; private nextSkillAt = 0; private rollDir = 0;
   private backUntil = 0;
+  /** letzter Zeitpunkt, an dem ein Angriff oder eine Fähigkeit herausging – findet der Bot lange keinen Schuss, läuft er um das Hindernis herum */
+  private lastActAt = 0; private hadTarget = false; private nav: Nav | null = null; private navZone: Zone | null = null; private via: { x: number; y: number } | null = null; private viaAt = 0;
   /** Messwerte */
   taken = 0; potions = 0; mpPotions = 0; rolls = 0; casts = 0;
   hitsBy = new Map<string, number>();
@@ -232,6 +263,16 @@ export class Bot {
     const back = melee && now < this.backUntil;
     const want = !tgt ? 0 : melee ? (back ? 100 : atk.range + tgt.radius - 7) : Math.min(atk.range * (tgt.boss ? 0.62 : 0.55), 135);
     const nuke = th.find(h => h.kind === 'nuke');
+    // kein Schuss seit drei Sekunden: Umweg über das Kachelraster suchen (Hindernis im Weg, Ziel hinter einer Ecke)
+    if (!tgt) { this.hadTarget = false; this.via = null; } else if (!this.hadTarget) { this.hadTarget = true; this.lastActAt = now; }
+    if (tgt && now - this.lastActAt > 3 && now >= this.viaAt) {
+      this.viaAt = now + 0.3;
+      if (this.navZone !== z) { this.nav = new Nav(z); this.navZone = z; }
+      const path = this.nav!.path(p.x, p.y, tgt.x, tgt.y);
+      this.via = path && path.length > 2 ? path[Math.min(path.length - 1, 3)] : { x: tgt.x, y: tgt.y };
+    }
+    if (tgt && now - this.lastActAt <= 3) this.via = null;
+    const via = this.via;
     const pref = (path: Float32Array): number => {
       const k = 8, x = path[k * 2], y = path[k * 2 + 1];
       let c = 0;
@@ -239,7 +280,10 @@ export class Bot {
       const bd = this.bounds;
       if (bd) c += (Math.max(0, bd.x0 - x, x - bd.x1) + Math.max(0, bd.y0 - y, y - bd.y1)) * 0.2;
       if (nuke) return c; // nur noch ins Licht
-      if (tgt) {
+      // Gegner nicht von ihrem Platz wegziehen: ab 260 px kehren sie um und heilen sich (Leine)
+      if (tgt && !tgt.boss && !tgt.summoned) c += Math.max(0, Math.hypot(x - tgt.hx, y - tgt.hy) - 170) * 0.03;
+      if (tgt && via) c += Math.hypot(via.x - x, via.y - y) * 0.012;
+      else if (tgt) {
         const d = Math.hypot(tgt.x - x, tgt.y - y);
         if (melee) c += back ? Math.abs(d - want) * 0.012 : Math.max(0, d - want) * 0.012 + Math.max(0, tgt.radius - 2 - d) * 0.03; // nicht im Gegner stehen
         else c += Math.abs(d - want) * (d < want ? 0.012 : 0.006);
@@ -313,6 +357,7 @@ export class Bot {
       this.send({ t: 'skill', id, ang: a, tx: Math.round(tgt.x), ty: Math.round(tgt.y) });
       if ((p.cds.get(id) ?? 0) > now + 0.05) {
         this.casts++;
+        if (e.k !== 'buff' && e.k !== 'heal') this.lastActAt = now;
         this.nextSkillAt = now + 0.2;
         if (sk.anim !== 'cast') this.moveLockUntil = Math.max(this.moveLockUntil, now + 0.24);
         return;
@@ -323,6 +368,7 @@ export class Bot {
       if (ok) {
         const before = p.atkReadyAt;
         this.send({ t: 'atk', ang: melee ? ang : aimProj });
+        if (p.atkReadyAt !== before) this.lastActAt = now;
         if (p.atkReadyAt !== before) this.moveLockUntil = Math.max(this.moveLockUntil, now + (melee && p.combo === 2 ? 0.275 : 0.14));
       }
     }

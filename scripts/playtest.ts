@@ -4,6 +4,7 @@
 //   tempo      Stufe entlang der Geschichte (gerechnet aus Questtabellen und Karten)
 //   bosse      alle acht Story-Bosse: fünf Klassen × drei Spielertypen, allein; dazu drei Zweiergruppen
 //   gebiete    alle 15 Zonen: Zeit je Gegner, Schaden, Tode/h, Tränke/h, Erfahrung/h, Gold/h
+//   dungeons   ganze Dungeon-Durchläufe vom Eingang bis zum Boss
 //   wirtschaft Einnahmen und Ausgaben über die Reise, Rohstoffe, Rezepte, die Gold drucken
 //   kraft      was jede Stärkequelle auf Stufe 40 bringt – einzeln und zusammen
 //   risse      Mana-Risse Stufe 1–30, Modifikatoren, Prüfung der Sieben, Neuer Kreis
@@ -18,6 +19,7 @@ import type { ClassId } from '../shared/src/types';
 import { Lab } from './playtest/lab';
 import { BOSS_STOPS, CHAPTERS, measureBoss, measureZone, pacing, type BossRow, type ZoneRow } from './playtest/measure';
 import { SKILL } from './playtest/model';
+import { chapterTimes, dungeons, kraft, risse, welt, wirtschaft } from './playtest/sections';
 
 const args = process.argv.slice(2);
 const fast = args.includes('--schnell');
@@ -102,7 +104,13 @@ function main() {
   try {
     if (want('tempo')) tempo();
     if (want('bosse')) bosse(lab);
-    if (want('gebiete')) gebiete(lab);
+    const zr = want('gebiete') || want('wirtschaft') || want('welt') ? gebiete(lab) : undefined;
+    if (want('dungeons') || want('tempo')) dungeons(lab, out, fast);
+    if (out.dungeons && out.bosse && zr) chapterTimes(out, zr, out.dungeons as any[], out.bosse as any[]);
+    if (want('wirtschaft')) wirtschaft(lab, out, fast, zr);
+    if (want('kraft')) kraft(lab, out, fast);
+    if (want('risse')) risse(lab, out, fast);
+    if (want('welt')) welt(lab, out, fast, zr);
   } finally { lab.close(); }
   if (jsonFile) fs.writeFileSync(jsonFile, JSON.stringify(out, null, 1));
   console.error(`(${((Date.now() - t0) / 1000).toFixed(0)} s)`);
