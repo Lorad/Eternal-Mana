@@ -356,6 +356,39 @@ export const CFG = {
     /** Bestiarium: Siege, ab denen Schwächen und Resistenzen bekannt sind (gewöhnliche Gegner / benannte und Bosse) */
     study: 8, studyNamed: 1,
   },
+  /**
+   * Quellwarte (0.9): Hub mit Einrichtungen. Inhalte: shared/src/data/{hubdata,rumours,hall,npcs_hub,quests_hub,dialoge_hub}.ts ·
+   * Karte: shared/src/maps/hubgen.ts · Logik: server/src/hub/*
+   */
+  hub: {
+    useRadius: 72,                 // so nah an Hüter oder Brett, um eine Einrichtung zu benutzen
+    /** Ausrüstungshändler: wechselt täglich (UTC), dazu ein Wochenstück; Stufe = eigene Stufe */
+    trader: {
+      daily: 6,
+      weights: [0, 56, 32, 10, 2],   // Seltenheit der Tagesware (gewöhnlich … legendär)
+      priceMul: 1.3,                 // auf den Grundwert (itemPrice)
+      weeklyMul: 2.6,
+      weeklyLegend: 0.15,            // Wochenstück: sonst episch
+      weeklyIlvl: 1,                 // Wochenstück liegt so viele Stufen über der eigenen
+    },
+    /** Lagerhaus: zusätzliche Reihen der Profil-Truhe, für Gold, gedeckelt */
+    lager: { row: 8, rowsMax: 6, gold: (n: number) => 600 * (n + 1) * (n + 1) },
+    /**
+     * Fähigkeitenmeister – Meisterränge: Eine voll ausgebaute aktive Fähigkeit bekommt bis zu `max` weitere Ränge (wirken wie
+     * gewöhnliche Ränge), höchstens für `skills` Fähigkeiten zugleich. Je Meisterrang: Stufe, Hauptquest, Gold, Essenzen.
+     */
+    mastery: {
+      max: 2, skills: 3,
+      ranks: [
+        { level: 20, quest: 'm_glut', gold: 2500, mats: 10, aether: 0 },
+        { level: 32, quest: 'm_koenig', gold: 9000, mats: 20, aether: 1 },
+      ],
+      /** Rohstoff physischer Fähigkeiten (statt einer Essenz) */
+      physMat: 'mat_ember',
+    },
+    lfgSec: 1800,                  // so lange hängt ein Gruppengesuch am Brett
+    walkerPause: [3, 8] as [number, number],
+  },
   world: {
     dayLengthSec: 720,     // ein voller Tag-Nacht-Zyklus
     weatherMinSec: 90,

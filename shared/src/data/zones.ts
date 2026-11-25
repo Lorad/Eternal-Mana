@@ -1,4 +1,6 @@
 import type { BiomeId } from '../maps/tiles';
+import { HUB_BIOME } from './hubart';
+import { HUB_ZONE as HUB_ID } from './hub';
 
 export interface Poi {
   id: string;
@@ -23,8 +25,9 @@ export interface ZoneDef {
   name: string;
   subtitle: string;
   biome: BiomeId;
-  /** `home` (0.7): der eigene Hof – je Besitzer eine Instanz, keine Gegner, steht nicht in ZONE_LIST (Weltkarte, Chronik, Weltsysteme) */
-  kind: 'overworld' | 'dungeon' | 'home';
+  /** `home` (0.7): der eigene Hof – je Besitzer eine Instanz, keine Gegner, steht nicht in ZONE_LIST (Weltkarte, Chronik, Weltsysteme)
+   *  `hub` (0.9): die Quellwarte – EINE Instanz für alle, kein Kampf, steht ebenfalls nicht in ZONE_LIST */
+  kind: 'overworld' | 'dungeon' | 'home' | 'hub';
   w: number; h: number;
   seed: number;
   level: [number, number];
@@ -315,7 +318,21 @@ export const HOME_ZONE: ZoneDef = Z({
   level: [1, 1], music: 'gruenwald', ambience: 'forest', weathers: [['clear', 7], ['rain', 1], ['leaves', 3]], dark: 0, indoor: false,
   mobs: [], mapPos: [34, 58],
 });
-export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE };
+/**
+ * Quellwarte (0.9): die alte Wache der Hüter über dem Quellstein-Netz – Hub aller Quellgänger. Wie der Hof nicht in ZONE_LIST
+ * (keine Weltsysteme, keine Chronik), aber über ZONES und getMap erreichbar. Karte: shared/src/maps/hubgen.ts, Daten: data/hubdata.ts.
+ */
+export const HUB_ZONE_DEF: ZoneDef = Z({
+  id: HUB_ID, name: 'Die Quellwarte', subtitle: 'Wo die Quellsteine Wache halten – und die Quellgänger Pause', biome: HUB_BIOME, kind: 'hub', w: 76, h: 64, seed: 9201,
+  level: [1, 1], music: 'gruenwald', ambience: 'village', weathers: [['clear', 8], ['leaves', 3], ['rain', 1]], dark: 0, indoor: false,
+  pois: [
+    { id: 'platz', x: 38, y: 19, r: 7, kind: 'spot', label: 'Portalplatz' },
+    { id: 'ankunft', x: 38, y: 53, r: 6, kind: 'spot', label: 'Ankunft' },
+    { id: 'brunnen', x: 38, y: 34, r: 4, kind: 'spot', label: 'Quellbrunnen' },
+  ],
+  mobs: [], mapPos: [47, 50],
+});
+export const ZONES: Record<string, ZoneDef> = { ...Object.fromEntries(ZONE_LIST.map(z => [z.id, z])), [HOME_ZONE.id]: HOME_ZONE, [HUB_ZONE_DEF.id]: HUB_ZONE_DEF };
 export const OVERWORLD_IDS = ZONE_LIST.filter(z => z.kind === 'overworld').map(z => z.id);
 /** Verbindungen für die Weltkarte */
 export const WORLD_LINKS: [string, string][] = [

@@ -3,6 +3,7 @@ import { countShards } from '../stats';
 import { condOk, countLore, countMemories, type Cond } from './cond';
 import { TOPICS } from './dialoge';
 import { QUESTS_AKT2 } from './quests_akt2';
+import { QUESTS_HUB } from './quests_hub';
 import { ZONE_CHAPTER } from './story';
 
 export type Objective =
@@ -355,6 +356,8 @@ export const QUEST_LIST: QuestDef[] = [
     done: ['Zu zweit, und beide noch am Stück. So macht man das.'] }),
   // ================================================================================== AKT II (0.3) – siehe quests_akt2.ts
   ...QUESTS_AKT2,
+  // ================================================================================== QUELLWARTE (0.9) – siehe quests_hub.ts
+  ...QUESTS_HUB,
 ];
 
 export const QUESTS: Record<string, QuestDef> = Object.fromEntries(QUEST_LIST.map(q => [q.id, q]));

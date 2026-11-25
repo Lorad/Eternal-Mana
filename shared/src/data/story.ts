@@ -116,6 +116,10 @@ export const PLACES: Record<string, PlaceDef> = {
   krater: { zone: 'glut', poi: 'krater', r: 5, name: 'Krater der Schmiedezeichen' },
   see_tau: { zone: 'frost', poi: 'see', r: 6, name: 'Gefrorener See' },
   grund: { zone: 'quellgrund', poi: 'lager', r: 7, name: 'Lager am Quellgrund' },
+  // 0.9 Quellwarte: Merles Lied (data/quests_hub.ts)
+  qw_weiher: { zone: 'gruenwald', poi: 'weiher', r: 5, name: 'Weiher im Grünwald' },
+  qw_spiegelsee: { zone: 'kristall', poi: 'see', r: 6, name: 'Spiegelsee' },
+  qw_obsidian: { zone: 'glut', poi: 'feld', r: 6, name: 'Obsidianfeld' },
 };
 
 // =====================================================================================================================
