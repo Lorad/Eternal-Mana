@@ -15,7 +15,7 @@ import { nextId } from '../player';
 import type { Obj } from '../zone';
 
 /** Quellhain: kleines Portal rechts oberhalb des Dorfplatzes (Kacheln relativ zum POI „dorf“) */
-const QUELLHAIN = { zone: 'gruenwald', poi: 'dorf', dx: 7, dy: -9 };
+const QUELLHAIN = { zone: 'gruenwald', poi: 'dorf', dx: 11, dy: -2 };
 export const hubExists = () => !!ZONES[HUB_ZONE];
 
 function freeSpot(map: GameMap, tx0: number, ty0: number, roomyR = 1): [number, number] | null {
