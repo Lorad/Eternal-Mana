@@ -151,6 +151,7 @@ export class Zone {
     for (const f of riftStones(this.map)) this.objs.set(f.id, f);
     for (const f of Home.signs(this.map)) this.objs.set(f.id, f); // 0.7: Wegweiser zum Hof
     for (const f of Expedition.portals(this.map)) this.objs.set(f.id, f); // 0.9: Expeditionsportal (Hub, Quellhain)
+    if (!this.rift) Expedition.dressExits(this); // 0.9: alte Dungeon-Eingänge tragen den Namen ihrer Expedition
     if (this.exp) Expedition.setup(this); // 0.9: Gegner nach Schwierigkeitsgrad, Mini-Bosse, Rätsel, Ereignisse
     else if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
     if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : this.exp ? Expedition.bossDef(this) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);

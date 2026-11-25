@@ -503,6 +503,7 @@ function mobXpFactor(id: string): number {
 export const Expedition = {
   portals(map: GameMap): Obj[] { return expeditionPortals(map); },
   mobXp(zone: Zone): number { return mobXpFactor(zone.exp!.exp); },
+  dressExits(zone: Zone) { for (const o of zone.objs.values()) { const id = o.type === 'exit' ? EXP_BY_LEGACY[o.props?.to] : undefined; if (id) o.props = { ...o.props, label: EXPEDITIONS[id].name }; } },
   /** Zonendefinition der Instanz: Stufen nach Kreis und Schwierigkeitsgrad */
   zoneDef(id: string, diff: Difficulty, kreis: number): ZoneDef {
     const base = ZONES[id], d = EXP_DIFF[diff];
