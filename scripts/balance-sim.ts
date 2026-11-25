@@ -1,4 +1,6 @@
 // Balance-Vergleich per Simulation (ohne Netzwerk):  npx tsx scripts/balance-sim.ts [--csv] [--ausbau]
+// Hinweis (0.8): Diese Rechnung lässt einen unverwundbaren Charakter auf der Stelle zuschlagen. Für alles, was mit echtem
+// Spielen zu tun hat (Ausweichen, Tränke, Bosse, Risse), ist scripts/playtest.ts das genauere Werkzeug.
 // Spielt für jede Klasse auf mehreren Stufen einen Standard-Charakter gegen den häufigsten Gegner des passenden Gebiets
 // und misst Schaden je Sekunde sowie den erlittenen Schaden. Dient dem Vorher/Nachher-Vergleich bei Systemänderungen.
 // --ausbau: zusätzlich derselbe Charakter mit allem, was das Handwerk (0.4) hergibt – Runen, Set, Speise, Elixier,
@@ -6,6 +8,7 @@
 import { CFG } from '../shared/src/config';
 import { CLASSES, CLASS_IDS } from '../shared/src/data/classes';
 import { BOSSES } from '../shared/src/data/enemies';
+import { emptyHome } from '../shared/src/data/home';
 import { generateGear } from '../shared/src/data/items';
 import { skillsOf } from '../shared/src/data/skills';
 import { ZONE_LIST } from '../shared/src/data/zones';
@@ -57,7 +60,8 @@ export interface SimResult { dps: number; ttk: number; dtps: number; ttd: number
  * `prep` kann den Spieler vorher verändern (Buffs usw.).
  */
 export function simulate(char: CharData, lvl: number, kills = KILLS, prep?: (p: Player, game: Game) => void, mobId?: string): SimResult {
-  const game = new Game({ saveChar() {}, backup() {}, listChars: () => [] } as any, { name: 'sim', version: CFG.version, port: 0, addresses: [], tailscale: { available: false } });
+  const home = emptyHome(); // 0.7: Siege zählen fürs Bestiarium des Profils – die Schein-Datenbank braucht dafür einen Hof-Stand
+  const game = new Game({ saveChar() {}, backup() {}, listChars: () => [], loadHome: () => home, saveHome() {} } as any, { name: 'sim', version: CFG.version, port: 0, addresses: [], tailscale: { available: false } });
   const zdef = ZONE_LIST.filter(z => z.kind === 'overworld').find(z => lvl >= z.level[0] && lvl <= z.level[1]) ?? ZONE_LIST.filter(z => z.kind === 'overworld').at(-1)!;
   const zone = game.zone(zdef.id);
   zone.rng = new Rng(4242 + lvl);

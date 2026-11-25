@@ -561,7 +561,8 @@ export class Zone {
       }
       case 'heal': {
         const amount = raw * (1 + p.stats.healPct / 100);
-        for (const q of this.players.values()) if (!q.dead && Math.hypot(q.x - p.x, q.y - p.y) <= e.party) { q.heal(amount); legendShield(this, p, q, amount); this.ev({ k: 'fx', n: 'heal', x: q.x, y: q.y, el: 'light' }); }
+        // 0.8: Ein Heilzauber stellt höchstens einen festen Anteil des Lebens des Geheilten wieder her – der Angriffswert wächst im Endspiel schneller als das Leben
+        for (const q of this.players.values()) if (!q.dead && Math.hypot(q.x - p.x, q.y - p.y) <= e.party) { const h = Math.min(amount, q.stats.maxHp * CFG.combat.healCap); q.heal(h); legendShield(this, p, q, h); this.ev({ k: 'fx', n: 'heal', x: q.x, y: q.y, el: 'light' }); }
         break;
       }
     }

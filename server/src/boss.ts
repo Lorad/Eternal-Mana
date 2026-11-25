@@ -547,7 +547,7 @@ export class BossCtl {
     this.moveTo(this.cx, this.cy - 8);
     this.anim(Anim.Special, 3);
     yield 0.3;
-    yield* this.spiral(44, 0.31, 0.06, 110, 'orb', 0.75, 3);
+    yield* this.spiral(26, 0.4, 0.1, 110, 'orb', 0.75, 3);
   }
   private *arZero(): Gen {
     this.moveTo(this.cx, this.cy - 8);
@@ -597,7 +597,9 @@ export class BossCtl {
     }
     yield 0.6;
   }
-  private *hkSpiral(): Gen { this.anim(Anim.Special, 3); yield* this.spiral(50, 0.27, 0.055, 115, 'orb', 0.8, 4); }
+  // 0.8: Spiralen schießen seltener und drehen dafür weiter je Schuss – in den Armen sind jetzt Lücken, durch die eine Figur passt
+  // (vorher 50 Schüsse im Abstand von 0,055 s: eine geschlossene Wand, der man nur mit der Rolle entkam)
+  private *hkSpiral(): Gen { this.anim(Anim.Special, 3); yield* this.spiral(28, 0.36, 0.1, 115, 'orb', 0.8, 4); }
   private *hkZero(): Gen {
     this.moveTo(this.cx, this.cy - 8);
     this.say('„Alles endet.“ – Sucht das Licht!');
@@ -650,7 +652,7 @@ export class BossCtl {
     }
     yield 0.3;
   }
-  private *vlSpiral(): Gen { this.anim(Anim.Special, 2.6); yield* this.spiral(40, 0.29, 0.06, 110, 'orb', 0.75, 3); }
+  private *vlSpiral(): Gen { this.anim(Anim.Special, 2.6); yield* this.spiral(24, 0.4, 0.1, 110, 'orb', 0.75, 3); }
   private *vlVigil(): Gen {
     this.moveTo(this.cx, this.cy - 8);
     this.say('„Die Wacht endet nie.“ – Sucht das Laternenlicht!');
@@ -741,5 +743,6 @@ export class BossCtl {
     this.summon('erinnerter', 2);
   }
   /** Der Chor: eine Spirale im Element des Augenblicks. */
-  private *aeChorus(): Gen { this.anim(Anim.Special, 2.6); yield* this.spiral(36, 0.33, 0.06, 105, 'orb', 0.75, 1 + this.phase); }
+  // 0.8: höchstens drei Arme, seltener geschossen (siehe hkSpiral) – vier dichte Arme ließen keine Lücke, durch die man hätte laufen können
+  private *aeChorus(): Gen { this.anim(Anim.Special, 2.6); yield* this.spiral(22, 0.4, 0.1, 105, 'orb', 0.75, Math.min(3, 1 + this.phase)); }
 }

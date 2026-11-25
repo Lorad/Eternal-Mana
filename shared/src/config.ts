@@ -89,6 +89,8 @@ export const CFG = {
     exposeDmgTaken: 1.1,
     /** 0.8: s Schonfrist nach einem Geschosstreffer gegen weitere Geschosse desselben Gegners (eine Salve trifft einmal, nicht mit jedem Geschoss) */
     shotGrace: 0.3,
+    /** 0.8: ein Heilzauber (Heilendes Licht) heilt je Wirken höchstens diesen Anteil des maximalen Lebens des Geheilten */
+    healCap: 0.35,
     /** 0.8: Obergrenze für Lebensraub in Prozent des Schadens (Affixe, Rune, Set und Blutdurst zusammen) */
     lifestealCap: 4,
     partyXpRadius: 520,
