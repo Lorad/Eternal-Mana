@@ -1,5 +1,5 @@
 /** Gemeinsame Datentypen von Server und Client. */
-import type { DungeonRecord } from './data/hub';
+import type { Difficulty, DungeonRecord } from './data/hub';
 export type Element = 'phys' | 'fire' | 'water' | 'earth' | 'wind' | 'light' | 'dark';
 export type ClassId = 'krieger' | 'magier' | 'waldlaeufer' | 'paladin' | 'schattenjaeger';
 export type AttrKey = 'str' | 'dex' | 'int' | 'vit';
@@ -298,6 +298,9 @@ export type ClientMsg =
   // ---- Zuhause (0.7): eine Nachricht, `a` = Aktion. buy (bei Mirelda) · go (am Wegweiser; `owner` = Spieler-ID eines Gruppenmitglieds) · leave ·
   //      put/take (`uid`, `n`) · gold (`n` > 0 einlagern, < 0 abheben) · sort · upgrade · trophy (`slot`, `id`) · pet (`id`) · look (`g`, `w`) · sleep
   | { t: 'home'; a: string; id?: string; uid?: string; n?: number; slot?: number; owner?: number; g?: string; w?: string; npc?: string }
+  // ---- Expeditionen (0.9): Stand abfragen, auswählen (Anführer, am Portal), bereit/nicht bereit, starten, abbrechen, laufender
+  //      Instanz der Gruppe beitreten, Instanz verlassen, gemeinsam zurückkehren (Belohnungskammer), Weg zur Schmiede (Hub)
+  | { t: 'exp'; a: 'info' | 'select' | 'ready' | 'unready' | 'start' | 'cancel' | 'join' | 'leave' | 'return' | 'forge'; id?: string; diff?: Difficulty }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -343,6 +346,33 @@ export interface WorldInfo {
 /** Gespräch einer Zufallsbegegnung: Der Server führt den Knoten, der Client zeigt nur an. */
 export interface EncDialog { id: number; who: string; look?: string; lines: string[]; opts: { s: string; off?: string }[] }
 
+// ---- Expeditionen (0.9)
+/** Bereitschaftsprüfung einer Gruppe vor dem Start. `here` = steht am Portal; `sec` = Restzeit */
+export interface ExpLobbyInfo { exp: string; diff: Difficulty; lead: number; sec: number; members: { charId: number; name: string; ready: boolean; here: boolean; online: boolean }[] }
+/** Laufende Expedition aus Sicht eines Teilnehmers (HUD). `t` = verstrichene Sekunden zum Zeitpunkt des Sendens */
+export interface ExpRunInfo {
+  exp: string; diff: Difficulty; t: number; sec: string; goal: string;
+  kills: number; deaths: number; secrets: [number, number]; minis: [number, number];
+  weekly?: string[]; par?: number;
+  /** besonderes Ereignis im Gang: Art, Welle/Wellen */
+  event?: { kind: string; wave: number; waves: number; text: string };
+  /** Abschluss erreicht (Sekunden) · Restzeit bis zur gemeinsamen Rückkehr · wer schon zurück will */
+  done?: number; ret?: number; votes?: [number, number];
+  /** Bosswut: Sekunden bis zur Wut (negativ = wütend) */
+  enrage?: number;
+  dark?: 1;
+}
+/** Abschluss einer Expedition für genau einen Charakter (Statistik, Belohnung) */
+export interface ExpResult {
+  exp: string; diff: Difficulty; sec: number; best: boolean; first: boolean; weekly: boolean;
+  kills: number; deaths: number; bosses: number; xp: number; gold: number;
+  items: { name: string; icon: string; rarity: number; qty: number }[];
+  secrets: [number, number]; minis: [number, number];
+  /** besondere Leistungen („Ohne Tod“, „Unter der Richtzeit“, „Alle Geheimnisse“ …) */
+  feats: string[];
+  par: number; clears: number;
+}
+
 export type ServerMsg =
   | { t: 'welcome'; account: number; name: string; chars: CharSummary[]; settings: string | null; server: ServerInfo }
   | { t: 'chars'; chars: CharSummary[] }
@@ -380,6 +410,10 @@ export type ServerMsg =
   | { t: 'inspect'; i: InspectInfo }
   // ---- Zuhause (0.7): geänderte Teile des Profil-Stands (wie `char`); `note` = Hinweise der Sammlung (der Client zeigt sie wie Toasts)
   | { t: 'home'; h: Partial<HomeData>; note?: { s: string; kind: 'info' | 'good' | 'story'; icon?: string }[] }
+  // ---- Expeditionen (0.9): Bereitschaftsprüfung (null = keine), laufender Lauf (null = keiner), Abschlussbildschirm, Zusammenfassung im Hub,
+  //      laufende Instanz der eigenen Gruppe (zum Beitreten), Herausforderung der Woche, Weg zur Schmiede (NPC)
+  | { t: 'exp'; lobby?: ExpLobbyInfo | null; run?: ExpRunInfo | null; result?: ExpResult; summary?: ExpResult; party?: { exp: string; diff: Difficulty; n: number } | null;
+      weekly?: { week: string; exp: string; diff: Difficulty; mods: string[]; done: boolean }; forge?: string }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 

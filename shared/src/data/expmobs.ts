@@ -24,7 +24,7 @@ export function expEnemies(base: EnemyDef[]): EnemyDef[] {
     const src = by.get(m.sprite)!;
     return { id: m.id, name: m.name, element: m.element, hpMul: m.hpMul, dmgMul: m.dmgMul, defMul: m.defMul, xpMul: 7, speed: m.speed, radius: m.radius, ai: m.ai,
       move: src.move, flying: src.flying, aggro: 170, atk: { ...src.atk, mult: (src.atk.mult ?? 1) * 1.2 }, sprite: m.sprite, tint: m.tint, scale: m.scale, named: true,
-      weak: src.weak, resist: src.resist };
+      weak: src.element === m.element ? src.weak : undefined, resist: src.element === m.element ? src.resist : undefined };
   });
   return [...minis, ...MECH];
 }

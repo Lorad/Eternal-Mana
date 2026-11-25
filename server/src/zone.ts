@@ -26,6 +26,9 @@ import { legendAttack, legendOnHit, legendShield, tryReaction } from './react';
 import { Rift, riftStones, type RiftRun } from './rift';
 import { Social } from './social';
 import { World } from './world';
+import { Expedition } from './expedition';
+import type { ExpRun } from './expedition/run';
+import { EXP_CFG } from '../../shared/src/data/expeditions';
 
 export interface Obj extends ObjInfo {
   looted?: Set<number>;
@@ -123,14 +126,17 @@ export class Zone {
   home: { zone: string; x: number; y: number } | null = null;
   /** höchste Gegenstandsstufe aus Truhen */
   ilvlCap = CFG.player.maxLevel;
+  /** 0.9: laufende Expedition, falls diese Instanz eine ist (server/src/expedition/) */
+  exp: ExpRun | null = null;
   /** Kampfregeln, die Riss-Modifikatoren verändern (neutral = 1) */
   mod = { dmgTaken: 1, cd: 1, heal: 1, mpRegen: 1, mpGain: 1, aggro: 1 };
 
-  constructor(public game: Game, public def: ZoneDef, opt: { key?: string; kreis?: number; rift?: RiftRun } = {}) {
+  constructor(public game: Game, public def: ZoneDef, opt: { key?: string; kreis?: number; rift?: RiftRun; exp?: ExpRun } = {}) {
     this.id = def.id;
     this.key = opt.key ?? def.id;
     this.kreis = opt.kreis ?? 0;
     this.rift = opt.rift ?? null;
+    this.exp = opt.exp ?? null;
     if (this.kreis > 0) { this.def = def = kreisZoneDef(def, this.kreis); this.ilvlCap = 99; }
     this.map = getMap(def.id);
     for (const o of this.map.objects) {
@@ -145,8 +151,10 @@ export class Zone {
     for (const f of cookFires(this.map)) this.objs.set(f.id, f);
     for (const f of riftStones(this.map)) this.objs.set(f.id, f);
     for (const f of Home.signs(this.map)) this.objs.set(f.id, f); // 0.7: Wegweiser zum Hof
-    if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
-    if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);
+    for (const f of Expedition.portals(this.map)) this.objs.set(f.id, f); // 0.9: Expeditionsportal (Hub, Quellhain)
+    if (this.exp) Expedition.setup(this); // 0.9: Gegner nach Schwierigkeitsgrad, Mini-Bosse, Rätsel, Ereignisse
+    else if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
+    if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : this.exp ? Expedition.bossDef(this) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);
     if (this.rift) Rift.setup(this);
     this.weather = this.rng.weighted(World.weathers(this));
     this.weatherUntil = game.now + this.rng.range(CFG.world.weatherMinSec, CFG.world.weatherMaxSec);
@@ -225,6 +233,7 @@ export class Zone {
       if (this.id === 'schatten') this.game.story(p, 'schatten');
     }
     World.onJoin(this, p);
+    if (this.exp) Expedition.onJoin(this, p);
   }
   removePlayer(p: Player) {
     this.players.delete(p.id);
@@ -334,11 +343,12 @@ export class Zone {
     if (m.boss) { m.boss.onDeath(); return; }
     Story.onMobDeath(this, m);
     if (this.rift) Rift.onMobDeath(this, m);
+    if (this.exp) Expedition.onMobDeath(this, m);
     if (m.spawnIdx >= 0 && !this.map.dungeon) this.respawns.push({ idx: m.spawnIdx, at: this.game.now + CFG.enemy.respawnSec });
     const rec = this.recipients(m);
     World.onMobDeath(this, m, rec);
     Home.onKill(this, m, rec); // 0.7: Bestiarium
-    const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
+    const xpBase = CFG.enemy.xp(m.lvl) * m.def.xpMul * (this.exp ? EXP_CFG.mobXp : 1) * (m.elite ? 3 : 1) * (m.summoned ? 0.25 : 1) * (1 + CFG.combat.partyXpBonus * (rec.length - 1));
     for (const p of rec) {
       p.char.kills++; p.sync('kills');
       p.gainXp(xpBase * CFG.enemy.xpLevelPenalty(p.level, m.lvl));
@@ -400,6 +410,7 @@ export class Zone {
       this.ev({ k: 'sfx', n: 'secret' });
     }
     if (p) { p.char.flags[`x:${this.id}:${o.props!.sid}`] = 1; p.sync('flags'); }
+    if (this.exp) Expedition.onSecret(this, o, p);
   }
   private arcHit(p: Player, ang: number, range: number, arcDeg: number, raw: number, el: Element, o: { kb?: number; status?: StatusSpec; crit?: number }): number {
     let total = 0;
@@ -573,6 +584,7 @@ export class Zone {
     const o = this.objs.get(id);
     const now = this.game.now;
     if (!o || p.dead || Math.hypot(o.x - p.x, o.y - p.y) > CFG.player.interactRadius + 18) return;
+    if (Expedition.interact(this, p, o)) return; // 0.9: Portal, Rätsel, Siegel, Rastplatz, Rückkehr
     switch (o.type) {
       case 'chest': this.openChest(p, o); break;
       case 'door': case 'bossdoor': {
@@ -696,6 +708,7 @@ export class Zone {
       if (now - p.msgAt > 3) { p.msgAt = now; p.toast(pr.reqMsg ?? 'Der Weg ist versperrt.', 'bad'); }
       return;
     }
+    if (Expedition.useExit(this, p, o)) return; // 0.9: alte Dungeon-Eingänge führen in die Expedition; Ausgang einer Expedition
     if (this.rift) { Rift.leave(this.game, p); return; }
     this.game.transfer(p, pr.to, this.id);
   }
@@ -717,6 +730,7 @@ export class Zone {
     this.updateObjs(now);
     Story.tick(this, dt);
     if (this.rift) Rift.tick(this, dt);
+    if (this.exp) { Expedition.tick(this, dt); if (Math.floor(now) !== Math.floor(now - dt)) Expedition.heal(this); }
     World.tickZone(this, dt);
     for (let i = this.respawns.length - 1; i >= 0; i--) {
       const r = this.respawns[i];
