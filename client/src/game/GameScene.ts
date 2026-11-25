@@ -54,9 +54,9 @@ const FONT = '"Trebuchet MS", Verdana, sans-serif';
 /** 0.8 „Blitze reduzieren“ (Einstellungen): Stärke der weichen Varianten */
 const FLASH = { softAlpha: 0.16, softMs: 700, shakeMul: 0.3, lightMul: 0.45, lightMinMs: 420, elementGapMs: 4000 };
 /** flach auf dem Boden liegende Deko (unter Figuren, ohne Schatten) */
-const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy|rug$|dig_spot)/;
+const FLAT = /^(clover|pebbles|leafpile|lilypad|lily_flower|bones|skull|d_rug|d_crack|d_moss|d_puddle|d_grate|d_bones|plate_|cave_moss|puddle_cave|crystal_shards|mine_rails|ash_pile|magma_crack|snowdrift|ice_crack|mosaic|urn_broken|lost_toy|rug$|dig_spot|collapse_floor|exp_glut_b)/;
 /** kleine oder massenhaft vorkommende Deko ohne eigenen Schlagschatten */
-const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags|mana_surge|star_shard|lore_)/;
+const NO_SHADOW = /^(wheat|reeds|cattail|tallgrass|fern|flowers|mushrooms|glowshroom|wall_torch|d_banner|d_chains|d_cobweb|d_roots|d_candles|d_mushroom|d_skull|fence_h|floating_shard|ember_vent|fire_geyser|floating_rune|ghost_flower|tendril|memory_frame|glowshroom_big|prayer_flags|mana_surge|star_shard|lore_|hub_blumen|boss_seal|exp_schatten_b)/;
 /** Flammen flackern schnell, alles andere wiegt sich langsam */
 const FLICKER = /^(campfire|brazier|torch|wall_torch|lamp|forge|d_candles|ember_vent|fire_geyser|nomad_brazier|lantern|last_light|brazier_blue|station_cook|home_sign)/;
 /** [Radius, Farbe, Stärke, Flackern] */
@@ -70,6 +70,13 @@ const LIGHTS: Record<string, [number, number, number, number]> = {
   void_rift: [60, 0xc070ff, 0.8, 0.04], ghost_flower: [24, 0xd8c8ff, 0.4, 0], last_light: [120, 0xfff0c0, 1, 0.03], eye_stalk: [0, 0, 0, 0], house_a: [60, 0xffd8a0, 0.5, 0], house_b: [60, 0xffd8a0, 0.5, 0], house_c: [60, 0xffd8a0, 0.5, 0],
   hueterschrein: [64, 0xfff2c8, 0.75, 0.02], riss_stein: [66, 0x9a90ff, 0.8, 0.06], mana_surge: [84, 0x70ffe0, 0.9, 0.05], star_shard: [44, 0xfff0c8, 0.65, 0.04], lore_stone: [24, 0xfff0c8, 0.4, 0],
   station_cook: [82, 0xffb060, 0.95, 0.07], station_enchant: [56, 0x80c0ff, 0.7, 0.03], station_alchemy: [30, 0x70ffd8, 0.4, 0.02],
+  // 0.9: Quellwarte und Expeditionen
+  hub_laterne: [84, 0x70ffe0, 0.85, 0.02], hub_brunnen: [72, 0x70ffe0, 0.7, 0.02], hub_schmiede: [64, 0xff9040, 0.7, 0.06], hub_gasthaus: [70, 0xffd8a0, 0.6, 0.02],
+  hub_alchemie: [50, 0xd0a0ff, 0.5, 0.03], hub_halle: [56, 0xfff0c0, 0.5, 0.02], hub_meister: [50, 0xffd8a0, 0.45, 0.02], hub_haendler: [50, 0xffd8a0, 0.45, 0.02],
+  expedition_portal: [130, 0x70ffe8, 1, 0.04], portal_small: [84, 0x70ffe8, 0.85, 0.04], checkpoint: [70, 0x80ffe8, 0.8, 0.03], reward_altar: [64, 0xfff0c0, 0.75, 0.02],
+  boss_seal: [40, 0xb070ff, 0.6, 0.05], exp_gruenwald_b: [36, 0xa0ff80, 0.5, 0], exp_gruenwald_c: [50, 0x70ffe0, 0.6, 0.02], exp_kristall_a: [60, 0x80e8ff, 0.7, 0],
+  exp_kristall_b: [40, 0xff80d8, 0.5, 0], exp_kristall_c: [70, 0xffb870, 0.85, 0.06], exp_glut_a: [44, 0xff8040, 0.6, 0.05], exp_glut_b: [40, 0xff7030, 0.6, 0.04],
+  exp_glut_c: [56, 0xff7a30, 0.7, 0.05], exp_ruinen_c: [30, 0x80c8ff, 0.4, 0], exp_schatten_a: [40, 0xb070ff, 0.5, 0], exp_schatten_c: [44, 0xff80d8, 0.6, 0.03],
 };
 const INDOOR: Record<string, [number, number]> = { // [Oberwelt (falls überdacht), Dungeon]
   gruenwald: [0xffffff, 0x6c7a62], kristall: [0x5e6eaa, 0x566296], glut: [0xffffff, 0x82523f], frost: [0xffffff, 0x60749a], ruinen: [0xffffff, 0x766c56], schatten: [0x5c4c90, 0x604f92],

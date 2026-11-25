@@ -1084,9 +1084,155 @@ const vael = base({
   carry: (dir) => (dir === 0 ? { oh: [2, 4] } : dir === 1 ? { oh: [6, 3], oz: 1 } : { oh: [-2, 4] }),
 });
 
+// ================================================================ Quellwarte (Hub, ab 0.9)
+const HB: Ramp = [mix(P.blue[0], P.violet[0], 0.3), P.blue[1], mix(P.blue[2], P.teal[2], 0.25), mix(P.blue[3], P.teal[3], 0.3), mix(P.blue[4], P.teal[4], 0.3)];
+const WN: Ramp = [mix(P.red[0], P.violet[0], 0.4), P.red[0], P.red[1], P.red[2], P.red[3]];
+const AUBURN = mixR(lo(P.red), lo(P.wood), 0.45);
+const GREY: Ramp = [P.stone[2], P.stone[3], P.bone[3], P.bone[4]];
+/** Krug in der Nebenhand (Wirtin) */
+function mug(l: Px, x: number, y: number): void {
+  l.rect(x, y, 4, 5, P.wood[3]); l.rect(x, y, 1, 5, P.wood[4]); l.rect(x + 3, y, 1, 5, P.wood[1]); l.rect(x, y + 1, 4, 1, P.steel[2]); l.rect(x, y + 3, 4, 1, P.steel[2]);
+  l.rect(x, y - 1, 4, 1, P.cream[4]); l.set(x + 1, y - 2, WHITE); l.px([x + 4, y + 1, x + 5, y + 2, x + 4, y + 3], P.wood[2]);
+}
+/** Kolben mit grünem Trank (Alchemistin) */
+function flaskItem(l: Px, x: number, y: number): void {
+  l.rect(x + 1, y - 3, 2, 2, P.ice[3]); l.rect(x + 1, y - 4, 2, 1, P.tan[2]);
+  l.rect(x, y - 1, 4, 4, P.green[3]); l.rect(x, y - 1, 4, 1, P.ice[3]); l.set(x, y, P.green[4]); l.set(x + 3, y + 2, P.green[2]); l.set(x + 1, y, WHITE);
+}
+
+// ---- Wirtin „Zum Letzten Licht“: Dutt, weinrotes Kleid, weiße Schürze, Krug
+const wiLg = legend(P.skin, AUBURN, [WN, P.cream, P.gold, P.wood]);
+const wirtin = base({
+  key: 'npc_wirtin', lg: wiLg, B: B({ shX: 7, legX: 4 }),
+  head: aelteste.head,
+  torso: [
+    art(['..AbAAAAAa..', '.AbACCCCAAa.', '.AbACddCAAa.', '.AbACCCCAAa.', '..AbCCCCAa..', '..eEfEEEEe..', '..AbCCdCAa..', '.AAbCCCdCAa.', '.AbACCCCdAa.', 'AAbACCCCdAAa', 'AbAACCCCdAAa', 'AbAACCCCCAAa', 'aAaaCcCcCaaa'], 4),
+    art(['..AbAa..', '.aAbACC.', '.aAbACC.', '.aAbACC.', '.aAbACC.', '.eEfECC.', '.aAbACC.', '.aAAbACC', 'aAAAbACC', 'aAAAbACC', 'aAAAbACC', 'aAAAbACC', 'aaaaaaCc'], 4),
+    art(['..AbAAAAAa..', '.AbAAAAAAAa.', '.AbAAAAAAAa.', '.AbAAAAAAAa.', '..AbAAAAAa..', '..eEfCCfEe..', '..AbACCAAa..', '.AAbAAAAAAa.', '.AbAAAAAAaa.', 'AAbAAAAAAAaa', 'AbAAAAAAAAaa', 'AbAAAAAAAAaa', 'aaaaaaaaaaaa'], 4),
+  ],
+  arm: { up: r2(WN, 4), low: r2(P.skin), hand: r2(P.skin) },
+  leg: { c: r3(P.wood), boot: r3(P.wood), robe: true },
+  off: (l, k, hx, hy) => { if (k.dir !== 2) mug(l, hx - 1, hy - 2); },
+  swing: [0.6, 0.2],
+  carry: (dir) => (dir === 0 ? { oh: [-2, 3], mh: [1, 5] } : dir === 1 ? { oh: [5, 2], oz: 1 } : { oh: [2, 4] }),
+});
+
+// ---- Ausrüster: Barett mit Feder, Schnurrbart, hüterblaues Wams mit Goldknöpfen, Auftragsbuch
+const hhLg = legend(P.skin, DARK, [HB, P.wood, P.gold, P.tan], { p: WN[1], P: WN[2], q: WN[3], Q: WN[4], y: P.gold[3] });
+const haendler_hub = base({
+  key: 'npc_haendler_hub', lg: hhLg,
+  head: [
+    head(['.........WW...', '....pPPPPpW...', '..pPPqQPPPPp..', '.pPqQPPPPPPPp.', '.ppPPPPPPPPpp.', '.UuUtttttttUu.', '.U..........u.', '.u..........u.', '..............', '..............', '..............', '.....UuuU.....'], 2),
+    head(['..W...........', '..WpPPPPp.....', '.pPqQPPPPPp...', 'pPqQPPPPPPPp..', '.pPPPPPPPPpp..', '.uUUUUUtUttt..', '.uUUUUt.......', '.uuUUt........', '..uUu.........', '..............', '..............', '.........UUu..'], 2),
+    head(['.........WW...', '....pPPPPpW...', '..pPPqQPPPPp..', '.pPqQPPPPPPPp.', '.ppPPPPPPPPpp.', '.UUUUUUUUUUUu.', '.UUvUUUUUUUuu.', '.uUUUUUUUUuuu.', '..uUUUUUUuuu..', '....uSSSSu....', '....SSSSSs....'], 2),
+  ],
+  torso: [
+    art(['.AbyyAa.', 'AAbAyAAa', 'AbAAyAAa', 'AbAAyAAa', 'AbAAyAAa', '.cCdyCc.', '.AbAAAa.', '.aAAAAa.', '.aAaaAa.']),
+    art(['.Abyy.', 'AAbAyA', 'AbAAyA', 'AbAAyA', '.AbAyA', '.cCdCC', '.AbAAa', '.aAAAa', '.aAAa.']),
+    art(['.AbAAAa.', 'AAbAAAAa', 'AbAAAAAa', 'AbAAAAAa', '.AbAAAA.', '.cCdCCc.', '.AbAAAa.', '.aAAAAa.', '.aAaaAa.']),
+  ],
+  arm: { up: r2(HB, 3), low: r2(HB, 4), hand: r2(P.skin) },
+  leg: { c: r3(P.tan, 3), boot: r3(P.wood, 3), cuff: P.gold[2] },
+  off: (l, k, hx, hy) => { if (k.dir === 0) book(l, hx - 3, hy - 2); else if (k.dir === 1) book(l, hx, hy - 2, true); },
+  swing: [0.7, 0.1],
+  carry: (dir) => (dir === 0 ? { oh: [-3, 3], mh: [2, 4] } : dir === 1 ? { oh: [5, 2], oz: 1 } : { oh: [2, 3], mh: [-2, 4] }),
+});
+
+// ---- Fähigkeitenmeister: grauer Haarknoten, langer weißer Bart, hüterblaue Robe mit Goldschärpe, Kampfstab
+const meLg = legend(P.skin, GREY, [HB, P.cream, P.gold, P.wood]);
+const meister = base({
+  key: 'npc_meister', lg: meLg, plant: true,
+  head: [
+    head(['.....UVu......', '.....UVu......', '....uUVUu.....', '...UVVvVVVUu..', '.UVvVVVVVVVUu.', '.UVVttttttVUu.', '.U..........u.', '.U..........u.', '..............', '..............', '...W.WWWW.W...', '....WWWWWW....', '.....WWWW.....', '......WW......'], 3),
+    head(['....UVu.......', '....UVu.......', '...uUVUu......', '..UVVVVVUu....', '.uUVvVVVVUu...', '.uUVVVVVVttt..', '.uUVVVVt......', '.uUVVVt.......', '..uUVu........', '..............', '.........WWW..', '........WWWW..', '.........WW...', '..........W...'], 3),
+    head(['.....UVu......', '.....UVu......', '....uUVUu.....', '...UVVVVVUu...', '..UVVvVVVVUu..', '.UVVvVVVvVVUu.', '.UVVVVvVVVVUu.', '.UVvVVVVvVUUu.', '.uUVVvVVVUUuu.', '.uUUVVVUUUuuu.', '..uUUUUUuuu...', '....uSSSSu....', '....SSSSSs....'], 3),
+  ],
+  torso: robes(
+    [['..AbeAAAAa..', '.AbAAeAAAAa.', '.AbAAAeAAAa.', '..AbAAAeAa..'], ['..AbeA..', '.aAbAeA.', '.aAbAAe.', '.aAbAAe.'], ['..AbAAAAAa..', '.AbAAAAAeAa.', '.AbAAAAeAAa.', '..AbAAeAAa..']],
+    ['..eEfFFfEe..', '.eEfFFfE', '..eEfFFEEe..'], ['eEfEEEEfEEee', 'eEfEEEEe', 'eEfEEEEfEEee'], 5),
+  arm: { up: r2(HB, 3), low: r2(HB, 4), hand: r2(P.skin) },
+  leg: { c: r3(P.wood), boot: r3(P.wood), robe: true },
+  weapon: (l, k, hx, hy, ang) => { stick(l, hx, hy, ang, 12, 9, P.wood, P.gold[3]); },
+  swing: [0.2, 0.5],
+  carry: (dir) => (dir === 0 ? { mh: [-2, 3], wa: -90 } : dir === 1 ? { mh: [5, 3], wa: -90 } : { mh: [2, 3], wa: -90, wz: 1 }),
+});
+
+// ---- Lagerverwalter: Schiebermütze, breit, braune Schürze über grünem Hemd, Klemmbrett
+const lvLg = legend(P.skin, P.wood, [P.tan, P.forest, P.wood, P.steel]);
+const lagerverwalter = base({
+  key: 'npc_lagerverwalter', lg: lvLg, B: B({ shX: 7, legX: 5 }),
+  head: [
+    head(['....gGGGGg....', '..gGhHGGGGGg..', '.gGHGGGGGGGGg.', 'ggggggggggggg.', '.UutttttttUUu.', '.U..........u.', '.u..........u.', '..............', '..............', '..............', '....UuuuuU....'], 1),
+    head(['...gGGGGg.....', '.gGhHGGGGGg...', '.gGHGGGGGGGgg.', '.ggggggggggggg', '.uUUUUUtUttt..', '.uUUUUt.......', '.uuUUt........', '..uUu.........', '..............', '..............', '.......UUUu...'], 1),
+    head(['....gGGGGg....', '..gGhHGGGGGg..', '.gGHGGGGGGGGg.', '.gggggggggggg.', '.UUUUUUUUUUUu.', '.UUvUUUUUUUuu.', '.uUUUUUUUUuuu.', '..uUUUUUUuuu..', '....uSSSSu....', '....SSSSSs....'], 1),
+  ],
+  torso: WIDE_TORSO,
+  arm: { up: r2(P.forest, 3), low: r2(P.forest, 4), hand: r2(P.skin), w: 3 },
+  leg: { c: r3(P.stone, 2), boot: r3(P.wood, 3), cuff: P.wood[2] },
+  off: (l, k, hx, hy) => { if (k.dir !== 2) { l.rect(hx - 2, hy - 3, 5, 7, P.wood[2]); l.rect(hx - 1, hy - 2, 3, 5, P.cream[4]); l.rect(hx, hy - 4, 1, 2, P.steel[3]); l.px([hx - 1, hy - 1, hx + 1, hy - 1, hx - 1, hy + 1], P.ash[3]); } },
+  swing: [0.6, 0.2],
+  carry: (dir) => (dir === 0 ? { oh: [-2, 3], mh: [1, 5] } : dir === 1 ? { oh: [5, 2], oz: 1 } : { oh: [2, 4] }),
+});
+
+// ---- Hallenwart: vergoldeter Helm mit weißem Busch, weißer Wappenrock, Hellebarde
+const hwLg = legend(P.skinD, P.wood, [P.cream, P.gold, P.gold, P.wood], { p: P.cream[2], P: P.cream[3], q: WHITE });
+const hallenwart = base({
+  key: 'npc_hallenwart', lg: hwLg, head: HELM, torso: krieger.torso, plant: true,
+  arm: { up: r2(P.gold, 3), low: r2(P.cream, 4), hand: r2(P.gold, 3) }, leg: { c: r3(P.cream, 3), boot: r3(P.gold, 3), cuff: P.gold[4] }, pauldron: krieger.pauldron,
+  weapon: (l, k, hx, hy, ang) => spear(l, hx, hy, ang, 15, 10, P.gold[3]),
+  swing: [0.2, 0.7],
+  carry: (dir) => (dir === 0 ? { mh: [-2, 2], wa: -90 } : dir === 1 ? { mh: [5, 2], wa: -90 } : { mh: [2, 2], wa: -90, wz: 1 }),
+});
+
+// ---- Schmiedin: rotes Kopftuch, roter Zopf, kräftig, Lederschürze, nackte Arme, Hammer
+const smLg = legend(P.skin, GINGER, [P.tan, P.stone, P.wood, P.steel], { p: HB[1], P: HB[2], q: HB[3] });
+const schmiedin = base({
+  key: 'npc_schmiedin', lg: smLg, B: B({ shX: 7, legX: 5 }),
+  head: [
+    head(['...UvvVvUUu...', '..pPPqqPPPPp..', '.pPPqPPPPPPPp.', '.UvUttttttUUu.', '.Utt......tUu.', '.U..........u.', '.u..........u.']),
+    head(['...UvvVvUUu...', '..pPPqqPPPp...', '.pPPqPPPPPPp..', '.uUvUUUUttttt.', '.uUUUUt.......', '.uUUUUt.......', '.uuUUu........', '. uUu.........']),
+    head(['...UvvVvUUu...', '..pPPqqPPPPp..', '.pPPqPPPPPPPp.', '.UvUvUUUuUUuu.', '.UvUvUUUuUUuu.', '.uUUUUuUUUuuu.', '.uUuUUuUuUuuu.', '..uUuUUuUuuu..', '....uSuSSu....', '....SSSSSs....']),
+  ],
+  torso: WIDE_TORSO,
+  arm: { up: r2(P.skin), low: r2(P.skin), hand: r2(P.wood), w: 3 },
+  leg: { c: r3(P.wood, 2), boot: r3(P.ash, 4), cuff: P.ash[3] },
+  weapon: (l, k, hx, hy, ang) => smithHammer(l, hx, hy, ang),
+  top: (k, L) => {
+    const { dir, ps, headX: hx, neckY: ny, lg } = k;
+    L((l) => {
+      if (dir === 0) braid(l, hx + 5, ny - 3, 6, [0.1, 1], ps.sw * 0.6, lg.U, lg.u, P.red[3]);
+      else if (dir === 1) braid(l, hx - 6, ny - 4, 9, [-0.2 - ps.tr * 0.3, 1 - ps.tr * 0.1], ps.sw, lg.U, lg.u, P.red[3]);
+      else braid(l, hx, ny - 4, 9, [0, 1], ps.sw, lg.U, lg.u, P.red[3]);
+    });
+  },
+  swing: [0.6, 0.8],
+  carry: (dir) => (dir === 0 ? { mh: [-1, 6], wa: 112.5, oh: [0, 6] } : dir === 1 ? { mh: [2, 6], wa: 45 } : { mh: [1, 6], wa: 67.5 }),
+});
+
+// ---- Alchemistin: lange dunkle Haare, Schutzbrille auf der Stirn, violette Robe mit grünen Flecken, Trankkolben
+const alLg = legend(P.skin, mixR(lo(P.violet), lo(P.shadow), 0.35), [P.violet, P.green, P.gold, P.tan, P.steel], { l: P.teal[2], L: P.teal[4], n: P.teal[1], N: WHITE });
+const alchemistin = base({
+  key: 'npc_alchemistin', lg: alLg,
+  head: [
+    head(['...UvvVvUUu...', '..UvVVvvUUUu..', '.UvVvvUvUUUUu.', '.UiIIiiiIIiUu.', '.ULNiUUUiLNUu.', '.Ut........tu.', '.U..........u.', '.U..........u.', '.u..........u.', '.u..........u.', '.u..........u.'], 1),
+    head(['...UvvVvUUu...', '..UvVVvvUUUu..', '.UvVvvUvUUUUu.', '.uUvUUiIIiII..', '.uUUUUUiLNi...', '.uUUUUt.......', '.uUUUUt.......', '.uUUUUu.......', '.uUUUUu.......', '..uUUu........', '..uUu.........'], 1),
+    head(['...UvvVvUUu...', '..UvVVvvUUUu..', '.UvVvvUvUUUUu.', '.UiIIiiiIIiUu.', '.UvVvUUvUUUuu.', '.UvUvUUUuUUuu.', '.uUUUUuUUUuuu.', '.uUuUUuUuUuuu.', '.uUuUUuUuUuuu.', '.uUuUUuUuUuuu.', '..uUuUUuUuuu..', '...uUuUUuu....']),
+  ],
+  torso: robes(
+    [['..AbAccAAa..', '.AbAAAAAAAa.', '.AbAAAAcAAa.', '..AbAAAAAa..'], ['..AbAa..', '.aAbAAA.', '.aAbAcA.', '.aAbAAA.'], ['..AbAAAAAa..', '.AbAAAAAAAa.', '.AbAAAAAAAa.', '..AbAAAAAa..']],
+    ['..gGhHHGGg..', '.gGhGGGh', '..gGhGGGGg..'], ['aAcAAAAcAAaa', 'aAAcAAAa', 'aAAAcAAAAAaa'], 5),
+  arm: { up: r2(P.violet, 3), low: r2(P.violet, 4), hand: r2(P.skin) },
+  leg: { c: r3(P.wood), boot: r3(P.wood), robe: true },
+  off: (l, k, hx, hy) => { if (k.dir !== 2) flaskItem(l, hx - 1, hy - 1); },
+  swing: [0.6, 0.2],
+  carry: (dir) => (dir === 0 ? { oh: [-2, 3], mh: [1, 5] } : dir === 1 ? { oh: [5, 2], oz: 1 } : { oh: [2, 4] }),
+});
+
 export const NPCS: Record<string, Costume> = {
   npc_aelteste: aelteste, npc_schmied: schmied, npc_haendlerin: haendlerin, npc_gelehrter: gelehrter, npc_kind: kind,
   npc_jaegerin: jaegerin, npc_wache: wache, npc_bergfrau: bergfrau, npc_nomade: nomade, npc_einsiedler: einsiedler,
   npc_fellhaendlerin: fellhaendlerin, npc_archaeologin: archaeologin, npc_geist: geist, npc_echo: echo, npc_kraemer: kraemer,
   npc_vael: vael,
+  npc_wirtin: wirtin, npc_haendler_hub: haendler_hub, npc_meister: meister, npc_lagerverwalter: lagerverwalter,
+  npc_hallenwart: hallenwart, npc_schmiedin: schmiedin, npc_alchemistin: alchemistin,
 };
