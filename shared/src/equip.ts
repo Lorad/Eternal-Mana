@@ -15,7 +15,7 @@
  *   jetzt den Amulettplatz) · ein zweites Amulett/Talisman → Rucksack (auch über die Rucksackgröße hinaus; nichts geht verloren).
  *   Werte, Eigenschaften, Verbesserungsstufe, Element, Rune und Set bleiben unverändert. Weil Hauptwaffe, Helm, Brust und Ring
  *   ihr Grundbudget mit den neuen Plätzen teilen, legt Borin jedem überführten Charakter für die neuen, noch leeren Plätze
- *   einfache Stücke (gewöhnlich, Stufe der bisherigen Ausrüstung) bei – so steht er nach dem Laden so stark da wie vorher.
+ *   einfache Stücke (gewöhnlich, ohne Eigenschaften, mit Gegenstands- und Verbesserungsstufe der bisherigen Ausrüstung im Mittel) bei – so steht er nach dem Laden so stark da wie vorher.
  */
 import { CFG } from './config';
 import { CLASS_OFFHAND, ITEMS, generateGear, gearBase, itemMods, newUid, slotKind, slotsFor, tierOf, type GenKind } from './data/items';
@@ -90,8 +90,8 @@ function legacyTarget(c: CharData, it: ItemInstance): Slot | null {
 export function migrateEquip(c: CharData): { toBag: ItemInstance[]; granted: ItemInstance[] } {
   const toBag: ItemInstance[] = [], granted: ItemInstance[] = [];
   const legacy = !(c.eqv && c.eqv >= EQUIP_VERSION);
-  const ilvls: number[] = [];
-  for (const s of [...SLOTS, ...LEGACY_SLOTS]) { const it = c.equip[s]; if (it && ITEMS[it.base]) ilvls.push(it.ilvl); }
+  const ilvls: number[] = [], ups: number[] = [];
+  for (const s of [...SLOTS, ...LEGACY_SLOTS]) { const it = c.equip[s]; if (it && ITEMS[it.base]) { ilvls.push(it.ilvl); ups.push(Math.max(0, Math.min(CFG.upgrade.max, it.up | 0))); } }
   for (const s of LEGACY_SLOTS as LegacySlot[]) {
     const it = c.equip[s];
     if (!it) { delete c.equip[s]; continue; }
@@ -106,9 +106,11 @@ export function migrateEquip(c: CharData): { toBag: ItemInstance[]; granted: Ite
   }
   if (legacy && ilvls.length) {
     const ilvl = Math.max(1, Math.round(ilvls.reduce((a, b) => a + b, 0) / ilvls.length));
+    // Verbesserungsstufe wie die bisherige Ausrüstung im Mittel (höchstens +9: die Passiven der Stufe +10 verdient man sich)
+    const up = Math.min(CFG.upgrade.max - 1, Math.round(ups.reduce((a, b) => a + b, 0) / ups.length));
     const grant = (slot: Slot, kind: GenKind, sub?: string) => {
       if (c.equip[slot]) return;
-      const it: ItemInstance = { uid: newUid(), base: gearBase(c.cls, kind, tierOf(ilvl), sub), rarity: 0, ilvl, up: 0, affixes: [] };
+      const it: ItemInstance = { uid: newUid(), base: gearBase(c.cls, kind, tierOf(ilvl), sub), rarity: 0, ilvl, up, affixes: [] };
       if (!ITEMS[it.base]) return;
       c.equip[slot] = it; granted.push(it);
     };
