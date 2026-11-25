@@ -136,10 +136,32 @@ drei Attributspunkte (Stärke, Geschick, Intelligenz, Vitalität) und einen Fäh
 
 ## Beute und Ausrüstung
 
-Fünf Slots (Waffe, Kopf, Rüstung, zwei Accessoires), fünf Seltenheitsstufen (Gewöhnlich bis Legendär) mit 0–4 zufälligen
-Affixen, sechs Materialstufen. Bosse lassen benannte Elementarwaffen für die eigene Klasse fallen. Schmiede verbessern
-Ausrüstung bis +10 gegen Gold und den Rohstoff der passenden Stufe; ab +4 kann ein Versuch scheitern (Material weg,
-Gegenstand bleibt). Händler verkaufen Tränke und Grundausrüstung.
+Seit 0.9 **zehn Plätze**: Hauptwaffe, Zweithand, Helm, Brust (ID `armor`), Handschuhe, Beine, Schuhe, Amulett, zwei Ringe.
+Die Zweithand hängt an der Klasse: Schild (Krieger, Paladin), Köcher (Waldläufer), Foliant oder Fokus (Magier), Parierdolch
+(Schattenjäger). Talismane belegen den Amulettplatz. Regeln: `shared/src/equip.ts`.
+
+- **Budget je Platz** (`GEAR_BUDGET`, `AFFIX_SCALE` in `data/items.ts`): Die zehn Plätze teilen sich, was bis 0.8 auf fünf lag.
+  Angriff 6 + 3,6·L = Hauptwaffe 4 + 2,5·L, zwei Ringe je 0,5 + 0,3·L, ein „Angriffsstück“ 1 + 0,5·L (Zweithand bzw. schwere
+  Handschuhe der Schildträger); Verteidigung (6 + 3·L) × Rüstungsklasse über Helm, Brust, Beine, Schuhe und das „Schutzstück“
+  (Schild bzw. leichte/Stoff-Handschuhe); Leben und Mana unverändert. Eigenschaften werden je Platz mit 0,45–0,6 gewürfelt
+  (Summe 5 = fünf alte Plätze). Voll ausgerüstet ergibt sich dieselbe Kurve wie vorher (`tests/equipment.test.ts`).
+- **Seltenheit:** sechs Stufen, neu **Mythisch** (×1,85 Grundwerte, fünf Eigenschaften). Alle Tabellen richten sich nach
+  `RARITY_NAME.length`; kürzere Gewichtstabellen zählen fehlende Stufen als 0 (`shared/src/rarity.ts`). Mythisch nur aus dem
+  schwersten Inhalt: Mana-Risse ab Stufe 15, Bosstruhen ab dem zweiten Neuen Kreis, Expeditionen auf Albtraum (Endboss) und
+  Mythisch (`expeditionRarity`).
+- **Verbessern +0 bis +10 ist fair:** Jede Stufe gelingt, nichts wird zerstört oder zurückgestuft. Die Kosten steigen: Gold,
+  Erz und Monster-Rohstoff der Stufe, ab +4 die Essenz des Stufenelements, ab +7 der Bosskern der Stufe, für +10 Ätherstaub
+  (Riss-Gegenstände über Stufe 40 ab +7 zusätzlich Echo-Fragmente). Jede Stufe +8 % Grundwerte; +3/+6/+9 je eine feste
+  Eigenschaft nach Art des Teils, +10 eine kleine Passive je Art (`data/upgrade.ts`, Wirkung im Kampf: `server/src/gearfx.ts`).
+- **Sets** aus sechs Teilen (Kopfschutz, Gewand, Handschutz, Schritt, Reif, Anhänger): 2 Teile schützen, 4 Teile stärken eine
+  Fähigkeit der eigenen Klasse, alle sechs schalten eine eigene Wirkung frei (Rindenhaut, Lichtbrechung, Aschenregen,
+  Frostspur, Stille vor dem Sturm, Was die Krone nimmt).
+- **Alte Spielstände** werden beim Laden überführt: Ring → Ring, Amulett/Talisman → Amulett, ein zweites Amulett in den
+  Rucksack; für die neuen, leeren Plätze legt Borin einfache Stücke bei (gewöhnlich, Stufe und Verbesserung der bisherigen
+  Ausrüstung im Mittel), damit niemand nach dem Laden schwächer dasteht.
+
+Bosse lassen benannte Elementarwaffen und – ab dem zweiten Sieg – benannte Stücke für die neuen Plätze fallen. Händler
+verkaufen Tränke und Grundausrüstung für alle Plätze.
 
 ## Handwerk (0.3)
 
@@ -153,7 +175,7 @@ Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohst
   Ayla, Jorund, Rakhan), Verzauberung (Fenwick, Liora). Im Schattenreich brennt kein Feuer.
 - **Schmiede:** Ausrüstung der eigenen Klasse auf der Materialstufe schmieden (Mindestseltenheit „Ungewöhnlich“,
   Meisterstücke „Selten“), **umschmieden** (Affixe neu würfeln), **Element einschmieden** (Stufe 1–3 mit Essenzen; Stufe 3
-  braucht den Bosskern des Elements), Setteile mit Bosskern, Legendäre Waffen. Verbessern bis +10 bleibt wie bisher.
+  braucht den Bosskern des Elements), Setteile mit Bosskern, Legendäre Waffen. Verbessern bis +10: siehe „Beute und Ausrüstung“.
 - **Alchemie:** Tränke bis zur vierten Stufe, Läuterungstrank, **Elixiere** (eines gleichzeitig, 5 Minuten): Verteidigung,
   Tempo, Krit, Angriff und je Element ein Schutzelixier.
 - **Kochen:** **Speisen** (eine gleichzeitig, 15 Minuten) aus den Zutaten der Gebiete; das **Quellhainer Festmahl** stärkt
