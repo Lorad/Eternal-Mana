@@ -398,15 +398,28 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Oberfläche:** `client/src/ui/expedition.tsx` (Auswahl, Bereitschaft, HUD, Abschluss, Zusammenfassung), `ui/exp-net.ts`,
   Rückfalltabelle der Grafik `client/src/game/expart.ts`.
 - **Werkzeuge:** `npx tsx scripts/expdump.ts [id]` (ASCII-Karte und Prüfung), `npx tsx scripts/exp-playtest.ts` (ganze Läufe mit dem
-  Spielermodell: sorgsam/zügig, allein/zu zweit), `tests/expedition.test.ts`, Browser: `tests/e2e/expedition.mjs` (Wurzeltiefe, allein
-  und zu zweit), `expeditionen.mjs` und `expeditionen-spaet.mjs` (die übrigen fünf und die geheime: Ereignis, Mini-Boss, Signatur
+  Spielermodell: sorgsam/zügig, allein/zu zweit; seit 0.11 mit Erfahrung, Stufen und Gold je Lauf; `--endspiel` für die Leiter aus
+  Endspiel-Expeditionen und Tiefen), `tests/expedition.test.ts`, Browser: `tests/e2e/expedition.mjs` (Wurzeltiefe, allein
+  und zu zweit), `lange-wacht.mjs` (Endspiel), `expeditionen.mjs` und `expeditionen-spaet.mjs` (die übrigen fünf und die geheime: Ereignis, Mini-Boss, Signatur
   wirklich ausgelöst, Phasen, Abschluss; Plan und Ablauf in `tests/e2e/lib/`), `expedition-grade.mjs` (Schwer bis Mythisch: Affixe,
   Zusatzangriff, Helfer, Wut, Zusatztruhen, mythische Beute). Last: `npx tsx scripts/load-check.ts --exp [id] [--boss]` (Vierergruppe).
-  Dev-Befehle: `/portal`, `/expfrei [spuren]` (`spuren`: geheime bleiben unentdeckt), `/exp id [schwierigkeit]`,
+  Dev-Befehle: `/portal`, `/expfrei [spuren]` (`spuren`: geheime bleiben unentdeckt), `/exp id [schwierigkeit] [tiefe]`,
   `/expgo abschnitt [mitte]`, `/expphase 2|3`, `/expwut` (Wut in drei Sekunden), `/expsieg`, `/mythisch` (mythisches Stück am Boden).
 - **Lesbarkeit:** Erwachte mit Affixen zeigen Name und Affixe in zwei Zeilen; in dichten Gruppen blendet `GameScene.declutterMobLabels`
   verdeckte Namen aus (der nächste gewinnt). Ansturm-Muster enden vor Wänden und Hindernissen (`BossCtl.dashLine`); der Ansturm aus
   den gewöhnlichen Mustern des Kristallkolosses fragt die Mechanik (`EchoMech.charged`).
+- **Endspiel (0.11):** `shared/src/data/expeditions_endgame.ts` (zur Laufzeit ohne Importe – nur Typen aus `expeditions.ts`, das die
+  Listen einhängt): zwei Expeditionen (`endgame`, `xpRef` statt `legacy`), ihre Mini-Bosse, `DEPTH_CFG`, `depthOpen`/`depthBlock`,
+  `depthMods(woche, id, tiefe)` (deterministisch, Server und Oberfläche rechnen dasselbe), `depthScale`, Titel (`ENDGAME_TITLES`,
+  eingehängt in `data/looks.ts` über `TITLE_SOURCES`). Tiefe des Laufs: `ExpRun.depth`/`mods`, wirkt in `levelFor`, `makeMob`,
+  `spawnMinis`, `zoneDef`, `bossDef`; Nachricht `exp` mit `depth` bei `select`, Anzeige in `ExpLobbyInfo`, `ExpRunInfo`, `ExpResult`.
+  Belohnung `reward.ts` (`rewardRarity`, Endspiel- und Tiefen-Zugaben, `DungeonRecord.deep`/`deepSec`). Vael und Aetherion: `spared`
+  bleibt, `BossCtl.shouldStart` beginnt in einer Expedition immer (einmal je Lauf), `Expedition.bossDef` nimmt `awaken`/`calm` weg.
+  Signaturen `vael` (Wachfeuer, `xobj` `watchfire`) und `aetherion` (Herztöne, `xobj` `tone`) in `bossmech.ts`, Aufräumen nach dem
+  Sieg `mechDone`. Bestenliste: `server/src/expedition/board.ts` (Tabelle `meta`, Schlüssel `exp_board`), geschickt beim Betreten der
+  Trophäenhalle (`exp` mit `board`), Oberfläche `ui/hub.tsx` (Reiter „Bestenliste“).
+- **Überführung der Ausrüstung (0.11):** `borinGift` in `shared/src/equip.ts`; Beigaben tragen `ItemInstance.gift` (nicht umschmiedbar,
+  `reforgeBlock`).
 
 ## Tests
 

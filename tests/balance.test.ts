@@ -8,13 +8,14 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CFG } from '../shared/src/config';
 import { CLASS_IDS } from '../shared/src/data/classes';
 import { BOSSES } from '../shared/src/data/enemies';
+import { EXPEDITION_LIST } from '../shared/src/data/expeditions';
 import { riftPar } from '../shared/src/data/rifts';
 import { computeStats } from '../shared/src/stats';
 import type { ClassId } from '../shared/src/types';
 import { Rng } from '../shared/src/util/rng';
 import { plausibleChar } from '../scripts/playtest/chars';
 import { Lab } from '../scripts/playtest/lab';
-import { BOSS_STOPS, measureBoss, measureZone, pacing } from '../scripts/playtest/measure';
+import { BOSS_STOPS, expeditionXp, measureBoss, measureZone, pacing } from '../scripts/playtest/measure';
 import { SKILL } from '../scripts/playtest/model';
 import { echoFight, riftChar } from '../scripts/playtest/runs';
 import { dummyDps } from '../scripts/playtest/world';
@@ -32,11 +33,25 @@ const stop = (boss: string) => BOSS_STOPS.find(b => b.boss === boss)!;
 const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
 
 describe('Balance – Wächter über die wichtigsten Korridore', () => {
-  it('Tempo: am Boss steht der Spieler nie weit unter und nie weit über dessen Stufe', () => {
+  it('Tempo: am Boss steht der Spieler nie weit unter und nie weit über dessen Stufe – gerechnet über die Expeditionen (0.11)', () => {
+    // seit 0.9 führt jeder alte Dungeon-Eingang in die Expedition der Region: Kapitel 1–6 rechnen mit ihr, nicht mit der alten Karte
+    expect(pacing(0.8, 60).slice(0, 6).map(r => r.exp)).toEqual(['exp_gruenwald', 'exp_kristall', 'exp_glut', 'exp_frost', 'exp_ruinen', 'exp_schatten']);
     for (const r of pacing(0.8, 60)) { expect(r.atBoss - r.bossLevel, `Kapitel ${r.ch} mit Nebenaufgaben`).toBeGreaterThanOrEqual(-1); expect(r.atBoss - r.bossLevel, `Kapitel ${r.ch} mit Nebenaufgaben`).toBeLessThanOrEqual(3); }
     for (const r of pacing(0, 35)) { expect(r.atBoss - r.bossLevel, `Kapitel ${r.ch} nur Hauptlinie`).toBeGreaterThanOrEqual(-5); expect(r.atBoss - r.bossLevel, `Kapitel ${r.ch} nur Hauptlinie`).toBeLessThanOrEqual(1); }
     // die Höchststufe fällt ins letzte Drittel der Geschichte, nicht in den ersten Akt
     expect(pacing(0.8, 60)[5].leave).toBeLessThan(CFG.player.maxLevel);
+    // ein erster Abschluss auf Normal bei empfohlener Stufe: knapp zwei Stufen (bis 0.11: zweieinhalb bis gut drei)
+    const levels = (from: number, xp: number) => { let l = from; while (xp >= CFG.xpToNext(l)) { xp -= CFG.xpToNext(l); l++; } return l - from + xp / CFG.xpToNext(l); };
+    for (const x of EXPEDITION_LIST.filter(e => !e.endgame)) { // Endspiel (Stufe 40): Erfahrung füllt Quellstufen
+      const e = expeditionXp(x.id, x.rec), up = levels(x.rec, e.mobs + e.minis + e.event + e.clear);
+      expect(up, `${x.name}: Stufen je Abschluss`).toBeGreaterThan(1.3);
+      expect(up, `${x.name}: Stufen je Abschluss`).toBeLessThan(2.6);
+    }
+    // Gold in Akt I: mehr als mit den alten Dungeons (zehn Plätze kosten doppelt so viel Verbessern), aber kein Vielfaches
+    const gold = (rows: { gold: number }[]) => rows.slice(0, 6).reduce((a, r) => a + r.gold, 0);
+    const g = gold(pacing(0.8, 60)) / gold(pacing(0.8, 60, { old: true }));
+    expect(g).toBeGreaterThan(1.15);
+    expect(g).toBeLessThan(1.8);
   });
 
   it('Gewöhnliche Gegner: ein paar Treffer, kein Dauerfeuer – und sie tun etwas, ohne zu töten', { timeout: 120_000 }, () => {

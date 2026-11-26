@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sanitizeChar } from '../server/src/db';
 import { CFG, MYTHIC, RARITY_COLOR, RARITY_MAX, RARITY_NAME } from '../shared/src/config';
-import { makeLegendary, makeSetPiece, upgradeBlock, upgradeCost, upgradePreview } from '../shared/src/craft';
+import { makeLegendary, makeSetPiece, reforgeBlock, upgradeBlock, upgradeCost, upgradePreview } from '../shared/src/craft';
 import { CLASSES, CLASS_IDS } from '../shared/src/data/classes';
 import { sanitizeHome } from '../shared/src/data/collection';
 import { AFFIX_SCALE, ARMOR_DEF_MUL, CLASS_OFFHAND, GEN_KINDS, ITEMS, baseMods, canEquip, gearBase, generateGear, itemMods, rollRarity, slotKind, slotsFor } from '../shared/src/data/items';
@@ -191,8 +191,12 @@ describe('Überführung alter Spielstände', () => {
       if (want2) expect(strip(c.equip[want2]!)).toBe(strip(before.equip.acc2));
       for (const s of ['weapon', 'helm', 'armor'] as const) expect(strip(c.equip[s]!)).toBe(strip(before.equip[s]));
       expect(c.equip.weapon!.up).toBe(6); expect(c.equip.armor!.up).toBe(10);
-      // Borin legt einfache Stücke für die neuen, leeren Plätze bei – gewöhnlich, ohne Eigenschaften
-      for (const s of ['offhand', 'gloves', 'legs', 'boots'] as const) { expect(c.equip[s], `${cls} ${s}`).toBeTruthy(); expect(c.equip[s]!.rarity).toBe(0); expect(canEquip(cls, ITEMS[c.equip[s]!.base])).toBe(true); }
+      // Borin legt Stücke für die neuen, leeren Plätze bei – ohne Eigenschaften, Seltenheit höchstens die der Spender (0.11)
+      for (const s of ['offhand', 'gloves', 'legs', 'boots'] as const) {
+        const g = c.equip[s]!;
+        expect(g, `${cls} ${s}`).toBeTruthy(); expect(g.affixes).toEqual([]); expect(g.gift).toBe(1); expect(g.up).toBeLessThanOrEqual(9);
+        expect(g.rarity).toBeLessThanOrEqual(4); expect(canEquip(cls, ITEMS[g.base])).toBe(true);
+      }
       // ein zweiter Lauf ändert nichts mehr
       const again = sanitizeChar(JSON.parse(JSON.stringify(c)))!;
       expect(again.equip).toEqual(c.equip);
@@ -214,7 +218,7 @@ describe('Überführung alter Spielstände', () => {
     }
   });
 
-  it('nach dem Laden steht ein alter Charakter fast so stark da wie vorher (Grundwerte −20 % … +10 %, im Extremfall: legendär +10)', () => {
+  it('nach dem Laden steht ein alter Charakter so stark da wie vorher, aber nie stärker (Grundwerte −6 % … ±0, 0.11; bis 0.10: −20 %)', () => {
     for (const cls of CLASS_IDS) {
       const raw = oldSave(cls, 'c_ring_5', 'c_amulet_4');
       // alte Werte: Grundwerte nach der alten Formel + Eigenschaften, Runen und Zustände wie damals
@@ -226,13 +230,39 @@ describe('Überführung alter Spielstände', () => {
       const e = raw.equip, a = CLASSES[cls].armor;
       const oldPow = Math.round((5 + 3 * L(e.weapon)) * mul(e.weapon)) + Math.round((1 + 0.6 * L(e.acc1)) * mul(e.acc1));
       const newPow = equippedItems(c).reduce((s, it) => s + (baseMods(it).power ?? 0), 0);
-      expect(newPow / oldPow, `${cls} Angriff aus Grundwerten`).toBeGreaterThan(0.85); // hoch verbesserte alte Waffen verlieren etwas (Bericht: Schwachstelle)
-      expect(newPow / oldPow, `${cls} Angriff aus Grundwerten`).toBeLessThan(1.06);
+      expect(newPow / oldPow, `${cls} Angriff aus Grundwerten`).toBeGreaterThan(0.94); // 0.10: 0.85 – Borins Stücke waren gewöhnlich
+      expect(newPow / oldPow, `${cls} Angriff aus Grundwerten`).toBeLessThan(1.02);
       const oldDef = Math.round((2 + 1.1 * L(e.helm)) * ARMOR_DEF_MUL[a] * mul(e.helm)) + Math.round((4 + 1.9 * L(e.armor)) * ARMOR_DEF_MUL[a] * mul(e.armor));
       const newDef = equippedItems(c).reduce((s, it) => s + (baseMods(it).def ?? 0), 0);
-      expect(newDef / oldDef, `${cls} Verteidigung aus Grundwerten`).toBeGreaterThan(0.8); // hier: legendäre Brust +10 – der Extremfall
-      expect(newDef / oldDef, `${cls} Verteidigung aus Grundwerten`).toBeLessThan(1.1);
+      expect(newDef / oldDef, `${cls} Verteidigung aus Grundwerten`).toBeGreaterThan(0.94); // hier: legendäre Brust +10 – 0.10: 0.8
+      expect(newDef / oldDef, `${cls} Verteidigung aus Grundwerten`).toBeLessThan(1.02);
       expect(d.power).toBeGreaterThan(refStats.power);
+    }
+  });
+
+  it('Borins Beigabe in allen Lagen: alles gewöhnlich +0 bleibt gewöhnlich, alles legendär +10 verliert höchstens 6 %, nie ein Gewinn; nicht umschmiedbar', () => {
+    const oldDefOf = (raw: any, a: string) => { const L = (it: any) => it.ilvl, mul = (it: any) => CFG.loot.rarityStatMul[it.rarity] * (1 + CFG.upgrade.statPerLevel * it.up); return Math.round((2 + 1.1 * L(raw.equip.helm)) * ARMOR_DEF_MUL[a as 'heavy'] * mul(raw.equip.helm)) + Math.round((4 + 1.9 * L(raw.equip.armor)) * ARMOR_DEF_MUL[a as 'heavy'] * mul(raw.equip.armor)); };
+    const oldPowOf = (raw: any) => { const L = (it: any) => it.ilvl, mul = (it: any) => CFG.loot.rarityStatMul[it.rarity] * (1 + CFG.upgrade.statPerLevel * it.up); return Math.round((5 + 3 * L(raw.equip.weapon)) * mul(raw.equip.weapon)) + (raw.equip.acc1 ? Math.round((1 + 0.6 * L(raw.equip.acc1)) * mul(raw.equip.acc1)) : 0); };
+    for (const cls of CLASS_IDS) for (const [rarity, up, ilvl] of [[0, 0, 8], [4, 10, 30], [2, 5, 18], [3, 8, 39], [1, 1, 3]] as const) {
+      const raw = oldSave(cls, 'c_ring_5', null);
+      for (const k of ['weapon', 'helm', 'armor', 'acc1']) Object.assign(raw.equip[k], { rarity, up, ilvl, affixes: [] });
+      const before = JSON.parse(JSON.stringify(raw)), c = sanitizeChar(raw)!, a = CLASSES[cls].armor;
+      const def = equippedItems(c).reduce((s, it) => s + (baseMods(it).def ?? 0), 0), pow = equippedItems(c).reduce((s, it) => s + (baseMods(it).power ?? 0), 0);
+      const tag = `${cls} ${RARITY_NAME[rarity]} +${up} L${ilvl}`;
+      // nie stärker als vorher – bis auf die Rundung der Grundwerte je Teil (höchstens ein halber Punkt je Stück)
+      const od = oldDefOf(before, a), op = oldPowOf(before);
+      expect(def / od, tag + ' Verteidigung').toBeGreaterThan(0.94);
+      expect(def, tag + ' Verteidigung').toBeLessThanOrEqual(od * 1.01 + 2.5);
+      expect(pow / op, tag + ' Angriff').toBeGreaterThan(0.94);
+      expect(pow, tag + ' Angriff').toBeLessThanOrEqual(op * 1.01 + 2.5);
+      const gifts = equippedItems(c).filter(it => it.gift);
+      expect(gifts.length, tag).toBe(5); // Zweithand, Handschuhe, Beine, Schuhe, zweiter Ring
+      for (const g of gifts) {
+        expect(g.rarity, tag).toBeLessThanOrEqual(rarity); expect(g.affixes).toEqual([]); expect(g.up).toBeLessThanOrEqual(9);
+        expect(Math.abs(g.ilvl - ilvl), tag).toBeLessThanOrEqual(1);
+        expect(reforgeBlock(c, g), 'Beigabe nicht umschmiedbar').toMatch(/Borin/);
+      }
+      if (rarity === 0 && up === 0) for (const g of gifts) { expect(g.rarity).toBe(0); expect(g.up).toBe(0); }
     }
   });
 

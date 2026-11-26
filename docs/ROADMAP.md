@@ -174,3 +174,27 @@ Systeme bis 0.8 bleiben erhalten; der Hub kommt dazu, er ersetzt nichts. Gemeins
 | 0.9 | Quellwarte mit allen Einrichtungen; eine vollständige Expedition mit Mini-Boss und Endboss; Abschluss und Rückkehr |
 | 0.10 | Alle Expeditionen, Schwierigkeitsgrade, wöchentliche Herausforderung, Bestzeiten; Ausrüstung mit zehn Plätzen |
 | 0.11 | Endgame-Expeditionen, Balance über die neue Länge, Leistung |
+
+### 5.3 Endspiel der Expeditionen (0.11) – Entscheidung
+
+Geprüft wurden vier Ideen. Maßstab: echter Inhalt statt Zahlenaufschlag, Wiederspielwert über Wochen, Anschluss an vorhandene
+Systeme (Bosskerne, Echo-Fragmente, Mythisch, +10, Titel, Erscheinungen), wenig neue Kunst.
+
+| Idee | Urteil | Begründung |
+|---|---|---|
+| Expeditionen für Vael und Aetherion | **gebaut** | Die Akt-II-Bosse hatten nur kleine Story-Dungeons und kein Wiedersehen. Gleicher Generator, eigene Mini-Bosse, je eine neue Signaturmechanik (Wachfeuer, Wiegenlied), die die Geschichte aufnimmt; beide ergeben sich wie in der Geschichte. |
+| „Tiefen“ über Mythisch mit steigender Belohnung | **gebaut** | Die stärkste Langzeit-Schleife: macht alle neun Expeditionen zum Endspiel, nicht nur zwei. Belohnt mit dem, was +7 bis +10 kostet (Bosskern), Echo-Fragmenten, Mythisch. Leiter wie die Mana-Risse, aber über ganze Expeditionen. |
+| Rotierende Endspiel-Expedition mit Modifikatoren | **in den Tiefen aufgegangen** | Die Modifikatoren der Tiefen wechseln jede Woche je Expedition – das ist die Rotation, ohne einen zweiten, parallelen Wochenmodus neben der Wochen-Herausforderung. |
+| Bestzeiten als Bestenliste in der Trophäenhalle | **gebaut (klein)** | Serverweit: schnellster Lauf je Expedition und Grad, tiefste Tiefe, mit den Namen der Gruppe. Gibt Gruppen ein gemeinsames Ziel, kostet wenig. |
+
+- **Freischaltung:** „Die Lange Wacht“ nach Vaels Prüfung und Stufe 40; „Das Atmende Herz“ nach Aetherion, Stufe 40 und einem
+  Abschluss der Langen Wacht. Tiefe 1 nach einem Mythisch-Abschluss der jeweiligen Expedition, danach Tiefe um Tiefe bis 20.
+- **Belohnung, die sich lohnt:** Endspiel-Expeditionen belohnen eine Stufe besser als ihr Grad, mit Echo-Fragmenten, Ätherstaub,
+  einem mythischen Stück beim ersten Albtraum/Mythisch, neuen Boss-Unikaten für die neuen Plätze, Glanz und Titel; Tiefen mit
+  Bosskern, Echo-Fragmenten, Ätherstaub, mythischen Meilensteinen und zwei Titeln.
+- **Schwierigkeit, die sich unterscheidet:** gemessen mit dem Spielermodell (docs/GAME_DESIGN.md, „Balance (Stand 0.11)“): Normal mit
+  Ausrüstung vom Ende der Geschichte, Mythisch erst mit Riss-Ausrüstung um Stufe 20, Tiefe 5 mit Stufe 25, Tiefe 10 allein kaum.
+- Daten: `shared/src/data/expeditions_endgame.ts`; Server: `server/src/expedition/` (Signaturen in `bossmech.ts`, Belohnung in
+  `reward.ts`, Bestenliste `board.ts`); Tests: `tests/expedition.test.ts`; Browser: `tests/e2e/lange-wacht.mjs`.
+- Offen: Tiefen über 10 sind ungemessen (Bots zu zweit hängen dort in Kämpfen fest); keine eigene Kunst für Wachfeuer und Herztöne
+  (vorhandene Feuerschalen und Kristalle).

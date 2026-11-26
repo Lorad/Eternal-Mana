@@ -141,8 +141,36 @@ Mana-Risse erhalten.
 | Die Unteren Archive | 25 | 18:32 (2/2, Tode 0.0, hängt 3×) | 15:24 (2/2, Tode 0.0, hängt 2×) | 15:17 (1/1, Tode 0.0, hängt 1×) | 14:20 (1/1, Tode 0.0, hängt 1×) |
 | Der Hof der Hohlen Krone | 30 | 18:24 (2/2, Tode 1.5) | 15:10 (2/2, Tode 2.5, hängt 1×) | 15:43 (1/1, Tode 0.0) | 11:16 (1/1, Tode 0.0) |
 
-- **Erfahrung:** Alle Gegner einer Expedition zusammen bringen doppelt so viel wie die des alten Dungeons ihrer Region – eine
-  Expedition auf Normal hebt bei empfohlener Stufe um gut zwei Stufen.
+- **Erfahrung und Gold (0.11):** Alle Gegner einer Expedition zusammen bringen 1,25-mal so viel Erfahrung wie die des alten
+  Dungeons ihrer Region, der Abschluss so viel wie der Bosssieg (`EXP_CFG.mobXpVsOld`, `clearXp`); gewöhnliche Gegner lassen
+  60 % des üblichen Goldes fallen (`EXP_CFG.mobGold`). Ein erster Abschluss auf Normal hebt bei empfohlener Stufe um knapp
+  zwei Stufen (0.9: zweieinhalb bis gut drei). Warum: siehe „Balance (Stand 0.11)“.
+- **Heilende Erwachte (0.11)** heilen keine anderen Heiler mehr: Zwei davon nebeneinander waren auf Mythisch für Einzelne
+  unbesiegbar.
+
+### Endspiel-Expeditionen und Tiefen (0.11)
+
+| Expedition | Region | Stufe | Endboss | Signatur | Ereignis | Mini-Bosse | Freischaltung |
+|---|---|---|---|---|---|---|---|
+| Die Lange Wacht | Schattenreich | 39–42 (ab 40) | Vael (ergibt sich) | **Wachfeuer:** Vael löscht drei Feuer am Rand nacheinander, jedes dunkle macht ihn um 25 % zäher; wer 1,6 s an einem dunklen Feuer steht, entzündet es. Brennt keines mehr, schlägt die Mitternacht über die Arena | Finsternis | Die Erste Wache, Die Nachtstute | Vaels Prüfung bestanden, Stufe 40 |
+| Das Atmende Herz | Quellgrund | 40–43 (ab 40) | Aetherion – Die Große Stille | **Wiegenlied:** Holt die Stille Atem, nennt sie drei (Phase 3: vier) Herztöne; wer sie rechtzeitig in dieser Reihenfolge anschlägt, bricht die Stille (6 s verwundbar ×1,8). Sonst atmet sie über die Arena aus | Flut | Echo des Feldherrn, Die Mutter der Stille | Aetherions Albtraum beendet, Stufe 40, „Die Lange Wacht“ abgeschlossen |
+
+- **Gleich gebaut wie die übrigen sieben:** Abschnittsplan, Generator, Rätsel, Fallen, Ereignis, Rastplatz, Schwierigkeitsgrade,
+  Abschluss genau einmal je Lauf. Daten: `shared/src/data/expeditions_endgame.ts`. Vael und Aetherion ergeben sich wie in der
+  Geschichte – ohne Filmszene, ohne Questgegenstand, aber jedes Mal (der Kampf beginnt auch für die, die ihn kennen).
+- **Belohnung:** Ausrüstung nach der Tabelle des nächsthöheren Grades, Echo-Fragmente (1–8 je Grad), Ätherstaub beim ersten
+  Abschluss jedes Grades, ein mythisches Stück beim ersten Abschluss auf Albtraum und auf Mythisch, das Boss-Unikat (Waffe oder
+  neu: *Haube der Langen Wacht*, *Reif des fünften Tons*), Expeditionstrophäe, seltener Fund (*Laternenglut*, *Herzton*).
+  Waffenglanz *Laternenglanz* / *Herztonglanz* für Albtraum, Titel *Ablösung der Wacht* / *Der fünfte Ton* für Mythisch.
+- **Tiefen** (alle neun Expeditionen): nach einem Abschluss auf Mythisch Tiefe 1, danach je geschaffte Tiefe die nächste, bis 20.
+  Je Tiefe +8 % Leben, +4 % Schaden, alle zwei Tiefen eine Gegnerstufe; ab Tiefe 3 ein Modifikator, ab 8 zwei, ab 15 drei – aus
+  Horde, Glaskanone, Versiegt, Hast, Finsternis (ohne „Erwacht“), je Woche und Expedition neu gemischt; tiefere Tiefen behalten die
+  Modifikatoren der flacheren. Lohn: Gegenstandsstufe +1 je zwei Tiefen, +15 % Erfahrung/Gold und +15 % Gewicht für Mythisch je
+  Tiefe, immer der Bosskern des Endbosses (das, was +7 bis +10 kostet), 1 + ⌊t/2⌋ Echo-Fragmente, ab Tiefe 5 Ätherstaub, beim
+  ersten Mal auf 5/10/15/20 ein mythisches Stück. Titel *Tiefengänger* (10) und *Grundlos* (20), Waffenglanz *Tiefenglanz* (5).
+  Rekord je Expedition: `DungeonRecord.deep`/`deepSec`. Wochen-Herausforderung bleibt bei Normal/Schwer und den sieben Story-Expeditionen.
+- **Bestenliste der Quellwarte:** schnellster Lauf je Expedition und Grad, tiefste Tiefe – serverweit, mit den Namen der Gruppe
+  (Trophäenhalle, Reiter „Bestenliste“; gespeichert in `meta.exp_board`).
 
 ## Bosse
 
@@ -209,8 +237,12 @@ Die Zweithand hängt an der Klasse: Schild (Krieger, Paladin), Köcher (Waldläu
   Fähigkeit der eigenen Klasse, alle sechs schalten eine eigene Wirkung frei (Rindenhaut, Lichtbrechung, Aschenregen,
   Frostspur, Stille vor dem Sturm, Was die Krone nimmt).
 - **Alte Spielstände** werden beim Laden überführt: Ring → Ring, Amulett/Talisman → Amulett, ein zweites Amulett in den
-  Rucksack; für die neuen, leeren Plätze legt Borin einfache Stücke bei (gewöhnlich, Stufe und Verbesserung der bisherigen
-  Ausrüstung im Mittel), damit niemand nach dem Laden schwächer dasteht.
+  Rucksack. Für die neuen, leeren Plätze legt Borin Stücke bei, die genau das Budget tragen, das die alten Teile abgeben
+  (0.11, `borinGift` in `shared/src/equip.ts`): Beine, Schuhe und Schutzstück übernehmen von Helm und Brust, das Angriffsstück von
+  der Hauptwaffe, der zweite Ring vom Ring – mit deren Gegenstandsstufe, Seltenheit und Verbesserung (die stärkste Mischung, die
+  die Spender nicht übersteigt, höchstens +9). Ohne Eigenschaften und nicht umschmiedbar (`ItemInstance.gift`): Niemand steht
+  nach dem Laden schwächer da (höchstens −6 %, Rundung), keiner stärker. Stände, die schon mit 0.9/0.10 geladen wurden, behalten
+  Borins gewöhnliche Stücke.
 
 Bosse lassen benannte Elementarwaffen und – ab dem zweiten Sieg – benannte Stücke für die neuen Plätze fallen. Händler
 verkaufen Tränke und Grundausrüstung für alle Plätze.
@@ -467,6 +499,95 @@ Nebenaufgaben lohnen sich also, ohne Pflicht zu sein.
 | Vael, Aetherion | – | schärfere Muster, Spiralen mit Lücken | Spiralen hatten Stellen ohne Ausweg |
 
 Dazu Feinheiten an Fähigkeiten (`shared/src/data/skills.ts`), Weltbossen und seltenen Monstern (zäher).
+
+## Balance (Stand 0.11): die Länge der Expeditionen
+
+### Tempo: die Geschichte läuft über die Expeditionen
+
+**Entscheidung:** Die Expedition ersetzt in der Geschichte den alten Dungeon (sein Eingang führt hinein). Sie ist der Hauptweg
+eines Kapitels und rund zehnmal so lang – sie darf mehr Erfahrung bringen als der alte Dungeon, aber das Tempo der Geschichte
+soll bleiben, wie es 0.8 gemessen hat: **Mit Nebenaufgaben steht man am Endboss 0 bis 2 Stufen über ihm, nur mit der Hauptlinie
+höchstens fünf darunter, und Stufe 40 kommt erst in Akt II.** Ein erster Abschluss auf Normal bei empfohlener Stufe bringt
+**knapp zwei Stufen** (die empfohlene Stufe liegt drei unter dem Endboss – wer dort ankommt, steht nach dem Lauf auf Höhe des
+Bosses).
+
+Gerechnet mit `pacing` (`scripts/playtest/measure.ts`), Kapitel 1–6 jetzt über die Expedition (alle Gegner, Mini-Bosse,
+Ereignis, Abschluss); Stufe am Boss / Boss-Stufe → Stufe danach:
+
+| Kapitel | bis 0.8 (alter Dungeon) | 0.9 (Expedition, ×2 / Abschluss ×1,2) | 0.11 (×1,25 / ×1,0) | 0.11 nur Hauptlinie |
+|---|---|---|---|---|
+| 1 Grünwald | 8 / 6 → 8 | 8 / 8 → 9 | 8 / 8 → 9 | 6 / 8 → 7 |
+| 2 Kristallhöhlen | 13 / 12 → 14 | 14 / 13 → 15 | 13 / 13 → 14 | 11 / 13 → 12 |
+| 3 Glutlande | 18 / 17 → 19 | 19 / 18 → 20 | 18 / 18 → 19 | 15 / 18 → 16 |
+| 4 Frostgebirge | 23 / 22 → 24 | 25 / 23 → 26 | 24 / 23 → 25 | 20 / 23 → 21 |
+| 5 Verlorene Ruinen | 28 / 27 → 30 | 30 / 28 → 32 | 29 / 28 → 30 | 25 / 28 → 26 |
+| 6 Schattenreich | 34 / 33 → 37 | 36 / 33 → 38 | 35 / 33 → 37 | 30 / 33 → 32 |
+| Gold Akt I | 38 100 | 67 000 | 56 000 | 43 000 |
+
+Gemessen mit Bots (`npx tsx scripts/exp-playtest.ts`, erster Abschluss auf Normal, empfohlene Stufe, ohne Wochenbonus):
+
+| Expedition | St. | Stufen je Lauf 0.9 (sorgsam / zügig) | 0.11 | Gold je Lauf 0.9 (zügig) | 0.11 | Dauer 0.11 sorgsam / zügig allein |
+|---|---|---|---|---|---|---|
+| Die Wurzeltiefe | 5 | 2,43 / 2,50 | 1,78 / 1,77 | 3 024 | 1 934 | 16:37 / 15:28 |
+| Die Singende Tiefe | 10 | 2,56 / 2,45 | 1,80 / 1,79 | 4 445 | 3 424 | 17:34 / 14:32 |
+| Die Gießerei der Ersten | 15 | 3,14 / 3,14 | 2,03 / 1,96 | 7 056¹ | 4 965 | 16:53 / 13:30 |
+| Der Webstuhl aus Eis | 20 | 2,62 / 2,60 | 1,86 / 1,87 | 7 911 | 5 917 | 18:54 / 16:05 |
+| Die Unteren Archive | 25 | 3,10 / – ² | 2,18 / – ² | – | – | 21:02 / – |
+| Der Hof der Hohlen Krone | 30 | 3,25 / 3,18 | 2,38 / 2,33 | 18 068 | 13 117 | 18:53 / 16:00 |
+
+¹ mit Wochenbonus (die Messung lief in der Woche der Gießerei; seit 0.11 rechnet der Spieltest ohne ihn). ² Der zügige Einzel-Bot
+bleibt in den Unteren Archiven hängen (Bot-Fehler, beide Messungen).
+
+Korridore (`tests/balance.test.ts`): wie 0.8 (am Boss −1 … +3 mit Nebenaufgaben, −5 … +1 nur Hauptlinie, Stufe 40 nicht vor
+Akt II) – jetzt über die Expeditionen gerechnet; **neu:** ein Abschluss bringt 1,3 bis 2,6 Stufen, und das Gold in Akt I liegt beim
+1,15- bis 1,8-Fachen der alten Rechnung (zehn Plätze kosten beim Verbessern doppelt so viel wie fünf).
+
+### Ausrüstung: Überführung und +10
+
+Grundwerte nach dem Laden eines alten Standes gegenüber vorher (Krieger; Verteidigung aus Helm und Brust, Angriff aus Waffe und Ring):
+
+| Alter Stand | Verteidigung 0.9 | 0.11 | Angriff 0.9 | 0.11 | Borins Stücke 0.11 |
+|---|---|---|---|---|---|
+| gemischt (Waffe Episch +6, Helm Selten +3, Brust Legendär +10, Ring Episch +4) | −15 % | −1 % | −6 % | +1 % | Legendär +7, Episch +6, Episch +4 |
+| alles Legendär +10 | −13 % | −1 % | −9 % | −1 % | Legendär +9 |
+| alles Episch +8 | −10 % | 0 % | −7 % | 0 % | Episch +8 |
+| alles Selten +5 | −8 % | −1 % | −6 % | −1 % | Selten +5 |
+| alles Gewöhnlich +0 | +3 % | +3 % | 0 % | 0 % | Gewöhnlich +0 |
+
+**+10 auf allen Teilen** (Spieltest „kraft“, Stufe 40, typischer Charakter mit +4/+3): ×1,37 Schaden, ×1,34 Aushalten (0.8 mit
+fünf Plätzen: ×1,19). **Bleibt so.** Begründung: Bis +6 – ohne Bosskerne – sind es nur ×1,12 / ×1,18; den Rest kosten die Stufen
++7 bis +10, und die kosten für zehn Teile auf Gegenstandsstufe 39 rund 527 000 Gold, 40 Hohle Kerne (rund 130 Siege über den
+Hohlen König, wenn sie nur aus Bosssiegen kommen) und 10 Ätherstaub. Zum Vergleich: die Legendäre Waffe (sechs Bosskerne,
+Ätherstaub) bringt ×1,31 Schaden, „Legendär auf allen Teilen“ ×1,49 / ×1,63. Seit 0.11 geben die Tiefen den Bosskern
+garantiert – das macht +10 zum langen, aber planbaren Ziel des Endspiels.
+
+### Endspiel: die Leiter
+
+Sorgfältige Spieler allein (Krieger, Magier), zügig auf dem Hauptweg; Ausrüstung je Stufe des Endspiels (`scripts/playtest/runs.ts`,
+`riftChar`; `npx tsx scripts/exp-playtest.ts --endspiel`):
+
+| Expedition | Grad / Tiefe | Ausrüstung | geschafft | Dauer | Bosskampf | Tode | Tränke |
+|---|---|---|---|---|---|---|---|
+| Die Lange Wacht | Normal | Ende der Geschichte | 2/2 | 15:17 | 136 s | 0,0 | 2,0 |
+| Die Lange Wacht | Schwer | Riss-Stufe 5 | 2/2 | 16:55 | 179 s | 0,0 | 0,5 |
+| Die Lange Wacht | Albtraum | Riss-Stufe 10 | 2/2 | 21:17 | 236 s | 0,0 | 0,0 |
+| Die Lange Wacht | Mythisch | Riss-Stufe 20 | 2/2 | 35:07 | 386 s | 2,0 | 20,0 |
+| Das Atmende Herz | Normal | Ende der Geschichte | 2/2 | 15:31 | 185 s | 0,0 | 3,5 |
+| Das Atmende Herz | Schwer | Riss-Stufe 5 | 2/2 | 16:07 | 203 s | 0,0 | 0,0 |
+| Das Atmende Herz | Albtraum | Riss-Stufe 10 | 2/2 | 20:59 | 279 s | 0,0 | 4,0 |
+| Das Atmende Herz | Mythisch | Riss-Stufe 20 | 1/2 | 31:38 | 1026 s¹ | 4,0 | 24,0 |
+| Der Hof der Hohlen Krone | Mythisch | Riss-Stufe 20 | 2/2 | 18:10 | 123 s | 0,0 | 10,5 |
+| Der Hof der Hohlen Krone | Tiefe 1 | Riss-Stufe 20 | 1/2 | 25:20 | 69 s | 1,0 | 12,0 |
+| Der Hof der Hohlen Krone | Tiefe 5 | Riss-Stufe 25 | 2/2 | 32:39 | 173 s | 5,5 | 14,0 |
+| Der Hof der Hohlen Krone | Tiefe 10 | Riss-Stufe 30 | 1/2 | 37:47 | 232 s | 7,5 | 18,5 |
+| Die Lange Wacht | Tiefe 1 | Riss-Stufe 20 | 2/2 | 38:42 | 407 s | 1,5 | 12,5 |
+| Die Lange Wacht | Tiefe 5 | Riss-Stufe 25 | 1/2 | 51:12 | 1089 s | 7,0 | 21,0 |
+
+¹ Danach ist Aetherion während des Lieds nur noch um 30 % statt 50 % zäher. Vor der Änderung an den heilenden Erwachten scheiterte
+derselbe Bot auf Mythisch im Hof der Hohlen Krone selbst mit Riss-Ausrüstung der Stufe 30 (zwei Heiler hielten sich gegenseitig am
+Leben); danach 21 Minuten, ein Tod. Die erste Fassung der Tiefen (Stufe +1 und +12 % Leben je Tiefe, „Erwacht“ unter den
+Modifikatoren) war schon ab Tiefe 1 nicht zu schaffen. Tiefe 10 und mehr ist allein kaum noch möglich – das ist Gruppen und voll
+verbesserter Ausrüstung vorbehalten (zu zweit hängen die Bots dort in Kämpfen fest: unbestätigt).
 
 ### Was der Spieltest nicht beurteilen kann
 

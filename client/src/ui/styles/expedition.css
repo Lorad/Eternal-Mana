@@ -76,3 +76,12 @@
 .exp-summary-head { display: flex; align-items: center; justify-content: space-between; font: 700 15px var(--serif); color: var(--gold-hi); }
 .is-narrow .xp, .is-portrait .xp { grid-template-columns: 1fr; }
 .is-narrow .xp-facts, .is-narrow .xp-diffs, .is-narrow .xr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* 0.11: Endspiel-Expeditionen und Tiefen */
+.xp-end { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #ffb02e; margin-left: 6px; vertical-align: 1px; }
+.xp-depth { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border-radius: 3px; background: rgba(40, 24, 60, .45); box-shadow: inset 0 0 0 1px #5a3f80; }
+.xp-depth .sec-title { margin: 0; }
+.xp-depth-row { display: flex; align-items: center; gap: 8px; }
+.xp-depth-n { min-width: 78px; text-align: center; color: #e0a0ff; font-variant-numeric: tabular-nums; }
+.xp-depth-mods { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; color: #c8b8e8; }
+.exp-mods { font-size: 11px; font-weight: 700; color: #e0a0ff; }

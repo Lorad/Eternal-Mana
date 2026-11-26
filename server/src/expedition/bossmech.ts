@@ -23,6 +23,9 @@ interface MechState {
   entry?: { p: Player; until: number };
   wisp?: { x0: number; y0: number; x1: number; y1: number; at: number; until: number; fx: number; fxAt: number };
   n?: number;
+  // ---- 0.11 Endspiel: Vaels Wachfeuer, Aetherions Wiegenlied
+  objs?: Obj[]; kindle?: Map<Player, number>;
+  song?: { order: number[]; step: number; until: number };
 }
 const states = new WeakMap<BossCtl, MechState>();
 export const st = (b: BossCtl): MechState => { let s = states.get(b); if (!s) { s = { invulnUntil: 0, enraged: false, adds: new Set(), next: 0, shieldTxt: 0, t: 0, heat: 0 }; states.set(b, s); } return s; };
@@ -299,7 +302,135 @@ const SIG: Record<string, Signature> = {
     },
     reset(k, s) { s.wisp = undefined; },
   },
+  /** Vael – Die Wacht (0.11, „Die Lange Wacht“): drei Wachfeuer am Rand der Arena. Vael löscht eines nach dem anderen; jedes
+   *  dunkle Feuer macht ihn zäher (−25 % Schaden je Feuer). Wer kurz an einem dunklen Feuer stehen bleibt, entzündet es neu. Brennt keines
+   *  mehr, schlägt die Mitternacht über die ganze Arena – danach brennen alle wieder. */
+  vael: {
+    hint: 'Vael löscht die Wachfeuer am Rand – jedes dunkle Feuer macht ihn zäher. Bleib kurz an einem dunklen Feuer stehen, um es neu zu entzünden. Brennt keines mehr, schlägt die Mitternacht.',
+    start(k, s) {
+      const z = k.boss.zone, r = k.boss.room, cy = Math.round((r.y0 + r.y1) / 2);
+      s.objs = [];
+      s.kindle = new Map();
+      for (const [tx, ty] of [[r.x0 + 3, cy], [r.x1 - 2, cy], [Math.round((r.x0 + r.x1) / 2), r.y0 + 3]]) { // links, rechts, oben – unten ist das Tor
+        const o = [...z.objs.values()].find(q => q.props?.kind === 'watchfire' && q.props.idx === s.objs!.length)
+          ?? z.addDynamicObj('xobj', (tx + 0.5) * TILE, (ty + 0.5) * TILE, { kind: 'watchfire', idx: s.objs.length, frame: 'brazier', label: 'Wachfeuer', prompt: 'Neu entzünden (stehen bleiben)', light: [80, 0xffc060, 0.9] }, 'watchfire');
+        lightFire(z, o, true);
+        s.objs.push(o);
+      }
+      s.next = z.game.now + 12;
+    },
+    phase(k, s, ph) {
+      if (ph === 2) k.say('„Die zweite Wache ist die längste. Glaubt mir. Ich habe sie gezählt.“');
+      if (ph === 3) k.say('„Bald ist Mitternacht. Haltet die Feuer – ich kann es nicht mehr.“');
+      s.next = Math.min(s.next, k.boss.zone.game.now + 4);
+    },
+    tick(k, s, dt) {
+      const z = k.boss.zone, m = k.boss.mob, t = z.game.now, fires = s.objs ?? [];
+      const dark = fires.filter(o => o.state === 0);
+      // jedes dunkle Feuer: −25 % erlittener Schaden
+      m.vuln = Math.max(0.3, 1 - 0.25 * dark.length);
+      // neu entzünden: 1,6 s bei einem dunklen Feuer stehen (Bewegung im Feuerkreis zählt, Weglaufen bricht ab)
+      for (const p of k.players()) {
+        const o = dark.find(f => Math.hypot(f.x - p.x, f.y - p.y) < 30);
+        if (!o) { s.kindle!.delete(p); continue; }
+        const v = (s.kindle!.get(p) ?? 0) + dt;
+        s.kindle!.set(p, v);
+        if (Math.floor(v * 2) !== Math.floor((v - dt) * 2)) z.ev({ k: 'txt', x: o.x, y: o.y - 26, s: `Entzünden … ${Math.min(100, Math.round(v / 1.6 * 100))} %`, col: '#ffd08a' });
+        if (v >= 1.6) { s.kindle!.delete(p); lightFire(z, o, true); z.ev({ k: 'sfx', n: 'cast_fire', x: o.x, y: o.y }); z.ev({ k: 'txt', x: o.x, y: o.y - 26, s: 'Brennt wieder!', col: '#ffe08a' }); }
+      }
+      if (t >= s.shieldTxt) { s.shieldTxt = t + 2.6; if (dark.length) z.ev({ k: 'txt', x: m.x, y: m.y - 50, s: `Die Nacht stärkt ihn (${dark.length})`, col: '#c8b0ff' }); }
+      if (t < s.next) return;
+      const lit = fires.filter(o => o.state === 1);
+      if (lit.length) {
+        const o = lit[z.rng.int(0, lit.length - 1)];
+        lightFire(z, o, false);
+        z.ev({ k: 'fx', n: 'blink', x: o.x, y: o.y, el: 'dark' });
+        k.say(lit.length > 1 ? '*Vael streckt die Hand aus. Ein Wachfeuer erlischt.*' : '*Das letzte Wachfeuer erlischt. Gleich ist Mitternacht.*');
+        s.next = t + (k.boss.phase >= 3 ? 9 : k.boss.phase === 2 ? 11 : 13) / diffOf(z).sigFaster;
+        if (lit.length === 1) s.next = t + 5; // Frist bis Mitternacht
+      } else {
+        k.say('*Mitternacht.*');
+        z.ev({ k: 'fx', n: 'explosion', x: k.boss.cx, y: k.boss.cy, r: 220, el: 'dark' });
+        for (const p of k.players()) z.hitPlayer(p, m.baseDmg * 2.4, 'dark', k.boss.def.level, 'Mitternacht', { id: 'weak', dur: 4 });
+        for (const o of fires) lightFire(z, o, true);
+        s.next = t + 13 / diffOf(z).sigFaster;
+      }
+    },
+    use(k, s, p, o) { if (o.state === 0) p.toast('Bleib am Feuer stehen, bis es wieder brennt.', 'info'); else p.toast('Das Feuer brennt. Pass auf, dass es so bleibt.', 'info'); void k; void s; },
+    reset(k, s) { for (const o of s.objs ?? []) lightFire(k.boss.zone, o, true); s.kindle?.clear(); k.boss.mob.vuln = 1; },
+  },
+  /** Aetherion – Das Wiegenlied (0.11, „Das Atmende Herz“): Vier Herztöne stehen in der Arena. Holt die Große Stille Atem,
+   *  nennt sie die Reihenfolge des Wiegenlieds. Wer die Töne rechtzeitig in dieser Reihenfolge anschlägt, bricht die Stille –
+   *  Aetherion liegt kurz offen. Sonst bricht die Große Stille über die Arena herein. */
+  aetherion: {
+    hint: 'Holt die Große Stille Atem, nennt sie die vier Töne des Wiegenlieds. Schlagt die Herztöne in dieser Reihenfolge an, bevor sie ausatmet – dann bricht die Stille.',
+    start(k, s) {
+      const z = k.boss.zone, r = k.boss.room;
+      s.objs = [];
+      const pts: [number, number][] = [[r.x0 + 4, r.y0 + 4], [r.x1 - 3, r.y0 + 4], [r.x1 - 3, r.y1 - 3], [r.x0 + 4, r.y1 - 3]];
+      pts.forEach(([tx, ty], i) => {
+        const o = [...z.objs.values()].find(q => q.props?.kind === 'tone' && q.props.idx === i)
+          ?? z.addDynamicObj('xobj', (tx + 0.5) * TILE, (ty + 0.5) * TILE, { kind: 'tone', idx: i, frame: 'crystal_big', label: `Herzton ${i + 1}`, prompt: 'Ton anschlagen', light: [70, 0x8fe8ff, 0.7] }, 'tone');
+        s.objs!.push(o);
+      });
+      s.song = undefined;
+      s.next = z.game.now + 16;
+    },
+    phase(k, s, ph) {
+      if (ph === 2) k.say('… ♪ … Die Stille hört zu. Noch nicht lange.');
+      if (ph === 3) k.say('… ♪ ♪ … Sie will das Ende des Lieds hören.');
+      if (!s.song) s.next = Math.min(s.next, k.boss.zone.game.now + 5);
+    },
+    tick(k, s) {
+      const z = k.boss.zone, m = k.boss.mob, t = z.game.now;
+      const stunned = (s.stunUntil ?? 0) > t;
+      m.vuln = stunned ? 1.8 : s.song ? 0.7 : 1; // während des Lieds zäher (Spieltest: 0,5 machte Mythisch zu einem Viertelstundenkampf)
+      if (!s.song && !stunned && t >= s.next) {
+        const order = z.rng.shuffle([0, 1, 2, 3]), n = k.boss.phase >= 3 ? 4 : 3, dur = (n === 4 ? 15 : 13) / diffOf(z).sigFaster;
+        s.song = { order: order.slice(0, n), step: 0, until: t + Math.max(8, dur) };
+        k.say(`*Die Große Stille holt Atem.* Das Wiegenlied: ${s.song.order.map(i => `Ton ${i + 1}`).join(' – ')}!`);
+        for (const p of z.players.values()) p.toast(`Wiegenlied: ${s.song.order.map(i => i + 1).join(' – ')}`, 'story');
+        s.song.order.forEach((i, pos) => { const o = s.objs![i]; z.ev({ k: 'txt', x: o.x, y: o.y - 30, s: `${pos + 1}.`, col: '#bff4ff' }); });
+        z.addFx({ kind: 'tele', x: k.boss.cx, y: k.boss.cy, r: 230, el: m.element, dur: s.song.until - t, until: s.song.until, hostile: false, raw: 0, lvl: 1, by: '' });
+        z.ev({ k: 'sfx', n: 'boss_phase' });
+      }
+      const song = s.song;
+      if (!song) return;
+      if (t >= s.shieldTxt) { s.shieldTxt = t + 1; z.ev({ k: 'txt', x: m.x, y: m.y - 56, s: `Stille ${Math.ceil(song.until - t)} · nächster Ton: ${song.order[song.step] + 1}`, col: '#bff4ff' }); }
+      if (t >= song.until) {
+        s.song = undefined; s.next = t + 20 / diffOf(z).sigFaster;
+        k.say('*Die Große Stille atmet aus.*');
+        z.ev({ k: 'fx', n: 'explosion', x: k.boss.cx, y: k.boss.cy, r: 230, el: m.element });
+        for (const p of k.players()) z.hitPlayer(p, m.baseDmg * 2.6, m.element, k.boss.def.level, 'Die Große Stille', { id: 'slow', dur: 3 });
+      }
+    },
+    use(k, s, p, o) {
+      const z = k.boss.zone, song = s.song;
+      if (!song) { z.ev({ k: 'sfx', n: 'lever', x: o.x, y: o.y }); p.toast('Der Ton verklingt. Noch singt niemand.', 'info'); return; }
+      const want = song.order[song.step];
+      if (o.props?.idx !== want) {
+        song.step = 0;
+        z.ev({ k: 'txt', x: o.x, y: o.y - 30, s: 'Falscher Ton!', col: '#ff8080' }); z.ev({ k: 'sfx', n: 'ui_error', x: o.x, y: o.y });
+        for (const q of z.players.values()) q.toast(`${p.name} hat den falschen Ton angeschlagen – das Lied beginnt von vorn: ${song.order.map(i => i + 1).join(' – ')}`, 'bad');
+        return;
+      }
+      song.step++;
+      z.ev({ k: 'txt', x: o.x, y: o.y - 30, s: '♪', col: '#bff4ff' }); z.ev({ k: 'sfx', n: 'puzzle_solved', x: o.x, y: o.y });
+      if (song.step < song.order.length) return;
+      s.song = undefined; s.stunUntil = z.game.now + 6; s.next = z.game.now + 6 + 18 / diffOf(z).sigFaster;
+      k.say('… ♪ ♪ ♪ ♪ … *Die Stille bricht. Aetherion lauscht – und vergisst für einen Atemzug, sich zu wehren.*');
+      z.ev({ k: 'fx', n: 'explosion', x: k.boss.mob.x, y: k.boss.mob.y, r: 80, el: 'light' });
+      k.anim(Anim.Hurt, 5);
+    },
+    reset(k, s) { s.song = undefined; s.stunUntil = 0; k.boss.mob.vuln = 1; },
+  },
 };
+/** Wachfeuer an oder aus (Bild, Licht, Zustand für Server und Oberfläche) */
+function lightFire(z: Zone, o: Obj, on: boolean) {
+  const props = { frame: on ? 'brazier' : 'brazier_unlit', light: on ? [80, 0xffc060, 0.9] : [30, 0x6050a0, 0.4], label: on ? 'Wachfeuer' : 'Wachfeuer (dunkel)', prompt: on ? 'Feuer prüfen' : 'Neu entzünden (stehen bleiben)' };
+  Object.assign(o.props!, props);
+  z.setObjState(o, on ? 1 : 0, props);
+}
 
 /** Zusätzlicher Angriff ab „Schwer“: das Muster des Boss-Echos – oder ein Ring mit Lücke */
 function* extraPattern(k: BossKit): Gen {
@@ -352,6 +483,11 @@ export function expBossMech(zone: Zone, bossId: string): EchoMech {
     reset(k) { const s = st(k.boss); s.invulnUntil = 0; k.boss.mob.invuln = true; sig?.reset?.(k, s); states.delete(k.boss); },
     charged: sig?.charged ? (k, x0, y0, x1, y1) => sig.charged!(k, st(k.boss), x0, y0, x1, y1) : undefined,
   };
+}
+
+/** 0.11: Der Kampf ist vorbei – die Arena kommt zur Ruhe (Vaels Wachfeuer brennen wieder: die Wacht ist abgelöst) */
+export function mechDone(zone: Zone) {
+  for (const o of zone.objs.values()) if (o.props?.kind === 'watchfire' && o.state === 0) lightFire(zone, o, true);
 }
 
 /** Objekt einer Bossmechanik benutzt (Kühlkette, Tintenfass). true = erledigt. */

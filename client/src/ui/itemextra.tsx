@@ -1,6 +1,6 @@
 /**
  * Zusatzzeilen im Gegenstands-Tooltip für die Eigenschaften der Version 0.4:
- * Elementstufe, Rune, Setzugehörigkeit mit aktiven Boni, Sonderwirkung Legendärer Waffen, Rezeptrollen.
+ * Elementstufe, Rune, Setzugehörigkeit mit aktiven Boni, Sonderwirkung Legendärer Waffen, Rezeptrollen, Borins Beigabe (0.11).
  * Bewusst ohne Import aus common.tsx (common.tsx bindet diese Datei ein).
  */
 import { CFG, ELEMENT_COLOR } from '../../../shared/src/config';
@@ -27,7 +27,7 @@ export function ItemExtras({ item: it, char }: { item: ItemInstance; char: CharD
   const set = it.set ? SETS[it.set] : undefined;
   const learn = b.use?.learn ? RECIPES[b.use.learn] : undefined;
   const bound = tradeBlock(it); // 0.7: gebundene Gegenstände lassen sich nicht handeln
-  if (!lvl && !ench && !set && !b.legend && !learn && !bound) return null;
+  if (!lvl && !ench && !set && !b.legend && !learn && !bound && !it.gift) return null;
   const wornSet = set && char ? setPiecesWorn(char)[set.id] : undefined;
   const n = wornSet?.size ?? 0;
   const worn = (piece: string) => !!wornSet?.has(piece as any);
@@ -50,6 +50,7 @@ export function ItemExtras({ item: it, char }: { item: ItemInstance; char: CharD
         </div>
       )}
       {learn && char && <div class={knowsRecipe(char, learn) ? 'tip-req' : 'tip-req good'}>{knowsRecipe(char, learn) ? 'Dieses Rezept kennst du bereits.' : 'Noch nicht gelernt.'}</div>}
+      {it.gift && <div class="tip-req">⚒ Borins Beigabe zu den zehn Plätzen: Grundwerte wie deine alte Ausrüstung, keine Eigenschaften, nicht umschmiedbar.</div>}
       {bound && <div class="tip-req tip-bound">⛓ Gebunden – nicht handelbar. {bound}</div>}
     </>
   );

@@ -16,6 +16,7 @@ import { condOk, type Cond } from './cond';
 import { DIFFICULTIES, DIFFICULTY_NAME, type Difficulty, type DungeonRecord } from './hub';
 import type { ZoneDef } from './zones';
 import type { BiomeId } from '../maps/tiles';
+import { ENDGAME_LIST, ENDGAME_MINIS } from './expeditions_endgame';
 
 // =====================================================================================================================
 //  Abschnittsplan
@@ -105,22 +106,31 @@ export interface ExpeditionDef {
   rare: string;
   dark: number;
   mapPos: [number, number];
+  /** 0.11: Endspiel-Expedition (Stufe 40, Bosse aus Akt II): eigene Belohnung, nicht in der Wochen-Herausforderung */
+  endgame?: boolean;
+  /** 0.11: alter Dungeon, an dem sich die Erfahrung der Gegner bemisst, ohne dessen Eingang zu übernehmen (Endspiel) */
+  xpRef?: string;
 }
 
 /** Eine Freischaltbedingung mit Anzeige. Erfüllt, wenn `cond` zutrifft, die Stufe reicht und der Gegenstand im Rucksack liegt. */
-export interface ExpReq { text: string; cond?: Cond; level?: number; item?: string }
+export interface ExpReq { text: string; cond?: Cond; level?: number; item?: string; /** 0.11: diese Expedition mindestens einmal abgeschlossen */ exp?: string }
 
 // =====================================================================================================================
 //  Zahlen
 // =====================================================================================================================
 export const EXP_CFG = {
   /** Erfahrung aus gewöhnlichen Gegnern: alle Gegner einer Expedition zusammen bringen so viel wie die des alten Dungeons
-   *  ihrer Region mal diesen Faktor (die Expedition ist zehnmal so lang – die Geschichte soll trotzdem nicht davonlaufen) */
-  mobXpVsOld: 2,
+   *  ihrer Region mal diesen Faktor (die Expedition ist zehnmal so lang – die Geschichte soll trotzdem nicht davonlaufen).
+   *  0.11: 2 → 1,25 und Abschluss 1,2 → 1,0 – ein erster Abschluss auf Normal bringt bei empfohlener Stufe knapp zwei Stufen,
+   *  mit Nebenaufgaben steht man am Endboss 0 bis 2 Stufen über ihm (Tempo-Test: tests/balance.test.ts, docs/GAME_DESIGN.md) */
+  mobXpVsOld: 1.25,
+  /** 0.11: Gold, das gewöhnliche Gegner in Expeditionen fallen lassen (dreihundert Gegner statt zwanzig – sonst druckt die
+   *  Expedition Gold; mit 0,6 bringt Akt I rund die Hälfte mehr als bis 0.8, weil zehn Plätze doppelt so viel Verbessern kosten) */
+  mobGold: 0.6,
   /** Faktor auf die Gegnergruppen jedes Abschnitts (Feinabstimmung der Spieldauer, gemessen mit scripts/exp-playtest.ts) */
   groupMul: 1.8,
   /** Abschluss: Erfahrung und Gold als Vielfaches der Boss-Werte; Wiederholungen bringen weniger */
-  clearXp: 1.2, clearGold: 1.4, repeatMul: 0.55,
+  clearXp: 1, clearGold: 1.4, repeatMul: 0.55,
   /** Beute des Abschlusses: Teile, Rohstoffe der Region, Chance auf Legendär (zusätzlich zum Raritätswurf) */
   gear: 2, mats: [3, 6] as [number, number], legendary: 0.04, rare: 0.12,
   /** Wöchentliche Herausforderung: Faktor auf Erfahrung und Gold, zusätzliche Teile */
@@ -241,6 +251,8 @@ export const MINI_LIST: MiniDef[] = [
   M({ id: 'xm_mahrkoenigin', name: 'Die Mahrkönigin', title: 'Mutter der Albträume', sprite: 'nachtmahr', tint: 0xff90c0, scale: 1.7, element: 'dark',
     hpMul: 33, dmgMul: 1.4, defMul: 1, speed: 90, radius: 13, ai: 'charge', pattern: ['adds', 'ring', 'rain'], every: 3.6, adds: ['leerenbrut'],
     intro: 'Sie träumt dich gerade. Es ist kein schöner Traum.' }),
+  // ---- Endspiel (0.11): data/expeditions_endgame.ts
+  ...ENDGAME_MINIS,
 ];
 export const MINIS: Record<string, MiniDef> = Object.fromEntries(MINI_LIST.map(m => [m.id, m]));
 
@@ -464,6 +476,8 @@ export const EXPEDITION_LIST: ExpeditionDef[] = [
       S({ id: 'nachwort', name: 'Das Nachwort', shape: 'chamber', role: 'reward', via: 'gate', look: 1 }),
     ],
   }),
+  // =================================================================== ENDSPIEL (0.11): Die Lange Wacht, Das Atmende Herz – data/expeditions_endgame.ts
+  ...ENDGAME_LIST,
 ];
 export const EXPEDITIONS: Record<string, ExpeditionDef> = Object.fromEntries(EXPEDITION_LIST.map(x => [x.id, x]));
 /** alter Dungeon → Expedition, die seinen Eingang übernimmt */
@@ -487,6 +501,7 @@ export interface ReqState { text: string; ok: boolean }
 export function reqOk(c: CharData, r: ExpReq): boolean {
   if (r.level !== undefined && c.level < r.level) return false;
   if (r.item && !c.inv.some(i => i.base === r.item)) return false;
+  if (r.exp && !totalClears(c.expeditions?.[r.exp])) return false;
   return condOk(c, r.cond);
 }
 /** Ist die Expedition (auf Normal) freigeschaltet? Mit Begründung je Bedingung für die Anzeige. */
@@ -502,7 +517,7 @@ export const secretFlag = (id: string) => 'xs:' + id;
 export function diffBlock(c: CharData, id: string, d: Difficulty): string | null {
   if (!expUnlock(c, id).ok) return 'Diese Expedition ist noch nicht freigeschaltet.';
   const r = c.expeditions?.[id], cl = (k: Difficulty) => (r?.clears?.[k] ?? 0) > 0;
-  if (d === 'normal') return null;
+  if (d === 'normal' || cl(d)) return null; // 0.11: wer einen Grad schon geschafft hat, darf ihn wieder spielen
   if (d === 'schwer') return cl('normal') ? null : 'Erst nach einem Abschluss auf Normal.';
   if (d === 'albtraum') return c.level < CFG.player.maxLevel ? `Erst ab Stufe ${CFG.player.maxLevel}.` : cl('schwer') ? null : 'Erst nach einem Abschluss auf Schwer.';
   return cl('albtraum') ? null : 'Erst nach einem Abschluss auf Albtraum.';
@@ -530,6 +545,7 @@ export function sanitizeExp(c: CharData) {
       if (Array.isArray(r.secrets)) rec.secrets = [...new Set(r.secrets.filter((s: any) => typeof s === 'string' && s.length < 40))].slice(0, 40) as string[];
       if (Array.isArray(r.minis)) rec.minis = [...new Set(r.minis.filter((s: any) => typeof s === 'string' && s.length < 40))].slice(0, 40) as string[];
       if (num(r.first, 1e15)) rec.first = num(r.first, 1e15);
+      if (num(r.deep, 99)) { rec.deep = num(r.deep, 99); if (num(r.deepSec, 1e7)) rec.deepSec = num(r.deepSec, 1e7); } // 0.11: Tiefen
       out[id] = rec;
     }
     c.expeditions = out;
@@ -564,7 +580,7 @@ function hashStr(s: string): number { let h = 2166136261; for (let i = 0; i < s.
 export interface Weekly { week: string; exp: string; diff: Difficulty; mods: WeeklyMod[] }
 /** Die Herausforderung einer Woche: eine (nicht geheime) Expedition, ein Schwierigkeitsgrad (Normal oder Schwer) und zwei Modifikatoren. */
 export function weeklyChallenge(week: string): Weekly {
-  const pool = EXPEDITION_LIST.filter(x => !x.secret);
+  const pool = EXPEDITION_LIST.filter(x => !x.secret && !x.endgame); // 0.11: Endspiel-Expeditionen nicht – nicht jeder kommt hinein
   const h = hashStr('woche:' + week);
   const exp = pool[h % pool.length].id;
   const diff: Difficulty = (h >>> 8) % 3 === 0 ? 'schwer' : 'normal';

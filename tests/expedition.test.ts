@@ -3,7 +3,15 @@
  * Schwierigkeitsgrade, Herausforderung der Woche, alte Spielstände.
  */
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, diffBlock, expUnlock, isoWeek, weeklyChallenge } from '../shared/src/data/expeditions';
+import { EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, diffBlock, expUnlock, isoWeek, sanitizeExp, weeklyChallenge } from '../shared/src/data/expeditions';
+import { DEPTH_CFG, depthBlock, depthMods, depthOpen } from '../shared/src/data/expeditions_endgame';
+import { expTrophy } from '../shared/src/data/expitems';
+import { AETHER, BOSS_CORE, ECHO_FRAG } from '../shared/src/data/materials';
+import { LOOKS } from '../shared/src/data/looks';
+import { ownedTitles } from '../shared/src/data/rifts';
+import { MYTHIC } from '../shared/src/config';
+import type { Difficulty } from '../shared/src/data/hub';
+import { st } from '../server/src/expedition/bossmech';
 import { getMap } from '../shared/src/maps/mapgen';
 import { genExpedition, validateExpedition } from '../shared/src/maps/expedition';
 import { TILE } from '../shared/src/maps/tiles';
@@ -30,7 +38,10 @@ function atPortal(t: Tester) {
 }
 function unlockAll(t: Tester) {
   t.p.char.flags['z:gruenwald'] = 1; t.p.char.quests.m_wurzel = { s: 'active', p: [0] };
-  for (const x of EXPEDITION_LIST) if (!x.secret) for (const r of x.unlock) { if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] }; }
+  for (const x of EXPEDITION_LIST) if (!x.secret) for (const r of x.unlock) {
+    if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] };
+    if (r.exp) { const e = (t.p.char.expeditions ??= {}); e[r.exp] ??= { clears: { normal: 1 } }; } // 0.11: „Das Atmende Herz“ nach der Langen Wacht
+  }
 }
 const expZone = (t: Tester): Zone | null => (t.p.zone.exp ? t.p.zone : null);
 function killBoss(t: Tester) {
@@ -360,7 +371,7 @@ describe('Expeditionen – Ereignisse und Bosse', () => {
 
 describe('Expeditionen – Tempo der Geschichte', () => {
   it('eine Expedition auf Normal hebt bei empfohlener Stufe um höchstens drei Stufen (die Geschichte läuft nicht davon)', () => {
-    for (const x of EXPEDITION_LIST) {
+    for (const x of EXPEDITION_LIST.filter(e => !e.endgame)) { // Endspiel (Stufe 40): die Erfahrung füllt Quellstufen
       const t = sim.join('Xp' + x.id.slice(4, 9), 'krieger', x.rec);
       const z = startSolo(t, 'normal', x.id), f = Expedition.mobXp(z);
       let lvl = x.rec, xp = 0;
@@ -371,5 +382,212 @@ describe('Expeditionen – Tempo der Geschichte', () => {
       expect(lvl - x.rec, x.id).toBeGreaterThanOrEqual(1);
       sim.leave(t);
     }
+  });
+});
+
+// =====================================================================================================================
+//  0.11: Endspiel – Die Lange Wacht, Das Atmende Herz, Tiefen, Bestenliste
+// =====================================================================================================================
+describe('Endspiel-Expeditionen (0.11)', () => {
+  const nearBoss = (t: Tester) => { const r = t.p.zone.map.bossRoom!; t.p.x = (r.cx + 0.5) * TILE; t.p.y = (r.cy + 3) * TILE; };
+  /** schlägt den Endboss, bis der Lauf abgeschlossen ist (Vael und Aetherion ergeben sich, statt zu sterben) */
+  function finish(t: Tester) {
+    const z = t.p.zone, b = z.boss!;
+    nearBoss(t); t.p.god = true; sim.step(0.3);
+    expect(b.active, 'Kampf beginnt – auch wer die Geschichte schon kennt').toBe(true);
+    for (let i = 0; i < 60 && !z.exp!.done; i++) { b.mob.invuln = false; b.mob.vuln = 1; z.hitMob(b.mob, t.p, Math.ceil(b.mob.maxHp * 0.3), 'phys'); sim.step(0.3); }
+    expect(z.exp!.done, 'Lauf abgeschlossen').toBeTruthy();
+  }
+  function veteran(name: string, cls: 'krieger' | 'magier' | 'paladin' = 'krieger') {
+    const t = sim.join(name, cls, 40);
+    t.p.char.flags['b:vael'] = 1; t.p.char.flags['b:aetherion'] = 1; t.p.char.flags['z:gruenwald'] = 1;
+    return t;
+  }
+  const start = (t: Tester, id: string, diff: Difficulty = 'normal', depth?: number) => { atPortal(t); t.send({ t: 'exp', a: 'select', id, diff, ...(depth ? { depth } : {}) }); return expZone(t); };
+
+  it('Freischaltung: Lange Wacht nach Vaels Prüfung und Stufe 40, das Atmende Herz nach Aetherion und der Langen Wacht; nie Herausforderung der Woche', () => {
+    const t = sim.join('Neuling', 'krieger', 40);
+    for (const id of ['exp_wacht', 'exp_herz']) { const u = expUnlock(t.p.char, id); expect(u.visible, id).toBe(true); expect(u.ok, id).toBe(false); }
+    expect(start(t, 'exp_wacht')).toBeNull();
+    t.p.char.flags['b:vael'] = 1; t.p.char.level = 39;
+    expect(expUnlock(t.p.char, 'exp_wacht').ok).toBe(false);
+    t.p.char.level = 40;
+    expect(expUnlock(t.p.char, 'exp_wacht').ok).toBe(true);
+    t.p.char.flags['b:aetherion'] = 1;
+    expect(expUnlock(t.p.char, 'exp_herz').reqs.filter(r => !r.ok).map(r => r.text)).toEqual(['„Die Lange Wacht“ abgeschlossen']);
+    t.p.char.expeditions = { exp_wacht: { clears: { schwer: 1 } } };
+    expect(expUnlock(t.p.char, 'exp_herz').ok).toBe(true);
+    for (let w = 1; w <= 53; w++) expect(EXPEDITIONS[weeklyChallenge(`2027-${String(w).padStart(2, '0')}`).exp].endgame, `Woche ${w}`).toBeFalsy();
+  });
+
+  it('Die Lange Wacht: Vael kämpft jedes Mal, löscht Wachfeuer (zäher je dunklem Feuer), Stehenbleiben entzündet, Mitternacht trifft', () => {
+    const t = veteran('Wachabloeser');
+    const z = start(t, 'exp_wacht')!;
+    expect(z.boss!.def.id).toBe('vael');
+    nearBoss(t); t.p.god = true; sim.step(0.3);
+    const b = z.boss!;
+    expect(b.active).toBe(true);
+    const fires = () => [...z.objs.values()].filter(o => o.props?.kind === 'watchfire');
+    expect(fires().length).toBe(3);
+    expect(fires().every(o => o.state === 1)).toBe(true);
+    expect(b.mob.vuln).toBe(1);
+    sim.step(12.5);
+    const dark = fires().filter(o => o.state === 0);
+    expect(dark.length).toBe(1);
+    expect(b.mob.vuln).toBeCloseTo(0.75, 2);
+    // an das dunkle Feuer stellen: nach 1,6 s brennt es wieder
+    t.p.x = dark[0].x + 6; t.p.y = dark[0].y + 10;
+    sim.step(0.8); expect(dark[0].state).toBe(0);
+    sim.step(1.2); expect(dark[0].state).toBe(1);
+    expect(b.mob.vuln).toBe(1);
+    // alle aus: Mitternacht – danach brennen alle wieder
+    nearBoss(t);
+    let hit = false;
+    for (let i = 0; i < 400 && !hit; i++) { b.mob.hp = b.mob.maxHp; sim.step(0.2); hit = t.msgs.some(m => m.t === 'chat' && /^\*Mitternacht\.\*$/.test((m as any).s)); }
+    expect(hit, 'Mitternacht schlägt').toBe(true);
+    sim.step(0.2);
+    expect(fires().every(o => o.state === 1)).toBe(true);
+    sim.leave(t);
+  });
+
+  it('Das Atmende Herz: das Wiegenlied in der richtigen Reihenfolge bricht die Stille; ein falscher Ton beginnt von vorn; zu spät trifft es alle', () => {
+    const t = veteran('Wiegenlied', 'paladin');
+    t.p.char.expeditions = { exp_wacht: { clears: { normal: 1 } } };
+    const z = start(t, 'exp_herz')!;
+    expect(z.boss!.def.id).toBe('aetherion');
+    nearBoss(t); t.p.god = true; sim.step(0.3);
+    const b = z.boss!, tones = () => [...z.objs.values()].filter(o => o.props?.kind === 'tone').sort((a, c) => a.props!.idx - c.props!.idx);
+    expect(b.active).toBe(true);
+    expect(tones().length).toBe(4);
+    sim.step(16.5);
+    const s = st(b);
+    expect(s.song, 'die Stille holt Atem').toBeTruthy();
+    expect(b.mob.vuln).toBe(0.7);
+    const strike = (i: number) => { const o = tones()[i]; t.p.x = o.x; t.p.y = o.y + 14; t.send({ t: 'interact', id: o.id }); };
+    const order = [...s.song!.order];
+    strike(order[0]);
+    expect(s.song!.step).toBe(1);
+    strike([0, 1, 2, 3].find(i => i !== order[1])!); // falscher Ton
+    expect(s.song!.step).toBe(0);
+    for (const i of order) strike(i);
+    expect(s.song).toBeUndefined();
+    sim.step(0.1);
+    expect(b.mob.vuln).toBeCloseTo(1.8, 2);
+    // nächster Atemzug ohne Lied: die Große Stille atmet aus und trifft
+    nearBoss(t);
+    for (let i = 0; i < 300 && !st(b).song; i++) { b.mob.hp = b.mob.maxHp; sim.step(0.2); }
+    expect(st(b).song, 'nächster Atemzug').toBeTruthy();
+    const by: string[] = [], orig = z.hitPlayer.bind(z);
+    (z as any).hitPlayer = (...args: Parameters<typeof z.hitPlayer>) => { by.push(String(args[4])); return orig(...args); };
+    let hit = false;
+    for (let i = 0; i < 100 && !hit; i++) { b.mob.hp = b.mob.maxHp; sim.step(0.2); hit = t.msgs.some(m => m.t === 'chat' && /atmet aus/.test((m as any).s)); }
+    expect(hit).toBe(true);
+    expect(by, 'die Große Stille trifft').toContain('Die Große Stille');
+    sim.leave(t);
+  });
+
+  it('Abschluss im Endspiel: Vael ergibt sich, Belohnung genau einmal – Echo-Fragmente, Ätherstaub, Trophäe, kein Questgegenstand; Mythisch beim ersten Albtraum, Glanz', () => {
+    const t = veteran('Ehrenwache');
+    const z = start(t, 'exp_wacht')!;
+    const echo0 = t.count(ECHO_FRAG), aether0 = t.count(AETHER);
+    finish(t);
+    expect(z.boss!.mob.dead, 'Vael stirbt nicht').toBe(false);
+    expect(t.p.char.expeditions!.exp_wacht.clears.normal).toBe(1);
+    expect(t.count(ECHO_FRAG)).toBeGreaterThan(echo0);
+    expect(t.count(AETHER)).toBeGreaterThanOrEqual(aether0 + 1);
+    expect(t.count('q_wachzeichen'), 'kein Questgegenstand aus Akt II').toBe(0);
+    expect(t.count(expTrophy('vael'))).toBe(1);
+    // doppeltes Bossende ändert nichts
+    const g = t.p.char.gold, runs = t.p.char.expRuns!.length;
+    Expedition.bossDown(z, z.boss!);
+    expect(t.p.char.gold).toBe(g); expect(t.p.char.expRuns!.length).toBe(runs);
+    sim.leave(t);
+    // erster Abschluss auf Albtraum: ein mythisches Stück, der Laternenglanz – der Titel erst auf Mythisch
+    const u = veteran('Albtraumwache');
+    u.p.char.expeditions = { exp_wacht: { clears: { normal: 1, schwer: 1 } } };
+    const z2 = start(u, 'exp_wacht', 'albtraum')!;
+    expect(z2.exp!.diff).toBe('albtraum');
+    finish(u);
+    expect(z2.exp!.results.get(u.p.charId)!.items.some(i => i.rarity === MYTHIC)).toBe(true);
+    expect(ownedTitles(u.p.char)).not.toContain('x_wacht');
+    expect(LOOKS.w_laterne.has!(u.p.char)).toBe(true);
+    sim.leave(u);
+  });
+
+  it('Tiefen: erst nach Mythisch, Stufe um Stufe; jede Tiefe härter (Stufe, Leben, Modifikatoren) und lohnender (Bosskern, Echo, Mythisch); Rekord und Bestenliste', () => {
+    const t = veteran('Tiefgang');
+    expect(depthBlock(t.p.char, 'exp_gruenwald', 1)).toMatch(/Mythisch/);
+    unlockAll(t);
+    t.p.char.expeditions = { exp_gruenwald: { clears: { normal: 1, schwer: 1, albtraum: 1 } } };
+    expect(start(t, 'exp_gruenwald', 'mythisch', 1), 'ohne Mythisch-Abschluss keine Tiefe').toBeNull();
+    t.p.char.expeditions.exp_gruenwald.clears.mythisch = 1;
+    expect(depthOpen(t.p.char, 'exp_gruenwald')).toBe(1);
+    expect(start(t, 'exp_gruenwald', 'mythisch', 2), 'Tiefe 2 erst nach Tiefe 1').toBeNull();
+    expect(start(t, 'exp_gruenwald', 'schwer', 1), 'Tiefen nur auf Mythisch').toBeNull();
+    const z = start(t, 'exp_gruenwald', 'mythisch', 1)!;
+    expect(z.exp!.depth).toBe(1);
+    expect(z.exp!.mods ?? []).toEqual([]); // Modifikatoren erst ab Tiefe 3
+    const lv1 = z.def.level[0], hp1 = z.boss!.def.hpMul;
+    const core0 = t.count(BOSS_CORE.dornenmutter), echo0 = t.count(ECHO_FRAG);
+    finish(t);
+    const rec = t.p.char.expeditions!.exp_gruenwald;
+    expect(rec.deep).toBe(1); expect(rec.deepSec).toBeGreaterThan(0);
+    expect(t.count(BOSS_CORE.dornenmutter)).toBeGreaterThan(core0);
+    expect(t.count(ECHO_FRAG)).toBeGreaterThanOrEqual(echo0 + 1);
+    expect(z.exp!.results.get(t.p.charId)!.feats).toContain('Neue Tiefe: 1');
+    expect(z.exp!.results.get(t.p.charId)!.depth).toBe(1);
+    expect(depthOpen(t.p.char, 'exp_gruenwald')).toBe(2);
+    // Bestenliste: Tiefe 1 mit Name und gespeichert
+    const board = Expedition.board(sim.game);
+    expect(board.exp_gruenwald.deep).toMatchObject({ depth: 1, names: ['Tiefgang'] });
+    expect(board.exp_gruenwald.best.mythisch!.sec).toBeGreaterThan(0);
+    expect(JSON.parse(sim.db.getMeta('exp_board')!).exp_gruenwald.deep.depth).toBe(1);
+    sim.leave(t);
+    // Tiefe 10 gegenüber Tiefe 1: höhere Stufe, mehr Leben, zwei Modifikatoren – und mehr Belohnung
+    const u = veteran('Grundlos');
+    unlockAll(u);
+    u.p.char.expeditions = { exp_gruenwald: { clears: { normal: 1, schwer: 1, albtraum: 1, mythisch: 1 }, deep: 9 } };
+    const z10 = start(u, 'exp_gruenwald', 'mythisch', 10)!;
+    expect(z10.def.level[0]).toBe(lv1 + 5);
+    expect(z10.exp!.mods!.length).toBe(2);
+    expect(new Set(z10.exp!.mods).size).toBe(2);
+    expect(z10.exp!.mods).not.toContain('erwacht');
+    expect(z10.boss!.def.hpMul).toBeGreaterThan(hp1 * 1.6);
+    finish(u);
+    expect(u.p.char.expeditions!.exp_gruenwald.deep).toBe(10);
+    expect(ownedTitles(u.p.char)).toContain('x_tiefe10');
+    expect(LOOKS.w_tiefe.has!(u.p.char)).toBe(true);
+    expect(z10.exp!.results.get(u.p.charId)!.items.some(i => i.rarity === MYTHIC), 'Meilenstein Tiefe 10: ein mythisches Stück').toBe(true);
+    expect(Expedition.board(sim.game).exp_gruenwald.deep!.depth).toBe(10);
+    // der Stand übersteht das Laden (sanitizeExp), Unsinn wird begrenzt
+    const c = JSON.parse(JSON.stringify(u.p.char)); c.expeditions.exp_gruenwald.deep = 1e9;
+    sanitizeExp(c);
+    expect(c.expeditions.exp_gruenwald.deep).toBe(99);
+    expect(depthOpen(c, 'exp_gruenwald')).toBe(DEPTH_CFG.max);
+    sim.leave(u);
+  });
+
+  it('heilende Erwachte heilen andere, aber keine anderen Heiler (sonst waren zwei davon für Einzelne unbesiegbar)', () => {
+    const t = veteran('Heilerprobe');
+    unlockAll(t);
+    const z = start(t, 'exp_gruenwald')!;
+    const [a, b, c] = [...z.mobs.values()].filter(m => !m.boss).slice(0, 3);
+    for (const m of [a, b, c]) { m.x = a.x + 10; m.y = a.y; m.awake = true; m.hp = Math.round(m.maxHp / 2); }
+    z.exp!.affix.set(a.id, ['heilend']); z.exp!.affix.set(b.id, ['heilend']); z.exp!.affix.delete(c.id);
+    const ha = a.hp, hb = b.hp, hc = c.hp;
+    Expedition.heal(z);
+    expect(a.hp).toBe(ha); expect(b.hp).toBe(hb);
+    expect(c.hp).toBeGreaterThan(hc);
+    sim.leave(t);
+  });
+
+  it('Tiefen-Modifikatoren wechseln je Woche, wachsen mit der Tiefe und behalten die der flacheren Tiefe', () => {
+    const a = depthMods('2026-48', 'exp_frost', 16);
+    expect(a.length).toBe(3);
+    expect(depthMods('2026-48', 'exp_frost', 2)).toEqual([]);
+    expect(depthMods('2026-48', 'exp_frost', 4)).toEqual(a.slice(0, 1));
+    expect(depthMods('2026-48', 'exp_frost', 12)).toEqual(a.slice(0, 2));
+    const weeks = new Set(Array.from({ length: 12 }, (_, i) => depthMods(`2027-${String(i + 1).padStart(2, '0')}`, 'exp_frost', 16).join()));
+    expect(weeks.size, 'mehrere Kombinationen über die Wochen').toBeGreaterThan(4);
   });
 });

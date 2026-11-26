@@ -46,4 +46,6 @@ export interface DungeonRecord {
   minis?: string[];
   /** Zeitpunkt (ms) des ersten Abschlusses */
   first?: number;
+  /** 0.11: tiefste abgeschlossene Tiefe (über Mythisch) und die Zeit dieses Laufs in Sekunden (data/expeditions_endgame.ts) */
+  deep?: number; deepSec?: number;
 }

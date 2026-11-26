@@ -21,7 +21,8 @@ import type { CharData, ClassId } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 import { plausibleChar } from './chars';
 import type { Lab } from './lab';
-import { BOSS_STOPS, measureZone, pacing, type ZoneRow } from './measure';
+import { BOSS_STOPS, expeditionOf, measureZone, pacing, type ZoneRow } from './measure';
+import { expeditionRun } from './expedition';
 import { SKILL } from './model';
 import { buffUp, dungeonRun, echoFight, riftChar, riftRun, type RunResult } from './runs';
 import { dummyDps, eventFight, rareFight, worldBoss } from './world';
@@ -44,19 +45,23 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).
 //  Dungeons der Geschichte: ganzer Durchlauf
 // =====================================================================================================================
 export function dungeons(lab: Lab, out: Record<string, unknown>, fast: boolean) {
-  console.log('## Dungeons der Geschichte – ganzer Durchlauf (Eingang → Schlüssel → Tür → Boss; ohne Rätsel, Truhen und Lesen)\n');
+  console.log('## Dungeons der Geschichte – ganzer Durchlauf\n');
+  console.log('Kapitel 1–6: die Expedition, in die der alte Eingang seit 0.9 führt (Normal, zügig: Hauptweg mit Rätseln, Ereignis und Endboss; empfohlene Stufe). Kapitel 7–10: die Story-Dungeons (Eingang → Schlüssel → Tür → Boss; ohne Rätsel, Truhen und Lesen).\n');
   const n = fast ? 1 : 3, rows: (string | number)[][] = [], data: unknown[] = [];
   for (const stop of BOSS_STOPS) {
     const cells: string[] = [];
+    const xd = expeditionOf(stop.zone);
     for (const sk of [SKILL.mittel, SKILL.achtlos]) {
       const rs: RunResult[] = [];
-      for (const cls of CLASS_IDS) for (let s = 1; s <= n; s++) rs.push(dungeonRun(lab, stop.zone, [plausibleChar(cls, stop.level, { seed: s })], sk, s * 7 + 1));
+      // 0.11: Expeditionen sind lang – je Spielertyp zwei Klassen (schnell: eine) statt aller fünf
+      if (xd) for (const cls of CLASS_IDS.slice(0, fast ? 1 : 2)) for (let s = 1; s <= n; s++) { const r = expeditionRun(lab, xd.id, [plausibleChar(cls, xd.rec, { seed: s, potions: [10, 5] })], sk, 'zuegig', s * 7 + 1); rs.push({ ok: r.ok, sec: r.sec, deaths: r.deaths, potions: r.potions, stuck: r.stuck > 0, bossSec: r.bossSec, bossTries: 1 }); }
+      else for (const cls of CLASS_IDS) for (let s = 1; s <= n; s++) rs.push(dungeonRun(lab, stop.zone, [plausibleChar(cls, stop.level, { seed: s })], sk, s * 7 + 1));
       data.push({ zone: stop.zone, skill: sk.id, ok: mean(rs.map(r => +r.ok)), sec: mean(rs.filter(r => r.ok).map(r => r.sec)), deaths: mean(rs.map(r => r.deaths)), stuck: rs.filter(r => r.stuck).length, potions: mean(rs.map(r => r.potions)) });
       cells.push(`${pct(mean(rs.map(r => +r.ok)))} · ${mmss(mean(rs.filter(r => r.ok).map(r => r.sec)))} · ${f1(mean(rs.map(r => r.deaths)))} · ${f1(mean(rs.map(r => r.potions)))}${rs.some(r => r.stuck) ? ' (hängt ' + rs.filter(r => r.stuck).length + '×)' : ''}`);
     }
-    rows.push([ZONES[stop.zone].name, stop.level, ...cells]);
+    rows.push([xd ? xd.name : ZONES[stop.zone].name, xd ? xd.rec : stop.level, ...cells]);
   }
-  table(['Dungeon', 'St.', 'durchschn.: geschafft · Dauer · Tode · Tränke', 'unachtsam: geschafft · Dauer · Tode · Tränke'], rows);
+  table(['Expedition / Dungeon', 'St.', 'durchschn.: geschafft · Dauer · Tode · Tränke', 'unachtsam: geschafft · Dauer · Tode · Tränke'], rows);
   out.dungeons = data;
 }
 
@@ -256,6 +261,7 @@ export const LAYERS: Layer[] = [
   { name: 'Element eingeschmiedet, Stufe 3 (Feuer; Übungsgegner ohne Schwäche)', build: c => { c.equip.weapon!.element = 'fire'; c.equip.weapon!.elv = 3; } },
   { name: 'Legendäre Waffe (statt der typischen, gleiche Stufe und Verbesserung)', build: (c, cls, rng) => { const w = makeLegendary(rng, cls, 40); w.up = c.equip.weapon!.up; c.equip.weapon = w; } },
   { name: 'Quellstufen (alle 60)', build: c => { c.quell = fullQuell(); } },
+  { name: 'Verbesserung +6 auf allen Teilen (bis hier ohne Bosskerne und Ätherstaub)', build: c => { for (const s of SLOTS) if (c.equip[s]) c.equip[s]!.up = 6; } },
   { name: 'Verbesserung +10 auf allen Teilen (statt +4/+3; mit Zusatzeigenschaften und Passiven)', build: c => { for (const s of SLOTS) if (c.equip[s]) c.equip[s]!.up = 10; } },
   { name: 'Seltenheit Legendär auf allen Teilen (statt Selten/Ungewöhnlich)', build: (c, cls, rng) => { const g = plausibleChar(cls, 40, { gear: 'gut', seed: rng.int(1, 99) }); for (const s of SLOTS) { const it = g.equip[s]!; it.rarity = 4; it.up = c.equip[s]!.up; it.ilvl = c.equip[s]!.ilvl; c.equip[s] = it; } } },
   { name: 'Begleiter (Pilzling: +1,5 Leben/s) · Trophäen · Ausgeruht', note: 'kein Kampfwert: Regeneration, Gold, Erfahrung, Ruf' },
@@ -439,6 +445,6 @@ export function chapterTimes(out: Record<string, unknown>, zoneRows: ZoneRow[], 
     const ow = ((i === 6 ? 30 : 60) / Math.max(1, killsH)) * 60;
     rows.push([p.ch, p.name, f1(ow), d ? f1(d.sec / 60) : '–', f0(mean(b.map(x => x.time || x.loseTime))), pct(mean(b.map(x => x.win))), f1(ow + (d ? d.sec / 60 : 0))]);
   });
-  table(['Kapitel', 'Gebiet', 'Oberwelt: 60 Gegner (min)', 'Dungeon samt Boss (min)', 'davon Bosskampf (s)', 'Boss-Sieg im 1. Anlauf', 'Kampfzeit gesamt (min)'], rows);
+  table(['Kapitel', 'Gebiet', 'Oberwelt: 60 Gegner (min)', 'Expedition bzw. Dungeon samt Boss (min)', 'davon Bosskampf (s)', 'Boss-Sieg im 1. Anlauf', 'Kampfzeit gesamt (min)'], rows);
   out.kapitelzeit = rows;
 }

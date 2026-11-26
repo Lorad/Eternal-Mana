@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import { CFG } from '../shared/src/config';
 import { CLASSES, CLASS_IDS } from '../shared/src/data/classes';
 import { BOSSES } from '../shared/src/data/enemies';
+import { EXPEDITIONS } from '../shared/src/data/expeditions';
 import { ZONE_LIST, ZONES } from '../shared/src/data/zones';
 import type { ClassId } from '../shared/src/types';
 import { Lab } from './playtest/lab';
@@ -43,11 +44,12 @@ const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.lengt
 
 function tempo() {
   console.log('## Tempo – Stufe entlang der Geschichte\n');
+  console.log('Seit 0.9 führt der Eingang jedes alten Dungeons in die Expedition der Region (Normal). Kapitel 1–6 rechnen deshalb mit allen Gegnern, Mini-Bossen und dem Ereignis der Expedition und mit ihrem Abschluss statt mit dem Bosssieg; die Kapitel 7–10 behalten ihre Story-Dungeons. Zum Vergleich darunter die Rechnung wie bis 0.8 (alte Dungeons).\n');
   for (const [name, side, kills] of [['Nebenaufgaben größtenteils erledigt', 0.8, 60], ['nur die Hauptlinie', 0, 35]] as const) {
-    console.log(`**${name}** (${kills} Gegner je Oberwelt-Gebiet, dazu alle Gegner des Dungeons)\n`);
-    const rows = pacing(side, kills);
-    table(['Kapitel', 'Gebiet (Stufe)', 'Stufe bei Ankunft', 'Stufe am Boss', 'Boss-Stufe', 'Stufe danach', 'EP Aufgaben', 'EP Gegner', 'EP Boss', 'Gold'],
-      rows.map(r => [r.ch, `${r.name} (${r.zone[0]}–${r.zone[1]})`, r.enter, r.atBoss, r.bossLevel, r.leave, f0(r.xpQuests), f0(r.xpKills), f0(r.xpBoss), f0(r.gold)]));
+    console.log(`**${name}** (${kills} Gegner je Oberwelt-Gebiet, dazu alle Gegner der Expedition bzw. des Dungeons)\n`);
+    const rows = pacing(side, kills), old = pacing(side, kills, { old: true });
+    table(['Kapitel', 'Gebiet (Stufe)', 'Expedition', 'Stufe bei Ankunft', 'Stufe am Boss', 'Boss-Stufe', 'Stufe danach', 'EP Aufgaben', 'EP Gegner', 'EP Boss/Abschluss', 'Gold', 'bis 0.8: am Boss / Boss / danach / Gold'],
+      rows.map((r, i) => [r.ch, `${r.name} (${r.zone[0]}–${r.zone[1]})`, r.exp ? EXPEDITIONS[r.exp].name : '–', r.enter, r.atBoss, r.bossLevel, r.leave, f0(r.xpQuests), f0(r.xpKills), f0(r.xpBoss), f0(r.gold), `${old[i].atBoss} / ${old[i].bossLevel} / ${old[i].leave} / ${f0(old[i].gold)}`]));
     (out.tempo ??= {} as any), ((out.tempo as any)[name] = rows);
   }
 }

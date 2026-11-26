@@ -124,6 +124,7 @@ export class BossCtl {
   private shouldStart(): boolean {
     const inRoom = this.zone.alivePlayers().filter(p => this.zone.inRoom(this.room, p.x, p.y, 1.5));
     if (!inRoom.length) return false;
+    if (this.zone.exp) return !this.yielded; // 0.11: in einer Expedition kämpfen auch Vael und Aetherion jedes Mal (einmal je Lauf)
     return this.def.spared === undefined || this.forced || inRoom.some(p => !p.char.flags[`b:${this.def.id}`]);
   }
   private surrender() {
