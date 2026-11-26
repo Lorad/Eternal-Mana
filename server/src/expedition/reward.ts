@@ -69,7 +69,8 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
   p.gainGold(boss.gold * EXP_CFG.clearGold * mul * (1 + p.stats.goldPct / 100));
 
   // ---- Beute (persönlich, über die gewöhnlichen Gegenstandsfunktionen – neue Plätze und Seltenheiten fließen von selbst ein)
-  const ilvl = Math.min(CFG.player.maxLevel + 20, kreisLevel(boss.level, kreisOf(c)) + d.ilvlPlus);
+  // Albtraum und Mythisch heben auch frühe Expeditionen auf mindestens Stufe 42/45 (EXP_DIFF.lvlMin) – die Beute zieht mit
+  const ilvl = Math.min(CFG.player.maxLevel + 20, Math.max(d.lvlMin, kreisLevel(boss.level, kreisOf(c)) + d.ilvlPlus));
   const w = diffRarity(run.diff);
   for (let i = 0; i < EXP_CFG.gear + (weekly ? EXP_CFG.weeklyGear : 0); i++) give(generateGear(r, ilvl, rollRarity(r, w), c.cls));
   const legend = Math.max(0, RARITY_NAME.indexOf('Legendär'));

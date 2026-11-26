@@ -14,7 +14,7 @@ import { EXP_CFG } from '../shared/src/data/expeditions';
 import { Expedition } from '../server/src/expedition';
 import type { Zone } from '../server/src/zone';
 import { acc } from '../server/src/home/state';
-import { generateGear } from '../shared/src/data/items';
+import { ITEMS, generateGear } from '../shared/src/data/items';
 import { Rng } from '../shared/src/util/rng';
 import { circleFree } from '../shared/src/collision';
 
@@ -40,7 +40,7 @@ function killBoss(t: Tester) {
   for (let i = 0; i < 40 && !b.mob.dead; i++) { b.mob.invuln = false; b.mob.vuln = 1; z.hitMob(b.mob, t.p, b.mob.maxHp, 'phys'); sim.step(0.1); }
   expect(b.mob.dead).toBe(true);
 }
-function startSolo(t: Tester, diff: 'normal' | 'schwer' = 'normal', id = 'exp_gruenwald') { unlockAll(t); if (EXPEDITIONS[id].secret) { t.p.char.flags['xs:' + id] = 1; t.p.char.flags['b:hohlkoenig'] = 1; } atPortal(t); t.send({ t: 'exp', a: 'select', id, diff }); return t.p.zone; }
+function startSolo(t: Tester, diff: 'normal' | 'schwer' | 'albtraum' = 'normal', id = 'exp_gruenwald') { unlockAll(t); if (EXPEDITIONS[id].secret) { t.p.char.flags['xs:' + id] = 1; t.p.char.flags['b:hohlkoenig'] = 1; } atPortal(t); t.send({ t: 'exp', a: 'select', id, diff }); return t.p.zone; }
 
 describe('Expeditionen – Karten', () => {
   it('jede Expedition ist gültig und vollständig spielbar (Weg über Schlüssel, Türen, Rätsel bis zur Arena; Geheimes nur durch die Wand)', () => {
@@ -240,6 +240,17 @@ describe('Expeditionen – Schwierigkeitsgrade und Woche', () => {
     expect(z.exp!.affix.size).toBeGreaterThan(0);
     const lv = [...z.mobs.values()].filter(m => !m.boss).map(m => m.lvl);
     expect(Math.min(...lv)).toBeGreaterThanOrEqual(EXPEDITIONS.exp_gruenwald.level[0] + 3);
+  });
+  it('Albtraum: Beute auf der Stufe der Gegner (mindestens 42), auch in der ersten Expedition', () => {
+    const t = sim.join('Alb', 'krieger', 40);
+    t.p.char.expeditions = { exp_gruenwald: { clears: { normal: 1, schwer: 1 } } };
+    const z = startSolo(t, 'albtraum');
+    expect(z.exp!.diff).toBe('albtraum');
+    const old = new Set(t.p.char.inv.map(i => i.uid));
+    killBoss(t);
+    const gear = t.p.char.inv.filter(i => !old.has(i.uid) && !i.name && !['consumable', 'material', 'quest'].includes(ITEMS[i.base]?.kind)); // ohne die benannten Boss-Unikate (eigene Stufe)
+    expect(gear.length).toBeGreaterThan(0);
+    for (const g of gear) expect(g.ilvl, g.base).toBeGreaterThanOrEqual(EXP_DIFF.albtraum.lvlMin);
   });
   it('Herausforderung der Woche: Bonus genau einmal je Woche und Charakter', () => {
     const t = sim.join('Woche', 'krieger', 6);
