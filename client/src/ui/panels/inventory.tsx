@@ -6,7 +6,9 @@ import { ITEMS, canEquip, equipLevel, isGear, itemName, slotsFor } from '../../.
 import { SETS, SET_FULL, setCounts } from '../../../../shared/src/data/sets';
 import { SLOT_NAME } from '../../../../shared/src/types';
 import type { ItemInstance, Slot } from '../../../../shared/src/types';
-import { Btn, Confirm, Gold, INV_SIZE, ItemDetails, ItemSlot, Portrait, SLOT_ICON, Window, closePanel, cx, send, sfx } from '../common';
+import { charGS } from '../../../../shared/src/gearscore';
+import { gsBracket } from '../../../../shared/src/data/gsreq';
+import { Btn, Confirm, GS_HELP, Gold, GsValue, INV_SIZE, ItemDetails, ItemSlot, Portrait, SLOT_ICON, Window, closePanel, cx, send, sfx } from '../common';
 
 /** Puppe (0.9): links Rüstung von Kopf bis Fuß, rechts Waffen und Schmuck – Reihenfolge = Fokus-Reihenfolge für das Gamepad */
 const DOLL_LEFT: Slot[] = ['helm', 'armor', 'gloves', 'legs', 'boots'];
@@ -23,6 +25,7 @@ export function InventoryPanel() {
   const item = eqSlot ? char.equip[eqSlot]! : char.inv.find(i => i.uid === sel) ?? null;
   const base = item ? ITEMS[item.base] : null;
   const full = char.inv.length >= INV_SIZE;
+  const gs = charGS(char);
 
   const primary = (it: ItemInstance, slot?: Slot) => {
     const b = ITEMS[it.base];
@@ -46,7 +49,7 @@ export function InventoryPanel() {
                   const it = char.equip[s];
                   return (
                     <li class={cx(sel && it?.uid === sel && 'on')} title={label(s)}>
-                      <ItemSlot item={it} placeholder={SLOT_ICON[s]} label={label(s) + ' (leer)'} char={char} equipped selected={!!it && it.uid === sel}
+                      <ItemSlot item={it} placeholder={SLOT_ICON[s]} label={label(s) + ' (leer)'} char={char} equipped gs selected={!!it && it.uid === sel}
                         onClick={() => setSel(it ? it.uid : null)} onAlt={() => it && primary(it, s)} />
                       <small class="doll-label">{label(s)}</small>
                     </li>
@@ -57,6 +60,7 @@ export function InventoryPanel() {
             <div class="doll-mid">
               <div class="char-stage"><Portrait k={'char_' + char.cls} scale={3} /></div>
               <div class="doll-name"><b>{char.name}</b><small>Stufe {char.level} · {CLASSES[char.cls].name}</small></div>
+              <div class="doll-gs" title={GS_HELP}><small>Ausrüstungswert</small><GsValue gs={gs} /><small class="doll-gs-b" style={{ color: gsBracket(gs).color }}>{gsBracket(gs).name}</small></div>
               {Object.entries(setCounts(char)).filter(([, n]) => n >= 2).map(([id, n]) => <small class="doll-set" title="Angelegte Setteile">◆ {SETS[id]?.name} {n}/{SET_FULL}</small>)}
             </div>
           </div>

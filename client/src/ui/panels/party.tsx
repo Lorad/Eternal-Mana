@@ -7,7 +7,7 @@ import { KREIS_NAME } from '../../../../shared/src/data/rifts';
 import { ZONES } from '../../../../shared/src/data/zones';
 import { PARTY_RULES } from '../../../../shared/src/social';
 import type { PartyMember } from '../../../../shared/src/types';
-import { Bar, Btn, Confirm, Face, Window, closePanel, cx, send } from '../common';
+import { Bar, Btn, Confirm, Face, GsValue, Window, closePanel, cx, send } from '../common';
 import { whereIs } from '../social';
 
 export function PartyPanel() {
@@ -41,7 +41,7 @@ export function PartyPanel() {
                   <div class="grow">
                     <div class="row between">
                       <b>{m.lead && <i class="pf-lead" title="führt die Gruppe an">★</i>}{m.name}{m.charId === charId && <span class="note"> (du)</span>}{m.lead && <span class="note"> · führt an</span>}</b>
-                      <span class="note">Stufe {m.level} · {CLASSES[m.cls]?.name}</span>
+                      <span class="note">Stufe {m.level} · {CLASSES[m.cls]?.name}{m.gs !== undefined && <> · <GsValue gs={m.gs} /></>}</span>
                     </div>
                     <Bar kind="hp" v={m.online ? m.hp : 0} max={m.maxHp} class="thin" label={false} />
                     <div class="note">{m.dead ? 'Gefallen · ' : ''}{whereIs(m)}{(m.kreis ?? 0) > 0 && !m.rift ? ` (eigener Kreis: ${KREIS_NAME[m.kreis!] ?? m.kreis})` : ''}{me && m.online && m.charId !== charId && m.inst !== me.inst ? ' – nicht bei dir' : ''}</div>
@@ -79,7 +79,7 @@ export function PartyPanel() {
               {others.map(p => (
                 <li class="card" key={p.id}>
                   <Face k={'char_' + p.cls} size={40} />
-                  <div class="grow"><b>{p.name}</b><div class="note">Stufe {p.level} · {CLASSES[p.cls]?.name} · {ZONES[p.zone]?.name ?? p.zone}</div></div>
+                  <div class="grow"><b>{p.name}</b><div class="note">Stufe {p.level} · {CLASSES[p.cls]?.name}{p.gs !== undefined && <> · <GsValue gs={p.gs} /></>} · {ZONES[p.zone]?.name ?? p.zone}</div></div>
                   <Btn kind="small" onClick={() => send({ t: 'inspect', id: p.id })}>Ansehen</Btn>
                   {names.has(p.name) ? <span class="pill gold-pill">in deiner Gruppe</span>
                     : <Btn kind="small" disabled={(inParty && !lead) || full} title={full ? 'Die Gruppe ist voll.' : undefined} onClick={() => send({ t: 'party', a: 'invite', id: p.id })}>Einladen</Btn>}

@@ -13,6 +13,8 @@ import { CLASSES } from '../../../shared/src/data/classes';
 import { ITEMS, baseMods, canEquip, equipLevel, isGear, itemName, sellPrice, slotKind } from '../../../shared/src/data/items';
 import { SLOT_KIND_NAME, UPGRADE_BONUS, UPGRADE_BONUS_AT, UP10 } from '../../../shared/src/data/upgrade';
 import { compareItem, compareTargets } from '../../../shared/src/equip';
+import { charGS, fmtGS, gsCompare, itemGS, itemGSEquiv } from '../../../shared/src/gearscore';
+import { gsBracket, gsColor } from '../../../shared/src/data/gsreq';
 import type { ItemBase } from '../../../shared/src/data/items';
 import { MOD_LABEL } from '../../../shared/src/types';
 import type { AnySlot, CharData, ClientMsg, Element, ItemInstance, ModKey, Mods } from '../../../shared/src/types';
@@ -252,6 +254,8 @@ interface SlotProps {
   equipped?: boolean;
   price?: number;
   size?: 'sm';
+  /** 0.12: Ausrüstungswert des Teils als kleine Zahl unten rechts (Puppe, Ansehen) */
+  gs?: boolean;
 }
 export function ItemSlot(p: SlotProps) {
   const it = p.item;
@@ -272,7 +276,8 @@ export function ItemSlot(p: SlotProps) {
       {it && it.up > 0 && <span class="slot-up">+{it.up}</span>}
       {it?.element && <span class="slot-el" style={{ background: ELEMENT_CSS[it.element] }} />}
       {it?.set && <span class="slot-set" title="Setteil" />}
-      {p.equipped && it && <span class="slot-eq">A</span>}
+      {p.equipped && it && !p.gs && <span class="slot-eq">A</span>}
+      {p.gs && it && b && isGear(b) && <span class="slot-gs" style={{ color: gsColor(itemGSEquiv(it)) }}>{itemGS(it)}</span>}
     </button>
   );
 }
@@ -300,6 +305,29 @@ export function UpgradeLadder({ it, compact }: { it: ItemInstance; compact?: boo
   );
 }
 
+// ------------------------------------------------------------------ Ausrüstungswert (shared/src/gearscore.ts, Stufen: data/gsreq.ts)
+/** Erklärung für Tooltips – einmal formuliert, überall gleich */
+export const GS_HELP = 'Ausrüstungswert (GS): die Güte der zehn angelegten Teile – Gegenstandsstufe, Seltenheit, Verbesserung, Eigenschaften, Runen, Element und Sonderwirkungen. Setboni zählen nicht mit. Gleich gute Ausrüstung ergibt für jede Klasse denselben Wert.';
+/** Farbige Zahl des Ausrüstungswerts eines Charakters (Farbe = Stufe) */
+export function GsValue({ gs, short, class: c }: { gs: number; short?: boolean; class?: string }) {
+  const b = gsBracket(gs);
+  return <span class={cx('gs-val', c)} style={{ color: b.color }} title={`${b.name} · ${GS_HELP}`}>{short ? '' : 'GS '}{fmtGS(gs)}</span>;
+}
+/** Vergleich im Tooltip: Wert des Teils und was der Charakter-Wert täte – bei Ringen für beide Ringplätze */
+function GsCompare({ char, it }: { char: CharData; it: ItemInstance }) {
+  const rows = gsCompare(char, it), now = charGS(char);
+  return (
+    <div class="tip-gs-cmp">
+      {rows.map(r => (
+        <div class="tip-gs-row">
+          <span class="note">{rows.length > 1 ? (r.slot === 'ring1' ? 'Statt Ring 1' : 'Statt Ring 2') : 'Statt'} {r.old ? <>(GS {fmtGS(r.old)})</> : '(frei)'}:</span>
+          <span>GS {fmtGS(now)} → <b style={{ color: gsColor(r.total) }}>{fmtGS(r.total)}</b> <b class={r.delta > 0 ? 'good' : r.delta < 0 ? 'bad' : 'note'}>{r.delta > 0 ? '▲ +' : r.delta < 0 ? '▼ −' : '± '}{fmtGS(Math.abs(r.delta))}</b></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Vollständige Beschreibung eines Gegenstands (Tooltip-Inhalt und Detailbereich). */
 export function ItemDetails({ item: it, char, equipped, price, compare = true }: { item: ItemInstance; char: CharData | null; equipped?: boolean; price?: number; compare?: boolean }) {
   const b = ITEMS[it.base];
@@ -320,6 +348,7 @@ export function ItemDetails({ item: it, char, equipped, price, compare = true }:
           <b class="tip-name" style={{ color: RARITY_COLOR[it.rarity] }}>{itemName(it)}{(it.qty ?? 1) > 1 ? ` ×${it.qty}` : ''}</b>
           <div class="tip-sub">{gear ? <span class={'rc' + it.rarity}>{RARITY_NAME[it.rarity]}</span> : null}{gear ? ' · ' : ''}{itemTypeName(b)}</div>
           {gear && <div class="tip-sub">Gegenstandsstufe {it.ilvl}{kind ? ` · Platz: ${SLOT_KIND_NAME[kind]}` : ''}{equipped ? ' · angelegt' : ''}</div>}
+          {gear && <div class="tip-sub tip-gs" title={GS_HELP}>Ausrüstungswert <b style={{ color: gsColor(itemGSEquiv(it)) }}>GS {fmtGS(itemGS(it))}</b></div>}
         </div>
       </div>
       {base.length > 0 && <ul class="tip-stats base">{base.map(([k, v]) => <li>{fmtMod(k, v)}</li>)}</ul>}
@@ -330,6 +359,7 @@ export function ItemDetails({ item: it, char, equipped, price, compare = true }:
       {b.desc && <p class="tip-desc">{b.desc}</p>}
       {gear && char && lvlReq > 1 && <div class={cx('tip-req', char.level < lvlReq && 'bad')}>Benötigt Stufe {lvlReq}</div>}
       {cls.length > 0 && <div class={cx('tip-req', !usable && 'bad')}>Klasse: {cls.join(', ')}</div>}
+      {cmp && <GsCompare char={char!} it={it} />}
       {cmp && cmp.rows.map(r => (
         <div class="tip-cmp">
           <div class="tip-cmp-h">{cmp.rows.length > 1 ? `Statt ${r.slot === 'ring1' ? 'Ring 1' : 'Ring 2'}: ` : 'Im Vergleich zu '}<span style={{ color: RARITY_COLOR[r.item.rarity] }}>{itemName(r.item)}</span></div>

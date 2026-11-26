@@ -19,6 +19,8 @@ import { BOSS_STOPS, expeditionXp, measureBoss, measureZone, pacing } from '../s
 import { SKILL } from '../scripts/playtest/model';
 import { echoFight, riftChar } from '../scripts/playtest/runs';
 import { dummyDps } from '../scripts/playtest/world';
+import { LEVEL_POINTS, RIFT_POINTS, measureGS } from '../scripts/playtest/gearscore';
+import { GS_BRACKETS, GS_REF, gsAtLevel } from '../shared/src/data/gsreq';
 
 let lab: Lab;
 beforeAll(() => {
@@ -121,5 +123,26 @@ describe('Balance – Wächter über die wichtigsten Korridore', () => {
     expect(riftPar('wurzelgruft', 1)).toBeLessThan(200);
     expect(riftPar('thron', 30)).toBeGreaterThan(riftPar('thron', 1) + 200);
     expect(riftPar('thron', 30)).toBeLessThan(600);
+  });
+
+  it('Ausrüstungswert: die hinterlegten Messpunkte (GS_REF) passen zum Spielermodell; Stufen liegen darauf, keine Klasse fällt ab', () => {
+    const m = measureGS(), near = (a: number, b: number, what: string) => expect(Math.abs(a / b - 1), `${what}: gemessen ${a}, hinterlegt ${b} – scripts/gearscore-calib.ts --ref`).toBeLessThan(0.03);
+    LEVEL_POINTS.forEach((L, i) => { for (const g of ['karg', 'typisch', 'gut'] as const) near(m.level[g][L].mean, GS_REF[g][i], `${g} Stufe ${L}`); });
+    near(m.story.mean, GS_REF.story, 'Ende der Geschichte');
+    for (const s of RIFT_POINTS) near(m.rift[s].mean, GS_REF.rift[s], `Riss-Ausrüstung ${s}`);
+    near(m.legend10.mean, GS_REF.legend10, 'Legendär +10'); near(m.mythic10.mean, GS_REF.mythic10, 'Mythisch +10');
+    // Reihenfolge der Reise: karg < typisch < gut, die Stufen steigen, das Endspiel liegt darüber, ohne zu explodieren
+    for (const L of LEVEL_POINTS) { expect(m.level.karg[L].mean).toBeLessThan(m.level.typisch[L].mean); expect(m.level.typisch[L].mean).toBeLessThan(m.level.gut[L].mean); }
+    expect(m.story.mean).toBeGreaterThan(m.level.typisch[40].mean);
+    const ladder = [m.story, ...RIFT_POINTS.map(s => m.rift[s]), m.legend10, m.mythic10].map(p => p.mean);
+    for (let i = 1; i < ladder.length; i++) expect(ladder[i]).toBeGreaterThan(ladder[i - 1]);
+    expect(m.mythic10.mean / m.story.mean, 'Spitze des Endspiels gegen Ende der Geschichte').toBeLessThan(7);
+    // jede Klasse mit gleicher Ausrüstung im selben Band (±3 %)
+    for (const p of [...LEVEL_POINTS.map(L => m.level.typisch[L]), m.story, ...RIFT_POINTS.map(s => m.rift[s]), m.legend10, m.mythic10]) {
+      const v = Object.values(p.byClass);
+      expect(Math.max(...v) / Math.min(...v)).toBeLessThan(1.03);
+    }
+    // Farbstufen: grün ab typisch Stufe 15, blau ab typisch 30, violett zum Ende der Geschichte, gold ab Riss-Ausrüstung 20
+    expect(GS_BRACKETS.map(b => b.min)).toEqual([0, gsAtLevel('typisch', 15), gsAtLevel('typisch', 30), GS_REF.story, GS_REF.rift[20]]);
   });
 });

@@ -167,10 +167,11 @@
 .slot.sel { outline: 2px solid var(--gold-hi); outline-offset: 0; z-index: 1; }
 .slot.dim > img { opacity: .35; filter: grayscale(.8); }
 .slot .ghost-icon { opacity: .16; filter: grayscale(1) brightness(1.6); }
-.slot-qty, .slot-up, .slot-eq { position: absolute; font: 700 11px/1 var(--sans); text-shadow: 0 1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 -1px 0 #000; pointer-events: none; }
+.slot-qty, .slot-up, .slot-eq, .slot-gs { position: absolute; font: 700 11px/1 var(--sans); text-shadow: 0 1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 -1px 0 #000; pointer-events: none; }
 .slot-qty { right: 3px; bottom: 2px; color: #fff; }
 .slot-up { left: 3px; top: 2px; color: var(--gold-hi); }
 .slot-eq { left: 3px; bottom: 2px; color: var(--good); }
+.slot-gs { right: 3px; bottom: 2px; font-size: 10px; font-variant-numeric: tabular-nums; }
 .slot-el { position: absolute; right: 3px; top: 3px; width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid #000; pointer-events: none; }
 
 .gold { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-hi); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -198,6 +199,11 @@
 .tip-req.bad { color: var(--bad); }
 .tip-cmp { border-top: 1px solid var(--line); padding-top: 6px; }
 .tip-cmp-h { font-size: 12px; color: var(--dim); margin-bottom: 2px; }
+/* 0.12: Ausrüstungswert (GS) – im Tooltip und überall, wo ein Charakter steht */
+.gs-val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip-gs b { font-variant-numeric: tabular-nums; }
+.tip-gs-cmp { border-top: 1px solid var(--line); padding-top: 6px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.tip-gs-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
 .tip-foot { border-top: 1px solid var(--line); padding-top: 6px; font-size: 12px; color: var(--dim); }
 .tip-text { max-width: 240px; }
 /* 0.9: Rahmen nach Seltenheit (Legendär golden, Mythisch türkis mit Schimmer) */

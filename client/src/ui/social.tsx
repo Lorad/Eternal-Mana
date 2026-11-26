@@ -13,12 +13,13 @@ import { LOOKS } from '../../../shared/src/data/looks';
 import { PETS } from '../../../shared/src/data/pets';
 import { QUESTS } from '../../../shared/src/data/quests';
 import { KREIS_NAME } from '../../../shared/src/data/rifts';
-import { SETS } from '../../../shared/src/data/sets';
+import { SETS, SET_FULL } from '../../../shared/src/data/sets';
+import { gsBracket } from '../../../shared/src/data/gsreq';
 import { ZONES } from '../../../shared/src/data/zones';
 import { tradeBlock } from '../../../shared/src/social';
 import { SLOTS, SLOT_NAME } from '../../../shared/src/types';
 import type { ItemInstance, PartyMember, TradeSide } from '../../../shared/src/types';
-import { AmountSteps, Bar, Btn, ELEMENT_CSS, Face, Gold, ItemSlot, Portrait, SLOT_ICON, TextInput, Window, cx, fmtNum, send, sfx } from './common';
+import { AmountSteps, Bar, Btn, ELEMENT_CSS, Face, GS_HELP, Gold, GsValue, ItemSlot, Portrait, SLOT_ICON, TextInput, Window, cx, fmtNum, send, sfx } from './common';
 
 const S = CFG.social;
 /** Re-Render zweimal je Sekunde (für Restzeiten) */
@@ -61,7 +62,7 @@ export function PartyFrames() {
             onClick={() => (m.id ? openPlayerMenu(m) : togglePanel('party'))}>
             <Face k={'char_' + m.cls} size={32} />
             <div class="grow">
-              <div class="party-name"><b>{m.lead && <i class="pf-lead" title="führt die Gruppe an">★</i>}{m.name}</b><span>St. {m.level}</span></div>
+              <div class="party-name"><b>{m.lead && <i class="pf-lead" title="führt die Gruppe an">★</i>}{m.name}</b><span>St. {m.level}{m.gs !== undefined && <> · <GsValue gs={m.gs} short /></>}</span></div>
               <Bar kind="hp" v={m.online ? m.hp : 0} max={m.maxHp} label={false} class="thin" />
               <div class={cx('party-zone', apart && 'apart')}>{m.dead ? (apart ? 'Gefallen · ' + whereIs(m, true) : 'Gefallen – hilf auf!') : (apart ? '↗ ' : '') + whereIs(m, true)}</div>
             </div>
@@ -286,6 +287,7 @@ export function InspectWindow() {
         <div class="insp-doll">
           <div class="char-stage"><Portrait k={'char_' + i.cls} scale={3} /></div>
           <div class="doll-name"><b>{i.name}</b>{i.title && <small class="insp-title">{i.title}</small>}<small>Stufe {i.level} · {CLASSES[i.cls]?.name}</small></div>
+          <div class="doll-gs" title={GS_HELP}><small>Ausrüstungswert</small><GsValue gs={i.gs} /><small class="doll-gs-b" style={{ color: gsBracket(i.gs).color }}>{gsBracket(i.gs).name}</small></div>
           <ul class="insp-facts note">
             {i.kreis > 0 && <li>{kreisName(i.kreis)}</li>}
             {i.quell > 0 && <li>Quellstufe {i.quell}</li>}
@@ -293,7 +295,7 @@ export function InspectWindow() {
             <li>Leben {fmtNum(i.stats.maxHp)} · Mana {fmtNum(i.stats.maxMp)}</li>
             <li>Angriff {fmtNum(i.stats.power)} · Verteidigung {fmtNum(i.stats.def)}</li>
             <li>Krit {String(i.stats.crit).replace('.', ',')} %{i.stats.el !== 'phys' && <> · <span style={{ color: ELEMENT_CSS[i.stats.el] }}>{ELEMENT_NAME[i.stats.el]}</span></>}</li>
-            {sets.map(([id, n]) => <li>Set: {SETS[id].name} ({n}/4)</li>)}
+            {sets.map(([id, n]) => <li>Set: {SETS[id].name} ({n}/{SET_FULL})</li>)}
             {i.pet && PETS[i.pet] && <li>Begleiter: {PETS[i.pet].name}</li>}
             {i.look?.g && LOOKS[i.look.g] && <li>Gewand: {LOOKS[i.look.g].name}</li>}
             {i.look?.w && LOOKS[i.look.w] && <li>Waffenglanz: {LOOKS[i.look.w].name}</li>}
@@ -306,8 +308,8 @@ export function InspectWindow() {
               const it = i.equip[s];
               return (
                 <li>
-                  <ItemSlot item={it} placeholder={SLOT_ICON[s]} label={SLOT_NAME[s] + ' (leer)'} char={char} />
-                  <div class="grow"><small>{SLOT_NAME[s]}</small><div class={cx('equip-name', it && 'rc' + it.rarity)}>{it ? itemName(it) + (it.up > 0 ? ` +${it.up}` : '') : '—'}</div></div>
+                  <ItemSlot item={it} placeholder={SLOT_ICON[s]} label={SLOT_NAME[s] + ' (leer)'} char={char} gs />
+                  <div class="grow"><small>{SLOT_NAME[s]}</small><div class={cx('equip-name', it && 'rc' + it.rarity)}>{it ? itemName(it) : '—'}</div></div>
                 </li>
               );
             })}

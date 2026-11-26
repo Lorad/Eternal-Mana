@@ -84,6 +84,14 @@ export function itemGSParts(it: ItemInstance | null | undefined): GsParts | null
 /** Ausrüstungswert eines Teils (0 für alles, was keine Ausrüstung ist) */
 export function itemGS(it: ItemInstance | null | undefined): number { return itemGSParts(it)?.gs ?? 0; }
 
+/**
+ * Güte eines einzelnen Teils auf der Skala des Charakters: so hoch wäre der Charakter-Wert, wenn alle zehn Plätze so gut wären
+ * (Wert ÷ Gewicht des Platzes × 10). Die Oberfläche färbt jeden Platz damit in denselben Stufen wie den Charakter.
+ */
+export function itemGSEquiv(it: ItemInstance | null | undefined): number {
+  const p = itemGSParts(it);
+  return p ? Math.round((p.gs / p.weight) * SLOTS.length) : 0;
+}
 /** Wert je Platz (leere Plätze 0) */
 export function slotGS(c: Pick<CharData, 'equip'>): Record<Slot, number> {
   const out = {} as Record<Slot, number>;

@@ -16,7 +16,10 @@ import { riftUnlocked } from '../../../shared/src/data/rifts';
 import { ZONES } from '../../../shared/src/data/zones';
 import type { CharData, ExpResult } from '../../../shared/src/types';
 import { store, useStore, type UiState } from '../state/store';
+import { charGS, fmtGS } from '../../../shared/src/gearscore';
+import { expRequirement, gsCheck, gsColor, gsWarning } from '../../../shared/src/data/gsreq';
 import { Btn, Confirm, Icon, Window, cx, send, sfx, useTick } from './common';
+import { GsReqBox } from './gearscore';
 import { openEndgame } from './endgame';
 import { openExpeditionState } from './exp-net';
 import './styles/expedition.css';
@@ -58,6 +61,10 @@ export function ExpeditionWindow() {
   // 0.11: Tiefen – nur auf Mythisch, Stufe um Stufe
   const open = depthOpen(char, x.id), dep = diff === 'mythisch' ? Math.min(depth, open) : 0;
   const block = diffBlock(char, x.id, diff) ?? (dep ? depthBlock(char, x.id, dep) : null);
+  // 0.12: Ausrüstungswert – Empfehlung des gewählten Grads (und der Tiefe), eigener Wert, in der Gruppe die Werte vom Server
+  const req = expRequirement(x.id, diff, dep, char.kreis ?? 0), mine = charGS(char);
+  const crew = inParty ? party.filter(m => m.online && m.gs !== undefined).map(m => ({ name: m.charId === charId ? char.name : m.name, gs: m.charId === charId ? mine : m.gs! })) : [{ name: char.name, gs: mine }];
+  const chk = gsCheck(req, crew), warn = gsWarning(req, chk, !inParty);
   return (
     <Window title="Expeditionen" onClose={close} class="win-exp" icon="map">
       {weekly && <WeeklyBanner w={weekly} />}
@@ -74,7 +81,7 @@ export function ExpeditionWindow() {
             const ok = expUnlock(char, e.id).ok, r = char.expeditions?.[e.id], n = r ? Object.values(r.clears).reduce((a, b) => a + (b ?? 0), 0) : 0;
             return (
               <button type="button" class={cx('craft-row', e.id === x.id && 'on', !ok && 'locked')} disabled={!!lobby && lobby.exp !== e.id} onClick={() => { sfx('ui_click'); setSel(e.id); setDiff('normal'); setDepth(0); }}>
-                <span class="craft-name grow"><b>{e.name}{e.secret ? ' ✦' : ''}{e.endgame ? <i class="xp-end"> Endspiel</i> : null}</b><small class="note">{regionOf(e)} · ab Stufe {e.rec}{n ? ` · ${n}× abgeschlossen` : ok ? '' : ' · verschlossen'}{r?.deep ? ` · Tiefe ${r.deep}` : ''}</small></span>
+                <span class="craft-name grow"><b>{e.name}{e.secret ? ' ✦' : ''}{e.endgame ? <i class="xp-end"> Endspiel</i> : null}</b><small class="note">{regionOf(e)} · ab Stufe {e.rec} · GS {fmtGS(expRequirement(e.id, 'normal').recGS)}{n ? ` · ${n}× abgeschlossen` : ok ? '' : ' · verschlossen'}{r?.deep ? ` · Tiefe ${r.deep}` : ''}</small></span>
               </button>
             );
           })}
@@ -104,11 +111,13 @@ export function ExpeditionWindow() {
                 <button type="button" class={cx('xp-diff', 'd-' + d, diff === d && 'on', !!b && 'locked')} disabled={!!lobby} title={b ?? EXP_DIFF[d].desc} onClick={() => { sfx('ui_click'); setDiff(d); if (d !== 'mythisch') setDepth(0); }}>
                   <b>{DIFFICULTY_NAME[d]}</b>
                   <small>{b ? '🔒 ' + EXP_DIFF[d].unlockText : n ? `${n}× · Bestzeit ${best ? fmtSec(best) : '–'}` : 'noch nicht geschafft'}</small>
+                  <small class="xp-diff-gs" style={{ color: gsColor(expRequirement(x.id, d).recGS) }}>GS {fmtGS(expRequirement(x.id, d).recGS)}</small>
                 </button>
               );
             })}
           </div>
           <p class="note xp-diffdesc">{EXP_DIFF[diff].desc}</p>
+          <GsReqBox req={req} mine={mine} crew={inParty ? crew : null} warn={warn} />
           {diff === 'mythisch' && open > 0 && (
             <div class="xp-depth">
               <div class="sec-title">Tiefe <small class="note">über Mythisch · erreicht: {rec?.deep ?? 0} / {DEPTH_CFG.max}</small></div>
@@ -152,15 +161,19 @@ function LobbyBox() {
   const at = useStore(s => s.expWin?.at);
   const lead = l.lead === me, mine = l.members.find(m => m.charId === me);
   const all = l.members.filter(m => m.online).every(m => m.ready);
+  const req = expRequirement(l.exp, l.diff, l.depth ?? 0);
+  const lobbyWarn = gsWarning(req, gsCheck(req, l.members.filter(m => m.online).map(m => ({ name: m.name, gs: m.gs }))), false);
   return (
     <div class="xp-lobby">
       <div class="sec-title">Bereitschaft · {EXPEDITIONS[l.exp]?.name} ({DIFFICULTY_NAME[l.diff]}{l.depth ? `, Tiefe ${l.depth}` : ''})</div>
       <ul>{l.members.map(m => (
         <li class={cx(m.ready && 'ready', !m.online && 'off')}>
           <i>{m.ready ? '✓' : '…'}</i><b>{m.name}</b>{m.charId === l.lead && <small> (führt)</small>}
+          <span class={cx('xp-lobby-gs', m.gs < req.minGS ? 'xp-gs-bad' : m.gs < req.recGS ? 'xp-gs-low' : 'xp-gs-ok')} title={m.gs < req.minGS ? `unter dem Mindestwert (GS ${fmtGS(req.minGS)})` : m.gs < req.recGS ? `unter der Empfehlung (GS ${fmtGS(req.recGS)})` : 'erfüllt die Empfehlung'}>{m.gs < req.minGS ? '⚠ ' : ''}GS {fmtGS(m.gs)}</span>
           <span class="note">{!m.online ? 'getrennt' : m.ready ? (m.here ? 'bereit, am Portal' : 'bereit – wird beim Start geholt') : 'wartet'}</span>
         </li>
       ))}</ul>
+      {lobbyWarn && <div class={cx('xp-gs-warn', req.hard && 'hard')} role="alert">⚠ {lobbyWarn}</div>}
       <div class="xp-actions">
         {lead ? <Btn kind="primary" disabled={!all || !at} onClick={() => { send({ t: 'exp', a: 'start' }); store.set({ expWin: null }); }}>Aufbrechen</Btn>
           : <Btn kind="primary" onClick={() => send({ t: 'exp', a: mine?.ready ? 'unready' : 'ready' })}>{mine?.ready ? 'Doch nicht bereit' : 'Bereit'}</Btn>}

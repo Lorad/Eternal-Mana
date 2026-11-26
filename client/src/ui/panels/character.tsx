@@ -3,12 +3,14 @@ import { useStore } from '../../state/store';
 import { CFG, ELEMENTS, ELEMENT_NAME } from '../../../../shared/src/config';
 import { CLASSES } from '../../../../shared/src/data/classes';
 import { perksOf } from '../../../../shared/src/data/collection';
-import { SETS } from '../../../../shared/src/data/sets';
+import { SETS, SET_FULL } from '../../../../shared/src/data/sets';
+import { charGS } from '../../../../shared/src/gearscore';
+import { gsBracket } from '../../../../shared/src/data/gsreq';
 import { ZONE_LIST } from '../../../../shared/src/data/zones';
 import { computeStats, countShards } from '../../../../shared/src/stats';
 import { ATTR_NAME } from '../../../../shared/src/types';
 import type { AttrKey } from '../../../../shared/src/types';
-import { Bar, Btn, ELEMENT_CSS, Portrait, Window, closePanel, cx, fmtDec, fmtNum, fmtTime, send } from '../common';
+import { Bar, Btn, ELEMENT_CSS, GS_HELP, GsValue, Portrait, Window, closePanel, cx, fmtDec, fmtNum, fmtTime, send } from '../common';
 
 const ATTR_HELP: Record<AttrKey, string> = {
   str: 'Erhöht Angriff (Nahkampfklassen) und etwas Verteidigung.',
@@ -23,6 +25,7 @@ export function CharacterPanel() {
   const home = useStore(s => s.home);
   if (!char) return null;
   const cls = CLASSES[char.cls];
+  const gs = charGS(char);
   // inklusive laufender Buffs (Speise, Elixier, Kriegsschrei …) und – 0.7 – Begleiter und ausgestellter Trophäen, wie der Server rechnet
   const d = computeStats(char, [...buffs.map(b => b.mods ?? {}), ...(home ? [perksOf(home, char).mods] : [])]);
   const need = CFG.xpToNext(char.level);
@@ -58,6 +61,7 @@ export function CharacterPanel() {
             <div class="grow">
               <h3 class="charp-name">{char.name}</h3>
               <div class="charp-cls">Stufe {char.level} · {cls.name}</div>
+              <div class="charp-gs" title={GS_HELP}>Ausrüstungswert <GsValue gs={gs} /> <small style={{ color: gsBracket(gs).color }}>{gsBracket(gs).name}</small></div>
               <div class="note">{cls.tagline}</div>
             </div>
           </div>
@@ -98,7 +102,7 @@ export function CharacterPanel() {
           <ul class={cx('stat-list', 'compact', 'res-list')}>
             {ELEMENTS.map(e => <li title="Verringert erlittenen Schaden dieses Elements."><span style={{ color: ELEMENT_CSS[e] }}>◆ {ELEMENT_NAME[e]}</span><b class={cx(!d.res[e] && 'zero')}>{d.res[e]} %</b></li>)}
           </ul>
-          {Object.keys(d.sets).length > 0 && <div class="note">Sets: {Object.entries(d.sets).map(([id, n]) => `${SETS[id]?.name ?? id} ${n} / 4`).join(' · ')}{buffs.length > 0 ? ' · Werte inklusive laufender Stärkungen' : ''}</div>}
+          {Object.keys(d.sets).length > 0 && <div class="note">Sets: {Object.entries(d.sets).map(([id, n]) => `${SETS[id]?.name ?? id} ${n} / ${SET_FULL}`).join(' · ')} (Setboni wirken in den Werten oben, nicht im Ausrüstungswert){buffs.length > 0 ? ' · Werte inklusive laufender Stärkungen' : ''}</div>}
           <div class="sec-title">Chronik</div>
           <ul class={cx('stat-list', 'compact')}>
             <li><span>Spielzeit</span><b>{fmtTime(char.playtime)}</b></li>

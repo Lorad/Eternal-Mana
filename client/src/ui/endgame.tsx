@@ -4,6 +4,9 @@
  * Alle Zahlen und Texte stammen aus shared/src/data/rifts.ts bzw. CFG – der Server prüft jede Aktion selbst
  * (server/src/rift.ts, endgame.ts); hier wird nur angezeigt, was geht und warum etwas nicht geht.
  */
+import { charGS } from '../../../shared/src/gearscore';
+import { gsCheck, gsWarning, riftRequirement, trialRequirement } from '../../../shared/src/data/gsreq';
+import { GsReqBox } from './gearscore';
 import { useRef, useState } from 'preact/hooks';
 import { store, useStore } from '../state/store';
 import { CFG, ELEMENT_NAME, RARITY_COLOR, RARITY_NAME } from '../../../shared/src/config';
@@ -87,6 +90,9 @@ function RiftTab({ char, stone }: { char: CharData; stone: boolean }) {
   const others = party.filter(m => m.charId !== charId).length;
   const why = !stone ? 'Nur am Riss-Stein in Quellhain' : !leader ? 'Nur der Anführer der Gruppe öffnet den Riss' : trial && !trialUnlocked(char) ? `Erst nach Riss-Stufe ${CFG.rift.trial.unlock}` : null;
   const boss = trial ? null : ZONES[sel]?.boss;
+  // 0.12: Ausrüstungswert – Empfehlung der Stufe (data/gsreq.ts), die Gruppe mit den Werten vom Server
+  const req = trial ? trialRequirement() : riftRequirement(s), mine = charGS(char);
+  const crew = party.length > 1 ? party.filter(m => m.online && m.gs !== undefined).map(m => ({ name: m.name, gs: m.charId === charId ? mine : m.gs! })) : [{ name: char.name, gs: mine }];
   return (
     <div class="eg">
       <div class="eg-list">
@@ -142,6 +148,7 @@ function RiftTab({ char, stone }: { char: CharData; stone: boolean }) {
               Unter der Richtzeit erscheint eine <b>Bonustruhe</b> (mindestens episch, +{CFG.rift.bonusFragments(s)} Fragmente). Zu langsam zu sein beendet nichts.</p>
           </>
         )}
+        <GsReqBox req={req} mine={mine} crew={party.length > 1 ? crew : null} warn={gsWarning(req, gsCheck(req, crew), party.length <= 1)} />
         <div class="eg-actions">
           <Btn kind="primary" class="grow" disabled={!!why} onClick={() => { send({ t: 'rift', a: 'start', dungeon: sel, stufe: s }); store.set({ endgame: null }); }}>{why ?? (trial ? 'Prüfung beginnen' : 'Riss öffnen')}</Btn>
           {stone && <Btn onClick={() => { send({ t: 'rift', a: 'join' }); store.set({ endgame: null }); }} title="Zurück in den Riss, den deine Gruppe gerade offen hat – oder den du eben verlassen hast">{others > 0 ? 'Der Gruppe folgen' : 'Offenem Riss folgen'}</Btn>}

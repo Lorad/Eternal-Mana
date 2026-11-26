@@ -19,7 +19,7 @@ export interface UiState {
   serverInfo: ServerInfo | null;
   error: string | null;            // letzte Fehlermeldung des Servers (z. B. Name vergeben)
   chars: CharSummary[];
-  online: { id: number; name: string; cls: ClassId; level: number; zone: string }[];
+  online: { id: number; name: string; cls: ClassId; level: number; zone: string; /** Ausrüstungswert (Server) */ gs?: number }[];
   char: CharData | null;
   charId: number;
   myId: number;                    // eigene Entity-ID

@@ -85,3 +85,21 @@
 .xp-depth-n { min-width: 78px; text-align: center; color: #e0a0ff; font-variant-numeric: tabular-nums; }
 .xp-depth-mods { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; color: #c8b8e8; }
 .exp-mods { font-size: 11px; font-weight: 700; color: #e0a0ff; }
+
+/* 0.12: Ausrüstungswert im Portal – Empfehlung, Mindestwert, Belohnungsstufe, Warnung */
+.xp-diff .xp-diff-gs { font-weight: 700; font-variant-numeric: tabular-nums; }
+.xp-gs { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px; font-size: 13px; }
+.xp-gs.raid { box-shadow: inset 0 0 0 1px #8a5a14; }
+.xp-gs-row { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.xp-gs-row b { font-variant-numeric: tabular-nums; }
+.xp-tier { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 1px 6px; border-radius: 3px; background: rgba(6, 7, 13, .6); color: var(--dim); box-shadow: inset 0 0 0 1px #2c3352; }
+.xp-tier.t-veteran { color: #8fc0ff; }
+.xp-tier.t-endspiel { color: #d0a0ff; }
+.xp-tier.t-raid { color: #ffb02e; box-shadow: inset 0 0 0 1px #8a5a14; }
+.xp-gs-crew { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.xp-gs-ok { color: var(--good); }
+.xp-gs-low { color: #e8c060; }
+.xp-gs-bad { color: var(--bad); font-weight: 700; }
+.xp-gs-warn { color: #ffd2c8; background: rgba(120, 30, 20, .35); box-shadow: inset 0 0 0 1px #8a3a2a; border-radius: 3px; padding: 4px 8px; font-size: 12px; }
+.xp-gs-warn.hard { background: rgba(140, 20, 20, .5); }
+.xp-lobby-gs { font-size: 12px; font-variant-numeric: tabular-nums; margin-left: 6px; }

@@ -5,6 +5,8 @@
  * Reine Funktion: Oberfläche und Tests rufen sie mit Charakter und Profil-Stand auf.
  */
 import { countShards } from '../stats';
+import { charGS, fmtGS } from '../gearscore';
+import { gsBracket } from './gsreq';
 import type { CharData, HomeData, ItemInstance } from '../types';
 import { SLOTS } from '../types';
 import { loreProgress } from './chronik';
@@ -70,6 +72,7 @@ export function hallData(c: CharData, h: HomeData | null): HallData {
   const questsDone = Object.keys(c.quests).filter(id => QUESTS[id] && c.quests[id].s === 'done').length;
   const stats: HallStat[] = [
     { label: 'Stufe', value: `${c.level}${(c.quell?.lvl ?? 0) > 0 ? ` · Quellstufe ${c.quell!.lvl}` : ''}${(c.kreis ?? 0) > 0 ? ` · Kreis ${c.kreis! + 1}` : ''}` },
+    { label: 'Ausrüstungswert (GS)', value: `${fmtGS(charGS(c))} · ${gsBracket(charGS(c)).name}` },
     { label: 'Spielzeit', value: fmtTime(c.playtime) },
     { label: 'Besiegte Gegner', value: fmt(c.kills) },
     { label: 'Niederlagen', value: fmt(c.deaths) },

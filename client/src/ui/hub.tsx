@@ -20,7 +20,8 @@ import { RUMOUR_KIND_NAME, boardRumours, rumourZone } from '../../../shared/src/
 import { SKILL_LIST } from '../../../shared/src/data/skills';
 import { ZONES } from '../../../shared/src/data/zones';
 import type { CharData, ItemInstance } from '../../../shared/src/types';
-import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Tabs, TextInput, Window, closePanel, cx, fmtNum, send, sfx } from './common';
+import { charGS } from '../../../shared/src/gearscore';
+import { Btn, Confirm, Gold, GsValue, INV_SIZE, Icon, ItemSlot, Tabs, TextInput, Window, closePanel, cx, fmtNum, send, sfx } from './common';
 import { ZoneMapCanvas } from './mapview';
 
 /** Öffnet ein Fenster der Quellwarte (aus dem Gespräch oder vom Server nach einer Interaktion) */
@@ -222,10 +223,10 @@ function Groups({ char }: { char: CharData }) {
       <div class="hub-col">
         <H>In der Quellwarte <span class="pill">{here.length + 1}</span></H>
         <ul class="hub-list scroll">
-          <li class="hub-pl me"><b>{char.name}</b> <span class="note">{CLASSES[char.cls].name} · Stufe {char.level}</span></li>
+          <li class="hub-pl me"><b>{char.name}</b> <span class="note">{CLASSES[char.cls].name} · Stufe {char.level} · <GsValue gs={charGS(char)} /></span></li>
           {here.map(p => { const e = lfg.find(x => x.id === p.id); return (
             <li class="hub-pl">
-              <div class="grow"><b>{e && '⚑ '}{p.name}</b> <span class="note">{CLASSES[p.cls]?.name} · Stufe {p.level}{inParty(p.id) && ' · in deiner Gruppe'}</span>{e && <div class="note">sucht: {LFG_GOAL[e.goal]}{e.note && ` – „${e.note}“`}</div>}</div>
+              <div class="grow"><b>{e && '⚑ '}{p.name}</b> <span class="note">{CLASSES[p.cls]?.name} · Stufe {p.level}{p.gs !== undefined && <> · <GsValue gs={p.gs} /></>}{inParty(p.id) && ' · in deiner Gruppe'}</span>{e && <div class="note">sucht: {LFG_GOAL[e.goal]}{e.note && ` – „${e.note}“`}</div>}</div>
               {!inParty(p.id) && lead && party.length < CFG.social.partyMax && <Btn kind="small" onClick={() => send({ t: 'party', a: 'invite', id: p.id })}>Einladen</Btn>}
             </li>
           ); })}
@@ -245,7 +246,7 @@ function Groups({ char }: { char: CharData }) {
         <ul class="hub-list scroll">
           {lfg.map(e => (
             <li class="hub-pl">
-              <div class="grow"><b>⚑ {e.name}</b> <span class="note">{CLASSES[e.cls]?.name} · Stufe {e.level} · Gruppe {e.size}/{CFG.social.partyMax}{e.zone !== HUB_ZONE && ` · ${ZONES[e.zone]?.name ?? ''}`}</span>
+              <div class="grow"><b>⚑ {e.name}</b> <span class="note">{CLASSES[e.cls]?.name} · Stufe {e.level}{e.gs !== undefined && <> · <GsValue gs={e.gs} /></>} · Gruppe {e.size}/{CFG.social.partyMax}{e.zone !== HUB_ZONE && ` · ${ZONES[e.zone]?.name ?? ''}`}</span>
                 <div class="note">{LFG_GOAL[e.goal]}{e.note && ` – „${e.note}“`} · seit {fmtTime(e.sec)}</div></div>
               {e.id !== myId && !inParty(e.id) && lead && e.size < CFG.social.partyMax && e.size === 1 && <Btn kind="small" onClick={() => send({ t: 'party', a: 'invite', id: e.id })}>Einladen</Btn>}
             </li>
