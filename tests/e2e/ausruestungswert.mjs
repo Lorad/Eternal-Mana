@@ -92,7 +92,8 @@ await step('Anlegen: der angekündigte Gewinn kommt genau an, die Puppe zählt r
     }
     if (idx < 0) break;
     const before = (await doll(a)).total;
-    await slots.nth(idx).dblclick();
+    await slots.nth(idx).click(); await a.wait(200);
+    await a.page.locator('.inv-actions').getByRole('button', { name: 'Ausrüsten' }).click();
     const after = await dollChange(a, before);
     ok(after.total === before + gain, `angekündigt +${gain}, aus ${before} wurde ${after.total}`);
     ok(after.total === after.sum, 'Summe je Platz');
@@ -164,7 +165,8 @@ await step('Gruppe zu zweit: Rahmen, Gruppenfenster und Ansehen zeigen den Wert,
   // B legt etwas an: der Rahmen bei A folgt
   await b.cmd('/gear 1'); await b.wait(500);
   await b.page.keyboard.press('i'); await b.page.locator('.win-inv').waitFor();
-  await b.page.locator('.win-inv .inv-grid .slot:not(.empty)').last().dblclick();
+  await b.page.locator('.win-inv .inv-grid .slot:not(.empty)').last().click(); await b.wait(200);
+  await b.page.locator('.inv-actions').getByRole('button', { name: 'Ausrüsten' }).click();
   const nb = (await dollChange(b, bGs)).total; await b.esc();
   ok(nb !== bGs, 'B: Wert hat sich geändert');
   await a.page.waitForFunction(([n, v]) => [...document.querySelectorAll('.party-frame')].some(f => f.textContent.includes(n) && f.querySelector('.gs-val')?.textContent.replace(/\D/g, '') === String(v)), [b.name, nb], { timeout: 8000 });

@@ -62,7 +62,7 @@ export function PartyFrames() {
             onClick={() => (m.id ? openPlayerMenu(m) : togglePanel('party'))}>
             <Face k={'char_' + m.cls} size={32} />
             <div class="grow">
-              <div class="party-name"><b>{m.lead && <i class="pf-lead" title="führt die Gruppe an">★</i>}{m.name}</b><span>St. {m.level}{m.gs !== undefined && <> · <GsValue gs={m.gs} short /></>}</span></div>
+              <div class="party-name"><b>{m.lead && <i class="pf-lead" title="führt die Gruppe an">★</i>}{m.name}</b><span>St. {m.level}{m.gs !== undefined && <> · <GsValue gs={m.gs} /></>}</span></div>
               <Bar kind="hp" v={m.online ? m.hp : 0} max={m.maxHp} label={false} class="thin" />
               <div class={cx('party-zone', apart && 'apart')}>{m.dead ? (apart ? 'Gefallen · ' + whereIs(m, true) : 'Gefallen – hilf auf!') : (apart ? '↗ ' : '') + whereIs(m, true)}</div>
             </div>
