@@ -12,6 +12,7 @@ import { CFG } from '../shared/src/config';
 import { BOSSES, ENEMIES } from '../shared/src/data/enemies';
 import { EXP_CFG } from '../shared/src/data/expeditions';
 import { Expedition } from '../server/src/expedition';
+import { st as bossState } from '../server/src/expedition/bossmech';
 import type { Zone } from '../server/src/zone';
 import { acc } from '../server/src/home/state';
 import { ITEMS, generateGear } from '../shared/src/data/items';
@@ -340,6 +341,17 @@ describe('Expeditionen – Ereignisse und Bosse', () => {
       expect(mech.charged(kit, x0, y0, p0.x + (p0.x - x0) * 0.2, p0.y + (p0.y - y0) * 0.2)).toBeGreaterThan(3);
       expect(pillars().length).toBe(n - 1); sim.step(0.1); expect(b.mob.vuln).toBeGreaterThan(1.5);
       sim.step(6); expect(mech.charged(kit, x0, y0, x0 + 1, y0 + 1)).toBeGreaterThan(0); sim.step(0.1); expect(b.mob.vuln).toBeLessThan(0.5);
+      sim.leave(t); }
+    { const { t, z, b } = run('exp_schatten'); const r = z.map.bossRoom!;
+      // das wandernde Licht endet in Reichweite – auch wer in einer Ecke der Arena steht, schafft es in den 5,5 Sekunden
+      for (let i = 0; i < 4; i++) {
+        t.p.x = ((i % 2 ? r.x1 - 3 : r.x0 + 3) + 0.5) * TILE; t.p.y = ((i < 2 ? r.y0 + 3 : r.y1 - 3) + 0.5) * TILE;
+        let w: any; for (let k = 0; k < 600 && !(w = bossState(b).wisp); k++) sim.step(0.05);
+        expect(w, 'Licht erscheint').toBeTruthy();
+        expect(Math.hypot(w.x1 - w.x0, w.y1 - w.y0)).toBeGreaterThanOrEqual(120);
+        expect(Math.hypot(w.x1 - t.p.x, w.y1 - t.p.y) / CFG.player.baseSpeed, 'Laufzeit bis zum Ziel des Lichts').toBeLessThan(4);
+        sim.step(6);
+      }
       sim.leave(t); }
     { const { t, z } = run('exp_ruinen'); sim.step(10.5); const mech = (z.boss as any); expect(t.p.statuses.has('mark')).toBe(true);
       const ink = [...z.objs.values()].find(o => o.props?.kind === 'ink')!; t.p.x = ink.x; t.p.y = ink.y + 10; sim.step(0.2); expect(t.p.statuses.has('mark')).toBe(false); void mech; sim.leave(t); }

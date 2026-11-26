@@ -273,7 +273,16 @@ const SIG: Record<string, Signature> = {
     tick(k, s) {
       const z = k.boss.zone, t = z.game.now, m = k.boss.mob;
       if (!s.wisp && t >= s.next) {
-        const [x0, y0] = k.rndPos(3), [x1, y1] = k.rndPos(3);
+        // Das Licht wandert sichtbar (mindestens 120 px), endet aber dort, wo es jeder in der Arena rechtzeitig erreicht:
+        // zwei freie Zufallspunkte konnten fast 450 px auseinanderliegen – bei 86 px/s blieben dafür kaum Sekunden übrig.
+        const pl = k.players(), far = (x: number, y: number) => Math.max(0, ...pl.map(p => Math.hypot(p.x - x, p.y - y)));
+        let [x0, y0] = k.rndPos(3), [x1, y1] = k.rndPos(3), best = Infinity;
+        for (let i = 0; i < 24; i++) {
+          const [ax, ay] = k.rndPos(3), [bx, by] = k.rndPos(3), d = far(bx, by);
+          if (Math.hypot(bx - ax, by - ay) < 120 || d >= best) continue;
+          best = d; [x0, y0, x1, y1] = [ax, ay, bx, by];
+          if (d <= 260) break;
+        }
         s.wisp = { x0, y0, x1, y1, at: t, until: t + 5.5, fx: 0, fxAt: 0 };
         k.say('„Wenn du gehst, soll NICHTS bleiben!“ – Ein kleines Licht flackert auf. Folgt ihm!');
         z.addFx({ kind: 'tele', x: k.boss.cx, y: k.boss.cy, r: 230, el: 'dark', dur: 5.5, until: t + 5.5, hostile: false, raw: 0, lvl: 1, by: '' });
