@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.9.0 (Quellwarte, Expeditionen und Ausrüstung mit zehn Plätzen; Feinschliff; Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.11.0 (Endspiel-Expeditionen, Tiefen, Bestenliste, Balance über die neue Länge; Quellwarte, Expeditionen und Ausrüstung mit zehn Plätzen; Feinschliff; Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -16,11 +16,11 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 | 0.7 | Zuhause (Hof mit Lagertruhe und drei Ausbaustufen, 30 Trophäen, 8 Begleiter, Sammlung, Erscheinungen) und Gemeinsam (Gruppenverwaltung, Handel, Quest teilen, Gruppentruhe, Ansehen) | **fertig** |
 | 0.8 | Feinschliff: Spieltest mit Spielermodell und Abstimmung aller Zahlen, Balance-Wächter, Handbuch, Hinweise, aufgeräumtes HUD, Gamepad in allen Fenstern, „Blitze reduzieren“, Echtzeit-Bewegung bei wenig Bildern, fehlende Grafik, Dokumentation | **fertig** |
 | 0.9 | Quellwarte (Hub mit neun Einrichtungen), sieben Expeditionen mit Mini-Bossen, Endbossen mit Signaturmechanik, vier Schwierigkeitsgraden, Wochen-Herausforderung und gemeinsamer Rückkehr; zehn Ausrüstungsplätze, Seltenheit Mythisch, faires Verbessern bis +10, Sets mit sechs Teilen | **fertig** |
+| 0.10/0.11 | Alle Expeditionen und Schwierigkeitsgrade im Browser geprüft und korrigiert; Endspiel-Expeditionen „Die Lange Wacht“ und „Das Atmende Herz“, Tiefen 1–20, Bestenliste; Tempo, Gold und Überführung der Ausrüstung abgestimmt; Leistung mit vier Spielern gemessen | **fertig** |
 
 ### Offene Punkte nach 0.9 (Roadmap Abschnitt 5)
 
-Ein Großteil von 0.10 ist schon in 0.9 enthalten (alle Expeditionen, Schwierigkeitsgrade, Wochen-Herausforderung, Bestzeiten,
-zehn Plätze). Offen bleibt:
+0.10 und 0.11 sind zusammen als Version 0.11.0 erschienen. Stand der einzelnen Punkte:
 
 - **Im Browser durchgespielt** sind alle sieben Expeditionen (`tests/e2e/expedition*.mjs`): je Portal, Mini-Boss, Ereignis
   (Hinterhalt, Finsternis, Flut, Einsturz), die Signatur des Endbosses wirklich ausgelöst (Prismensäule, Kühlkette, Stillstand,
@@ -34,9 +34,7 @@ zehn Plätze). Offen bleibt:
   Zwei Vierergruppen in je einer Instanz: 1,35 ms je Takt. Kein Engpass gefunden.
 - **Dauer:** Bot-Läufe auf Normal brauchen allein 14–19 Minuten, zu zweit 11–19 (`scripts/exp-playtest.ts`). Schnelle Läufe
   von Wurzeltiefe und Gießerei liegen knapp unter 15 Minuten.
-- **Tempo:** Ein Abschluss bringt etwa zwei Stufen – mehr als die alten Dungeons. Der Tempo-Test misst noch die alten Karten.
-- **Ausrüstung:** Hoch verbesserte alte Stücke verlieren nach der Überführung bis zu 15–20 % Grundverteidigung; +10 auf allem
-  ist stärker als vorher (×1,34 statt ×1,19). Keine legendären Zweithand-Stücke.
+- Tempo und Überführung der Ausrüstung: erledigt in 0.11 (siehe unten). Keine legendären Zweithand-Stücke.
 - **Gruppen:** mit höchstens zwei echten Browsern geprüft. Gruppen-Instanzen und Gruppengesuche überleben keinen Neustart.
 - Händler-Wechsel um Mitternacht nur mit gestellter Uhr geprüft; Gamepad in Hub-Fenstern und Inventar-Puppe nicht mit echtem Pad.
 

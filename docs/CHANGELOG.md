@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.0 – Endspiel der Expeditionen (Meilensteine 0.10 und 0.11)
+
+- Browser-Durchläufe aller Expeditionen (`tests/e2e/expeditionen.mjs`, `expeditionen-spaet.mjs`, `expedition-grade.mjs`,
+  gemeinsamer Code in `tests/e2e/lib/`); Korrekturen an Kristallkoloss (`EchoMech.charged`, Säulen, Ansturm vor Wänden),
+  wanderndem Licht, Belohnungsstufe auf hohen Graden, Zusatztruhen, Ereignistexten, Lichtsteinen, Einsturzlinie und
+  Namensschildern (`GameScene.declutterMobLabels`). Dev-Befehle `/expfrei spuren`, `/expwut`, `/mythisch`.
+- Lastprobe `scripts/load-check.ts --exp`: vier Spieler in einer Expedition, 0,8 ms je Takt.
+- Endspiel-Expeditionen (`shared/src/data/expeditions_endgame.ts`): Die Lange Wacht (Vael, Wachfeuer), Das Atmende Herz
+  (Aetherion, Wiegenlied); Tiefen 1–20 mit wöchentlichen Modifikatoren; serverweite Bestenliste (Tabelle `meta`).
+  Browser-Durchlauf `tests/e2e/lange-wacht.mjs`.
+- Balance über die neue Länge (`docs/GAME_DESIGN.md`, Balance 0.11): Erfahrung und Gold der Expeditionen, Tempo-Test über die
+  Expeditionen, `borinGift` mit Stufe/Seltenheit/Verbesserung der alten Teile (`ItemInstance.gift`, nicht umschmiedbar),
+  Heiler heilen keine Heiler.
+
 ## 0.9.0 – Quellwarte und Expeditionen
 
 - Hub `quellwarte` (`shared/src/maps/hubgen.ts`, `server/src/hub/`, `shared/src/data/hubdata.ts`, `client/src/ui/hub.tsx`):

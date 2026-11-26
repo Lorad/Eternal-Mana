@@ -3,6 +3,34 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.11.0 – Endspiel der Expeditionen
+_26.11.2026_
+
+### Neu im Endspiel
+- **„Die Lange Wacht“** gegen Vael: Er löscht die Wachfeuer der Arena eines nach dem anderen – wer an einem dunklen Feuer steht, entzündet es neu, sonst schlägt Mitternacht zu.
+- **„Das Atmende Herz“** gegen Aetherion: Schlag die Tonsteine des Wiegenlieds in der angesagten Reihenfolge, um die Stille zu brechen.
+- Beide ab Stufe 40, mit Echo-Fragmenten, Ätherstaub, mythischer Beute, neuen Unikaten, Waffenglanz und Titeln.
+- **Tiefen 1–20** über Mythisch in jeder Expedition: härter und lohnender mit jeder Stufe, wöchentlich wechselnde Modifikatoren, garantierter Bosskern.
+- **Bestenliste** in der Trophäenhalle: schnellste Läufe und tiefste Tiefe der ganzen Quellwarte.
+
+### Abstimmung
+- Expeditionen bringen knapp zwei Stufen je erstem Abschluss statt bis zu drei – die Geschichte bleibt im Takt; gewöhnliche Gegner dort lassen weniger Gold fallen.
+- Borins Beigaben bei der Umstellung auf zehn Plätze tragen jetzt Seltenheit und Verbesserung deiner alten Teile.
+- Albtraum und Mythisch: Die Belohnung liegt mindestens auf der Stufe der Gegner.
+- Truhe der Unversehrten und Truhe der Eile können auf Mythisch mythische Stücke enthalten.
+- Heilende Erwachte heilen keine anderen Heiler mehr.
+
+### Bosse und Ereignisse
+- **Kristallkoloss:** Auch sein Ansturm aus Phase 2 und 3 zerschlägt Prismensäulen; ohne Säule hält der Panzer. Die Säulen sind als schwebende Kristallsplitter zu erkennen, der Ansturm endet vor Wänden.
+- **Hohler König:** Das wandernde Licht endet immer in Reichweite und wandert sichtbar.
+- Finsternis: Lichtsteine schimmern im Dunkeln. Einsturz: Die Bruchlinie bleibt im Gang.
+- Hinterhalt in den Unteren Archiven: Gitter statt Wurzeln.
+
+### Bedienung
+- Erwachte mit Affixen: Name und Affixe stehen in zwei kurzen Zeilen; in dichten Gruppen überdecken sich die Namen nicht mehr.
+- Ein schon geschaffter Schwierigkeitsgrad bleibt immer wählbar; die Rückkehr-Zusammenfassung liegt nicht mehr über offenen Fenstern.
+- Alle Expeditionen sind im Browser durchgespielt – Ereignisse, Mini-Bosse, Bossmechaniken und alle Schwierigkeitsgrade.
+
 ## 0.9.0 – Quellwarte und Expeditionen
 _26.11.2026_
 
