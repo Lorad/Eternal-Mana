@@ -398,8 +398,15 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Oberfläche:** `client/src/ui/expedition.tsx` (Auswahl, Bereitschaft, HUD, Abschluss, Zusammenfassung), `ui/exp-net.ts`,
   Rückfalltabelle der Grafik `client/src/game/expart.ts`.
 - **Werkzeuge:** `npx tsx scripts/expdump.ts [id]` (ASCII-Karte und Prüfung), `npx tsx scripts/exp-playtest.ts` (ganze Läufe mit dem
-  Spielermodell: sorgsam/zügig, allein/zu zweit), `tests/expedition.test.ts`, `tests/e2e/expedition.mjs`. Dev-Befehle: `/portal`,
-  `/expfrei`, `/exp id [schwierigkeit]`, `/expgo abschnitt [mitte]`, `/expphase 2|3`, `/expsieg`.
+  Spielermodell: sorgsam/zügig, allein/zu zweit), `tests/expedition.test.ts`, Browser: `tests/e2e/expedition.mjs` (Wurzeltiefe, allein
+  und zu zweit), `expeditionen.mjs` und `expeditionen-spaet.mjs` (die übrigen fünf und die geheime: Ereignis, Mini-Boss, Signatur
+  wirklich ausgelöst, Phasen, Abschluss; Plan und Ablauf in `tests/e2e/lib/`), `expedition-grade.mjs` (Schwer bis Mythisch: Affixe,
+  Zusatzangriff, Helfer, Wut, Zusatztruhen, mythische Beute). Last: `npx tsx scripts/load-check.ts --exp [id] [--boss]` (Vierergruppe).
+  Dev-Befehle: `/portal`, `/expfrei [spuren]` (`spuren`: geheime bleiben unentdeckt), `/exp id [schwierigkeit]`,
+  `/expgo abschnitt [mitte]`, `/expphase 2|3`, `/expwut` (Wut in drei Sekunden), `/expsieg`, `/mythisch` (mythisches Stück am Boden).
+- **Lesbarkeit:** Erwachte mit Affixen zeigen Name und Affixe in zwei Zeilen; in dichten Gruppen blendet `GameScene.declutterMobLabels`
+  verdeckte Namen aus (der nächste gewinnt). Ansturm-Muster enden vor Wänden und Hindernissen (`BossCtl.dashLine`); der Ansturm aus
+  den gewöhnlichen Mustern des Kristallkolosses fragt die Mechanik (`EchoMech.charged`).
 
 ## Tests
 

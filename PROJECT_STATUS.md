@@ -22,9 +22,15 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
 Ein Großteil von 0.10 ist schon in 0.9 enthalten (alle Expeditionen, Schwierigkeitsgrade, Wochen-Herausforderung, Bestzeiten,
 zehn Plätze). Offen bleibt:
 
-- **Im Browser durchgespielt** ist nur die Wurzeltiefe (allein und zu zweit) und der ganze Hub. Die anderen fünf Expeditionen,
-  die geheime Expedition, die Ereignisse Finsternis, Flut und Einsturz und alle Grade ab Schwer sind durch Tests und Bot-Läufe
-  geprüft, nicht im Browser. Die Prismensäulen des Kristallkolosses haben die Bots nie benutzt.
+- **Im Browser durchgespielt** sind alle sieben Expeditionen (`tests/e2e/expedition*.mjs`): je Portal, Mini-Boss, Ereignis
+  (Hinterhalt, Finsternis, Flut, Einsturz), die Signatur des Endbosses wirklich ausgelöst (Prismensäule, Kühlkette, Stillstand,
+  Tintenfass, wanderndes Licht), Phasen, Abschluss, Rückkehr; die geheime Expedition über ihre Spur entdeckt; Schwer, Albtraum
+  und Mythisch an der Singenden Tiefe. Mit Dev-Befehlen abgekürzt: Normale Gegner und Bosse fallen per `/kill`/`/expsieg`, nicht
+  im echten Kampf; Rätsel, Fallen, Schlüssel und das Einschlagen der geheimen Wände sind nur durch Tests und Bots geprüft.
+- **Einsturz-Jagd** (Gießerei, Hof) ist kurz: Die ferne Mündung liegt 10–14 Kacheln vom Zugang, die Bruchkante startet nach 1,6 s
+  mit 46 px/s – wer losläuft, ist nach gut zwei Sekunden durch. Spannung bräuchte einen längeren Weg (Karte) oder eine schnellere Kante.
+- **Leistung, vier Spieler in einer Expedition** (`load-check.ts --exp`, Singende Tiefe): Takt im Mittel unter 1 ms (p99 ≈ 5 ms),
+  Snapshots im Mittel ≈ 1,7 kB, ≈ 34 kB/s je Spieler beim Durchkämpfen; im Bosskampf weniger.
 - **Dauer:** Bot-Läufe auf Normal brauchen allein 14–19 Minuten, zu zweit 11–19 (`scripts/exp-playtest.ts`). Schnelle Läufe
   von Wurzeltiefe und Gießerei liegen knapp unter 15 Minuten.
 - **Tempo:** Ein Abschluss bringt etwa zwei Stufen – mehr als die alten Dungeons. Der Tempo-Test misst noch die alten Karten.
@@ -32,8 +38,7 @@ zehn Plätze). Offen bleibt:
   ist stärker als vorher (×1,34 statt ×1,19). Keine legendären Zweithand-Stücke.
 - **Gruppen:** mit höchstens zwei echten Browsern geprüft. Gruppen-Instanzen und Gruppengesuche überleben keinen Neustart.
 - Händler-Wechsel um Mitternacht nur mit gestellter Uhr geprüft; Gamepad in Hub-Fenstern und Inventar-Puppe nicht mit echtem Pad.
-- Noch nicht gebaut (0.11): eigene Endspiel-Expeditionen, Abstimmung der Balance über die neue Länge, Leistungsmessung mit
-  vier Spielern in einer Expedition.
+- Noch nicht gebaut (0.11): eigene Endspiel-Expeditionen, Abstimmung der Balance über die neue Länge.
 
 ### Offene Punkte nach 0.8
 
