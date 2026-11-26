@@ -1,11 +1,13 @@
 /** Weltkarte (stilisierte Pergamentkarte mit Schnellreise) und Karte der aktuellen Zone. */
+import { charGS, fmtGS } from '../../../../shared/src/gearscore';
+import { gsColor, zoneRecGS } from '../../../../shared/src/data/gsreq';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { useStore } from '../../state/store';
 import { RANK_NAMES, factionOfZone, rankIn } from '../../../../shared/src/data/factions';
 import { HUB_ZONE_DEF, WORLD_LINKS, ZONES, ZONE_LIST } from '../../../../shared/src/data/zones';
 import type { ZoneDef } from '../../../../shared/src/data/zones';
-import { Btn, Tabs, Window, closePanel, cx, send, sfx } from '../common';
+import { Btn, GS_HELP, GsValue, Tabs, Window, closePanel, cx, send, sfx } from '../common';
 import { ZoneMapCanvas } from '../mapview';
 import { HomeTravel } from '../home';
 import { HubTravel } from '../hub';
@@ -134,6 +136,7 @@ function ZoneInfo({ id }: { id: string }) {
           {fac && char && z.kind === 'overworld' && <p class="note">{fac.name}: <b>{RANK_NAMES[rankIn(char, fac.id) - 1]}</b></p>}
           {evs.map(e => <p class="note winfo-ev"><b>{e.boss ? 'Weltboss' : 'Ereignis'}:</b> {e.name}</p>)}
           {z.kind === 'dungeon' && <p class="note">{parent ? `Eingang in: ${parent.name}. ` : ''}Dungeons setzen sich zurück, sobald sie leer sind. Am Ende wartet ein Boss.</p>}
+          {char && <p class="note winfo-gs" title={GS_HELP}>Empfohlener Ausrüstungswert: <b style={{ color: gsColor(zoneRecGS(z.level)) }}>GS {fmtGS(zoneRecGS(z.level))}</b> · deiner: <GsValue gs={charGS(char)} short /></p>}
           {level < z.level[0] - 2 && <p class="note bad">Die Gegner hier sind deutlich stärker als du.</p>}
           {z.kind === 'overworld' && (
             <div class="winfo-travel">

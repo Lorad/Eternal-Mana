@@ -146,6 +146,9 @@ export function trialRequirement(): GsReq {
   return finish({ recLevel: CFG.player.maxLevel, recGS: gsAtStage(T.stufe), minGS: gsAtStage(T.unlock), tier: 'raid', reward: `Gegenstandsstufe ${CFG.rift.ilvl(T.stufe)}`, basis: `Riss-Ausrüstung ${T.stufe} empfohlen, ${T.unlock} mindestens` });
 }
 
+/** Gebiete und alte Dungeons der Welt: typische Ausrüstung auf der unteren Gegnerstufe (nur Anzeige auf der Weltkarte) */
+export function zoneRecGS(level: readonly [number, number]): number { return gsAtLevel('typisch', level[0]); }
+
 // =====================================================================================================================
 //  Prüfung für eine Gruppe (Bereitschaft, Portal, Server)
 // =====================================================================================================================

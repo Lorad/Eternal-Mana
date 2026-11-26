@@ -154,6 +154,7 @@ Herleitung (`expRequirement`, `riftRequirement`, `trialRequirement`):
 | Tiefe t (über Mythisch) | Riss-Ausrüstung 20 + t | Riss-Ausrüstung 15 + t | **Raid-Endgame** |
 | Mana-Riss, Stufe s | Riss-Ausrüstung s | Riss-Ausrüstung s − 5 (mind. Ende der Geschichte) | Endspiel, ab 20 **Raid-Endgame** |
 | Prüfung der Sieben | Riss-Ausrüstung 18 (ihre Stufe) | Riss-Ausrüstung 15 (ab der sie offen ist) | **Raid-Endgame** |
+| Gebiet oder alter Dungeon der Welt (nur Anzeige auf der Weltkarte) | typisch auf der unteren Gegnerstufe | – | – |
 
 Endspiel-Stufen über 30 gehen weiter zu „alles Legendär +10“ (35) und „alles Mythisch +10“ (40); Tiefe 15 verlangt damit
 Legendär +10, Tiefe 20 Mythisch +10. Die Zuordnung der Grade zu Riss-Ausrüstung ist die des Spieltests
@@ -208,6 +209,7 @@ Mana-Risse ab Stufe 20. Ein künftiger Raid legt nur seine Werte fest (`GsReqDec
 - **Quellwarte:** Gruppenbereich (Spieler in der Warte und Gesuche am Brett), Trophäenhalle (Statistik), Portal
   (je Expedition die Empfehlung auf Normal, je Grad die Empfehlung, für den gewählten Grad und die Tiefe der Kasten mit
   empfohlen / mindestens / dein Wert / Belohnungsstufe / Beute und die Warnung), Riss-Stein (je Stufe und Prüfung der Sieben).
+- **Weltkarte:** je bekanntem Gebiet der empfohlene Wert neben dem eigenen.
 
 ## Neu einmessen
 
