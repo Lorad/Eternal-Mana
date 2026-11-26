@@ -14,7 +14,10 @@ export function markerItems(out: Item[]): void {
     p.outline(mix(r[0], INK, 0.55));
     p.set(4, 2, WHITE);
   });
+  // Questzeichen in der Farbe der Questart: gold = Hauptquest, grün = Nebenquest, blau = wiederholbar (Gold behält den alten Namen)
   mark('exclaim', EX, P.gold); mark('question', QU, P.gold); mark('question_grey', QU, P.steel);
+  mark('exclaim_side', EX, P.green); mark('question_side', QU, P.green);
+  mark('exclaim_repeat', EX, P.blue); mark('question_repeat', QU, P.blue);
   one(out, 'bubble', 16, 14, (p) => {
     p.rrect(1, 1, 14, 9, WHITE); p.rect(2, 9, 12, 1, P.snow[2]); p.rect(14, 3, 1, 6, P.snow[2]);
     p.poly([[4, 10], [4, 13], [8, 10]], WHITE); p.set(4, 11, P.snow[2]);

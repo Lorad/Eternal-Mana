@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2 – Questzeichen in Farbe
+
+- `npcMark` (`shared/src/data/quests.ts`) liefert Art (abgeben/Angebot/laufend) und Farbe (Haupt/Neben/wiederholbar);
+  Vorrang Abgeben > Angebot > laufend, innerhalb gleicher Art Haupt > Neben > wiederholbar. Neue Marker-Frames
+  `exclaim_side|repeat`, `question_side|repeat`; Karte, Minikarte, Gesprächsoptionen und Questverfolgung färben mit.
+
 ## 0.11.1 – Zwischenspeicher der Grafiken
 
 - `tools/export-assets.ts` hängt jeder Datei im Manifest eine Inhaltskennung an (`?v=<sha1>`); der Server

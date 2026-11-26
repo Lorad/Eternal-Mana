@@ -15,7 +15,7 @@ import { SEASON_TINT } from '../../../shared/src/data/events';
 import { routineState } from '../../../shared/src/data/routines';
 import { activeTreasure } from '../../../shared/src/world';
 import { NPCS } from '../../../shared/src/data/npcs';
-import { npcMarker } from '../../../shared/src/data/quests';
+import { npcMark } from '../../../shared/src/data/quests';
 import { SKILLS, skillMp } from '../../../shared/src/data/skills';
 import { ECHOES, objVisible, type CineStep } from '../../../shared/src/data/story';
 import { ZONES } from '../../../shared/src/data/zones';
@@ -1257,7 +1257,7 @@ export class GameScene extends Phaser.Scene {
       // 0.6: Objekte der Weltsysteme tragen `props.mark` (star, trader, enc); Ereignisorte kommen aus dem Weltzustand
       const wmark = (v: ObjView): string | null => (v.o.type === 'dig' ? 'dig' : v.o.props?.mark && v.o.props.mark !== 'event' ? v.o.props.mark : null);
       live.objs = [...this.objs.values()].filter(v => !v.hidden && !v.o.props?.anchor && (wmark(v) || ['npc', 'exit', 'stone', 'chest', 'shard', 'node', 'board', 'riftstone'].includes(v.o.type)))
-        .map(v => { const w = wmark(v); return { x: v.o.x, y: v.o.y, type: w ? 'w_' + w : v.o.type, state: v.o.state, mark: !w && v.o.type === 'npc' ? npcMarker(c, v.o.tag!) : null, label: v.o.props?.label }; });
+        .map(v => { const w = wmark(v), nm = !w && v.o.type === 'npc' ? npcMark(c, v.o.tag!) : null; return { x: v.o.x, y: v.o.y, type: w ? 'w_' + w : v.o.type, state: v.o.state, mark: nm?.m ?? null, tone: nm?.tone, label: v.o.props?.label }; });
     }
   }
 
@@ -1493,9 +1493,9 @@ export class GameScene extends Phaser.Scene {
           s.setFrame(f).setFlipX(flip);
           v.shadows[0]?.setFrame(f).setFlipX(flip);
           if (refreshMarks) {
-            const m = npcMarker(c, o.tag!);
+            const m = npcMark(c, o.tag!), sfx = m?.tone === 'main' ? '' : '_' + m?.tone;
             v.marker!.setVisible(!!m);
-            if (m) v.marker!.setFrame(m === 'turnin' ? 'question' : m === 'offer' ? 'exclaim' : 'question_grey');
+            if (m) v.marker!.setFrame(m.m === 'turnin' ? 'question' + sfx : m.m === 'offer' ? 'exclaim' + sfx : 'question_grey');
           }
           if (v.marker!.visible) v.marker!.y = o.y - 50 + Math.sin(now / 250) * 1.5;
           break;

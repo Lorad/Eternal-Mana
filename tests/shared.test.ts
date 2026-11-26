@@ -150,3 +150,18 @@ describe('Kampf & Balancing', () => {
     expect(questAvailable(c, QUESTS.r_gruenwald)).toBe(true);
   });
 });
+
+describe('Questzeichen über NPCs (Art und Farbe)', () => {
+  it('Abgeben (?) vor Angebot (!) vor laufender Quest; Farbe folgt der Questart', async () => {
+    const { npcMark, markTone, QUESTS } = await import('../shared/src/data/quests');
+    const c = newCharacter('T', 'krieger');
+    expect(npcMark(c, 'mirelda')).toEqual({ m: 'offer', tone: 'main' });
+    expect(markTone('side')).toBe('side'); expect(markTone('group')).toBe('side'); expect(markTone('repeat')).toBe('repeat');
+    const r = QUESTS.r_gruenwald;
+    c.level = r.level;
+    c.quests.r_gruenwald = { s: 'active', p: r.objectives.map(() => 0) };
+    expect(npcMark(c, r.turnIn ?? r.giver)?.m).not.toBe('turnin');
+    c.quests.r_gruenwald = { s: 'active', p: r.objectives.map(o => ('n' in o ? (o as any).n : 1)) };
+    expect(npcMark(c, r.turnIn ?? r.giver)).toEqual({ m: 'turnin', tone: 'repeat' });
+  });
+});

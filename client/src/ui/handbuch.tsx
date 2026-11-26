@@ -110,7 +110,8 @@ const ALL = [
       <Facts rows={[
         [<>Gelbes <b class="hb-q">!</b></>, <>Hier gibt es eine Aufgabe. Hingehen und <K a="interact" /> drücken.</>],
         [<>Gelbes <b class="hb-q">?</b></>, 'Hier gibst du eine erfüllte Aufgabe ab und bekommst die Belohnung.'],
-        ['Questverfolgung', <>Rechts im Bild stehen deine nächsten Ziele. <K a="tracker" /> klappt sie ein und aus, ein Klick öffnet das Questlog (<K a="quests" />). Im Mana-Riss und im Bosskampf klappt sie sich von selbst ein.</>],
+        ['Questverfolgung', <>Rechts im Bild stehen deine nächsten Ziele. <K a="tracker" /> klappt sie ein und aus, ein Klick öffnet das Questlog (<K a="quests" />). In Mana-Riss, Expedition und Bosskampf klappt sie sich von selbst ein.</>],
+        ['Questzeichen', <>Über den Köpfen: <b>!</b> – eine Quest oder ein wichtiges Gespräch wartet, <b>?</b> – eine Quest ist bereit zum Abgeben, graues <b>?</b> – läuft noch. Die Farbe zeigt die Art: <b style={{ color: '#ffd23e' }}>gold</b> Hauptquest, <b style={{ color: '#8fdc4e' }}>grün</b> Nebenquest, <b style={{ color: '#58a6ea' }}>blau</b> wiederholbar.</>],
         ['Karte', <>Oben rechts die Umgebung, mit <K a="map" /> die ganze Welt. Marken zeigen Auftraggeber, Ausgänge, Quellsteine und Ereignisse.</>],
         ['Quellsteine', 'Berühren heilt, setzt deinen Rückkehrpunkt und schaltet den Stein für die Schnellreise frei (Weltkarte, während du an einem Quellstein stehst).'],
         ['Speichern', `Automatisch alle ${CFG.save.autosaveSec} Sekunden, bei jedem Zonenwechsel, Questabschluss und Bosssieg. Du musst nichts tun.`],

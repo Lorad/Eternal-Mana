@@ -408,20 +408,35 @@ export function chapterOf(c: CharData): number {
   return n;
 }
 /** Welche Questmarkierung trägt ein NPC für diesen Charakter? */
-export function npcMarker(c: CharData, npcId: string): 'turnin' | 'offer' | 'progress' | null {
-  let offer = false, progress = false;
+/** Farbe eines Questzeichens: Hauptquest, Nebenquest (auch Gruppenquests und Gesprächsthemen ohne Quest), Wiederholbar */
+export type MarkTone = 'main' | 'side' | 'repeat';
+export type MarkKind = 'turnin' | 'offer' | 'progress';
+export const markTone = (t: QuestDef['type'] | undefined): MarkTone => (t === 'main' ? 'main' : t === 'repeat' ? 'repeat' : 'side');
+const TONE_RANK: Record<MarkTone, number> = { main: 3, side: 2, repeat: 1 };
+
+/**
+ * Zeichen über einem NPC: Abgeben (?) vor Angebot (!) vor laufender Quest (graues ?). Innerhalb derselben Art bestimmt die
+ * wichtigste Quest die Farbe (Haupt- vor Neben- vor wiederholbarer Quest).
+ */
+export function npcMark(c: CharData, npcId: string): { m: MarkKind; tone: MarkTone } | null {
+  let best: { m: MarkKind; tone: MarkTone } | null = null;
+  const KIND_RANK: Record<MarkKind, number> = { turnin: 3, offer: 2, progress: 1 };
+  const take = (m: MarkKind, tone: MarkTone) => {
+    if (!best || KIND_RANK[m] > KIND_RANK[best.m] || (m === best.m && TONE_RANK[tone] > TONE_RANK[best.tone])) best = { m, tone };
+  };
   for (const q of QUEST_LIST) {
-    const st = c.quests[q.id];
+    const st = c.quests[q.id], tone = markTone(q.type);
     if (st?.s === 'active') {
-      if ((q.turnIn ?? q.giver) === npcId) { if (questComplete(c, q)) return 'turnin'; progress = true; }
+      if ((q.turnIn ?? q.giver) === npcId) take(questComplete(c, q) ? 'turnin' : 'progress', tone);
       // Gesprächsziele
-      q.objectives.forEach((o, i) => { if (o.t === 'talk' && o.npc === npcId && (st.p[i] ?? 0) < 1) offer = true; });
-    } else if (q.giver === npcId && questAvailable(c, q) && c.level >= q.level - 3) offer = true;
+      q.objectives.forEach((o, i) => { if (o.t === 'talk' && o.npc === npcId && (st.p[i] ?? 0) < 1) take('offer', tone); });
+    } else if (q.giver === npcId && questAvailable(c, q) && c.level >= q.level - 3) take('offer', tone);
   }
-  // wichtige Gesprächsthemen (Dialogbäume) zählen wie ein Angebot
-  if (!offer) for (const t of TOPICS) if (t.npc === npcId && t.hot && condOk(c, t.hot) && condOk(c, t.if)) { offer = true; break; }
-  return offer ? 'offer' : progress ? 'progress' : null;
+  // wichtige Gesprächsthemen (Dialogbäume) zählen wie ein Angebot – in der Farbe der Quest, zu der sie gehören
+  for (const t of TOPICS) if (t.npc === npcId && t.hot && condOk(c, t.hot) && condOk(c, t.if)) take('offer', markTone(t.hot.active ? QUESTS[t.hot.active]?.type : undefined));
+  return best;
 }
+export function npcMarker(c: CharData, npcId: string): MarkKind | null { return npcMark(c, npcId)?.m ?? null; }
 
 export const STORY: Record<string, { title: string; lines: string[] }> = {
   intro: { title: 'Eternal Mana', lines: [

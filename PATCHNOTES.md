@@ -3,6 +3,13 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.11.2 – Questzeichen in Farbe
+_26.11.2026_
+
+- **Questzeichen zeigen die Art der Quest:** gold für Hauptquests, grün für Nebenquests, blau für wiederholbare Aufträge – über den Köpfen, auf Karte und Minikarte und im Gespräch.
+- **Abgeben:** Ist eine Quest bereit zum Abschließen, steht ein **?** in ihrer Farbe über dem NPC; läuft sie noch, ein graues **?**. Abgeben hat Vorrang vor neuen Angeboten.
+- Die Questverfolgung trägt am Rand dieselbe Farbe; das Handbuch erklärt die Zeichen unter „Questzeichen“.
+
 ## 0.11.1 – Richtige Symbole
 _26.11.2026_
 

@@ -243,7 +243,7 @@ export const FX_FRAMES = [
   'leaf', 'snowflake', 'raindrop', 'ember', 'mote', // Wetter-Partikel 4-8 px
   'heal_plus',                                    // 8x8 Pluszeichen
   'rune_circle',                                  // 64x64 magischer Kreis (Telegraph/Zauber)
-  'exclaim', 'question', 'question_grey',         // 12x16 Questmarker (gelb !, gelb ?, grau ?) – farbig
+  'exclaim', 'question', 'question_grey', 'exclaim_side', 'question_side', 'exclaim_repeat', 'question_repeat', // 12x18 Questmarker: gold Hauptquest, grün Nebenquest, blau wiederholbar, grau ? laufend
   'bubble',                                       // 16x14 Sprechblase "…" – farbig
   'target',                                       // 24x12 Ziel-/Auswahl-Ellipse
   'status_burn', 'status_slow', 'status_stun', 'status_poison', 'status_buff', 'status_shield', // 8x8 Status-Icons – farbig

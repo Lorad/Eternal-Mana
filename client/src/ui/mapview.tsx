@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { live } from '../state/live';
 import { store } from '../state/store';
-import { npcMarker } from '../../../shared/src/data/quests';
+import { npcMark } from '../../../shared/src/data/quests';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { objVisible } from '../../../shared/src/data/story';
 import { ZONES } from '../../../shared/src/data/zones';
@@ -78,7 +78,7 @@ export function mapCanvas(zone: string): { cv: HTMLCanvasElement; map: GameMap }
   return { cv, map };
 }
 
-export interface Marker { x: number; y: number; type: string; mark?: 'offer' | 'turnin' | 'progress' | null; label?: string; state?: number }
+export interface Marker { x: number; y: number; type: string; mark?: 'offer' | 'turnin' | 'progress' | null; tone?: 'main' | 'side' | 'repeat'; label?: string; state?: number }
 
 /** Eigene Position in Weltpixeln (aus der Spielszene; sonst aus dem Spielstand). */
 export function selfPos(zone: string): { x: number; y: number } {
@@ -94,7 +94,7 @@ export function staticMarkers(map: GameMap): Marker[] {
   const out: Marker[] = [];
   for (const o of map.objects) {
     if (!objVisible(c, o) || o.props?.anchor) continue; // Story-Objekte mit Bedingung (0.3)
-    if (o.type === 'npc') out.push({ x: o.x, y: o.y, type: 'npc', mark: c && o.tag ? npcMarker(c, o.tag) : null, label: o.tag ? NPCS[o.tag]?.name : undefined });
+    if (o.type === 'npc') { const nm = c && o.tag ? npcMark(c, o.tag) : null; out.push({ x: o.x, y: o.y, type: 'npc', mark: nm?.m ?? null, tone: nm?.tone, label: o.tag ? NPCS[o.tag]?.name : undefined }); }
     else if (o.type === 'exit') out.push({ x: o.x, y: o.y, type: 'exit', label: o.props?.label ?? ZONES[o.props?.to]?.name });
     else if (o.type === 'stone') out.push({ x: o.x, y: o.y, type: 'stone', label: 'Quellstein' });
     else if (o.type === 'board') out.push({ x: o.x, y: o.y, type: 'board', label: 'Auftragsbrett' });
@@ -114,6 +114,9 @@ const WORLD_MARKS = new Set(['w_star', 'w_trader', 'w_enc', 'w_dig']);
 function diamond(ctx: CanvasRenderingContext2D, x: number, y: number, r: number) { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
 function outlined(ctx: CanvasRenderingContext2D, fill: string) { ctx.lineWidth = 2; ctx.strokeStyle = '#05060a'; ctx.stroke(); ctx.fillStyle = fill; ctx.fill(); }
 
+/** Farben der Questzeichen (wie die Zeichen über den Köpfen): gold Hauptquest, grün Nebenquest, blau wiederholbar */
+export const QUEST_TONE_COLOR = { main: '#ffd23e', side: '#8fdc4e', repeat: '#58a6ea' } as const;
+
 /** Zeichnet einen Marker. u = Größe einer "Einheit" in Canvas-Pixeln. */
 export function drawMarker(ctx: CanvasRenderingContext2D, m: Marker, x: number, y: number, u: number) {
   switch (m.type) {
@@ -123,7 +126,7 @@ export function drawMarker(ctx: CanvasRenderingContext2D, m: Marker, x: number, 
         ctx.font = `900 ${Math.round(u * 6.5)}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
         const ch = m.mark === 'offer' ? '!' : '?';
         ctx.lineWidth = 3; ctx.strokeStyle = '#05060a'; ctx.strokeText(ch, x, y - u * 2.2);
-        ctx.fillStyle = m.mark === 'progress' ? '#aab0c4' : '#ffd23e'; ctx.fillText(ch, x, y - u * 2.2);
+        ctx.fillStyle = m.mark === 'progress' ? '#aab0c4' : QUEST_TONE_COLOR[m.tone ?? 'main']; ctx.fillText(ch, x, y - u * 2.2);
       }
       break;
     }

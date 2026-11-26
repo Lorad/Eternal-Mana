@@ -512,7 +512,7 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `woodpile` | 28×20 | 1 | Weltdeko · Modul `objects/gruenwald.ts` |
 | `woodpile_snow` | 28×20 | 1 | Weltdeko · Modul `objects/frost.ts` |
 
-## Atlas: fx (318 Frames, 1024×729)
+## Atlas: fx (322 Frames, 1024×730)
 
 | Name | Größe | Frames | Herkunft / Verwendung |
 |---|---|---|---|
@@ -544,6 +544,8 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `dust_run` | 12×8 | 4 (`_0…_3`) | Effekt |
 | `ember` | 3×3 | 2 (`_0…_1`) | Wetter/Umgebung |
 | `exclaim` | 12×18 | 1 | Weltmarker |
+| `exclaim_repeat` | 12×18 | 1 | Weltmarker |
+| `exclaim_side` | 12×18 | 1 | Weltmarker |
 | `explosion_dark` | 64×64 | 8 (`_0…_7`) | Explosion |
 | `explosion_earth` | 64×64 | 8 (`_0…_7`) | Explosion |
 | `explosion_fire` | 64×64 | 8 (`_0…_7`) | Explosion |
@@ -572,6 +574,8 @@ Quelle jeder Grafik ist ein Zeichenprogramm in `client/src/gfx/` (siehe `docs/AR
 | `px` | 2×2 | 1 | Effekt |
 | `question` | 12×18 | 1 | Weltmarker |
 | `question_grey` | 12×18 | 1 | Weltmarker |
+| `question_repeat` | 12×18 | 1 | Weltmarker |
+| `question_side` | 12×18 | 1 | Weltmarker |
 | `rain_splash` | 8×5 | 3 (`_0…_2`) | Wetter/Umgebung |
 | `raindrop` | 2×10 | 1 | Wetter/Umgebung |
 | `ring` | 64×64 | 1 | Effekt |

@@ -10,7 +10,7 @@ export const live = {
   /** aktive Gegner */
   mobs: [] as { x: number; y: number; boss: boolean; rare?: boolean }[],
   /** sichtbare Objekte für die Minimap: type = 'npc'|'exit'|'stone'|'chest'|'shard'|'node'|…; mark = Questmarker */
-  objs: [] as { x: number; y: number; type: string; state: number; mark?: 'offer' | 'turnin' | 'progress' | null; label?: string }[],
+  objs: [] as { x: number; y: number; type: string; state: number; mark?: 'offer' | 'turnin' | 'progress' | null; tone?: 'main' | 'side' | 'repeat'; label?: string }[],
   fps: 60,
   /** Leistungsanzeige (0.8): die Spielszene und das Netz füllen diese Werte zweimal je Sekunde */
   perf: { fps: 0, ms: 0, worst: 0, mobs: 0, players: 0, objs: 0, projs: 0, draw: 0, tex: 0, snaps: 0, inKb: 0 },

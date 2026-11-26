@@ -95,6 +95,8 @@
 .qt-q b { font: 700 13px var(--serif); color: var(--parch); letter-spacing: .02em; }
 .qt-q.main { border-right-color: var(--gold); }
 .qt-q.main b { color: var(--gold-hi); }
+.qt-q.side { border-right-color: #8fdc4e; }
+.qt-q.repeat { border-right-color: #58a6ea; }
 .qt-mark { font-style: normal; margin-right: 5px; font-size: 10px; color: var(--gold); }
 .qt-o.done { color: var(--good); opacity: .8; }
 .qt-q.ready { border-right-color: var(--quest); box-shadow: inset 0 0 0 1px rgba(255, 215, 94, .45); animation: qt-ready 1.3s ease-in-out infinite alternate; }

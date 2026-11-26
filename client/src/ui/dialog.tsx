@@ -6,7 +6,7 @@ import { CFG, RARITY_COLOR } from '../../../shared/src/config';
 import { ITEMS, TIER_MATERIAL, baseMods, isGear, itemName, itemPrice, sellPrice, tierOf } from '../../../shared/src/data/items';
 import { NPCS, shopStock } from '../../../shared/src/data/npcs';
 import { TOPIC, topicsOf } from '../../../shared/src/data/dialoge';
-import { QUEST_LIST, condOk, questAvailable, questComplete, questText } from '../../../shared/src/data/quests';
+import { QUESTS, QUEST_LIST, condOk, markTone, questAvailable, questComplete, questText, type MarkTone } from '../../../shared/src/data/quests';
 import type { QuestDef } from '../../../shared/src/data/quests';
 import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
@@ -77,13 +77,13 @@ function Dialog({ npc }: { npc: string }) {
       <>
         <Speech>{line}</Speech>
         <div class="dlg-options">
-          {turnIns.map(q => <Opt mark="?" kind="turnin" onClick={() => setView({ k: 'quest', id: q.id, mode: 'turnin', page: 0 })}>{q.name} <small>abschließen</small></Opt>)}
+          {turnIns.map(q => <Opt mark="?" kind="turnin" tone={markTone(q.type)} onClick={() => setView({ k: 'quest', id: q.id, mode: 'turnin', page: 0 })}>{q.name} <small>abschließen</small></Opt>)}
           {offers.map(q => {
             const low = char.level < q.level - 3;
-            return <Opt mark="!" kind="offer" disabled={low} onClick={() => setView({ k: 'quest', id: q.id, mode: 'offer', page: 0 })}>{q.name} <small>{low ? `Empfohlen ab Stufe ${q.level - 3}` : `${QUEST_TYPE[q.type]} · Stufe ${q.level}`}</small></Opt>;
+            return <Opt mark="!" kind="offer" tone={markTone(q.type)} disabled={low} onClick={() => setView({ k: 'quest', id: q.id, mode: 'offer', page: 0 })}>{q.name} <small>{low ? `Empfohlen ab Stufe ${q.level - 3}` : `${QUEST_TYPE[q.type]} · Stufe ${q.level}`}</small></Opt>;
           })}
           {running.map(q => <Opt mark="…" kind="progress" onClick={() => setView({ k: 'quest', id: q.id, mode: 'progress', page: 0 })}>{q.name} <small>läuft</small></Opt>)}
-          {topics.map(t => { const hot = !!t.hot && condOk(char, t.hot); return <Opt mark={hot ? '!' : '❝'} kind={hot ? 'offer' : undefined} onClick={() => send({ t: 'dlgOpen', npc, topic: t.id })}>{t.label}</Opt>; })}
+          {topics.map(t => { const hot = !!t.hot && condOk(char, t.hot); return <Opt mark={hot ? '!' : '❝'} kind={hot ? 'offer' : undefined} tone={hot ? markTone(t.hot!.active ? QUESTS[t.hot!.active]?.type : undefined) : undefined} onClick={() => send({ t: 'dlgOpen', npc, topic: t.id })}>{t.label}</Opt>; })}
           {def.shop && <Opt mark="◈" onClick={() => setView({ k: 'shop' })}>Handeln</Opt>}
           {def.services?.includes('upgrade') && <Opt mark="⚒" onClick={() => setView({ k: 'upgrade' })}>Ausrüstung verbessern</Opt>}
           {def.services?.includes('respec') && <Opt mark="↺" onClick={() => setView({ k: 'respec' })}>Fähigkeiten und Attribute zurücksetzen</Opt>}
@@ -128,11 +128,11 @@ function Dialog({ npc }: { npc: string }) {
 function Speech({ children }: { children: ComponentChildren }) {
   return <div class="speech"><p>{children}</p></div>;
 }
-function Opt(p: { mark: string; kind?: string; onClick: () => void; children: ComponentChildren; disabled?: boolean; autofocus?: boolean }) {
+function Opt(p: { mark: string; kind?: string; tone?: MarkTone; onClick: () => void; children: ComponentChildren; disabled?: boolean; autofocus?: boolean }) {
   return (
     <button type="button" class={cx('opt', p.kind && 'opt-' + p.kind)} disabled={p.disabled} ref={el => { if (el && p.autofocus && !el.dataset.f) { el.dataset.f = '1'; el.focus({ preventScroll: true }); } }}
       onClick={() => { sfx('ui_click'); p.onClick(); }}>
-      <i class="opt-mark">{p.mark}</i><span class="grow">{p.children}</span>
+      <i class={cx('opt-mark', p.tone && p.tone !== 'main' && 'tone-' + p.tone)}>{p.mark}</i><span class="grow">{p.children}</span>
     </button>
   );
 }
@@ -172,7 +172,7 @@ function QuestTalk({ q, mode, npc, char, back }: { q: QuestDef; mode: 'offer' | 
   useEffect(() => { if (!stillValid) back(); }, [stillValid]);
   return (
     <>
-      <div class="dlg-qhead"><span class={cx('opt-mark', mode === 'progress' && 'grey')}>{mode === 'offer' ? '!' : '?'}</span><b>{q.name}</b><small>{QUEST_TYPE[q.type]} · Stufe {q.level}</small>{lines.length > 1 && <span class="dlg-page">{page + 1} / {lines.length}</span>}</div>
+      <div class="dlg-qhead"><span class={cx('opt-mark', mode === 'progress' ? 'grey' : q.type !== 'main' && 'tone-' + markTone(q.type))}>{mode === 'offer' ? '!' : '?'}</span><b>{q.name}</b><small>{QUEST_TYPE[q.type]} · Stufe {q.level}</small>{lines.length > 1 && <span class="dlg-page">{page + 1} / {lines.length}</span>}</div>
       <Speech><span key={page} class="speech-line">{lines[Math.min(page, lines.length - 1)]}</span></Speech>
       {last && (
         <div class="dlg-qinfo">

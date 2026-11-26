@@ -244,6 +244,9 @@
 .opt-mark { flex: none; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font: 900 16px/1 var(--serif); font-style: normal; color: var(--dim); background: rgba(255, 255, 255, .06); border-radius: 50%; }
 .opt-turnin .opt-mark, .opt-offer .opt-mark, .dlg-qhead .opt-mark { background: var(--quest); color: #2a1c05; }
 .opt-progress .opt-mark, .opt-mark.grey { background: #5c6488; color: #fff; }
+/* Farbe der Questart wie über den Köpfen: grün Nebenquest, blau wiederholbar (gold Hauptquest ist der Standard oben) */
+.opt-mark.tone-side { background: #8fdc4e; color: #12260a; }
+.opt-mark.tone-repeat { background: #58a6ea; color: #0a1a33; }
 .opt-bye { color: var(--dim); }
 .dlg-qhead { display: flex; align-items: center; gap: 10px; }
 .dlg-qhead b { font: 700 18px var(--serif); color: var(--gold-hi); letter-spacing: .02em; }
