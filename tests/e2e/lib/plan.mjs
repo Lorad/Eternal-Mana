@@ -62,9 +62,15 @@ export async function playExpeditions(prefix, ids) {
       if (x.discover) {
         const d = (await a.objs('discover'))[0];
         if (!d) throw new Error('keine Spur in der Schatzkammer');
-        await a.walkTo(d.x, d.y + 16, { near: 8 });
-        await a.use();
-        await a.has('Eine geheime Expedition ist entdeckt', 6000);
+        // Die Inschrift der Kammer steht gleich daneben – von der abgewandten Seite herantreten, sonst liest E die Inschrift
+        const lore = (await a.objs('lore')).sort((u, v) => Math.hypot(u.x - d.x, u.y - d.y) - Math.hypot(v.x - d.x, v.y - d.y))[0];
+        const ux = lore ? d.x - lore.x : 0, uy = lore ? d.y - lore.y : 1, ul = Math.hypot(ux, uy) || 1;
+        for (let i = 0; ; i++) {
+          await a.reach(d.x + (ux / ul) * 14, d.y + (uy / ul) * 14 + 4, 'Spur');
+          await a.use();
+          try { await a.has('Eine geheime Expedition ist entdeckt', 4000); break; }
+          catch (e) { if (i >= 1) throw e; a.notes.push('Spur: E las die Inschrift daneben'); await a.esc(); await a.goto(d.x, d.y + 10); }
+        }
         await a.shot(`${n}-spur`);
       }
     });
