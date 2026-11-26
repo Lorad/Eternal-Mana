@@ -16,6 +16,7 @@ import type { Zone } from '../server/src/zone';
 import { acc } from '../server/src/home/state';
 import { generateGear } from '../shared/src/data/items';
 import { Rng } from '../shared/src/util/rng';
+import { circleFree } from '../shared/src/collision';
 
 const sim = new Sim();
 afterAll(() => sim.close());
@@ -307,12 +308,28 @@ describe('Expeditionen – Ereignisse und Bosse', () => {
     const run = (id: string, cls: 'paladin' = 'paladin') => { const t = sim.join('Si' + id.slice(4, 9), cls, EXPEDITIONS[id].rec); const z = startSolo(t, 'normal', id), r = z.map.bossRoom!; t.p.god = true; t.p.x = (r.cx + 0.5) * TILE; t.p.y = (r.cy + 3) * TILE; sim.step(0.4); return { t, z, b: z.boss! }; };
     { const { t, z, b } = run('exp_gruenwald'); expect([...z.mobs.values()].some(m => m.def.id === 'xm_knospe')).toBe(true); expect(b.mob.vuln).toBeLessThan(0.5);
       for (const m of [...z.mobs.values()]) if (m.def.id === 'xm_knospe') z.killMob(m); sim.step(0.2); expect(b.mob.vuln).toBe(1); sim.leave(t); }
-    { const { t, b } = run('exp_kristall'); expect(b.mob.vuln).toBeLessThan(0.5); sim.leave(t); }
     { const { t, z, b } = run('exp_glut'); const chain = [...z.objs.values()].find(o => o.props?.kind === 'chain')!; expect(chain).toBeTruthy();
       sim.step(9); t.p.x = chain.x; t.p.y = chain.y + 12; t.send({ t: 'interact', id: chain.id }); sim.step(0.1); expect(b.mob.vuln).toBeGreaterThan(1.5); sim.leave(t); }
     { const { t } = run('exp_frost'); sim.step(14); t.p.god = false; t.p.char.level = 40; t.p.recalc();
       let hit = false; for (let i = 0; i < 200 && !hit; i++) { t.p.x += i % 2 ? 8 : -8; t.p.iframesUntil = 0; t.p.hp = t.p.stats.maxHp; sim.step(0.05); hit = t.p.statuses.has('freeze'); }
       expect(hit, 'Bewegung im Stillstand friert ein').toBe(true); sim.leave(t); }
+    { const { t, z, b } = run('exp_kristall'); const r = z.map.bossRoom!, mech = (b as any).echo, kit = b.kit();
+      const pillars = () => [...z.mobs.values()].filter(m => m.def.id === 'xm_prisma' && !m.dead);
+      expect(b.mob.vuln).toBeLessThan(0.5); expect(pillars().length).toBe(4);
+      // Der Ansturm endet in jeder Richtung auf begehbarem Boden – die Arena ist nicht rechteckig
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * Math.PI * 2;
+        b.mob.x = (r.cx + 0.5) * TILE; b.mob.y = (r.cy + 0.5) * TILE; t.p.x = b.mob.x + Math.cos(a) * 50; t.p.y = b.mob.y + Math.sin(a) * 50;
+        const g = mech.pattern(kit); g.next(); g.next();
+        expect(circleFree(z.solidWalk, b.mob.x, b.mob.y, 8), `Ansturm Richtung ${i}`).toBe(true);
+      }
+      // auch der Ansturm aus Phase 2/3 zerschlägt eine Säule (dann taumelt er) – ohne Säule hält der Panzer
+      sim.step(6); for (const m of pillars()) z.killMob(m); mech.phase(kit, 2); sim.step(0.1);
+      const p0 = pillars()[0], n = pillars().length, x0 = p0.x + (r.cx * TILE - p0.x) * 0.6, y0 = p0.y + (r.cy * TILE - p0.y) * 0.6;
+      expect(mech.charged(kit, x0, y0, p0.x + (p0.x - x0) * 0.2, p0.y + (p0.y - y0) * 0.2)).toBeGreaterThan(3);
+      expect(pillars().length).toBe(n - 1); sim.step(0.1); expect(b.mob.vuln).toBeGreaterThan(1.5);
+      sim.step(6); expect(mech.charged(kit, x0, y0, x0 + 1, y0 + 1)).toBeGreaterThan(0); sim.step(0.1); expect(b.mob.vuln).toBeLessThan(0.5);
+      sim.leave(t); }
     { const { t, z } = run('exp_ruinen'); sim.step(10.5); const mech = (z.boss as any); expect(t.p.statuses.has('mark')).toBe(true);
       const ink = [...z.objs.values()].find(o => o.props?.kind === 'ink')!; t.p.x = ink.x; t.p.y = ink.y + 10; sim.step(0.2); expect(t.p.statuses.has('mark')).toBe(false); void mech; sim.leave(t); }
   });

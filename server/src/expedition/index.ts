@@ -24,6 +24,7 @@ import { NPCS } from '../../../shared/src/data/npcs';
 import { kreisBossDef, kreisLevel, kreisOf } from '../../../shared/src/data/rifts';
 import { ZONES, type ZoneDef } from '../../../shared/src/data/zones';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
+import { rarityTable } from '../../../shared/src/rarity';
 import type { ExpSection } from '../../../shared/src/maps/expedition';
 import { runeLabel } from '../../../shared/src/maps/expedition';
 import { TILE } from '../../../shared/src/maps/tiles';
@@ -640,7 +641,8 @@ export const Expedition = {
         if (o.looted!.has(p.charId)) return true;
         o.looted!.add(p.charId);
         p.pev.push({ k: 'obj', id: o.id, state: 1 }, { k: 'sfx', n: 'chest_open' });
-        const r = zone.rng, ilvl = zone.def.level[1] + 2, w = [0, 0, 30, 50, 20];
+        // Zusatztruhen: Episch aufwärts; „Mythisch“ mit dem Truhen-Gewicht des Grads (CFG.loot.mythic.expedition – nur auf Mythisch)
+        const r = zone.rng, ilvl = zone.def.level[1] + 2, w = rarityTable([0, 0, 30, 50, 20], CFG.loot.mythic.expedition[run.diff]?.[0] ?? 0);
         p.give(generateGear(r, ilvl, Math.max(3, rollRarity(r, w)), p.char.cls));
         p.give(makeStack('gem', r.int(1, 3)));
         return true;
