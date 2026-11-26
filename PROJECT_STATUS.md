@@ -50,6 +50,10 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
   Gruppen in Tiefen sind ungemessen (Bots zu zweit hängen dort fest). Wachfeuer und Herztöne benutzen vorhandene Kunst
   (Feuerschale, Kristall). Bestenliste nur serverweit, ohne Zeitraum.
 
+- **Browser-Durchläufe 0.11.0:** 13 Skripte. Im gemeinsamen Lauf mit zwei parallelen Jobs (`npm run test:e2e:all`, 45 Minuten
+  auf 4 Kernen) scheitern unter Last gelegentlich zeitkritische Schritte (zuletzt `coop`: Reaktion zu zweit, `welt`: seltenes
+  Monster); einzeln laufen alle durch. Auf schwachen Rechnern `EM_JOBS=1` und `EM_TIMEOUT=2400` verwenden.
+
 ### Offene Punkte nach 0.8
 
 Alle Inhalte der Roadmap sind umgesetzt. Was bleibt, betrifft vor allem das, was nur Menschen beurteilen können:
