@@ -4,6 +4,8 @@
 import { CFG } from '../../shared/src/config';
 import { CLASS_IDS } from '../../shared/src/data/classes';
 import { BOSSES, ENEMIES } from '../../shared/src/data/enemies';
+import { EXPEDITION_LIST, EXPEDITIONS, EXP_CFG, EXP_DIFF } from '../../shared/src/data/expeditions';
+import { Expedition } from '../../server/src/expedition';
 import { QUEST_LIST } from '../../shared/src/data/quests';
 import { ZONES } from '../../shared/src/data/zones';
 import { getMap } from '../../shared/src/maps/mapgen';
@@ -99,9 +101,34 @@ export const CHAPTERS: Chapter[] = [
     side: ['h_erde', 'h_licht', 'h_feuer', 'h_wasser', 'h_wind', 'h_herz', 'c_mirelda_1', 'c_mirelda_2', 'c_borin_1', 'c_borin_2', 'c_hedda_1', 'c_hedda_2', 'c_jorund_1', 'c_sen_1', 'c_ayla_1'] },
   { id: '10', name: 'Quellgrund und Herz', region: 'quellgrund', dungeon: 'herz', boss: 'aetherion', main: ['m_abstieg', 'm_tor', 'm_albtraum', 'm_entscheidung', 'm_epilog'], side: ['c_fenwick_1', 'c_fenwick_2', 'c_rakhan_1', 'c_rakhan_2', 'c_liora_1', 'c_liora_2', 'c_jorund_2', 'c_sen_2', 'c_ayla_2', 'c_borin_3'] },
 ];
-export interface PaceRow { ch: string; name: string; enter: number; atBoss: number; bossLevel: number; zone: [number, number]; leave: number; xpQuests: number; xpKills: number; xpBoss: number; gold: number; kills: number }
+export interface PaceRow { ch: string; name: string; enter: number; atBoss: number; bossLevel: number; zone: [number, number]; leave: number; xpQuests: number; xpKills: number; xpBoss: number; gold: number; kills: number; /** 0.11: Expedition statt des alten Dungeons */ exp?: string }
 
 const Q = Object.fromEntries(QUEST_LIST.map(q => [q.id, q]));
+/** 0.11: Expedition, die den alten Dungeon eines Kapitels ersetzt (seit 0.9 führt dessen Eingang dorthin) */
+export const expeditionOf = (dungeon: string) => EXPEDITION_LIST.find(x => x.legacy === dungeon);
+/** Stufe des Endbosses einer Expedition auf Normal (wie Expedition.bossDef) */
+export const expBossLevel = (id: string) => { const x = EXPEDITIONS[id]; return Math.max(BOSSES[x.boss].level, x.level[1] + 1); };
+export interface ExpXp { mobs: number; minis: number; event: number; clear: number; kills: number; gold: number }
+/**
+ * 0.11: Erfahrung eines ersten Abschlusses auf Normal (allein) für einen Spieler der Stufe `plvl`: alle Gegner der Karte (mit dem
+ * Faktor der Expedition und den Erwachten des Schwierigkeitsgrads), Mini-Bosse, die Wellen des Ereignisses, der Abschluss.
+ * Gerechnet, nicht gespielt – `scripts/exp-playtest.ts` misst dieselbe Größe mit Bots (Abgleich in docs/GAME_DESIGN.md).
+ */
+export function expeditionXp(id: string, plvl: number): ExpXp {
+  const x = EXPEDITIONS[id], m = getMap(id), f = Expedition.xpFactor(id), d = EXP_DIFF.normal;
+  const [l0, l1] = x.level, pen = (l: number) => CFG.enemy.xpLevelPenalty(plvl, l);
+  const one = (mob: string, lvl: number, elite: number) => CFG.enemy.xp(lvl) * ENEMIES[mob].xpMul * f * elite * pen(lvl);
+  let mobs = 0, gold = 0;
+  for (const s of m.spawns) { mobs += one(s.mob, s.lvl, s.elite ? 3 : 1 + d.elite * 2); gold += CFG.enemy.gold(s.lvl) * 0.5 * EXP_CFG.mobGold * (s.elite ? 4 : 1 + d.elite * 3); }
+  const n = m.exp!.minis.length;
+  const minis = m.exp!.minis.reduce((a, mi, k) => { const l = l0 + 1 + Math.round(((l1 - l0) * k) / Math.max(1, n)); return a + one(mi.mini, l, 1); }, 0);
+  // Ereignis: Hinterhalt vier Wellen (5, 7, 9, 11 Gegner allein), Finsternis rund acht Schatten; Einsturz und Flut ohne Gegner
+  const mix = x.mobs[1], w = mix.reduce((a, [, k]) => a + k, 0), mixMul = mix.reduce((a, [id2, k]) => a + ENEMIES[id2].xpMul * k, 0) / w;
+  const evN = x.event === 'ambush' ? 32 : x.event === 'darkness' ? 8 : 0, evL = x.event === 'ambush' ? l0 + Math.round((l1 - l0) * 0.7) : l1 - 1;
+  const event = evN * CFG.enemy.xp(evL) * mixMul * f * pen(evL);
+  const b = BOSSES[x.boss];
+  return { mobs, minis, event, clear: b.xp * EXP_CFG.clearXp, kills: m.spawns.length + n + evN, gold: gold + b.gold * EXP_CFG.clearGold };
+}
 /** mittlere Erfahrung eines Gegners der Zone (Mischung der Karte, Erwachte eingerechnet) auf Spielerstufe `plvl` */
 function zoneXp(zoneId: string, plvl: number): number {
   const m = getMap(zoneId);
@@ -119,12 +146,14 @@ function zoneGold(zoneId: string): number {
  * Rechnet die Stufe entlang der Geschichte. `side` = Anteil der Nebenaufgaben (0..1), `kills` = besiegte Gegner je Oberwelt-Gebiet
  * (ein Spieler, der Nebenaufgaben macht, kommt an rund 60 vorbei; wer nur der Hauptlinie folgt, an rund 35).
  */
-export function pacing(side: number, kills: number): PaceRow[] {
+export function pacing(side: number, kills: number, o: { old?: boolean } = {}): PaceRow[] {
   let level = 1, xp = 0;
   const gain = (n: number) => { xp += n; while (level < CFG.player.maxLevel && xp >= CFG.xpToNext(level)) { xp -= CFG.xpToNext(level); level++; } };
   const out: PaceRow[] = [];
   for (const ch of CHAPTERS) {
-    const row: PaceRow = { ch: ch.id, name: ch.name, enter: level, atBoss: 0, bossLevel: BOSSES[ch.boss].level, zone: ZONES[ch.region].level, leave: 0, xpQuests: 0, xpKills: 0, xpBoss: 0, gold: 0, kills: 0 };
+    // seit 0.9 führt der Eingang des alten Dungeons in die Expedition der Region (Normal); `old` rechnet wie bis 0.8
+    const xd = o.old ? undefined : expeditionOf(ch.dungeon);
+    const row: PaceRow = { ch: ch.id, name: ch.name, enter: level, atBoss: 0, bossLevel: xd ? expBossLevel(xd.id) : BOSSES[ch.boss].level, zone: ZONES[ch.region].level, leave: 0, xpQuests: 0, xpKills: 0, xpBoss: 0, gold: 0, kills: 0, exp: xd?.id };
     const bi = ch.main.findIndex(id => Q[id].objectives.some(o => o.t === 'boss'));
     const quests = [...ch.main.slice(0, bi), ...ch.side.slice(0, Math.round(ch.side.length * side))];
     // Oberwelt: Gegner und Aufgaben abwechselnd (Aufgaben in vier Portionen)
@@ -134,12 +163,19 @@ export function pacing(side: number, kills: number): PaceRow[] {
       for (const id of quests.filter((_, i) => i % 4 === part)) { const q = Q[id]; if (!q) continue; gain(q.rewards.xp); row.xpQuests += q.rewards.xp; row.gold += q.rewards.gold; }
     }
     if (ch.repeat && side >= 0.5) { const q = Q[ch.repeat]; gain(q.rewards.xp); row.xpQuests += q.rewards.xp; row.gold += q.rewards.gold; }
-    // Dungeon: alle Gegner auf dem Weg
-    const dm = getMap(ch.dungeon);
-    for (let k = 0; k < dm.spawns.length; k++) { const x = zoneXp(ch.dungeon, level); gain(x); row.xpKills += x; row.gold += zoneGold(ch.dungeon); row.kills++; }
-    row.atBoss = level;
     const b = BOSSES[ch.boss];
-    gain(b.xp); row.xpBoss = b.xp; row.gold += b.gold;
+    if (xd) {
+      // Expedition: Gegner, Mini-Bosse und Ereignis in vier Portionen (die Stufe steigt unterwegs), dann der Endboss und der Abschluss
+      for (let part = 0; part < 4; part++) { const e = expeditionXp(xd.id, level), x = (e.mobs + e.minis + e.event) / 4; gain(x); row.xpKills += x; row.gold += (e.gold - b.gold * EXP_CFG.clearGold) / 4; row.kills += Math.round(e.kills / 4); }
+      row.atBoss = level;
+      const c = b.xp * EXP_CFG.clearXp; gain(c); row.xpBoss = c; row.gold += b.gold * EXP_CFG.clearGold;
+    } else {
+      // Dungeon: alle Gegner auf dem Weg
+      const dm = getMap(ch.dungeon);
+      for (let k = 0; k < dm.spawns.length; k++) { const x = zoneXp(ch.dungeon, level); gain(x); row.xpKills += x; row.gold += zoneGold(ch.dungeon); row.kills++; }
+      row.atBoss = level;
+      gain(b.xp); row.xpBoss = b.xp; row.gold += b.gold;
+    }
     // die Boss-Aufgabe wird nach dem Sieg abgegeben; in Kapitel 10 folgen noch Entscheidung und Epilog
     for (const id of ch.main.slice(bi)) { const q = Q[id]; gain(q.rewards.xp); row.xpQuests += q.rewards.xp; row.gold += q.rewards.gold; }
     row.leave = level;

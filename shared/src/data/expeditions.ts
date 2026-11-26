@@ -115,12 +115,17 @@ export interface ExpReq { text: string; cond?: Cond; level?: number; item?: stri
 // =====================================================================================================================
 export const EXP_CFG = {
   /** Erfahrung aus gewöhnlichen Gegnern: alle Gegner einer Expedition zusammen bringen so viel wie die des alten Dungeons
-   *  ihrer Region mal diesen Faktor (die Expedition ist zehnmal so lang – die Geschichte soll trotzdem nicht davonlaufen) */
-  mobXpVsOld: 2,
+   *  ihrer Region mal diesen Faktor (die Expedition ist zehnmal so lang – die Geschichte soll trotzdem nicht davonlaufen).
+   *  0.11: 2 → 1,25 und Abschluss 1,2 → 1,0 – ein erster Abschluss auf Normal bringt bei empfohlener Stufe knapp zwei Stufen,
+   *  mit Nebenaufgaben steht man am Endboss 0 bis 2 Stufen über ihm (Tempo-Test: tests/balance.test.ts, docs/GAME_DESIGN.md) */
+  mobXpVsOld: 1.25,
+  /** 0.11: Gold, das gewöhnliche Gegner in Expeditionen fallen lassen (dreihundert Gegner statt zwanzig – sonst druckt die
+   *  Expedition Gold; mit 0,6 bringt Akt I rund die Hälfte mehr als bis 0.8, weil zehn Plätze doppelt so viel Verbessern kosten) */
+  mobGold: 0.6,
   /** Faktor auf die Gegnergruppen jedes Abschnitts (Feinabstimmung der Spieldauer, gemessen mit scripts/exp-playtest.ts) */
   groupMul: 1.8,
   /** Abschluss: Erfahrung und Gold als Vielfaches der Boss-Werte; Wiederholungen bringen weniger */
-  clearXp: 1.2, clearGold: 1.4, repeatMul: 0.55,
+  clearXp: 1, clearGold: 1.4, repeatMul: 0.55,
   /** Beute des Abschlusses: Teile, Rohstoffe der Region, Chance auf Legendär (zusätzlich zum Raritätswurf) */
   gear: 2, mats: [3, 6] as [number, number], legendary: 0.04, rare: 0.12,
   /** Wöchentliche Herausforderung: Faktor auf Erfahrung und Gold, zusätzliche Teile */

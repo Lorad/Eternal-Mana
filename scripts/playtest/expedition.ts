@@ -7,7 +7,7 @@
  * Zahlen für die Zeitaufschläge stehen in THINK.
  */
 import { CFG } from '../../shared/src/config';
-import { EXPEDITIONS } from '../../shared/src/data/expeditions';
+import { EXPEDITIONS, isoWeek, weeklyFlag } from '../../shared/src/data/expeditions';
 import type { Difficulty } from '../../shared/src/data/hub';
 import { RUNE_SYMBOLS, type ExpSection } from '../../shared/src/maps/expedition';
 import { TILE } from '../../shared/src/maps/tiles';
@@ -48,7 +48,15 @@ export const THINK = {
   sorgsam: { sign: 7, lore: 12, puzzle: 40, chest: 2, secret: 20, look: 6 },
   zuegig: { sign: 2, lore: 4, puzzle: 55, chest: 1, secret: 10, look: 1.5 },
 };
-export interface ExpRunResult { ok: boolean; sec: number; deaths: number; potions: number; stuck: number; bossSec: number; minis: number; secrets: number; kills: number; byRole: Record<string, number> }
+export interface ExpRunResult {
+  ok: boolean; sec: number; deaths: number; potions: number; stuck: number; bossSec: number; minis: number; secrets: number; kills: number; byRole: Record<string, number>;
+  /** 0.11: Erfahrung und Gold je Teilnehmer (Gegner, Mini-Bosse, Abschluss) und daraus die Stufen, die ein Lauf bringt (bei Stufe 40 gedeckelt) */
+  xp: number; xpClear: number; gold: number; levels: number;
+}
+/** Gesamte Erfahrung eines Standes (Stufe + Fortschritt) – für die Stufen, die ein Lauf bringt */
+export function totalXp(level: number, xp: number): number { let n = xp; for (let l = 1; l < level; l++) n += CFG.xpToNext(l); return n; }
+/** Stufe (mit Bruchteil) zu einer Gesamterfahrung */
+export function levelOf(total: number): number { let l = 1; while (l < CFG.player.maxLevel && total >= CFG.xpToNext(l)) { total -= CFG.xpToNext(l); l++; } return l + (l < CFG.player.maxLevel ? total / CFG.xpToNext(l) : 0); }
 
 type Task =
   | { k: 'go'; x: number; y: number; sec?: ExpSection; why: string }
@@ -61,6 +69,7 @@ type Task =
   | { k: 'mini'; sec: ExpSection }
   | { k: 'boss' };
 
+const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const inSec = (s: ExpSection, x: number, y: number, pad = 0) => x >= (s.x0 + pad) * TILE && x < (s.x1 + 1 - pad) * TILE && y >= (s.y0 + pad) * TILE && y < (s.y1 + 1 - pad) * TILE;
 
 export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Skill, style: Style, seed: number, diff: Difficulty = 'normal', maxSec = 3600): ExpRunResult {
@@ -71,6 +80,7 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
   for (const b of bots) {
     for (const r of x.unlock) { if (r.cond?.flag) b.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started) b.p.char.quests[a.started] = { s: 'active', p: [0] }; }
     if (diff !== 'normal') b.p.char.expeditions = { [id]: { clears: { normal: 1, schwer: 1, albtraum: 1 } } };
+    b.p.char.flags[weeklyFlag(isoWeek(Date.now()))] = 1; // 0.11: ohne den Bonus der Wochen-Herausforderung – die Messung hängt nicht vom Kalender ab
     game.transfer(b.p, 'gruenwald', '');
     const o = [...b.p.zone.objs.values()].find(q => q.props?.kind === 'portal')!;
     lab.place(b.p, o.x, o.y + 20);
@@ -118,6 +128,7 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
   // ---- Durchführen
   const navs = bots.map(() => new Nav(z));
   const t0 = game.now, d0 = bots.map(b => b.p.char.deaths);
+  const xp0 = bots.map(b => totalXp(b.p.char.level, b.p.char.xp)), g0 = bots.map(b => b.p.char.gold), lv0 = xp0.map(levelOf);
   const moved = new Map<Bot, { x: number; y: number; at: number; until: number }>();
   const byRole: Record<string, number> = {};
   let ti = 0, taskAt = game.now, stuck = 0, bossSec = 0, waitUntil = 0, navAt = 0, lastProg = game.now, lastPos = { x: 0, y: 0 };
@@ -229,9 +240,13 @@ export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Sk
     if (still && now >= still.at - 0.3 && now < still.until) (game as any).tick(1 / CFG.net.tickRate); else lab.step(bots);
   }
   if (tasks[ti]) next();
+  const xpNow = bots.map(b => totalXp(b.p.char.level, b.p.char.xp));
+  const clear = [...run.results.values()];
   const res: ExpRunResult = {
     ok: !!run.done, sec: run.done ? run.done.sec : game.now - t0, deaths: bots.reduce((a, b, i) => a + b.p.char.deaths - d0[i], 0), potions: bots.reduce((a, b) => a + b.potions, 0),
     stuck, bossSec, minis: run.minis.size, secrets: run.secrets.size, kills: run.kills, byRole,
+    xp: mean(xpNow.map((v, i) => v - xp0[i])), xpClear: mean(clear.map(r => r.xp)), gold: mean(bots.map((b, i) => b.p.char.gold - g0[i])),
+    levels: mean(xpNow.map((v, i) => levelOf(v) - lv0[i])),
   };
   for (const b of bots) lab.leave(b);
   game.zones.delete(z.key);

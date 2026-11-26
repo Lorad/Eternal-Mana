@@ -503,6 +503,8 @@ function mobXpFactor(id: string): number {
 export const Expedition = {
   portals(map: GameMap): Obj[] { return expeditionPortals(map); },
   mobXp(zone: Zone): number { return mobXpFactor(zone.exp!.exp); },
+  /** Faktor auf die Erfahrung gewöhnlicher Gegner einer Expedition (für den Tempo-Test, scripts/playtest/measure.ts) */
+  xpFactor(id: string): number { return mobXpFactor(id); },
   dressExits(zone: Zone) { for (const o of zone.objs.values()) { const id = o.type === 'exit' ? EXP_BY_LEGACY[o.props?.to] : undefined; if (id) o.props = { ...o.props, label: EXPEDITIONS[id].name }; } },
   /** Zonendefinition der Instanz: Stufen nach Kreis und Schwierigkeitsgrad */
   zoneDef(id: string, diff: Difficulty, kreis: number): ZoneDef {

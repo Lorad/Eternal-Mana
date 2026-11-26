@@ -3,6 +3,7 @@
  */
 import { angleDiff, circleFree, distToSegment, lineClear, moveCircle } from '../../shared/src/collision';
 import { CFG } from '../../shared/src/config';
+import { EXP_CFG } from '../../shared/src/data/expeditions';
 import { CLASSES } from '../../shared/src/data/classes';
 import { BOSSES, ENEMIES, type EnemyDef } from '../../shared/src/data/enemies';
 import { ITEMS, TIER_MATERIAL, generateGear, itemName, makeStack, rollRarity, tierOf } from '../../shared/src/data/items';
@@ -377,7 +378,7 @@ export class Zone {
     const L = CFG.loot, r = this.rng;
     const at = () => [m.x + r.range(-10, 10), m.y + r.range(-8, 8)] as const;
     if (r.chance(m.elite ? 1 : 0.5)) {
-      const g = Math.max(1, Math.round(CFG.enemy.gold(m.lvl) * r.range(0.7, 1.3) * (m.elite ? 4 : 1) * (1 + p.stats.goldPct / 100)));
+      const g = Math.max(1, Math.round(CFG.enemy.gold(m.lvl) * r.range(0.7, 1.3) * (m.elite ? 4 : 1) * (this.exp ? EXP_CFG.mobGold : 1) * (1 + p.stats.goldPct / 100))); // 0.11: Expeditionen mit weniger Gold je Gegner
       this.dropGoldFor(p, g, ...at());
     }
     if (r.chance(m.elite ? L.eliteGearChance : L.gearChance)) {

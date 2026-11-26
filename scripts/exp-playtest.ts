@@ -37,6 +37,16 @@ export function expeditionTable(list: string[], n: number) {
     }
     console.log(`| ${x.name} | ${x.rec} | ${cells.join(' | ')} |`);
   }
+  // 0.11: Tempo – was ein Lauf (erster Abschluss auf Normal, empfohlene Stufe) an Erfahrung, Stufen und Gold bringt
+  console.log('');
+  console.log('| Expedition | St. | Stufen je Lauf (sorgsam / zügig, allein) | Erfahrung (zügig) | davon Abschluss | Gold (zügig) | Stufen zu zweit (zügig) |');
+  console.log('|---|---|---|---|---|---|---|');
+  const of = (id: string, style: Style, party: number) => (rows as any[]).find(q => q.id === id && q.style === style && q.party === party)?.runs as ExpRunResult[] ?? [];
+  for (const id of list) {
+    const x = EXPEDITIONS[id], s1 = of(id, 'sorgsam', 1), z1 = of(id, 'zuegig', 1), z2 = of(id, 'zuegig', 2);
+    const m = (a: ExpRunResult[], f: (q: ExpRunResult) => number) => mean(a.filter(q => q.ok).map(f));
+    console.log(`| ${x.name} | ${x.rec} | ${m(s1, q => q.levels).toFixed(2)} / ${m(z1, q => q.levels).toFixed(2)} | ${Math.round(m(z1, q => q.xp))} | ${Math.round(m(z1, q => q.xpClear))} | ${Math.round(m(z1, q => q.gold))} | ${m(z2, q => q.levels).toFixed(2)} |`);
+  }
   return rows;
 }
 const list = ids.length ? ids : EXPEDITION_LIST.filter(x => !x.secret).map(x => x.id);
