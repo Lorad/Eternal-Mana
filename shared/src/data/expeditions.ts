@@ -16,6 +16,7 @@ import { condOk, type Cond } from './cond';
 import { DIFFICULTIES, DIFFICULTY_NAME, type Difficulty, type DungeonRecord } from './hub';
 import type { ZoneDef } from './zones';
 import type { BiomeId } from '../maps/tiles';
+import { ENDGAME_LIST, ENDGAME_MINIS } from './expeditions_endgame';
 
 // =====================================================================================================================
 //  Abschnittsplan
@@ -105,10 +106,14 @@ export interface ExpeditionDef {
   rare: string;
   dark: number;
   mapPos: [number, number];
+  /** 0.11: Endspiel-Expedition (Stufe 40, Bosse aus Akt II): eigene Belohnung, nicht in der Wochen-Herausforderung */
+  endgame?: boolean;
+  /** 0.11: alter Dungeon, an dem sich die Erfahrung der Gegner bemisst, ohne dessen Eingang zu übernehmen (Endspiel) */
+  xpRef?: string;
 }
 
 /** Eine Freischaltbedingung mit Anzeige. Erfüllt, wenn `cond` zutrifft, die Stufe reicht und der Gegenstand im Rucksack liegt. */
-export interface ExpReq { text: string; cond?: Cond; level?: number; item?: string }
+export interface ExpReq { text: string; cond?: Cond; level?: number; item?: string; /** 0.11: diese Expedition mindestens einmal abgeschlossen */ exp?: string }
 
 // =====================================================================================================================
 //  Zahlen
@@ -246,6 +251,8 @@ export const MINI_LIST: MiniDef[] = [
   M({ id: 'xm_mahrkoenigin', name: 'Die Mahrkönigin', title: 'Mutter der Albträume', sprite: 'nachtmahr', tint: 0xff90c0, scale: 1.7, element: 'dark',
     hpMul: 33, dmgMul: 1.4, defMul: 1, speed: 90, radius: 13, ai: 'charge', pattern: ['adds', 'ring', 'rain'], every: 3.6, adds: ['leerenbrut'],
     intro: 'Sie träumt dich gerade. Es ist kein schöner Traum.' }),
+  // ---- Endspiel (0.11): data/expeditions_endgame.ts
+  ...ENDGAME_MINIS,
 ];
 export const MINIS: Record<string, MiniDef> = Object.fromEntries(MINI_LIST.map(m => [m.id, m]));
 
@@ -469,6 +476,8 @@ export const EXPEDITION_LIST: ExpeditionDef[] = [
       S({ id: 'nachwort', name: 'Das Nachwort', shape: 'chamber', role: 'reward', via: 'gate', look: 1 }),
     ],
   }),
+  // =================================================================== ENDSPIEL (0.11): Die Lange Wacht, Das Atmende Herz – data/expeditions_endgame.ts
+  ...ENDGAME_LIST,
 ];
 export const EXPEDITIONS: Record<string, ExpeditionDef> = Object.fromEntries(EXPEDITION_LIST.map(x => [x.id, x]));
 /** alter Dungeon → Expedition, die seinen Eingang übernimmt */
@@ -492,6 +501,7 @@ export interface ReqState { text: string; ok: boolean }
 export function reqOk(c: CharData, r: ExpReq): boolean {
   if (r.level !== undefined && c.level < r.level) return false;
   if (r.item && !c.inv.some(i => i.base === r.item)) return false;
+  if (r.exp && !totalClears(c.expeditions?.[r.exp])) return false;
   return condOk(c, r.cond);
 }
 /** Ist die Expedition (auf Normal) freigeschaltet? Mit Begründung je Bedingung für die Anzeige. */
@@ -535,6 +545,7 @@ export function sanitizeExp(c: CharData) {
       if (Array.isArray(r.secrets)) rec.secrets = [...new Set(r.secrets.filter((s: any) => typeof s === 'string' && s.length < 40))].slice(0, 40) as string[];
       if (Array.isArray(r.minis)) rec.minis = [...new Set(r.minis.filter((s: any) => typeof s === 'string' && s.length < 40))].slice(0, 40) as string[];
       if (num(r.first, 1e15)) rec.first = num(r.first, 1e15);
+      if (num(r.deep, 99)) { rec.deep = num(r.deep, 99); if (num(r.deepSec, 1e7)) rec.deepSec = num(r.deepSec, 1e7); } // 0.11: Tiefen
       out[id] = rec;
     }
     c.expeditions = out;
@@ -569,7 +580,7 @@ function hashStr(s: string): number { let h = 2166136261; for (let i = 0; i < s.
 export interface Weekly { week: string; exp: string; diff: Difficulty; mods: WeeklyMod[] }
 /** Die Herausforderung einer Woche: eine (nicht geheime) Expedition, ein Schwierigkeitsgrad (Normal oder Schwer) und zwei Modifikatoren. */
 export function weeklyChallenge(week: string): Weekly {
-  const pool = EXPEDITION_LIST.filter(x => !x.secret);
+  const pool = EXPEDITION_LIST.filter(x => !x.secret && !x.endgame); // 0.11: Endspiel-Expeditionen nicht – nicht jeder kommt hinein
   const h = hashStr('woche:' + week);
   const exp = pool[h % pool.length].id;
   const diff: Difficulty = (h >>> 8) % 3 === 0 ? 'schwer' : 'normal';

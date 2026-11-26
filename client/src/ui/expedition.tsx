@@ -7,7 +7,8 @@
 import { useRef, useState } from 'preact/hooks';
 import { RARITY_COLOR } from '../../../shared/src/config';
 import { BOSSES } from '../../../shared/src/data/enemies';
-import { DIFFICULTIES, DIFFICULTY_NAME, EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, MINIS, WEEKLY_MOD, diffBlock, expUnlock, fmtSec, isExpedition, type WeeklyMod } from '../../../shared/src/data/expeditions';
+import { DIFFICULTIES, DIFFICULTY_NAME, EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, MINIS, WEEKLY_MOD, WEEKLY_MODS, diffBlock, expUnlock, fmtSec, isExpedition, isoWeek, type WeeklyMod } from '../../../shared/src/data/expeditions';
+import { DEPTH_CFG, depthBlock, depthMods, depthOpen } from '../../../shared/src/data/expeditions_endgame';
 import type { Difficulty } from '../../../shared/src/data/hub';
 import { ITEMS } from '../../../shared/src/data/items';
 import { BIOME_MATS } from '../../../shared/src/data/materials';
@@ -22,6 +23,10 @@ import './styles/expedition.css';
 
 export const openExpedition = openExpeditionState;
 const REGION: Record<string, string> = { gruenwald: 'Grünwald', kristall: 'Kristallhöhlen', glut: 'Glutlande', frost: 'Frostgebirge', ruinen: 'Verlorene Ruinen', schatten: 'Schattenreich' };
+/** Region in der Anzeige (0.11: „Das Atmende Herz“ liegt unter dem Quellgrund) */
+const regionOf = (x: { region: string; parent: string }) => (x.parent === 'quellgrund' ? 'Quellgrund' : REGION[x.region]);
+/** Modifikatoren einer Tiefe in dieser Woche, als Namen (0.11) */
+export const depthModNames = (id: string, depth: number) => depthMods(isoWeek(Date.now()), id, depth, WEEKLY_MODS).map(m => WEEKLY_MOD[m]);
 
 // ------------------------------------------------------------------ Auswahlfenster
 export function ExpeditionWindow() {
@@ -35,6 +40,7 @@ export function ExpeditionWindow() {
   const list = EXPEDITION_LIST.filter(x => char && expUnlock(char, x.id).visible);
   const [sel, setSel] = useState<string>(lobby?.exp ?? list.find(x => char && expUnlock(char, x.id).ok && !(char.expeditions?.[x.id]?.clears.normal))?.id ?? list[0]?.id);
   const [diff, setDiff] = useState<Difficulty>((lobby?.diff as Difficulty) ?? 'normal');
+  const [depth, setDepth] = useState<number>(lobby?.depth ?? 0);
   if (!win || !char) return null;
   const x = EXPEDITIONS[lobby?.exp ?? sel] ?? list[0];
   if (!x) return null;
@@ -44,13 +50,15 @@ export function ExpeditionWindow() {
   const minis = new Set<string>();
   const walk = (s: typeof x.sections[number]) => { if (s.mini) minis.add(s.mini); for (const w of s.side ?? []) walk(w); };
   x.sections.forEach(walk);
-  const block = diffBlock(char, x.id, diff);
+  // 0.11: Tiefen – nur auf Mythisch, Stufe um Stufe
+  const open = depthOpen(char, x.id), dep = diff === 'mythisch' ? Math.min(depth, open) : 0;
+  const block = diffBlock(char, x.id, diff) ?? (dep ? depthBlock(char, x.id, dep) : null);
   return (
     <Window title="Expeditionen" onClose={close} class="win-exp" icon="map">
       {weekly && <WeeklyBanner w={weekly} />}
       {running && (
         <div class="xp-running card">
-          <span>Deine Gruppe ist in <b>{EXPEDITIONS[running.exp]?.name}</b> ({DIFFICULTY_NAME[running.diff as Difficulty]}) – {running.n} drin.</span>
+          <span>Deine Gruppe ist in <b>{EXPEDITIONS[running.exp]?.name}</b> ({DIFFICULTY_NAME[running.diff as Difficulty]}{running.depth ? `, Tiefe ${running.depth}` : ''}) – {running.n} drin.</span>
           <Btn kind="primary" disabled={!win.at} title={win.at ? '' : 'Am Portal beitreten'} onClick={() => { send({ t: 'exp', a: 'join' }); close(); }}>Beitreten</Btn>
         </div>
       )}
@@ -60,8 +68,8 @@ export function ExpeditionWindow() {
           {list.map(e => {
             const ok = expUnlock(char, e.id).ok, r = char.expeditions?.[e.id], n = r ? Object.values(r.clears).reduce((a, b) => a + (b ?? 0), 0) : 0;
             return (
-              <button type="button" class={cx('craft-row', e.id === x.id && 'on', !ok && 'locked')} disabled={!!lobby && lobby.exp !== e.id} onClick={() => { sfx('ui_click'); setSel(e.id); setDiff('normal'); }}>
-                <span class="craft-name grow"><b>{e.name}{e.secret ? ' ✦' : ''}</b><small class="note">{REGION[e.region]} · ab Stufe {e.rec}{n ? ` · ${n}× abgeschlossen` : ok ? '' : ' · verschlossen'}</small></span>
+              <button type="button" class={cx('craft-row', e.id === x.id && 'on', !ok && 'locked')} disabled={!!lobby && lobby.exp !== e.id} onClick={() => { sfx('ui_click'); setSel(e.id); setDiff('normal'); setDepth(0); }}>
+                <span class="craft-name grow"><b>{e.name}{e.secret ? ' ✦' : ''}{e.endgame ? <i class="xp-end"> Endspiel</i> : null}</b><small class="note">{regionOf(e)} · ab Stufe {e.rec}{n ? ` · ${n}× abgeschlossen` : ok ? '' : ' · verschlossen'}{r?.deep ? ` · Tiefe ${r.deep}` : ''}</small></span>
               </button>
             );
           })}
@@ -72,12 +80,14 @@ export function ExpeditionWindow() {
           <div class="xp-head"><h3>{x.name}</h3><span class="note">{x.subtitle}</span></div>
           <p class="xp-desc">{x.desc}</p>
           <dl class="xp-facts">
-            <div><dt>Region</dt><dd>{REGION[x.region]}</dd></div>
+            <div><dt>Region</dt><dd>{regionOf(x)}</dd></div>
             <div><dt>Empfohlen</dt><dd>Stufe {x.rec}</dd></div>
             <div><dt>Endboss</dt><dd>{boss.name}</dd></div>
             <div><dt>Mini-Bosse</dt><dd>{[...minis].map(m => MINIS[m]?.name).join(', ')}</dd></div>
           </dl>
-          <div class="xp-reward note">Belohnung: Ausrüstung, {ITEMS[BIOME_MATS[x.region]?.monster]?.name ?? 'Rohstoffe'}, Bosskern, die Trophäe des Bosses, selten {ITEMS[x.rare]?.name ?? 'ein besonderer Fund'} – und mit Glück Legendäres.</div>
+          <div class="xp-reward note">{x.endgame
+            ? <>Belohnung (Endspiel): Ausrüstung eine Stufe besser als der Grad verspricht, Echo-Fragmente, Ätherstaub beim ersten Abschluss jedes Grades, ein mythisches Stück beim ersten Abschluss auf Albtraum und Mythisch, {boss.name}s Unikat, die Trophäe und selten {ITEMS[x.rare]?.name ?? 'ein besonderer Fund'}. Auf Albtraum ein eigener Waffenglanz, auf Mythisch ein Titel.</>
+            : <>Belohnung: Ausrüstung, {ITEMS[BIOME_MATS[x.region]?.monster]?.name ?? 'Rohstoffe'}, Bosskern, die Trophäe des Bosses, selten {ITEMS[x.rare]?.name ?? 'ein besonderer Fund'} – und mit Glück Legendäres.</>}</div>
           {!u.ok && (
             <ul class="xp-reqs">{u.reqs.map(r => <li class={r.ok ? 'ok' : 'no'}>{r.ok ? '✓' : '✗'} {r.text}</li>)}</ul>
           )}
@@ -86,7 +96,7 @@ export function ExpeditionWindow() {
             {DIFFICULTIES.map(d => {
               const b = diffBlock(char, x.id, d), best = rec?.best?.[d], n = rec?.clears?.[d] ?? 0;
               return (
-                <button type="button" class={cx('xp-diff', 'd-' + d, diff === d && 'on', !!b && 'locked')} disabled={!!lobby} title={b ?? EXP_DIFF[d].desc} onClick={() => { sfx('ui_click'); setDiff(d); }}>
+                <button type="button" class={cx('xp-diff', 'd-' + d, diff === d && 'on', !!b && 'locked')} disabled={!!lobby} title={b ?? EXP_DIFF[d].desc} onClick={() => { sfx('ui_click'); setDiff(d); if (d !== 'mythisch') setDepth(0); }}>
                   <b>{DIFFICULTY_NAME[d]}</b>
                   <small>{b ? '🔒 ' + EXP_DIFF[d].unlockText : n ? `${n}× · Bestzeit ${best ? fmtSec(best) : '–'}` : 'noch nicht geschafft'}</small>
                 </button>
@@ -94,9 +104,21 @@ export function ExpeditionWindow() {
             })}
           </div>
           <p class="note xp-diffdesc">{EXP_DIFF[diff].desc}</p>
+          {diff === 'mythisch' && open > 0 && (
+            <div class="xp-depth">
+              <div class="sec-title">Tiefe <small class="note">über Mythisch · erreicht: {rec?.deep ?? 0} / {DEPTH_CFG.max}</small></div>
+              <div class="xp-depth-row">
+                <Btn kind="small" disabled={!!lobby || dep <= 0} onClick={() => { sfx('ui_click'); setDepth(Math.max(0, dep - 1)); }}>−</Btn>
+                <b class="xp-depth-n">{dep ? `Tiefe ${dep}` : 'ohne Tiefe'}</b>
+                <Btn kind="small" disabled={!!lobby || dep >= open} title={dep >= open ? (open >= DEPTH_CFG.max ? 'Tiefer geht es nicht.' : `Erst Tiefe ${open} schaffen.`) : ''} onClick={() => { sfx('ui_click'); setDepth(Math.min(open, dep + 1)); }}>+</Btn>
+                <span class="note grow">{dep ? `Gegner +${dep} Stufen, mehr Leben und Schaden. Beute: Gegenstandsstufe +${dep}, öfter Mythisch, der Bosskern, Echo-Fragmente${dep >= DEPTH_CFG.aetherFrom ? ', Ätherstaub' : ''}.` : `Bis Tiefe ${open} offen. Jede Tiefe ist härter und lohnender.`}</span>
+              </div>
+              {dep > 0 && <div class="xp-depth-mods">Diese Woche: {depthModNames(x.id, dep).map(m => <span class="pill" title={m.desc}>{m.name}</span>)}</div>}
+            </div>
+          )}
           {lobby ? <LobbyBox /> : (
             <div class="xp-actions">
-              <Btn kind="primary" disabled={!!block || !win.at || !!running || !lead} onClick={() => send({ t: 'exp', a: 'select', id: x.id, diff })}>
+              <Btn kind="primary" disabled={!!block || !win.at || !!running || !lead} onClick={() => send({ t: 'exp', a: 'select', id: x.id, diff, ...(dep ? { depth: dep } : {}) })}>
                 {inParty ? 'Gruppe zur Bereitschaft rufen' : 'Allein aufbrechen'}
               </Btn>
               <span class="note">{block ?? (!win.at ? 'Wählen und starten nur am Expeditionsportal.' : running ? 'Erst den laufenden Lauf beenden.' : !lead ? 'Die Gruppe wählt, wer sie anführt.' : inParty ? 'Jedes Mitglied bestätigt seine Bereitschaft, dann startet die Anführung.' : 'Eine Gruppe bildest du im Gruppenfenster (P).')}</span>
@@ -125,7 +147,7 @@ function LobbyBox() {
   const all = l.members.filter(m => m.online).every(m => m.ready);
   return (
     <div class="xp-lobby">
-      <div class="sec-title">Bereitschaft · {EXPEDITIONS[l.exp]?.name} ({DIFFICULTY_NAME[l.diff]})</div>
+      <div class="sec-title">Bereitschaft · {EXPEDITIONS[l.exp]?.name} ({DIFFICULTY_NAME[l.diff]}{l.depth ? `, Tiefe ${l.depth}` : ''})</div>
       <ul>{l.members.map(m => (
         <li class={cx(m.ready && 'ready', !m.online && 'off')}>
           <i>{m.ready ? '✓' : '…'}</i><b>{m.name}</b>{m.charId === l.lead && <small> (führt)</small>}
@@ -160,9 +182,10 @@ export function ExpHud() {
   const ret = r.ret !== undefined ? Math.max(0, Math.round(r.ret - (performance.now() - store.state.expRunAt) / 1000)) : undefined;
   return (
     <div class={cx('exp-hud', 'd-' + r.diff, r.done !== undefined && 'done')}>
-      <div class="exp-hud-top"><b>{x?.name}</b><small>{DIFFICULTY_NAME[r.diff]}</small><span class="exp-clock"><span ref={clock}>{fmtSec(r.t)}</span>{r.par ? <small> / {fmtSec(r.par)}</small> : null}</span></div>
+      <div class="exp-hud-top"><b>{x?.name}</b><small>{DIFFICULTY_NAME[r.diff]}{r.depth ? ` · Tiefe ${r.depth}` : ''}</small><span class="exp-clock"><span ref={clock}>{fmtSec(r.t)}</span>{r.par ? <small> / {fmtSec(r.par)}</small> : null}</span></div>
       <div class="exp-sec">{r.sec}</div>
       <div class="exp-goal">▸ {r.goal}</div>
+      {r.mods && <div class="exp-mods" title={r.mods.map(m => `${WEEKLY_MOD[m as WeeklyMod]?.name}: ${WEEKLY_MOD[m as WeeklyMod]?.desc}`).join(' · ')}>{r.mods.map(m => WEEKLY_MOD[m as WeeklyMod]?.name).join(' · ')}</div>}
       {r.event && <div class="exp-event">{r.event.text}{r.event.waves ? ` ${r.event.wave}/${r.event.waves}` : ''}</div>}
       {r.enrage !== undefined && <div class={cx('exp-enrage', r.enrage <= 0 && 'on')}>{r.enrage > 0 ? `Wut in ${fmtSec(r.enrage)}` : 'Der Boss rast!'}</div>}
       <div class="exp-foot">
@@ -190,7 +213,7 @@ function ResultBody({ r }: { r: ExpResult }) {
   const x = EXPEDITIONS[r.exp];
   return (
     <div class="xr">
-      <div class="xr-title"><span>{x?.name}</span><small class={'d-' + r.diff}>{DIFFICULTY_NAME[r.diff]}</small></div>
+      <div class="xr-title"><span>{x?.name}</span><small class={'d-' + r.diff}>{DIFFICULTY_NAME[r.diff]}{r.depth ? ` · Tiefe ${r.depth}` : ''}</small></div>
       <dl class="xr-stats">
         <div><dt>Zeit</dt><dd>{fmtSec(r.sec)}{r.best && <em> Bestzeit!</em>}</dd></div>
         <div><dt>Gegner</dt><dd>{r.kills}</dd></div>
@@ -232,7 +255,7 @@ export function ExpSummary() {
   return (
     <div class="exp-summary card" role="status">
       <div class="exp-summary-head"><b>Zurück aus {x?.name}</b><button type="button" class="window-x" aria-label="Schließen" onClick={() => store.set({ expSummary: null })}>✕</button></div>
-      <div class="note">{DIFFICULTY_NAME[r.diff]} · {fmtSec(r.sec)}{r.best ? ' (Bestzeit)' : ''} · +{r.xp.toLocaleString('de-DE')} EP · +{r.gold.toLocaleString('de-DE')} Gold · {r.items.length} Funde</div>
+      <div class="note">{DIFFICULTY_NAME[r.diff]}{r.depth ? ` · Tiefe ${r.depth}` : ''} · {fmtSec(r.sec)}{r.best ? ' (Bestzeit)' : ''} · +{r.xp.toLocaleString('de-DE')} EP · +{r.gold.toLocaleString('de-DE')} Gold · {r.items.length} Funde</div>
       {r.feats.length > 0 && <div class="xr-feats small">{r.feats.map(f => <span>{f}</span>)}</div>}
       <div class="row">
         <Btn kind="primary" onClick={() => send({ t: 'exp', a: 'forge' })}>Zur Schmiede</Btn>

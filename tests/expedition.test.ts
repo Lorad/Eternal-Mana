@@ -28,7 +28,10 @@ function atPortal(t: Tester) {
 }
 function unlockAll(t: Tester) {
   t.p.char.flags['z:gruenwald'] = 1; t.p.char.quests.m_wurzel = { s: 'active', p: [0] };
-  for (const x of EXPEDITION_LIST) if (!x.secret) for (const r of x.unlock) { if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] }; }
+  for (const x of EXPEDITION_LIST) if (!x.secret) for (const r of x.unlock) {
+    if (r.cond?.flag) t.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started && !t.p.char.quests[a.started]) t.p.char.quests[a.started] = { s: 'active', p: [0] };
+    if (r.exp) { const e = (t.p.char.expeditions ??= {}); e[r.exp] ??= { clears: { normal: 1 } }; } // 0.11: „Das Atmende Herz“ nach der Langen Wacht
+  }
 }
 const expZone = (t: Tester): Zone | null => (t.p.zone.exp ? t.p.zone : null);
 function killBoss(t: Tester) {
@@ -320,7 +323,7 @@ describe('Expeditionen – Ereignisse und Bosse', () => {
 
 describe('Expeditionen – Tempo der Geschichte', () => {
   it('eine Expedition auf Normal hebt bei empfohlener Stufe um höchstens drei Stufen (die Geschichte läuft nicht davon)', () => {
-    for (const x of EXPEDITION_LIST) {
+    for (const x of EXPEDITION_LIST.filter(e => !e.endgame)) { // Endspiel (Stufe 40): die Erfahrung füllt Quellstufen
       const t = sim.join('Xp' + x.id.slice(4, 9), 'krieger', x.rec);
       const z = startSolo(t, 'normal', x.id), f = Expedition.mobXp(z);
       let lvl = x.rec, xp = 0;

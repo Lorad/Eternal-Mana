@@ -4,7 +4,7 @@
  * gespeichert wird nur, was ein Abschluss in den Charakter schreibt (reward.ts).
  */
 import type { Difficulty } from '../../../shared/src/data/hub';
-import type { EliteAffix, Weekly } from '../../../shared/src/data/expeditions';
+import type { EliteAffix, Weekly, WeeklyMod } from '../../../shared/src/data/expeditions';
 import type { ExpResult } from '../../../shared/src/types';
 import type { Game, Party } from '../game';
 import type { Player } from '../player';
@@ -45,6 +45,8 @@ export interface ExpRun {
   infoAt: number;
   /** Neuer Kreis der Gruppe (hebt die Stufen) · Tode je Charakter beim Betreten (Zähler im Lauf = Differenz) */
   kreis: number; d0: Map<number, number>;
+  /** 0.11: Tiefe über Mythisch (0 = keine) und ihre Modifikatoren dieser Woche (data/expeditions_endgame.ts) */
+  depth?: number; mods?: WeeklyMod[];
 }
 
 let NEXT = 1;
@@ -60,7 +62,7 @@ export function newRun(exp: string, diff: Difficulty, party: Party | null, now: 
 }
 
 /** Zustand je Spiel: offene Bereitschaftsprüfungen (je Gruppe) */
-export interface Lobby { exp: string; diff: Difficulty; party: Party; lead: Player; ready: Set<number>; until: number }
+export interface Lobby { exp: string; diff: Difficulty; party: Party; lead: Player; ready: Set<number>; until: number; /** 0.11 */ depth?: number }
 const lobbies = new WeakMap<Game, Map<Party, Lobby>>();
 export const lobbiesOf = (g: Game) => { let m = lobbies.get(g); if (!m) { m = new Map(); lobbies.set(g, m); } return m; };
 

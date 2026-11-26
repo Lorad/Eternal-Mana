@@ -12,7 +12,8 @@ import { CLASSES } from '../../../shared/src/data/classes';
 import { stashSlots } from '../../../shared/src/data/collection';
 import { emptyHome } from '../../../shared/src/data/home';
 import { fmtTime, hallData } from '../../../shared/src/data/hall';
-import { HUB_ZONE } from '../../../shared/src/data/hub';
+import { DIFFICULTIES, DIFFICULTY_NAME, HUB_ZONE } from '../../../shared/src/data/hub';
+import { EXPEDITION_LIST, fmtSec } from '../../../shared/src/data/expeditions';
 import { FACILITIES, FACILITY_OF_NPC, FACILITY_ORDER, LFG_GOAL, LFG_GOALS, effRank, hubPeriod, lagerRows, masterable, masteredSkills, masteryBlock, masteryCost, masteryOf, rowBlock, rowPrice } from '../../../shared/src/data/hubdata';
 import { ITEMS, itemName, sellPrice } from '../../../shared/src/data/items';
 import { RUMOUR_KIND_NAME, boardRumours, rumourZone } from '../../../shared/src/data/rumours';
@@ -260,12 +261,14 @@ function Groups({ char }: { char: CharData }) {
 // ------------------------------------------------------------------ Trophäenhalle
 function Hall({ char }: { char: CharData }) {
   const home = useStore(s => s.home);
-  const [tab, setTab] = useState<'stats' | 'bosse' | 'zeiten' | 'stuecke'>('stats');
+  const board = useStore(s => s.expBoard);
+  const [tab, setTab] = useState<'stats' | 'bosse' | 'zeiten' | 'rekorde' | 'stuecke'>('stats');
   const d = hallData(char, home);
   const owned = d.trophies.filter(t => t.owned).length;
+  const records = EXPEDITION_LIST.filter(x => board?.[x.id] && (Object.keys(board[x.id].best).length || board[x.id].deep));
   return (
     <div class="hub-hall">
-      <Tabs tabs={[['stats', 'Statistik'], ['bosse', 'Bosse und Erfolge'], ['zeiten', 'Bestzeiten', d.expeditions.length], ['stuecke', 'Vitrinen', d.showcase.length]]} value={tab} onChange={setTab} />
+      <Tabs tabs={[['stats', 'Statistik'], ['bosse', 'Bosse und Erfolge'], ['zeiten', 'Bestzeiten', d.expeditions.length], ['rekorde', 'Bestenliste', records.length], ['stuecke', 'Vitrinen', d.showcase.length]]} value={tab} onChange={setTab} />
       {tab === 'stats' && <dl class="hub-stats">{d.stats.map(s => <><dt>{s.label}</dt><dd>{s.value}</dd></>)}</dl>}
       {tab === 'bosse' && (
         <div class="hub-cols scroll">
@@ -286,9 +289,19 @@ function Hall({ char }: { char: CharData }) {
         d.expeditions.length ? (
           <ul class="hub-list scroll">{d.expeditions.map(r => (
             <li class="hub-rec"><div class="grow"><b>{r.name}</b> <span class="note">{r.clears} Abschlüsse{r.secrets ? ` · ${r.secrets} Geheimnisse` : ''}{r.minis ? ` · ${r.minis} Wächter` : ''}</span>
-              <div class="hub-diffs">{r.best.map(b => <span class={cx('pill', 'd-' + b.diff)}>{b.name}: {b.clears}×{b.sec ? ` · ${fmtTime(b.sec)}` : ''}</span>)}</div></div></li>
+              <div class="hub-diffs">{r.best.map(b => <span class={cx('pill', 'd-' + b.diff)}>{b.name}: {b.clears}×{b.sec ? ` · ${fmtTime(b.sec)}` : ''}</span>)}{r.deep ? <span class="pill d-mythisch">Tiefe {r.deep}{r.deepSec ? ` · ${fmtTime(r.deepSec)}` : ''}</span> : null}</div></div></li>
           ))}</ul>
         ) : <p class="note">Noch keine Expedition abgeschlossen. Das Portal auf dem Platz wartet – Bertram hat die Tafel schon gestrichen.</p>
+      )}
+      {tab === 'rekorde' && (
+        records.length ? (
+          <ul class="hub-list scroll hub-board">{records.map(x => { const row = board![x.id]; return (
+            <li class="hub-rec"><div class="grow"><b>{x.name}</b>
+              {DIFFICULTIES.filter(dd => row.best[dd]).map(dd => <div class="hub-board-row"><span class={cx('pill', 'd-' + dd)}>{DIFFICULTY_NAME[dd]}</span><b>{fmtSec(row.best[dd]!.sec)}</b><span class="note">{row.best[dd]!.names.join(', ')}</span></div>)}
+              {row.deep && <div class="hub-board-row"><span class="pill d-mythisch">Tiefe {row.deep.depth}</span><b>{fmtSec(row.deep.sec)}</b><span class="note">{row.deep.names.join(', ')}</span></div>}
+            </div></li>
+          ); })}</ul>
+        ) : <p class="note">{board ? 'Die Tafel der Quellwarte ist noch leer. Wer als Erster eine Expedition abschließt, steht hier – mit Zeit und Gruppe.' : 'Bertram holt die Tafel …'}</p>
       )}
       {tab === 'stuecke' && (
         d.showcase.length ? <div class="hub-vitrine">{d.showcase.map(it => <div class="hub-ped"><ItemSlot item={it} char={char} size="sm" /><small style={{ color: RARITY_COLOR[it.rarity] }}>{itemName(it)}</small></div>)}</div>

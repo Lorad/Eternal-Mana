@@ -9,7 +9,8 @@
 import type { CharData } from '../types';
 import { rankIn } from './factions';
 import { riftDone } from './home';
-import { seenEndings } from './rifts';
+import { TITLES, TITLE_SOURCES, seenEndings } from './rifts';
+import { ENDGAME_TITLES, deepest } from './expeditions_endgame';
 
 export interface LookDef {
   id: string;
@@ -44,7 +45,14 @@ export const LOOK_LIST: LookDef[] = [
   { id: 'w_stille', kind: 'w', name: 'Stiller Glanz', color: 0xa8c0d8, desc: 'Blass wie Wasser, das sich an etwas erinnert.', how: 'Ende „Versiegeln“', has: c => seenEndings(c).includes(1) },
   { id: 'w_wild', kind: 'w', name: 'Wilder Glanz', color: 0x60ffb0, desc: 'Mana, das niemandem mehr gehört.', how: 'Ende „Befreien“', has: c => seenEndings(c).includes(2) },
   { id: 'w_lied', kind: 'w', name: 'Glanz des Lieds', color: 0xffb0e0, desc: 'Vier Töne und der fünfte.', how: 'Ende „Das Lied vollenden“', has: c => seenEndings(c).includes(3) },
+  // 0.11: Endspiel-Expeditionen und Tiefen
+  { id: 'w_laterne', kind: 'w', name: 'Laternenglanz', color: 0xffc860, desc: 'Warm und geduldig, wie ein Licht, das tausend Jahre lang niemand ausgemacht hat.', how: '„Die Lange Wacht“ auf Albtraum abschließen', has: c => (c.expeditions?.exp_wacht?.clears?.albtraum ?? 0) > 0 },
+  { id: 'w_herzton', kind: 'w', name: 'Herztonglanz', color: 0x8ff0ff, desc: 'Er schwingt nach, wie ein Ton, der nicht aufhören will.', how: '„Das Atmende Herz“ auf Albtraum abschließen', has: c => (c.expeditions?.exp_herz?.clears?.albtraum ?? 0) > 0 },
+  { id: 'w_tiefe', kind: 'w', name: 'Tiefenglanz', color: 0x5a6cff, desc: 'Dunkelblau, mit einem Schimmer von ganz unten.', how: 'In einer Expedition Tiefe 5 abschließen', has: c => deepest(c) >= 5 },
 ];
+// 0.11: Titel der Endspiel-Expeditionen und Tiefen (Regeln in data/expeditions_endgame.ts)
+for (const [id, t] of Object.entries(ENDGAME_TITLES)) TITLES[id] = { name: t.name, desc: t.desc };
+TITLE_SOURCES.push(c => Object.keys(ENDGAME_TITLES).filter(id => ENDGAME_TITLES[id].has(c)));
 export const LOOKS: Record<string, LookDef> = Object.fromEntries(LOOK_LIST.map(l => [l.id, l]));
 /**
  * EINZIGE Stelle für den Rückfall der Gewand-Grafik: Gibt es das Sheet `char_<klasse>_<variante>` (Kunst-Pipeline), wird es

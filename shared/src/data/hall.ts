@@ -20,7 +20,7 @@ import { ZONES } from './zones';
 
 export interface HallStat { label: string; value: string }
 export interface HallBoss { id: string; name: string; wins: number }
-export interface HallRecord { id: string; name: string; clears: number; best: { diff: Difficulty; name: string; sec: number; clears: number }[]; secrets: number; minis: number; first?: number }
+export interface HallRecord { id: string; name: string; clears: number; best: { diff: Difficulty; name: string; sec: number; clears: number }[]; secrets: number; minis: number; first?: number; /** 0.11: tiefste Tiefe und ihre Zeit */ deep?: number; deepSec?: number }
 export interface HallData {
   bosses: HallBoss[];
   trophies: { id: string; name: string; icon: string; desc: string; how: string; owned: boolean }[];
@@ -53,7 +53,7 @@ export function hallRecords(c: CharData): HallRecord[] {
       clears += n;
       if (n > 0 || t > 0) best.push({ diff: d, name: DIFFICULTY_NAME[d], sec: t > 0 ? t : 0, clears: n });
     }
-    out.push({ id, name: ZONES[id]?.name ?? id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' '), clears, best, secrets: r.secrets?.length ?? 0, minis: r.minis?.length ?? 0, first: r.first });
+    out.push({ id, name: ZONES[id]?.name ?? id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g, ' '), clears, best, secrets: r.secrets?.length ?? 0, minis: r.minis?.length ?? 0, first: r.first, deep: r.deep || undefined, deepSec: r.deepSec || undefined });
   }
   return out.sort((a, b) => b.clears - a.clears || a.name.localeCompare(b.name));
 }

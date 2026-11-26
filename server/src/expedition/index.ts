@@ -17,6 +17,8 @@ import {
   DIFFICULTIES, ELITE_AFFIX, ELITE_AFFIXES, EXPEDITIONS, EXP_BY_LEGACY, EXP_CFG, EXP_DIFF, MINIS, diffBlock, expPar, expUnlock, isExpedition, isoWeek, weeklyChallenge, weeklyFlag,
   type EliteAffix, type Weekly,
 } from '../../../shared/src/data/expeditions';
+import { WEEKLY_MODS } from '../../../shared/src/data/expeditions';
+import { depthBlock, depthMods, depthScale } from '../../../shared/src/data/expeditions_endgame';
 import type { Difficulty } from '../../../shared/src/data/hub';
 import { DIFFICULTY_NAME } from '../../../shared/src/data/hub';
 import { generateGear, makeStack, rollRarity } from '../../../shared/src/data/items';
@@ -38,6 +40,7 @@ import { expBossMech, mechInteract, tickMechObjs } from './bossmech';
 import { expeditionPortals, portalAt, returnSpot } from './hub';
 import { miniDown, spawnMinis, tickMinis } from './mini';
 import { grant, totals } from './reward';
+import { boardOf, recordRun } from './board';
 import { lobbiesOf, newRun, runs, type EventState, type ExpRun, type Lobby } from './run';
 
 type ExpMsg = Extract<ClientMsg, { t: 'exp' }>;
@@ -46,8 +49,17 @@ const secOf = (zone: Zone, id: string) => zone.map.exp!.sections.find(s => s.id 
 const inSec = (s: ExpSection, x: number, y: number, pad = 0) => x >= (s.x0 + pad) * TILE && x < (s.x1 + 1 - pad) * TILE && y >= (s.y0 + pad) * TILE && y < (s.y1 + 1 - pad) * TILE;
 const EVENT_TEXT: Record<string, string> = { ambush: 'Hinterhalt: Welle', darkness: 'Finsternis: Lichtsteine', flood: 'Flut: Ventile', collapse: 'Einsturz – lauft!' };
 const weeklyNow = (): Weekly => weeklyChallenge(isoWeek(Date.now()));
-/** Stufe eines Gegners in diesem Lauf: Plan + Neuer Kreis + Schwierigkeitsgrad */
-function levelFor(run: ExpRun, base: number): number { const d = EXP_DIFF[run.diff]; return Math.max(d.lvlMin, kreisLevel(base, run.kreis) + d.lvlPlus); }
+/** Stufe eines Gegners in diesem Lauf: Plan + Neuer Kreis + Schwierigkeitsgrad + Tiefe (0.11) */
+function levelFor(run: ExpRun, base: number): number { const d = EXP_DIFF[run.diff]; return Math.max(d.lvlMin, kreisLevel(base, run.kreis) + d.lvlPlus) + depthScale(run.depth ?? 0).lvl; }
+/** Modifikatoren des Laufs: Herausforderung der Woche und (0.11) die der Tiefe */
+const modsOf = (run: ExpRun) => [...(run.weekly?.mods ?? []), ...(run.mods ?? [])];
+/** Ablehnungsgrund für Grad und Tiefe (0.11: Tiefe nur auf Mythisch) */
+function runBlock(c: Player['char'], id: string, diff: Difficulty, depth: number): string | null {
+  const b = diffBlock(c, id, diff);
+  if (b || !depth) return b;
+  return diff !== 'mythisch' ? 'Tiefen gibt es nur auf Mythisch.' : depthBlock(c, id, depth);
+}
+const runName = (id: string, diff: Difficulty, depth = 0) => `${EXPEDITIONS[id].name} (${DIFFICULTY_NAME[diff]}${depth ? `, Tiefe ${depth}` : ''})`;
 
 /** Zeitpunkt der letzten Rückkehr je Charakter (Weg zur Schmiede nur kurz danach) */
 const returnedAt = new Map<number, number>();
@@ -56,9 +68,9 @@ const returnedAt = new Map<number, number>();
 //  Instanz aufbauen
 // =====================================================================================================================
 function makeMob(zone: Zone, mobId: string, lvl: number, x: number, y: number, elite: boolean, group: number, idx: number): Mob {
-  const run = zone.exp!, d = EXP_DIFF[run.diff], mods = run.weekly?.mods ?? [];
+  const run = zone.exp!, d = EXP_DIFF[run.diff], mods = modsOf(run), t = depthScale(run.depth ?? 0);
   const m = new Mob(ENEMIES[mobId], lvl, x, y, elite, group, idx);
-  m.maxHp = m.hp = Math.round(m.maxHp * d.hpMul); m.baseDmg *= d.dmgMul; m.dmg = m.baseDmg;
+  m.maxHp = m.hp = Math.round(m.maxHp * d.hpMul * t.hp); m.baseDmg *= d.dmgMul * t.dmg; m.dmg = m.baseDmg;
   if (mods.includes('hast')) { m.speed *= 1.25; m.cdMul = 0.8; }
   if (elite && d.affixes) {
     const list = zone.rng.shuffle([...ELITE_AFFIXES]).slice(0, d.affixes) as EliteAffix[];
@@ -72,7 +84,7 @@ function makeMob(zone: Zone, mobId: string, lvl: number, x: number, y: number, e
 }
 
 function setup(zone: Zone) {
-  const run = zone.exp!, d = EXP_DIFF[run.diff], info = zone.map.exp!, mods = run.weekly?.mods ?? [];
+  const run = zone.exp!, d = EXP_DIFF[run.diff], info = zone.map.exp!, mods = modsOf(run), t = depthScale(run.depth ?? 0);
   if (mods.includes('glas')) { zone.mod.dmgTaken = 1.3; zone.mod.cd = 0.8; }
   if (mods.includes('versiegt')) zone.mod.heal = 0.6;
   if (mods.includes('finster')) zone.mod.aggro = 0.75;
@@ -88,7 +100,7 @@ function setup(zone: Zone) {
       if (circleFree(ENEMIES[s.mob].flying ? zone.solidFly : zone.solidWalk, x, y, 6)) makeMob(zone, s.mob, lvl, x, y, zone.rng.chance(eliteCh), s.group, i);
     }
   });
-  spawnMinis(zone, b => levelFor(run, b), d.hpMul, d.dmgMul);
+  spawnMinis(zone, b => levelFor(run, b), d.hpMul * t.hp, d.dmgMul * t.dmg);
   for (const pz of info.puzzles) run.puzzles.set(pz.sec, { sec: pz.sec, kind: pz.kind, order: pz.order, bits: pz.bits, runes: pz.runes, time: pz.time, progress: 0, solved: false });
   for (const ev of info.events) run.events.set(ev.sec, { kind: ev.kind, sec: ev.sec, state: 'idle', wave: 0, waves: 4, mobs: new Set(), barriers: [], at: 0, next: 0, pools: [] });
 }
@@ -111,13 +123,14 @@ function runFor(game: Game, p: Player): Zone | undefined {
 /** Darf dieser Spieler in diesen Lauf? Nur die eigene Gruppe – nie die Instanz einer fremden Gruppe. */
 function mayEnter(r: ExpRun, p: Player): boolean { return r.party ? r.party === p.party : r.members.has(p.charId); }
 
-function startRun(game: Game, lead: Player, id: string, diff: Difficulty, members: Player[], back?: { zone: string; x: number; y: number }): Zone {
+function startRun(game: Game, lead: Player, id: string, diff: Difficulty, members: Player[], back?: { zone: string; x: number; y: number }, depth = 0): Zone {
   const w = weeklyNow();
   const run = newRun(id, diff, lead.party, game.now, w.exp === id && w.diff === diff ? w : null);
   run.kreis = game.worldKreis(lead);
-  const zone = new Zone(game, Expedition.zoneDef(id, diff, run.kreis), { key: 'exp:' + run.id, exp: run });
+  if (depth > 0) { run.depth = depth; run.mods = depthMods(isoWeek(Date.now()), id, depth, WEEKLY_MODS); } // 0.11: Tiefen
+  const zone = new Zone(game, Expedition.zoneDef(id, diff, run.kreis, depth), { key: 'exp:' + run.id, exp: run });
   game.zones.set(zone.key, zone);
-  const name = `${EXPEDITIONS[id].name} (${DIFFICULTY_NAME[diff]})`;
+  const name = runName(id, diff, depth);
   for (const q of members) {
     enter(game, q, zone, q === lead ? back : undefined);
     q.toast(q === lead ? `${name} beginnt.` : `${lead.name} führt euch in: ${name}.`, 'story');
@@ -149,7 +162,7 @@ function leave(game: Game, p: Player, why?: string) {
 //  Bereitschaftsprüfung
 // =====================================================================================================================
 function lobbyInfo(game: Game, l: Lobby): ExpLobbyInfo {
-  return { exp: l.exp, diff: l.diff, lead: l.lead.charId, sec: Math.max(0, Math.round(l.until - game.now)),
+  return { exp: l.exp, diff: l.diff, depth: l.depth || undefined, lead: l.lead.charId, sec: Math.max(0, Math.round(l.until - game.now)),
     members: [...l.party.members].map(q => ({ charId: q.charId, name: q.name, ready: l.ready.has(q.charId), here: nearPortal(q), online: !q.linkdead })) };
 }
 function sendLobby(game: Game, l: Lobby | null, party: Lobby['party']) { const info = l ? lobbyInfo(game, l) : null; for (const q of party.members) q.send({ t: 'exp', lobby: info }); }
@@ -184,7 +197,7 @@ function runInfo(zone: Zone, p: Player): ExpRunInfo {
   return {
     exp: run.exp, diff: run.diff, t: Math.round(run.done ? run.done.sec : now - run.startAt), sec: here ? secOf(zone, here).name : '', goal: goalFor(zone, p),
     kills: run.kills, deaths: p.char.deaths - (run.d0.get(p.charId) ?? p.char.deaths), secrets: [run.secrets.size, T.secrets], minis: [run.minis.size, T.minis],
-    weekly: run.weekly?.mods, par: d.timedChest ? expPar(EXPEDITIONS[run.exp]) : undefined,
+    weekly: run.weekly?.mods, par: d.timedChest ? expPar(EXPEDITIONS[run.exp]) : undefined, depth: run.depth || undefined, mods: run.mods?.length ? run.mods : undefined,
     event: ev ? { kind: ev.kind, wave: ev.kind === 'ambush' ? ev.wave : [...zone.objs.values()].filter(o => (o.props?.kind === 'lightstone' || o.props?.kind === 'valve') && o.props.sec === ev.sec && o.state === 1).length, waves: ev.kind === 'collapse' ? 0 : ev.waves, text: EVENT_TEXT[ev.kind] } : undefined,
     dark: ev?.kind === 'darkness' ? 1 : undefined,
     done: run.done?.sec, ret: run.done?.revealed ? Math.max(0, Math.round(run.returnAt - now)) : undefined,
@@ -493,8 +506,8 @@ function mobXpFactor(id: string): number {
   let f = xpCache.get(id);
   if (f === undefined) {
     const sum = (z: string) => getMap(z).spawns.reduce((a, s) => a + CFG.enemy.xp(s.lvl) * ENEMIES[s.mob].xpMul * (s.elite ? 3 : 1), 0);
-    const x = EXPEDITIONS[id], old = x.legacy ?? 'archiv';
-    f = Math.min(1, (EXP_CFG.mobXpVsOld * sum(old) * (x.legacy ? 1 : sum(id) / sum('exp_ruinen'))) / Math.max(1, sum(id)));
+    const x = EXPEDITIONS[id], old = x.legacy ?? x.xpRef ?? 'archiv'; // 0.11: Endspiel-Expeditionen messen sich an Vaels Wacht bzw. dem Herz der Quelle
+    f = Math.min(1, (EXP_CFG.mobXpVsOld * sum(old) * (x.legacy || x.xpRef ? 1 : sum(id) / sum('exp_ruinen'))) / Math.max(1, sum(id)));
     xpCache.set(id, f);
   }
   return f;
@@ -507,15 +520,16 @@ export const Expedition = {
   xpFactor(id: string): number { return mobXpFactor(id); },
   dressExits(zone: Zone) { for (const o of zone.objs.values()) { const id = o.type === 'exit' ? EXP_BY_LEGACY[o.props?.to] : undefined; if (id) o.props = { ...o.props, label: EXPEDITIONS[id].name }; } },
   /** Zonendefinition der Instanz: Stufen nach Kreis und Schwierigkeitsgrad */
-  zoneDef(id: string, diff: Difficulty, kreis: number): ZoneDef {
+  zoneDef(id: string, diff: Difficulty, kreis: number, depth = 0): ZoneDef {
     const base = ZONES[id], d = EXP_DIFF[diff];
-    const lv = (v: number) => Math.max(d.lvlMin, kreisLevel(v, kreis) + d.lvlPlus);
+    const lv = (v: number) => Math.max(d.lvlMin, kreisLevel(v, kreis) + d.lvlPlus) + depthScale(depth).lvl;
     return { ...base, level: [lv(base.level[0]), lv(base.level[1])] };
   },
   bossDef(zone: Zone): BossDef {
     const run = zone.exp!, d = EXP_DIFF[run.diff], b = kreisBossDef(BOSSES[EXPEDITIONS[run.exp].boss], run.kreis);
-    const x = EXPEDITIONS[run.exp], lvl = levelFor(run, Math.max(BOSSES[x.boss].level, x.level[1] + 1));
-    return { ...b, name: x.bossName ?? b.name, level: lvl, hpMul: b.hpMul * d.hpMul / EXP_DIFF.normal.hpMul, dmgMul: b.dmgMul * d.dmgMul };
+    const x = EXPEDITIONS[run.exp], lvl = levelFor(run, Math.max(BOSSES[x.boss].level, x.level[1] + 1)), t = depthScale(run.depth ?? 0);
+    // 0.11: Vael und Aetherion ergeben sich auch hier (spared), aber ohne Filmszene und Ruhepose der Geschichte
+    return { ...b, name: x.bossName ?? b.name, level: lvl, hpMul: b.hpMul * d.hpMul / EXP_DIFF.normal.hpMul * t.hp, dmgMul: b.dmgMul * d.dmgMul * t.dmg, awaken: undefined, calm: undefined };
   },
   bossMech(zone: Zone, bossId: string): EchoMech { return expBossMech(zone, bossId); },
   setup,
@@ -610,7 +624,7 @@ export const Expedition = {
           return true;
         }
         case 'rune': return puzzleInteract(zone, p, o);
-        case 'chain': case 'ink': return mechInteract(zone, p, o);
+        case 'chain': case 'ink': case 'watchfire': case 'tone': return mechInteract(zone, p, o); // 0.11: Wachfeuer (Vael), Herztöne (Aetherion)
         case 'discover': {
           const id = String(pr.exp ?? ''), k = 'xs:' + id;
           if (!EXPEDITIONS[id]) return true;
@@ -681,14 +695,20 @@ export const Expedition = {
       if (res) run.results.set(p.charId, res);
       game.savePlayer(p);
     }
+    // 0.11: Bestenliste der Quellwarte – einmal je Lauf
+    const names = [...zone.players.values()].map(p => p.name).sort((a, b) => a.localeCompare(b));
+    const rec = recordRun(game, run.exp, run.diff, run.depth ?? 0, run.done.sec, names);
+    if (rec.best || rec.deep) for (const p of zone.players.values()) p.toast(rec.deep ? `Neuer Rekord der Quellwarte: Tiefe ${run.depth} in ${EXPEDITIONS[run.exp].name}! Bertram meißelt es in die Tafel.` : `Neue Bestzeit der Quellwarte für ${runName(run.exp, run.diff)}! Bertram meißelt sie in die Tafel.`, 'good');
     // die Arena versiegelt sich: Tor zu, Siegel an jeder Mündung außer zur Belohnungskammer
     for (const o of zone.objs.values()) if (o.type === 'bossdoor') { if (o.state !== 0) zone.setObjState(o, 0); o.props!.sealed = 1; }
     const arena = zone.map.exp!.sections.find(s => s.role === 'boss')!;
     const rewardSec = zone.map.exp!.sections.find(s => s.role === 'reward')!;
     for (const m of arena.mouths) if (!rewardSec.mouths.some(r => r.cells.some(c => m.cells.includes(c)) || Math.hypot(r.x - m.x, r.y - m.y) < 6 * TILE)) zone.addDynamicObj('xobj', m.x, m.y, { kind: 'seal', frame: 'boss_seal', label: '', light: [70, 0xffe0a0, 0.6] }, 'seal');
-    zone.ev({ k: 'fx', n: 'bossdeath', x: boss.mob.x, y: boss.mob.y, el: boss.def.element });
-    zone.ev({ k: 'fx', n: 'explosion', x: boss.mob.x, y: boss.mob.y, r: 120, el: boss.def.element });
-    for (const p of zone.players.values()) p.toast(`${boss.def.name} ist besiegt! Die Arena versiegelt sich …`, 'story');
+    if (boss.def.spared === undefined) { // wer sich ergibt (Vael, Aetherion), vergeht nicht in einer Explosion
+      zone.ev({ k: 'fx', n: 'bossdeath', x: boss.mob.x, y: boss.mob.y, el: boss.def.element });
+      zone.ev({ k: 'fx', n: 'explosion', x: boss.mob.x, y: boss.mob.y, r: 120, el: boss.def.element });
+    }
+    for (const p of zone.players.values()) p.toast(boss.def.spared !== undefined ? `${boss.def.fightName ?? boss.def.name} ist vorüber. Die Arena versiegelt sich …` : `${boss.def.name} ist besiegt! Die Arena versiegelt sich …`, 'story');
     sendInfo(zone);
   },
 
@@ -708,29 +728,29 @@ export const Expedition = {
           const busy = online.filter(q => q.zone.exp || q.zone.rift || q.dead);
           if (busy.length) return reject(p, `Gerade verhindert: ${busy.map(q => q.name).join(', ')}.`);
           lobbiesOf(game).delete(lobby.party); sendLobby(game, null, lobby.party);
-          startRun(game, p, lobby.exp, lobby.diff, online);
+          startRun(game, p, lobby.exp, lobby.diff, online, undefined, lobby.depth ?? 0);
           return;
         }
-        const id = String(m.id ?? ''), diff = (m.diff ?? 'normal') as Difficulty;
+        const id = String(m.id ?? ''), diff = (m.diff ?? 'normal') as Difficulty, depth = Math.max(0, Math.floor(Number(m.depth) || 0));
         if (!EXPEDITIONS[id] || !DIFFICULTIES.includes(diff)) return;
         if (p.dead || p.zone.exp || p.zone.rift) return;
         if (!nearPortal(p)) return reject(p, 'Dafür musst du am Expeditionsportal stehen.');
-        const block = diffBlock(c, id, diff);
+        const block = runBlock(c, id, diff, depth);
         if (block) return reject(p, block);
         if (runFor(game, p)) return reject(p, 'Deine Gruppe hat bereits eine laufende Expedition – tritt ihr bei.');
         const others = p.party ? [...p.party.members].filter(q => q !== p && !q.linkdead) : [];
-        if (!others.length) { startRun(game, p, id, diff, [p]); return; }
+        if (!others.length) { startRun(game, p, id, diff, [p], undefined, depth); return; }
         if (p.party!.leader !== p) return reject(p, 'Nur wer die Gruppe anführt, wählt die Expedition.');
-        const l: Lobby = { exp: id, diff, party: p.party!, lead: p, ready: new Set([p.charId]), until: game.now + EXP_CFG.lobbySec };
+        const l: Lobby = { exp: id, diff, depth, party: p.party!, lead: p, ready: new Set([p.charId]), until: game.now + EXP_CFG.lobbySec };
         lobbiesOf(game).set(p.party!, l);
         sendLobby(game, l, p.party!);
-        for (const q of others) q.toast(`${p.name} wählt ${EXPEDITIONS[id].name} (${DIFFICULTY_NAME[diff]}). Bist du bereit? (Fenster „Expedition“)`, 'story');
+        for (const q of others) q.toast(`${p.name} wählt ${runName(id, diff, depth)}. Bist du bereit? (Fenster „Expedition“)`, 'story');
         return;
       }
       case 'ready': case 'unready': {
         const l = lobbyOf(game, p);
         if (!l) return;
-        if (m.a === 'ready') { const b = diffBlock(c, l.exp, l.diff); if (b) return reject(p, b); l.ready.add(p.charId); } else if (l.lead !== p) l.ready.delete(p.charId);
+        if (m.a === 'ready') { const b = runBlock(c, l.exp, l.diff, l.depth ?? 0); if (b) return reject(p, b); l.ready.add(p.charId); } else if (l.lead !== p) l.ready.delete(p.charId);
         sendLobby(game, l, l.party);
         return;
       }
@@ -747,7 +767,7 @@ export const Expedition = {
         const z = runFor(game, p);
         if (!z) return reject(p, 'Deine Gruppe hat gerade keine laufende Expedition.');
         if (z.exp!.done) return reject(p, 'Dieser Lauf ist schon vorbei.');
-        if (diffBlock(c, z.exp!.exp, z.exp!.diff) && !z.exp!.members.has(p.charId)) return reject(p, 'Dieser Schwierigkeitsgrad ist für dich noch nicht freigeschaltet.');
+        if (runBlock(c, z.exp!.exp, z.exp!.diff, z.exp!.depth ?? 0) && !z.exp!.members.has(p.charId)) return reject(p, 'Dieser Schwierigkeitsgrad (oder diese Tiefe) ist für dich noch nicht freigeschaltet.');
         enter(game, p, z);
         return;
       }
@@ -766,7 +786,7 @@ export const Expedition = {
   /** Stand für das Auswahlfenster: Bereitschaftsprüfung, laufende Instanz der Gruppe, Herausforderung der Woche */
   sendTo(game: Game, p: Player) {
     const l = lobbyOf(game, p), z = runFor(game, p), w = weeklyNow();
-    p.send({ t: 'exp', lobby: l ? lobbyInfo(game, l) : null, party: z && !z.exp!.done ? { exp: z.exp!.exp, diff: z.exp!.diff, n: z.players.size } : null,
+    p.send({ t: 'exp', lobby: l ? lobbyInfo(game, l) : null, party: z && !z.exp!.done ? { exp: z.exp!.exp, diff: z.exp!.diff, n: z.players.size, depth: z.exp!.depth || undefined } : null,
       weekly: { ...w, done: !!p.char.flags[weeklyFlag(w.week)] }, ...(p.zone.exp ? { run: runInfo(p.zone, p) } : {}) });
   },
   /** Anmeldung: Wer in einer Expedition gespeichert wurde, kehrt in seinen laufenden Lauf zurück – sonst zum Portal. Wer noch in einem alten Dungeon stand, steht an dessen Eingang. */
@@ -797,7 +817,7 @@ export const Expedition = {
       const id = EXPEDITIONS[a[0]] ? a[0] : 'exp_gruenwald', diff = (DIFFICULTIES.includes(a[1] as Difficulty) ? a[1] : 'normal') as Difficulty;
       if (p.zone.exp) leave(game, p);
       const members = p.party ? [...p.party.members].filter(q => !q.linkdead && q.zone === p.zone) : [p];
-      startRun(game, p, id, diff, members.length ? members : [p]);
+      startRun(game, p, id, diff, members.length ? members : [p], undefined, diff === 'mythisch' ? Math.max(0, Math.min(20, +a[2] || 0)) : 0); // 0.11: /exp id mythisch <tiefe>
       return true;
     }
     if (cmd === 'portal') { // zum Expeditionsportal (Hub oder Quellhain)
@@ -829,5 +849,7 @@ export const Expedition = {
     return false;
   },
   dumpInfo: runInfo,
+  /** 0.11: Bestenliste für die Trophäenhalle */
+  board(game: Game) { return boardOf(game); },
 };
 void ([] as EventState[]);

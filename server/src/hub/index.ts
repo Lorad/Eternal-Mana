@@ -23,6 +23,7 @@ import { acc, flush, touch } from '../home/state';
 import { nextId, type Player } from '../player';
 import type { Obj, Zone } from '../zone';
 import { tickWalkers } from './walkers';
+import { Expedition } from '../expedition';
 
 type HubMsg = Extract<ClientMsg, { t: 'hub' }>;
 const H = CFG.hub;
@@ -171,7 +172,7 @@ function handle(g: Game, p: Player, m: HubMsg) {
       return;
     }
     case 'board': return p.send({ t: 'hub', lfg: lfgList(g) });
-    case 'halle': if (atFacility(p, 'halle')) p.sync('playtime', 'kills', 'deaths'); return; // frische Zahlen für die Statistik
+    case 'halle': if (atFacility(p, 'halle')) { p.sync('playtime', 'kills', 'deaths'); p.send({ t: 'exp', board: Expedition.board(g) }); } return; // frische Zahlen für die Statistik; 0.11: Bestenliste
   }
 }
 
@@ -197,7 +198,7 @@ export const Hub = {
       return true;
     }
     if (o.props?.fac === 'gruppe') p.send({ t: 'hub', lfg: lfgList(g) });
-    if (o.props?.fac === 'halle') p.sync('playtime', 'kills', 'deaths');
+    if (o.props?.fac === 'halle') { p.sync('playtime', 'kills', 'deaths'); p.send({ t: 'exp', board: Expedition.board(g) }); } // 0.11: Bestenliste
     p.send({ t: 'hub', open: tag });
     return true;
   },

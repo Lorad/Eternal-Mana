@@ -1,6 +1,6 @@
 /** Zentraler UI-Zustand (reaktiv). Die Preact-Oberfläche liest ihn über `useStore`. */
 import { useEffect, useState } from 'preact/hooks';
-import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, HubStock, LfgEntry, ExpLobbyInfo, ExpResult, ExpRunInfo, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
+import type { CharData, CharSummary, ClassId, Element, EncDialog, HomeData, HubStock, LfgEntry, ExpBoard, ExpLobbyInfo, ExpResult, ExpRunInfo, InspectInfo, ItemInstance, Mods, PartyInvite, PartyMember, RiftInfo, ServerInfo, TradeView, WorldInfo, ZoneInit } from '../../../shared/src/types';
 import { bus } from './bus';
 
 export type Panel = 'inventory' | 'character' | 'skills' | 'quests' | 'map' | 'settings' | 'party' | 'menu' | 'help' | 'ruf' | 'sammlung';
@@ -122,8 +122,10 @@ export interface UiState {
   /** Abschlussbildschirm (in der Belohnungskammer) und Zusammenfassung nach der Rückkehr */
   expResult: ExpResult | null; expSummary: ExpResult | null;
   /** laufende Instanz der eigenen Gruppe · Herausforderung der Woche */
-  expParty: { exp: string; diff: string; n: number } | null;
+  expParty: { exp: string; diff: string; n: number; depth?: number } | null;
   expWeekly: { week: string; exp: string; diff: string; mods: string[]; done: boolean } | null;
+  /** 0.11: Bestenliste der Quellwarte (Trophäenhalle) */
+  expBoard: ExpBoard | null;
 }
 
 const state: UiState = {
@@ -138,7 +140,7 @@ const state: UiState = {
   home: null, heim: null, hof: null, sammlungTab: 'uebersicht',
   trackerOpen: false, hint: null, helpTab: 'start', loadFail: null, fatal: null, stale: null,
   hubWin: null, hubStock: null, lfg: [], lfgAt: 0,
-  expWin: null, expLobby: null, expRun: null, expRunAt: 0, expResult: null, expSummary: null, expParty: null, expWeekly: null,
+  expWin: null, expLobby: null, expRun: null, expRunAt: 0, expResult: null, expSummary: null, expParty: null, expWeekly: null, expBoard: null,
 };
 
 const listeners = new Set<() => void>();

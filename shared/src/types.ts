@@ -333,7 +333,7 @@ export type ClientMsg =
   | { t: 'hub'; a: string; idx?: number; day?: number; lvl?: number; id?: string; goal?: string; note?: string }
   // ---- Expeditionen (0.9): Stand abfragen, auswählen (Anführer, am Portal), bereit/nicht bereit, starten, abbrechen, laufender
   //      Instanz der Gruppe beitreten, Instanz verlassen, gemeinsam zurückkehren (Belohnungskammer), Weg zur Schmiede (Hub)
-  | { t: 'exp'; a: 'info' | 'select' | 'ready' | 'unready' | 'start' | 'cancel' | 'join' | 'leave' | 'return' | 'forge'; id?: string; diff?: Difficulty }
+  | { t: 'exp'; a: 'info' | 'select' | 'ready' | 'unready' | 'start' | 'cancel' | 'join' | 'leave' | 'return' | 'forge'; id?: string; diff?: Difficulty; /** 0.11: Tiefe (nur mit „mythisch“) */ depth?: number }
   | { t: 'ping'; c: number };
 
 export interface ZoneInit {
@@ -381,7 +381,7 @@ export interface EncDialog { id: number; who: string; look?: string; lines: stri
 
 // ---- Expeditionen (0.9)
 /** Bereitschaftsprüfung einer Gruppe vor dem Start. `here` = steht am Portal; `sec` = Restzeit */
-export interface ExpLobbyInfo { exp: string; diff: Difficulty; lead: number; sec: number; members: { charId: number; name: string; ready: boolean; here: boolean; online: boolean }[] }
+export interface ExpLobbyInfo { exp: string; diff: Difficulty; lead: number; sec: number; members: { charId: number; name: string; ready: boolean; here: boolean; online: boolean }[]; /** 0.11 */ depth?: number }
 /** Laufende Expedition aus Sicht eines Teilnehmers (HUD). `t` = verstrichene Sekunden zum Zeitpunkt des Sendens */
 export interface ExpRunInfo {
   exp: string; diff: Difficulty; t: number; sec: string; goal: string;
@@ -394,6 +394,8 @@ export interface ExpRunInfo {
   /** Bosswut: Sekunden bis zur Wut (negativ = wütend) */
   enrage?: number;
   dark?: 1;
+  /** 0.11: Tiefe über Mythisch und ihre Modifikatoren */
+  depth?: number; mods?: string[];
 }
 /** Abschluss einer Expedition für genau einen Charakter (Statistik, Belohnung) */
 export interface ExpResult {
@@ -404,7 +406,12 @@ export interface ExpResult {
   /** besondere Leistungen („Ohne Tod“, „Unter der Richtzeit“, „Alle Geheimnisse“ …) */
   feats: string[];
   par: number; clears: number;
+  /** 0.11: Tiefe des Laufs */
+  depth?: number;
 }
+/** 0.11: Bestenliste der Quellwarte – schnellste Läufe je Expedition und Schwierigkeitsgrad, tiefste Tiefe (alle Spieler des Servers) */
+export interface ExpBoardEntry { sec: number; names: string[]; at: number; depth?: number }
+export interface ExpBoard { [exp: string]: { best: Partial<Record<Difficulty, ExpBoardEntry>>; deep?: ExpBoardEntry } }
 
 export type ServerMsg =
   | { t: 'welcome'; account: number; name: string; chars: CharSummary[]; settings: string | null; server: ServerInfo }
@@ -447,8 +454,8 @@ export type ServerMsg =
   | { t: 'hub'; open?: string; stock?: HubStock; lfg?: LfgEntry[] }
   // ---- Expeditionen (0.9): Bereitschaftsprüfung (null = keine), laufender Lauf (null = keiner), Abschlussbildschirm, Zusammenfassung im Hub,
   //      laufende Instanz der eigenen Gruppe (zum Beitreten), Herausforderung der Woche, Weg zur Schmiede (NPC)
-  | { t: 'exp'; lobby?: ExpLobbyInfo | null; run?: ExpRunInfo | null; result?: ExpResult; summary?: ExpResult; party?: { exp: string; diff: Difficulty; n: number } | null;
-      weekly?: { week: string; exp: string; diff: Difficulty; mods: string[]; done: boolean }; forge?: string }
+  | { t: 'exp'; lobby?: ExpLobbyInfo | null; run?: ExpRunInfo | null; result?: ExpResult; summary?: ExpResult; party?: { exp: string; diff: Difficulty; n: number; depth?: number } | null;
+      weekly?: { week: string; exp: string; diff: Difficulty; mods: string[]; done: boolean }; forge?: string; /** 0.11: Bestenliste */ board?: ExpBoard }
   | { t: 'err'; s: string }
   | { t: 'pong'; c: number; n: number };
 

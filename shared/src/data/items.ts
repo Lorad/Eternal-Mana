@@ -383,6 +383,9 @@ export const BOSS_UNIQUE_GEAR: Record<string, { kind: GenKind; acc?: 'ring' | 'a
   ysolde: { kind: 'boots', names: 'Eisblumentritt' },
   archivar: { kind: 'legs', names: 'Saum der Stille' },
   hohlkoenig: { kind: 'accessory', acc: 'amulet', names: 'Hohles Herz' },
+  // 0.11: Endspiel-Expeditionen (Boss-Unikate der Akt-II-Bosse für die neuen Plätze)
+  vael: { kind: 'helm', names: 'Haube der Langen Wacht' },
+  aetherion: { kind: 'accessory', acc: 'ring', names: 'Reif des fünften Tons' },
 };
 const RES_OF: Record<string, ModKey> = { fire: 'resFire', water: 'resWater', earth: 'resEarth', wind: 'resWind', light: 'resLight', dark: 'resDark' };
 
