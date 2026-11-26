@@ -54,6 +54,8 @@ export interface ItemInstance {
   elv?: number;        // Elementstufe einer eingeschmiedeten Waffe 1..3 (fehlt = 1, wenn `element` gesetzt ist)
   ench?: string;       // Verzauberung (ENCHANTS in data/recipes.ts)
   set?: string;        // Rüstungsset (SETS in data/sets.ts)
+  // ---- 0.11 (optional)
+  gift?: 1;            // Borins Beigabe bei der Überführung auf zehn Plätze (shared/src/equip.ts): ohne Eigenschaften, nicht umschmiedbar
 }
 
 export interface QuestState {

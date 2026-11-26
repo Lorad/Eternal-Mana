@@ -15,7 +15,14 @@
  *   jetzt den Amulettplatz) · ein zweites Amulett/Talisman → Rucksack (auch über die Rucksackgröße hinaus; nichts geht verloren).
  *   Werte, Eigenschaften, Verbesserungsstufe, Element, Rune und Set bleiben unverändert. Weil Hauptwaffe, Helm, Brust und Ring
  *   ihr Grundbudget mit den neuen Plätzen teilen, legt Borin jedem überführten Charakter für die neuen, noch leeren Plätze
- *   einfache Stücke (gewöhnlich, ohne Eigenschaften, mit Gegenstands- und Verbesserungsstufe der bisherigen Ausrüstung im Mittel) bei – so steht er nach dem Laden so stark da wie vorher.
+ *   Stücke bei, die genau den Teil des Budgets tragen, den die alten Teile abgeben (0.11, `borinGift`):
+ *     Beine, Schuhe und Schutzstück (Schild bzw. leichte Handschuhe) ← Helm und Brust · Angriffsstück (Zweithand bzw. schwere
+ *     Handschuhe) ← Hauptwaffe · zweiter Ring ← Ring.
+ *   Gegenstandsstufe, Seltenheit und Verbesserung folgen den abgebenden Teilen (gewichtet nach dem, was sie abgeben); gewählt wird
+ *   die stärkste Mischung aus Seltenheit und Verbesserung, die deren Grundwerte NICHT übersteigt (höchstens +9, höchstens die
+ *   Seltenheit der Spender). Die Stücke haben keine Eigenschaften und lassen sich nicht umschmieden (`gift`) – wer überführt
+ *   wird, steht danach so stark da wie vorher, aber nie stärker. Fehlen die Spender, gilt die Regel von 0.9 (gewöhnlich,
+ *   Stufen der ganzen Ausrüstung im Mittel).
  */
 import { CFG } from './config';
 import { CLASS_OFFHAND, ITEMS, generateGear, gearBase, itemMods, newUid, slotKind, slotsFor, tierOf, type GenKind } from './data/items';
@@ -105,21 +112,51 @@ export function migrateEquip(c: CharData): { toBag: ItemInstance[]; granted: Ite
     if (it && !slotsFor(ITEMS[it.base]).includes(s)) { delete c.equip[s]; toBag.push(it); }
   }
   if (legacy && ilvls.length) {
-    const ilvl = Math.max(1, Math.round(ilvls.reduce((a, b) => a + b, 0) / ilvls.length));
+    const ilvl0 = Math.max(1, Math.round(ilvls.reduce((a, b) => a + b, 0) / ilvls.length));
     // Verbesserungsstufe wie die bisherige Ausrüstung im Mittel (höchstens +9: die Passiven der Stufe +10 verdient man sich)
-    const up = Math.min(CFG.upgrade.max - 1, Math.round(ups.reduce((a, b) => a + b, 0) / ups.length));
-    const grant = (slot: Slot, kind: GenKind, sub?: string) => {
+    const up0 = Math.min(CFG.upgrade.max - 1, Math.round(ups.reduce((a, b) => a + b, 0) / ups.length));
+    const E = c.equip, def = [E.helm && [E.helm, LOST.helm] as const, E.armor && [E.armor, LOST.armor] as const].filter(Boolean) as Donor[];
+    const grant = (slot: Slot, kind: GenKind, donors: Donor[], sub?: string) => {
       if (c.equip[slot]) return;
-      const it: ItemInstance = { uid: newUid(), base: gearBase(c.cls, kind, tierOf(ilvl), sub), rarity: 0, ilvl, up, affixes: [] };
+      const g = borinGift(donors) ?? { ilvl: ilvl0, rarity: 0, up: up0 };
+      const it: ItemInstance = { uid: newUid(), base: gearBase(c.cls, kind, tierOf(g.ilvl), sub), rarity: g.rarity, ilvl: g.ilvl, up: g.up, affixes: [], gift: 1 };
       if (!ITEMS[it.base]) return;
       c.equip[slot] = it; granted.push(it);
     };
-    grant('offhand', 'offhand', CLASS_OFFHAND[c.cls][0]);
-    grant('gloves', 'gloves'); grant('legs', 'legs'); grant('boots', 'boots');
-    if (c.equip.ring1) grant('ring2', 'accessory', 'ring');
+    // Schildträger: Schild = Schutzstück, schwere Handschuhe = Angriffsstück; alle anderen umgekehrt
+    const shield = CLASS_OFFHAND[c.cls][0] === 'shield', atk = E.weapon ? [[E.weapon, LOST.weapon] as Donor] : [];
+    grant('offhand', 'offhand', shield ? def : atk, CLASS_OFFHAND[c.cls][0]);
+    grant('gloves', 'gloves', shield ? atk : def); grant('legs', 'legs', def); grant('boots', 'boots', def);
+    if (c.equip.ring1) grant('ring2', 'accessory', slotKind(ITEMS[c.equip.ring1.base]) === 'ring' ? [[c.equip.ring1, LOST.ring]] : [], 'ring');
   }
   c.eqv = EQUIP_VERSION;
   return { toBag, granted };
+}
+
+/** Was ein altes Teil bei der Überführung an Grundbudget abgibt (alte Formel − neue, je Gegenstandsstufe L; data/items.ts GEAR_BUDGET) */
+const LOST = {
+  helm: [0.5, 0.3], armor: [1.5, 0.7], weapon: [1, 0.5], ring: [0.5, 0.3],
+} as const satisfies Record<string, readonly [number, number]>;
+type Donor = readonly [ItemInstance, readonly [number, number]];
+const statMul = (rarity: number, up: number) => (CFG.loot.rarityStatMul[rarity] ?? 1) * (1 + CFG.upgrade.statPerLevel * up);
+/**
+ * Borins Beigabe (0.11): Gegenstandsstufe, Seltenheit und Verbesserung eines Stücks, das das abgegebene Budget der Spender trägt.
+ * Ziel ist der gewichtete Faktor der Spender; gewählt wird die stärkste Mischung, die ihn nicht übersteigt. null = keine Spender.
+ */
+export function borinGift(donors: Donor[]): { ilvl: number; rarity: number; up: number } | null {
+  if (!donors.length) return null;
+  const w = donors.map(([it, [a, b]]) => a + b * it.ilvl), W = w.reduce((x, y) => x + y, 0);
+  const ilvl = Math.max(1, Math.round(donors.reduce((x, [it], i) => x + it.ilvl * w[i], 0) / W));
+  // Wert, den die Spender abgeben, geteilt durch das Budget des Geschenks auf seiner Stufe = Faktor, den es höchstens haben darf
+  const value = donors.reduce((x, [it], i) => x + w[i] * statMul(it.rarity, Math.min(CFG.upgrade.max, it.up | 0)), 0);
+  const target = value / donors.reduce((x, [, [a, b]]) => x + a + b * ilvl, 0);
+  const maxR = Math.min(Math.max(...donors.map(([it]) => it.rarity | 0)), CFG.loot.rarityStatMul.length - 2); // nie Mythisch
+  let best = { rarity: 0, up: 0, m: 1 };
+  for (let r = 0; r <= maxR; r++) for (let u = 0; u < CFG.upgrade.max; u++) {
+    const m = statMul(r, u);
+    if (m <= target + 1e-9 && m > best.m + 1e-9) best = { rarity: r, up: u, m };
+  }
+  return { ilvl, rarity: best.rarity, up: best.up };
 }
 
 /** Startausrüstung neuer Charaktere (0.9): Waffe, Zweithand, Brust, Handschuhe – zusammen so stark wie früher Waffe und Rüstung */

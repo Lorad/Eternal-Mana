@@ -108,6 +108,7 @@ export function reforgeCost(it: ItemInstance): Cost {
 export function reforgeBlock(c: CharData, it: ItemInstance): string | null {
   const b = ITEMS[it.base];
   if (!b || !isGear(b)) return 'Nur Ausrüstung lässt sich umschmieden.';
+  if (it.gift) return 'Borins Beigabe trägt nur Grundwerte – es gibt keine Eigenschaften, die sich neu würfeln ließen.';
   if (CFG.loot.affixCount[it.rarity] < 1) return 'Gewöhnliche Gegenstände haben keine Eigenschaften, die sich neu würfeln ließen.';
   return missing(c, reforgeCost(it));
 }
