@@ -261,6 +261,7 @@ export const LAYERS: Layer[] = [
   { name: 'Element eingeschmiedet, Stufe 3 (Feuer; Übungsgegner ohne Schwäche)', build: c => { c.equip.weapon!.element = 'fire'; c.equip.weapon!.elv = 3; } },
   { name: 'Legendäre Waffe (statt der typischen, gleiche Stufe und Verbesserung)', build: (c, cls, rng) => { const w = makeLegendary(rng, cls, 40); w.up = c.equip.weapon!.up; c.equip.weapon = w; } },
   { name: 'Quellstufen (alle 60)', build: c => { c.quell = fullQuell(); } },
+  { name: 'Verbesserung +6 auf allen Teilen (bis hier ohne Bosskerne und Ätherstaub)', build: c => { for (const s of SLOTS) if (c.equip[s]) c.equip[s]!.up = 6; } },
   { name: 'Verbesserung +10 auf allen Teilen (statt +4/+3; mit Zusatzeigenschaften und Passiven)', build: c => { for (const s of SLOTS) if (c.equip[s]) c.equip[s]!.up = 10; } },
   { name: 'Seltenheit Legendär auf allen Teilen (statt Selten/Ungewöhnlich)', build: (c, cls, rng) => { const g = plausibleChar(cls, 40, { gear: 'gut', seed: rng.int(1, 99) }); for (const s of SLOTS) { const it = g.equip[s]!; it.rarity = 4; it.up = c.equip[s]!.up; it.ilvl = c.equip[s]!.ilvl; c.equip[s] = it; } } },
   { name: 'Begleiter (Pilzling: +1,5 Leben/s) · Trophäen · Ausgeruht', note: 'kein Kampfwert: Regeneration, Gold, Erfahrung, Ruf' },
