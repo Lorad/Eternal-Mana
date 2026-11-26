@@ -1,6 +1,6 @@
 # Projektstatus – Eternal Mana
 
-Stand: Version 0.11.0 (Endspiel-Expeditionen, Tiefen, Bestenliste, Balance über die neue Länge; Quellwarte, Expeditionen und Ausrüstung mit zehn Plätzen; Feinschliff; Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
+Stand: Version 0.12.0 (Ausrüstungswert mit Empfehlungen je Inhalt; Expeditionen nur über die Quellwarte; Endspiel-Expeditionen, Tiefen, Bestenliste, Balance über die neue Länge; Quellwarte, Expeditionen und Ausrüstung mit zehn Plätzen; Feinschliff; Gemeinsam; Zuhause; Lebendige Welt; Endspiel; Akt II der Geschichte; Handwerk & Elemente; Launcher mit automatischen Updates; Grafik-Neuaufbau abgeschlossen)
 
 Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die Version in `package.json` und
 `shared/src/config.ts` pflegen. Der Launcher folgt dem Zweig aus `config/patcher.json`.
@@ -54,7 +54,7 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
   auf 4 Kernen) scheitern unter Last gelegentlich zeitkritische Schritte (zuletzt `coop`: Reaktion zu zweit, `welt`: seltenes
   Monster); einzeln laufen alle durch. Auf schwachen Rechnern `EM_JOBS=1` und `EM_TIMEOUT=2400` verwenden.
 
-### Ausrüstungswert (GS) – in Arbeit für die nächste Version
+### Ausrüstungswert (GS) – fertig in 0.12.0
 
 - Eine Formel in `shared/src/gearscore.ts`, Messpunkte und Empfehlungen in `shared/src/data/gsreq.ts`, alles beschrieben in
   `docs/GEAR_SCORE.md`. Gezeigt in Puppe (mit Wert je Platz), Charakterbogen, jedem Tooltip (Vergleich mit Änderung des

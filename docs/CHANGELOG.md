@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.0 – Ausrüstungswert
+
+- `shared/src/gearscore.ts`: eine Formel für Gegenstand und Charakter (Platzgewicht × (Stufe + 2) × (Seltenheit × Verbesserung
+  + 0,2 × Eigenschafts-Einheiten)); `shared/src/data/gsreq.ts`: Messpunkte `GS_REF`, Stufen, Empfehlungen und Mindestwerte je
+  Expedition/Grad/Tiefe/Riss, allgemeine Deklaration `GsReqDecl` (auch für künftige Raids), gemeinsame Belohnungsrechnung.
+  Dokumentation `docs/GEAR_SCORE.md`, Kalibrierung `scripts/gearscore-calib.ts`, Wächter in `tests/balance.test.ts`.
+- Server berechnet den Wert (`Player.gs`, in `recalc()`), verschickt ihn nur in Gruppe, Ansehen, Online-Liste, Gesuchen und
+  Lobby; nie aus dem Client übernommen. Warnung statt Sperre bei zu niedrigem Wert.
+- Oberfläche: Puppe, Charakterbogen, Tooltips mit Vergleich, Schmiede, Portal, Riss-Stein, Weltkarte, Gruppenrahmen,
+  Gruppenfenster, Ansehen, Bereitschaftsprüfung, Gruppenbereich und Trophäenhalle. Tests `tests/gearscore.test.ts`,
+  Browser-Durchlauf `tests/e2e/ausruestungswert.mjs`.
+
 ## 0.11.3 – Expeditionen nur über die Quellwarte
 
 - `server/src/expedition/hub.ts`: mit Quellwarte kein Portal in Quellhain. `Expedition.useExit`/`entry`: Dungeon-Eingänge

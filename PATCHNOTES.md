@@ -3,6 +3,23 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.12.0 – Ausrüstungswert
+_26.11.2026_
+
+### Ausrüstungswert (GS)
+- Neu: **Ausrüstungswert (GS)** – eine Zahl für die Güte deiner zehn angelegten Teile (Stufe, Seltenheit, Verbesserung, Eigenschaften, Runen, Element, Sonderwirkungen). Gleich gute Ausrüstung ergibt für jede Klasse denselben Wert; Setboni zählen nicht mit.
+- Puppe und Charakterbogen zeigen den Ausrüstungswert in der Farbe seiner Stufe (Grundausstattung, Erprobt, Gefestigt, Meisterlich, Endspiel), jeder Platz seinen eigenen Wert.
+- Jeder Gegenstand nennt seinen Ausrüstungswert; beim Vergleich steht, wie sich dein Gesamtwert ändert (▲ grün / ▼ rot) – Ringe gegen beide Ringplätze.
+- Die Schmiede zeigt beim Verbessern den Wert vorher und nachher.
+
+### Expeditionen und Gruppe
+- Am Portal trägt jede Expedition, jeder Schwierigkeitsgrad und jede Tiefe einen empfohlenen und einen Mindestwert, die empfohlene Stufe, die Belohnungsstufe und die Beute. Wer darunter liegt, wird gewarnt (in Gruppen mit Namen) – gesperrt wird nichts.
+- Mythisch, Tiefen, die Prüfung der Sieben und Mana-Risse ab Stufe 20 tragen die Belohnungsstufe „Raid-Endgame“; der Riss-Stein zeigt die Empfehlung je Stufe, die Weltkarte je Gebiet.
+- Den Ausrüstungswert deiner Mitspieler siehst du im Gruppenrahmen, im Gruppenfenster, beim Ansehen, in der Bereitschaftsprüfung und im Gruppenbereich der Quellwarte; die Trophäenhalle führt ihn in der Statistik. Berechnet wird er immer auf dem Server.
+
+### Behoben
+- Beim Ansehen stand die Verbesserungsstufe doppelt im Namen; Setteile wurden als „/4“ statt „/6“ gezählt.
+
 ## 0.11.3 – Expeditionen nur über die Quellwarte
 _26.11.2026_
 
