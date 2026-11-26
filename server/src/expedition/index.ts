@@ -441,10 +441,24 @@ function tickChase(zone: Zone, ev: EventState, s: ExpSection, inside: Player[], 
   }
   if (now < ev.next) return;
   ev.next = now + 0.35;
-  const half = Math.max(s.x1 - s.x0, s.y1 - s.y0) * TILE; // Breite quer zur Laufrichtung reicht über den ganzen Abschnitt
+  const half = Math.max(s.x1 - s.x0, s.y1 - s.y0) * TILE; // Breite quer zur Laufrichtung reicht über den ganzen Abschnitt …
   const fx = sx + ux * ev.front, fy = sy + uy * ev.front, px2 = -uy, py2 = ux, lvl = zone.def.level[1];
-  zone.addFx({ kind: 'tele', shape: 'line', x: fx - px2 * half / 2, y: fy - py2 * half / 2, x2: fx + px2 * half / 2, y2: fy + py2 * half / 2, w: 26, r: 0, el: 'phys', dur: 0.55, until: now + 0.55, hostile: true, raw: CFG.enemy.dmg(lvl) * 1.5, lvl, by: 'Einsturz' });
+  // … aber nicht über ihn hinaus: Die Linie endet an seinen Wänden, statt quer durch Mauern und Leere zu leuchten
+  const ln = clipToSection(s, fx - px2 * half / 2, fy - py2 * half / 2, fx + px2 * half / 2, fy + py2 * half / 2);
+  if (ln) zone.addFx({ kind: 'tele', shape: 'line', x: ln[0], y: ln[1], x2: ln[2], y2: ln[3], w: 26, r: 0, el: 'phys', dur: 0.55, until: now + 0.55, hostile: true, raw: CFG.enemy.dmg(lvl) * 1.5, lvl, by: 'Einsturz' });
   if (zone.rng.chance(0.5)) { const d = ev.front + zone.rng.range(40, 120); zone.addFx({ kind: 'tele', x: sx + ux * d + px2 * zone.rng.range(-30, 30), y: sy + uy * d + py2 * zone.rng.range(-30, 30), r: 18, el: 'phys', dur: 0.9, until: now + 0.9, hostile: true, raw: CFG.enemy.dmg(lvl) * 0.9, lvl, by: 'Trümmer' }); }
+}
+/** Strecke auf das Rechteck eines Abschnitts zuschneiden (Liang–Barsky); null, wenn sie ganz außerhalb liegt */
+function clipToSection(s: ExpSection, x0: number, y0: number, x1: number, y1: number): [number, number, number, number] | null {
+  const dx = x1 - x0, dy = y1 - y0, lo = [s.x0 * TILE, s.y0 * TILE], hi = [(s.x1 + 1) * TILE, (s.y1 + 1) * TILE];
+  let t0 = 0, t1 = 1;
+  for (const [p, q] of [[-dx, x0 - lo[0]], [dx, hi[0] - x0], [-dy, y0 - lo[1]], [dy, hi[1] - y0]]) {
+    if (p === 0) { if (q < 0) return null; continue; }
+    const r = q / p;
+    if (p < 0) t0 = Math.max(t0, r); else t1 = Math.min(t1, r);
+    if (t0 > t1) return null;
+  }
+  return [x0 + dx * t0, y0 + dy * t0, x0 + dx * t1, y0 + dy * t1];
 }
 function clearBarriers(zone: Zone, ev: EventState) {
   for (const o of ev.barriers) { zone.setObjState(o, 1); zone.objs.delete(o.id); zone.ev({ k: 'obj-', id: o.id }); }
@@ -825,7 +839,7 @@ export const Expedition = {
       return true;
     }
     if (cmd === 'mythisch') { // ein mythisches Stück vor die Füße legen (Darstellung am Boden prüfen)
-      p.zone.dropItemFor(p, generateGear(p.zone.rng, p.char.level, RARITY_NAME.length - 1, p.char.cls), p.x + 24, p.y);
+      p.zone.dropItemFor(p, generateGear(p.zone.rng, p.char.level, RARITY_NAME.length - 1, p.char.cls), p.x + 40, p.y);
       return true;
     }
     if (cmd === 'expphase' && p.zone.boss?.active) { const b = p.zone.boss, f = [0, 1, 0.58, 0.23][Math.max(1, Math.min(3, +a[0] || 2))]; b.mob.hp = Math.max(1, Math.round(b.mob.maxHp * f)); return true; }
