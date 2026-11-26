@@ -265,6 +265,15 @@ const AFFIXES: AffixDef[] = [
   // Elementarresistenzen (0.4): nur auf Rüstung und Schmuck, damit Waffen wie bisher würfeln
   ...(['resFire', 'resWater', 'resEarth', 'resWind', 'resLight', 'resDark'] as ModKey[]).map((k): AffixDef => ({ k, w: 1, v: L => 5 + L * 0.08, armorOnly: true })),
 ];
+/**
+ * Normstärke einer Eigenschaft auf Gegenstandsstufe L (vor dem Faktor des Platzes, AFFIX_SCALE): der Mittelwert, den
+ * `rollAffixes` für eine gewöhnliche Würfelung ansetzt. Grundlage des Ausrüstungswerts (shared/src/gearscore.ts).
+ * null = keine würfelbare Eigenschaft (Prozentwerte aus Runen und Verbesserung haben dort eigene Normstärken).
+ */
+export function affixNominal(k: ModKey, L: number): number | null {
+  const a = AFFIXES.find(d => d.k === k);
+  return a ? a.v(L) : null;
+}
 const CLASS_ATTR_BIAS: Record<ClassId, ModKey[]> = {
   krieger: ['str', 'vit'], magier: ['int', 'mp'], waldlaeufer: ['dex', 'crit'], paladin: ['str', 'int', 'vit'], schattenjaeger: ['dex', 'critDmg'],
 };

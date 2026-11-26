@@ -18,7 +18,8 @@ import { DIFFICULTY_NAME } from '../../../shared/src/data/hub';
 import { ITEMS, TIER_MATERIAL, generateBossUnique, generateGear, itemName, makeStack, rollRarity, tierOf } from '../../../shared/src/data/items';
 import { BIOME_MATS } from '../../../shared/src/data/materials';
 import { STORY } from '../../../shared/src/data/quests';
-import { kreisLevel, kreisOf } from '../../../shared/src/data/rifts';
+import { kreisOf } from '../../../shared/src/data/rifts';
+import { rewardIlvl, rewardRarity } from '../../../shared/src/data/gsreq';
 import type { ExpResult, ItemInstance } from '../../../shared/src/types';
 import { stashSlots } from '../../../shared/src/data/collection';
 import { fits, putInto, stashBlock } from '../../../shared/src/data/home';
@@ -34,18 +35,8 @@ export function totals(zone: Zone): { secrets: number; minis: number } {
   return { secrets: info.secrets.length, minis: info.minis.length };
 }
 
-/** Nächster Schwierigkeitsgrad (Endspiel-Expeditionen belohnen eine Stufe besser) */
-const NEXT: Record<Difficulty, Difficulty> = { normal: 'schwer', schwer: 'albtraum', albtraum: 'mythisch', mythisch: 'mythisch' };
-/**
- * Raritätsgewichte des Abschlusses (0.11): wie der Schwierigkeitsgrad – in Endspiel-Expeditionen wie der nächsthöhere, in Tiefen
- * mit einem Gewicht für „Mythisch“, das je Tiefe steigt (DEPTH_CFG.mythic).
- */
-export function rewardRarity(exp: string, diff: Difficulty, depth = 0): number[] {
-  const x = EXPEDITIONS[exp], d = x?.endgame ? NEXT[diff] : diff;
-  if (!depth && !(x?.endgame && diff === 'mythisch')) return diffRarity(d);
-  const mythic = (CFG.loot.mythic.expedition.mythisch?.[1] ?? 0) * depthScale(depth).mythic * (x?.endgame ? 1.5 : 1);
-  return rarityTable(EXP_DIFF.mythisch.rarity, mythic);
-}
+/** Raritätsgewichte und Gegenstandsstufe des Abschlusses stehen in shared/src/data/gsreq.ts (das Portal zeigt sie an) */
+export { rewardRarity };
 
 /** Belohnt einen Teilnehmer. Rückgabe: das Ergebnis – oder null, wenn dieser Lauf ihn schon belohnt hat. */
 export function grant(zone: Zone, p: Player): ExpResult | null {
@@ -88,7 +79,7 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
 
   // ---- Beute (persönlich, über die gewöhnlichen Gegenstandsfunktionen – neue Plätze und Seltenheiten fließen von selbst ein)
   // Albtraum und Mythisch heben auch frühe Expeditionen auf mindestens Stufe 42/45 (EXP_DIFF.lvlMin) – die Beute zieht mit
-  const ilvl = Math.min(CFG.player.maxLevel + 20, Math.max(d.lvlMin, kreisLevel(boss.level, kreisOf(c)) + d.ilvlPlus) + ds.ilvl);
+  const ilvl = rewardIlvl(run.exp, run.diff, depth, kreisOf(c));
   const w = rewardRarity(run.exp, run.diff, depth);
   for (let i = 0; i < EXP_CFG.gear + (weekly ? EXP_CFG.weeklyGear : 0); i++) give(generateGear(r, ilvl, rollRarity(r, w), c.cls));
   const legend = Math.max(0, RARITY_NAME.indexOf('Legendär'));

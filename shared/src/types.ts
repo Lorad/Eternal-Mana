@@ -234,6 +234,8 @@ export type GameEvent =
 
 export interface PartyMember {
   id: number; charId: number; name: string; cls: ClassId; level: number; hp: number; maxHp: number; zone: string; online: boolean;
+  /** Ausrüstungswert – vom Server aus seinen Gegenständen berechnet (shared/src/gearscore.ts); fehlt bei freigehaltenen Plätzen */
+  gs?: number;
   // ---- 0.7 (alles optional): führt die Gruppe an · gefallen · Kreis des Charakters · Welt-Instanz, in der er steht (gleicher Wert = ihr seht euch) ·
   //      Stufe des Mana-Risses, in dem er steckt · `away` = hält nur noch seinen Platz (Verbindung ganz verloren; `id` ist dann 0)
   lead?: 1; dead?: 1; kreis?: number; inst?: string; rift?: number; away?: 1;
@@ -251,6 +253,8 @@ export interface TradeView { with: { id: number; name: string; cls: ClassId; lev
 /** Ein anderer Spieler zum Ansehen (nur lesen) */
 export interface InspectInfo {
   id: number; name: string; cls: ClassId; level: number; title?: string; kreis: number; quell: number; riftStufe: number;
+  /** Ausrüstungswert, vom Server berechnet */
+  gs: number;
   equip: Partial<Record<AnySlot, ItemInstance>>;
   stats: { maxHp: number; maxMp: number; power: number; def: number; crit: number; el: Element };
   sets: Record<string, number>;
@@ -381,7 +385,7 @@ export interface EncDialog { id: number; who: string; look?: string; lines: stri
 
 // ---- Expeditionen (0.9)
 /** Bereitschaftsprüfung einer Gruppe vor dem Start. `here` = steht am Portal; `sec` = Restzeit */
-export interface ExpLobbyInfo { exp: string; diff: Difficulty; lead: number; sec: number; members: { charId: number; name: string; ready: boolean; here: boolean; online: boolean }[]; /** 0.11 */ depth?: number }
+export interface ExpLobbyInfo { exp: string; diff: Difficulty; lead: number; sec: number; members: { charId: number; name: string; ready: boolean; here: boolean; online: boolean; /** Ausrüstungswert (Server) */ gs: number }[]; /** 0.11 */ depth?: number }
 /** Laufende Expedition aus Sicht eines Teilnehmers (HUD). `t` = verstrichene Sekunden zum Zeitpunkt des Sendens */
 export interface ExpRunInfo {
   exp: string; diff: Difficulty; t: number; sec: string; goal: string;
@@ -432,7 +436,7 @@ export type ServerMsg =
   | { t: 'dead'; by: string }
   | { t: 'story'; id: string; lines: string[]; title?: string }
   | { t: 'env'; weather?: string; tod?: number }
-  | { t: 'online'; players: { name: string; cls: ClassId; level: number; zone: string; id: number }[] }
+  | { t: 'online'; players: { name: string; cls: ClassId; level: number; zone: string; id: number; /** Ausrüstungswert (Server) */ gs?: number }[] }
   | { t: 'saved' }
   // ---- Story (ab 0.3): aktueller Gesprächsknoten (null = beendet, err = abgelehnt), Filmszene abspielen, Chronik-Dokument zeigen
   | { t: 'dlg'; npc: string; topic: string; node: string | null; err?: 1 }
@@ -471,4 +475,4 @@ export interface ServerInfo {
 /** Ausrüstungshändler: Angebot für genau diesen Charakter (`got` = schon gekauft, `weekly` = Wochenstück); `next`/`nextWeek` = Sekunden bis zum Wechsel */
 export interface HubStock { day: number; week: number; lvl: number; next: number; nextWeek: number; offers: { item: ItemInstance; price: number; got?: 1; weekly?: 1 }[] }
 /** Gruppengesuch am Brett: wer, was, wie groß die Gruppe ist, wo und seit wie vielen Sekunden */
-export interface LfgEntry { id: number; name: string; cls: ClassId; level: number; goal: string; note?: string; size: number; lead: boolean; zone: string; sec: number }
+export interface LfgEntry { id: number; name: string; cls: ClassId; level: number; /** Ausrüstungswert (Server) */ gs?: number; goal: string; note?: string; size: number; lead: boolean; zone: string; sec: number }

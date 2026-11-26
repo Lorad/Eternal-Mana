@@ -70,7 +70,7 @@ export function inspect(g: Game, p: Player, id: number) {
   if (!t || t.linkdead) return;
   const c = t.char, s = t.stats;
   const i: InspectInfo = {
-    id: t.id, name: t.name, cls: c.cls, level: t.level, title: titleName(c), kreis: kreisOf(c), quell: c.quell?.lvl ?? 0, riftStufe: c.rift?.stufe ?? 1,
+    id: t.id, name: t.name, cls: c.cls, level: t.level, title: titleName(c), kreis: kreisOf(c), quell: c.quell?.lvl ?? 0, riftStufe: c.rift?.stufe ?? 1, gs: t.gs,
     equip: c.equip, sets: s.sets, pet: c.pet, look: c.look,
     stats: { maxHp: s.maxHp, maxMp: s.maxMp, power: Math.round(s.power), def: Math.round(s.def), crit: Math.round(s.crit * 1000) / 10, el: s.attackElement },
   };

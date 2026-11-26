@@ -23,6 +23,7 @@ import { DIFFICULTY_NAME } from '../../../shared/src/data/hub';
 import { generateGear, makeStack, rollRarity } from '../../../shared/src/data/items';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { kreisBossDef, kreisLevel, kreisOf } from '../../../shared/src/data/rifts';
+import { expRequirement, gsCheck, gsWarning } from '../../../shared/src/data/gsreq';
 import { ZONES, type ZoneDef } from '../../../shared/src/data/zones';
 import { getMap, type GameMap } from '../../../shared/src/maps/mapgen';
 import { rarityTable } from '../../../shared/src/rarity';
@@ -45,6 +46,16 @@ import { lobbiesOf, newRun, runs, type EventState, type ExpRun, type Lobby } fro
 
 type ExpMsg = Extract<ClientMsg, { t: 'exp' }>;
 const reject = (p: Player, s: string) => { p.toast(s, 'bad'); p.pev.push({ k: 'sfx', n: 'ui_error' }); };
+/**
+ * Ausrüstungswert gegen die Empfehlung des Laufs (data/gsreq.ts). Gerechnet mit `Player.gs` – dem Wert, den der Server aus seinen
+ * eigenen Gegenständen bildet; was ein Client schickt, zählt nie. Rückgabe: Ablehnungsgrund (nur bei harter Grenze) und Warnung.
+ */
+function gsGate(id: string, diff: Difficulty, depth: number, who: Player[]): { block: string | null; warn: string | null } {
+  const req = expRequirement(id, diff, depth);
+  const chk = gsCheck(req, who.map(q => ({ name: q.name, gs: q.gs })));
+  const text = gsWarning(req, chk, who.length === 1);
+  return chk.blocked ? { block: text, warn: null } : { block: null, warn: text };
+}
 const secOf = (zone: Zone, id: string) => zone.map.exp!.sections.find(s => s.id === id)!;
 const inSec = (s: ExpSection, x: number, y: number, pad = 0) => x >= (s.x0 + pad) * TILE && x < (s.x1 + 1 - pad) * TILE && y >= (s.y0 + pad) * TILE && y < (s.y1 + 1 - pad) * TILE;
 /** Was beim Hinterhalt die Ausgänge versperrt – im Grünwald Wurzeln, in den Archiven Gitter: [schließen, öffnen, Tür hält] */
@@ -169,7 +180,7 @@ function leave(game: Game, p: Player, why?: string) {
 // =====================================================================================================================
 function lobbyInfo(game: Game, l: Lobby): ExpLobbyInfo {
   return { exp: l.exp, diff: l.diff, depth: l.depth || undefined, lead: l.lead.charId, sec: Math.max(0, Math.round(l.until - game.now)),
-    members: [...l.party.members].map(q => ({ charId: q.charId, name: q.name, ready: l.ready.has(q.charId), here: nearPortal(q), online: !q.linkdead })) };
+    members: [...l.party.members].map(q => ({ charId: q.charId, name: q.name, ready: l.ready.has(q.charId), here: nearPortal(q), online: !q.linkdead, gs: q.gs })) };
 }
 function sendLobby(game: Game, l: Lobby | null, party: Lobby['party']) { const info = l ? lobbyInfo(game, l) : null; for (const q of party.members) q.send({ t: 'exp', lobby: info }); }
 function lobbyOf(game: Game, p: Player): Lobby | null {
@@ -751,8 +762,11 @@ export const Expedition = {
           if (wait.length) return reject(p, `Noch nicht bereit: ${wait.map(q => q.name).join(', ')}.`);
           const busy = online.filter(q => q.zone.exp || q.zone.rift || q.dead);
           if (busy.length) return reject(p, `Gerade verhindert: ${busy.map(q => q.name).join(', ')}.`);
+          const gate = gsGate(lobby.exp, lobby.diff, lobby.depth ?? 0, online);
+          if (gate.block) return reject(p, gate.block);
           lobbiesOf(game).delete(lobby.party); sendLobby(game, null, lobby.party);
           startRun(game, p, lobby.exp, lobby.diff, online, undefined, lobby.depth ?? 0);
+          if (gate.warn) for (const q of online) q.toast(gate.warn, 'info');
           return;
         }
         const id = String(m.id ?? ''), diff = (m.diff ?? 'normal') as Difficulty, depth = Math.max(0, Math.floor(Number(m.depth) || 0));
@@ -763,7 +777,13 @@ export const Expedition = {
         if (block) return reject(p, block);
         if (runFor(game, p)) return reject(p, 'Deine Gruppe hat bereits eine laufende Expedition – tritt ihr bei.');
         const others = p.party ? [...p.party.members].filter(q => q !== p && !q.linkdead) : [];
-        if (!others.length) { startRun(game, p, id, diff, [p], undefined, depth); return; }
+        const gate = gsGate(id, diff, depth, others.length ? [p, ...others] : [p]);
+        if (!others.length) {
+          if (gate.block) return reject(p, gate.block);
+          startRun(game, p, id, diff, [p], undefined, depth);
+          if (gate.warn) p.toast(gate.warn, 'info');
+          return;
+        }
         if (p.party!.leader !== p) return reject(p, 'Nur wer die Gruppe anführt, wählt die Expedition.');
         const l: Lobby = { exp: id, diff, depth, party: p.party!, lead: p, ready: new Set([p.charId]), until: game.now + EXP_CFG.lobbySec };
         lobbiesOf(game).set(p.party!, l);
@@ -774,7 +794,7 @@ export const Expedition = {
       case 'ready': case 'unready': {
         const l = lobbyOf(game, p);
         if (!l) return;
-        if (m.a === 'ready') { const b = runBlock(c, l.exp, l.diff, l.depth ?? 0); if (b) return reject(p, b); l.ready.add(p.charId); } else if (l.lead !== p) l.ready.delete(p.charId);
+        if (m.a === 'ready') { const b = runBlock(c, l.exp, l.diff, l.depth ?? 0) ?? gsGate(l.exp, l.diff, l.depth ?? 0, [p]).block; if (b) return reject(p, b); l.ready.add(p.charId); } else if (l.lead !== p) l.ready.delete(p.charId);
         sendLobby(game, l, l.party);
         return;
       }
@@ -792,6 +812,8 @@ export const Expedition = {
         if (!z) return reject(p, 'Deine Gruppe hat gerade keine laufende Expedition.');
         if (z.exp!.done) return reject(p, 'Dieser Lauf ist schon vorbei.');
         if (runBlock(c, z.exp!.exp, z.exp!.diff, z.exp!.depth ?? 0) && !z.exp!.members.has(p.charId)) return reject(p, 'Dieser Schwierigkeitsgrad (oder diese Tiefe) ist für dich noch nicht freigeschaltet.');
+        const gj = z.exp!.members.has(p.charId) ? null : gsGate(z.exp!.exp, z.exp!.diff, z.exp!.depth ?? 0, [p]).block;
+        if (gj) return reject(p, gj);
         enter(game, p, z);
         return;
       }

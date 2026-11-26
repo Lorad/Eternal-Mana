@@ -4,6 +4,7 @@ import { ITEMS } from '../../shared/src/data/items';
 import { DERIVED_OBJECTIVES, QUESTS, QUEST_LIST, objectiveProgress, objectiveTarget, questComplete } from '../../shared/src/data/quests';
 import { QUELL_MAX } from '../../shared/src/data/rifts';
 import { computeStats } from '../../shared/src/stats';
+import { charGS } from '../../shared/src/gearscore';
 import { Anim, FLAG_BUFF, FLAG_DEAD, FLAG_INVULN, FLAG_ROLL, FLAG_SHIELD, STATUS_BIT } from '../../shared/src/types';
 import type { CharData, Derived, Element, GameEvent, ItemInstance, Mods, ServerMsg, StatusId } from '../../shared/src/types';
 import type { Party } from './game';
@@ -46,12 +47,16 @@ export class Player {
   gear = newGearState();
   /** 0.7 Zuhause (gesetzt von server/src/home): dauerhafte Werte aus Begleiter und Trophäen; Faktoren für Aufsammelradius, Ruf, Schatzkarten */
   perkMods: Mods = {};
+  /** Ausrüstungswert (shared/src/gearscore.ts) – aus den Gegenständen des Servers, neu berechnet bei jedem `recalc` (also nach
+   *  jeder Änderung der Ausrüstung). Nie ein Wert vom Client. Geht nur in Gruppe, Ansehen, Bereitschaft und Online-Liste. */
+  gs = 0;
   perk = { pickup: 1, rep: 1, maps: 1 };
   /** Wird vor jedem Abgleich geänderter Charakterdaten gerufen (die Sammlung des Profils liest hier mit) */
   static onDirty: ((p: Player, keys: Set<keyof CharData>) => void) | null = null;
 
   constructor(public accountId: number, public charId: number, public char: CharData, public send: (m: ServerMsg) => void) {
     this.stats = computeStats(char);
+    this.gs = charGS(char);
     this.hp = Math.min(char.hp, this.stats.maxHp);
     this.mp = Math.min(char.mp, this.stats.maxMp);
   }
@@ -61,6 +66,7 @@ export class Player {
 
   recalc() {
     this.stats = computeStats(this.char, [...this.buffs.map(b => b.mods), this.perkMods]);
+    this.gs = charGS(this.char);
     this.hp = Math.min(this.hp, this.stats.maxHp);
     this.mp = Math.min(this.mp, this.stats.maxMp);
   }

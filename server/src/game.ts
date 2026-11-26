@@ -390,7 +390,7 @@ export class Game {
   story(p: Player, id: string) { const st = STORY[id]; if (st) p.send({ t: 'story', id, title: st.title, lines: st.lines }); }
   sysChat(s: string) { for (const p of this.players.values()) p.send({ t: 'chat', from: '', s, ch: 'sys' }); }
   private sendOnline() {
-    const players = [...this.players.values()].filter(p => !p.linkdead).map(p => ({ id: p.id, name: p.name, cls: p.char.cls, level: p.level, zone: p.zone.id }));
+    const players = [...this.players.values()].filter(p => !p.linkdead).map(p => ({ id: p.id, name: p.name, cls: p.char.cls, level: p.level, zone: p.zone.id, gs: p.gs }));
     for (const s of this.sessions) if (s.account) this.send(s, { t: 'online', players });
   }
   onlineCount() { return [...this.players.values()].filter(p => !p.linkdead).length; }

@@ -15,6 +15,7 @@ import type { CharData, Element } from '../types';
 import { condOk, type Cond } from './cond';
 import { DIFFICULTIES, DIFFICULTY_NAME, type Difficulty, type DungeonRecord } from './hub';
 import type { ZoneDef } from './zones';
+import type { GsReqDecl } from './gsreq';
 import type { BiomeId } from '../maps/tiles';
 import { ENDGAME_LIST, ENDGAME_MINIS } from './expeditions_endgame';
 
@@ -110,6 +111,8 @@ export interface ExpeditionDef {
   endgame?: boolean;
   /** 0.11: alter Dungeon, an dem sich die Erfahrung der Gegner bemisst, ohne dessen Eingang zu übernehmen (Endspiel) */
   xpRef?: string;
+  /** Ausrüstungswert je Grad selbst festlegen (empfohlen, Mindestwert, harte Grenze) – sonst gilt die Herleitung aus data/gsreq.ts */
+  gsReq?: Partial<Record<Difficulty, GsReqDecl>>;
 }
 
 /** Eine Freischaltbedingung mit Anzeige. Erfüllt, wenn `cond` zutrifft, die Stufe reicht und der Gegenstand im Rucksack liegt. */

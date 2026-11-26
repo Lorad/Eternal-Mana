@@ -109,7 +109,7 @@ function lfgList(g: Game): LfgEntry[] {
     const q = g.players.get(charId);
     if (!q || q.linkdead) continue;
     const size = q.party ? q.party.members.size + q.party.seats.size : 1;
-    out.push({ id: q.id, name: q.name, cls: q.char.cls, level: q.level, goal: e.goal, note: e.note || undefined, size, lead: !q.party || q.party.leader === q, zone: q.zone.id, sec: Math.round(now - e.at) });
+    out.push({ id: q.id, name: q.name, cls: q.char.cls, level: q.level, gs: q.gs, goal: e.goal, note: e.note || undefined, size, lead: !q.party || q.party.leader === q, zone: q.zone.id, sec: Math.round(now - e.at) });
   }
   return out.sort((a, b) => a.sec - b.sec);
 }

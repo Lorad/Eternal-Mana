@@ -4,10 +4,13 @@
  */
 import { CFG } from '../../shared/src/config';
 import { CLASSES } from '../../shared/src/data/classes';
-import { generateGear, makeStack, type GenKind } from '../../shared/src/data/items';
+import { makeLegendary } from '../../shared/src/craft';
+import { generateGear, makeStack, rescaleItem, type GenKind } from '../../shared/src/data/items';
 import { skillsOf } from '../../shared/src/data/skills';
+import { fullKit } from '../../shared/src/equip';
 import { newCharacter } from '../../shared/src/stats';
 import type { CharData, ClassId, ItemInstance, Slot } from '../../shared/src/types';
+import { SLOTS } from '../../shared/src/types';
 import { Rng } from '../../shared/src/util/rng';
 
 /** Leiste: die vier Fähigkeiten, die ein Spieler dieser Klasse am ehesten einpackt (in dieser Reihenfolge, soweit schon gelernt) */
@@ -83,5 +86,24 @@ export function plausibleChar(cls: ClassId, level: number, o: CharOpt = {}): Cha
   if (strong) c.inv.push(makeStack('potion_hp4', strong));
   if (hp - strong) c.inv.push(makeStack(`potion_hp${t}`, hp - strong));
   if (mp) c.inv.push(makeStack(`potion_mp${t}`, mp));
+  return c;
+}
+
+/**
+ * Die theoretische Spitze für den Ausrüstungswert (docs/GEAR_SCORE.md): alle zehn Plätze in `rarity` (4 = Legendär, 5 = Mythisch)
+ * auf +10, Gegenstandsstufe der höchsten Riss-Beute, Waffe mit Elementstufe 3 und Echo-Runen auf allem, was eine trägt.
+ * Bei Legendär ist die Waffe die Legendäre Waffe der Klasse (angeglichen), bei Mythisch eine mythische Waffe.
+ */
+export function topChar(cls: ClassId, rarity: 4 | 5, seed = 1): CharData {
+  const c = plausibleChar(cls, 40, { gear: 'gut', seed });
+  const rng = new Rng(seed * 4001 + rarity);
+  const ilvl = CFG.rift.ilvl(CFG.rift.maxStufe);
+  const kit = fullKit(rng, ilvl, rarity, cls);
+  if (rarity === 4) { const leg = makeLegendary(rng, cls, 40); rescaleItem(leg, ilvl); kit.weapon = leg; }
+  for (const s of SLOTS) { const it = kit[s]; if (it) it.up = CFG.upgrade.max; }
+  kit.weapon!.element = 'fire'; kit.weapon!.elv = 3; kit.weapon!.ench = 'echo_macht';
+  kit.helm!.ench = 'echo_wacht'; kit.armor!.ench = 'echo_wacht';
+  kit.ring1!.ench = 'echo_einklang'; kit.ring2!.ench = 'echo_einklang'; kit.amulet!.ench = 'echo_einklang';
+  c.equip = kit;
   return c;
 }

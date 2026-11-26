@@ -39,7 +39,7 @@ const sent = new WeakMap<Party, { sig: string; at: number }>();
 export function partyMembers(party: Party): PartyMember[] {
   const lead = party.leader;
   const out: PartyMember[] = [...party.members].map(q => ({
-    id: q.id, charId: q.charId, name: q.name, cls: q.char.cls, level: q.level, hp: Math.max(0, Math.round(q.hp)), maxHp: q.stats.maxHp, zone: q.zone.id, online: !q.linkdead,
+    id: q.id, charId: q.charId, name: q.name, cls: q.char.cls, level: q.level, hp: Math.max(0, Math.round(q.hp)), maxHp: q.stats.maxHp, zone: q.zone.id, online: !q.linkdead, gs: q.gs,
     lead: q === lead ? 1 : undefined, dead: q.dead ? 1 : undefined, kreis: kreisOf(q.char) || undefined, inst: q.zone.key, rift: q.zone.rift ? q.zone.rift.stufe : undefined,
     heim: Home.owner(q.zone)?.name,
   }));
