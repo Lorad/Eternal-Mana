@@ -29,8 +29,9 @@ zehn Plätze). Offen bleibt:
   im echten Kampf; Rätsel, Fallen, Schlüssel und das Einschlagen der geheimen Wände sind nur durch Tests und Bots geprüft.
 - **Einsturz-Jagd** (Gießerei, Hof) ist kurz: Die ferne Mündung liegt 10–14 Kacheln vom Zugang, die Bruchkante startet nach 1,6 s
   mit 46 px/s – wer losläuft, ist nach gut zwei Sekunden durch. Spannung bräuchte einen längeren Weg (Karte) oder eine schnellere Kante.
-- **Leistung, vier Spieler in einer Expedition** (`load-check.ts --exp`, Singende Tiefe): Takt im Mittel unter 1 ms (p99 ≈ 5 ms),
-  Snapshots im Mittel ≈ 1,7 kB, ≈ 34 kB/s je Spieler beim Durchkämpfen; im Bosskampf weniger.
+- **Leistung, vier Spieler in einer Expedition** (`load-check.ts --exp`): Takt im Mittel 0,8 ms (p99 2–5 ms, Budget 50 ms),
+  Snapshots im Mittel 1,7 kB (Singende Tiefe) bis 2,1 kB (Hof), 34–40 kB/s je Spieler beim Durchkämpfen, im Bosskampf 0,6 kB.
+  Zwei Vierergruppen in je einer Instanz: 1,35 ms je Takt. Kein Engpass gefunden.
 - **Dauer:** Bot-Läufe auf Normal brauchen allein 14–19 Minuten, zu zweit 11–19 (`scripts/exp-playtest.ts`). Schnelle Läufe
   von Wurzeltiefe und Gießerei liegen knapp unter 15 Minuten.
 - **Tempo:** Ein Abschluss bringt etwa zwei Stufen – mehr als die alten Dungeons. Der Tempo-Test misst noch die alten Karten.
