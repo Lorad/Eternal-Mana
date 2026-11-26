@@ -42,7 +42,7 @@ describe('Balance – Wächter über die wichtigsten Korridore', () => {
     expect(pacing(0.8, 60)[5].leave).toBeLessThan(CFG.player.maxLevel);
     // ein erster Abschluss auf Normal bei empfohlener Stufe: knapp zwei Stufen (bis 0.11: zweieinhalb bis gut drei)
     const levels = (from: number, xp: number) => { let l = from; while (xp >= CFG.xpToNext(l)) { xp -= CFG.xpToNext(l); l++; } return l - from + xp / CFG.xpToNext(l); };
-    for (const x of EXPEDITION_LIST) {
+    for (const x of EXPEDITION_LIST.filter(e => !e.endgame)) { // Endspiel (Stufe 40): Erfahrung füllt Quellstufen
       const e = expeditionXp(x.id, x.rec), up = levels(x.rec, e.mobs + e.minis + e.event + e.clear);
       expect(up, `${x.name}: Stufen je Abschluss`).toBeGreaterThan(1.3);
       expect(up, `${x.name}: Stufen je Abschluss`).toBeLessThan(2.6);

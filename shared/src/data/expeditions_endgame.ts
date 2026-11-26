@@ -23,17 +23,17 @@ const M = (m: MiniDef) => m;
 // =====================================================================================================================
 export const ENDGAME_MINIS: MiniDef[] = [
   // ---- Die Lange Wacht
-  M({ id: 'xm_erste_wache', name: 'Die Erste Wache', title: 'Stand vor Vael auf Posten', sprite: 'wachschatten', tint: 0xe8d8ff, scale: 2.1, element: 'dark',
+  M({ id: 'xm_erste_wache', name: 'Die Erste Wache', title: 'Stand vor Vael auf Posten', sprite: 'schattenwandler', tint: 0xe8d8ff, scale: 2.1, element: 'dark',
     hpMul: 48, dmgMul: 1.45, defMul: 1.4, speed: 64, radius: 13, ai: 'blink', pattern: ['lines', 'ring', 'adds'], every: 3.8, adds: ['wachschatten'],
     intro: '„Ich wurde vor tausend Jahren abgelöst. Mir hat nur niemand Bescheid gesagt.“' }),
-  M({ id: 'xm_nachtstute', name: 'Die Nachtstute', title: 'Sie schläft nie – und du auch nicht', sprite: 'albtraumross', tint: 0xff9070, scale: 1.8, element: 'fire',
+  M({ id: 'xm_nachtstute', name: 'Die Nachtstute', title: 'Sie schläft nie – und du auch nicht', sprite: 'nachtmahr', tint: 0xff9070, scale: 1.8, element: 'fire',
     hpMul: 42, dmgMul: 1.5, defMul: 1.1, speed: 86, radius: 14, ai: 'charge', pattern: ['charge', 'pools', 'ring'], every: 3.8,
     intro: 'Ihre Hufe hinterlassen Glut. Ihre Träume auch.' }),
   // ---- Das Atmende Herz
-  M({ id: 'xm_feldherr', name: 'Echo des Feldherrn', title: 'Er hat den Alten Krieg nie verlassen', sprite: 'erinnerter', tint: 0xffd090, scale: 2.0, element: 'dark',
+  M({ id: 'xm_feldherr', name: 'Echo des Feldherrn', title: 'Er hat den Alten Krieg nie verlassen', sprite: 'skelettkrieger', tint: 0xffd090, scale: 2.0, element: 'dark',
     hpMul: 50, dmgMul: 1.5, defMul: 1.8, speed: 50, radius: 14, ai: 'chase', pattern: ['stomp', 'lines', 'adds'], every: 4, adds: ['erinnerter'],
     intro: '„Sieben Reiche, eine Quelle. Ich habe gezählt, wer übrig blieb. Es waren zu wenige, um weiterzuzählen.“' }),
-  M({ id: 'xm_stillemutter', name: 'Die Mutter der Stille', title: 'Sie faltet Geräusche zusammen', sprite: 'stillefalter', tint: 0xf4f4ff, scale: 2.4, element: 'wind',
+  M({ id: 'xm_stillemutter', name: 'Die Mutter der Stille', title: 'Sie faltet Geräusche zusammen', sprite: 'fledermaus', tint: 0xf4f4ff, scale: 2.4, element: 'wind',
     hpMul: 36, dmgMul: 1.45, defMul: 0.9, speed: 80, radius: 12, ai: 'blink', pattern: ['ring', 'rain', 'adds'], every: 3.5, adds: ['stillefalter'],
     intro: 'Wo sie fliegt, hört man nichts mehr. Nicht einmal sich selbst.' }),
 ];
@@ -161,7 +161,7 @@ export function depthScale(depth: number) {
   return { lvl: Math.floor(D.lvl * t), hp: 1 + D.hp * t, dmg: 1 + D.dmg * t, ilvl: Math.floor(D.ilvl * t), reward: 1 + D.reward * t, mythic: 1 + D.mythic * t };
 }
 /** tiefste erreichte Tiefe über alle Expeditionen */
-export function deepest(c: CharData): number { let n = 0; for (const id in c.expeditions ?? {}) n = Math.max(n, Math.floor(c.expeditions![id].deep ?? 0)); return n; }
+export function deepest(c: CharData): number { let n = 0; for (const id in c.expeditions ?? {}) n = Math.max(n, Math.floor(Number(c.expeditions![id]?.deep) || 0)); return n; }
 
 // =====================================================================================================================
 //  Ehrungen: Titel (TITLE_SOURCES in rifts.ts) – die Erscheinungen stehen in data/looks.ts
