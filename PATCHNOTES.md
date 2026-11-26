@@ -3,6 +3,13 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.11.1 – Richtige Symbole
+_26.11.2026_
+
+- **Behoben:** Handschuhe, Beine, Schuhe und andere neue Ausrüstungsteile zeigten bei manchen Spielern einen Edelstein statt ihres Symbols. Ursache: Der Browser hielt nach dem Update an der alten Grafikdatei fest. Grafiken tragen jetzt eine Kennung ihres Inhalts und werden nach jedem Update neu geladen.
+- Fehlt ein Symbol einmal doch, erscheint ein passendes Ersatzsymbol statt des Edelsteins.
+- Nach einem Update lädt der Browser nur die Grafiken neu, die sich geändert haben; alles andere kommt weiter schnell aus dem Zwischenspeicher.
+
 ## 0.11.0 – Endspiel der Expeditionen
 _26.11.2026_
 

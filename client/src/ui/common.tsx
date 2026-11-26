@@ -3,7 +3,7 @@ import type { ComponentChildren, JSX } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio';
 import type { SfxName } from '../audio';
-import { iconUrl, portraitUrl } from '../gfx/runtime';
+import { hasIcon, iconUrl, portraitUrl } from '../gfx/runtime';
 import { ITEM_ICONS, UNIQUE_ICONS } from '../gfx/spec';
 import { net } from '../net/net';
 import { onSettingsChange, settings } from '../state/settings';
@@ -169,14 +169,15 @@ const ICON_FALLBACK: Record<string, string> = {
   gloves_heavy: 'armor_heavy', gloves_light: 'armor_light', gloves_robe: 'robe',
   legs_heavy: 'armor_heavy', legs_light: 'armor_light', legs_robe: 'robe',
   boots_heavy: 'helm_heavy', boots_light: 'helm_light', boots_robe: 'hood',
-  shield: 'armor_heavy', quiver: 'bow', tome: 'scroll', focus: 'gem', offdagger: 'dagger',
+  shield: 'armor_heavy', quiver: 'bow', tome: 'scroll', focus: 'staff', offdagger: 'dagger',
   slot_offhand: 'armor_heavy', slot_gloves: 'armor_light', slot_legs: 'armor_light', slot_boots: 'helm_light', slot_amulet: 'amulet', slot_ring: 'ring',
 };
 const DRAWN = new Set<string>(ITEM_ICONS);
 export function iconKey(k: string): string {
   if (!k.startsWith('item_')) return k;
   const n = k.slice(5);
-  return !DRAWN.has(n) && ICON_FALLBACK[n] ? 'item_' + ICON_FALLBACK[n] : k;
+  // nicht gezeichnet – oder im geladenen Atlas (noch) nicht vorhanden: lieber ein verwandtes Icon als der Edelstein-Ersatz
+  return (!DRAWN.has(n) || !hasIcon(k)) && ICON_FALLBACK[n] ? 'item_' + ICON_FALLBACK[n] : k;
 }
 export function Icon({ k, el, size = 48, class: c }: { k: string; el?: Element; size?: number; class?: string }) {
   return <img class={cx('px', c)} src={iconUrl(iconKey(k), el)} width={size} height={size} alt="" draggable={false} />;

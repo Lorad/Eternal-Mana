@@ -69,7 +69,7 @@ export function CostList({ cost, char }: { cost: Cost; char: CharData }) {
         const have = countItem(char, b), it = ITEMS[b];
         return (
           <li class={cx(have < n && 'bad')}>
-            <span class="row"><Icon k={'item_' + (it?.icon ?? 'gem')} size={24} />{it?.name ?? b}</span>
+            <span class="row"><Icon k={'item_' + (it?.icon ?? 'scroll')} size={24} />{it?.name ?? b}</span>
             <span class="craft-have"><b>{have}</b> / {n}</span>
           </li>
         );
@@ -163,7 +163,7 @@ function Recipes({ char, station, at }: { char: CharData; station: StationId; at
             return (
               <li>
                 <button type="button" class={cx('craft-row', r?.id === x.id && 'on', !!w && 'blocked', !known && 'locked')} onClick={() => { sfx('ui_click'); setSel(x.id); setQty(1); }}>
-                  <span class={cx('slot slot-sm slot-static', 'r' + minRarity(x))}><Icon k={'item_' + (b?.icon ?? 'gem')} size={36} /></span>
+                  <span class={cx('slot slot-sm slot-static', 'r' + minRarity(x))}><Icon k={'item_' + (b?.icon ?? 'scroll')} size={36} /></span>
                   <span class="grow craft-name"><b>{recipeLabel(x, char.cls)}</b><small>{CAT_NAME[x.cat]}{x.level > 1 ? ` · ab Stufe ${x.level}` : ''}{b && isGear(b) ? ` · Gegenstandsstufe ${outIlvl(x, char.level)}` : ''}</small></span>
                   <span class={cx('craft-state', !w && 'good')}>{shortWhy(w)}</span>
                 </button>

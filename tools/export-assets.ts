@@ -15,6 +15,7 @@
  * Läuft in Node mit @napi-rs/canvas als Canvas-Ersatz – kein Browser nötig. Die Ausgabe ist deterministisch.
  */
 import { createCanvas, ImageData, loadImage, type Canvas } from '@napi-rs/canvas';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -203,6 +204,16 @@ for (const name of Object.keys(bundle.overlays ?? {})) {
   manifest.overlays[name] = { file: rel(file) };
 }
 catalog.push({ group: 'Overlays (256×256, nahtlos)', rows: [['Datei', 'Verwendung'], ...Object.keys(manifest.overlays).map(n => [`\`overlays/${n}.png\``, n === 'fog' ? 'ziehender Nebel' : n === 'cloud_shadow' ? 'Wolkenschatten über der Oberwelt' : n === 'leaf_shadow' ? 'Blätterschatten im Grünwald' : 'Overlay'])] });
+// Jede Datei bekommt eine Inhaltskennung (`?v=…`). Der Server liefert solche Adressen mit langer Zwischenspeicherung aus;
+// ändert sich eine Grafik, ändert sich ihre Adresse, und der Browser lädt sie neu (sonst bliebe ein Jahr lang die alte Datei).
+const stamp = (o: any): void => {
+  for (const k in o) {
+    const v = o[k];
+    if ((k === 'file' || k === 'json') && typeof v === 'string') o[k] = v + '?v=' + crypto.createHash('sha1').update(fs.readFileSync(path.join(OUT, v))).digest('hex').slice(0, 10);
+    else if (v && typeof v === 'object') stamp(v);
+  }
+};
+stamp({ sheets: manifest.sheets, outfits: manifest.outfits, atlases: manifest.atlases, liquids: manifest.liquids, overlays: manifest.overlays });
 write(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 1));
 
 // ---------------------------------------------------------------- Tiled-Karten

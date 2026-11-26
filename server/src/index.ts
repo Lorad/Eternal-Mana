@@ -59,9 +59,16 @@ async function main() {
     if (rel.endsWith('/')) rel += 'index.html';
     let file = path.normalize(path.join(dist, rel));
     if (!file.startsWith(dist)) { res.writeHead(403); res.end(); return; }
-    if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(dist, 'index.html');
-    const ext = path.extname(file);
-    res.writeHead(200, { 'content-type': MIME[ext] ?? 'application/octet-stream', 'cache-control': rel.includes('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache' });
+    const found = fs.existsSync(file) && !fs.statSync(file).isDirectory();
+    if (!found) file = path.join(dist, 'index.html');
+    const ext = path.extname(file), st = fs.statSync(file);
+    // Lange zwischenspeichern nur, was seinen Inhalt in der Adresse trägt: Vite-Dateien mit Hash im Namen und Grafiken mit
+    // `?v=<Inhaltskennung>` (Manifest). Alles andere fragt der Browser jedes Mal kurz nach (304, wenn unverändert) – sonst
+    // bliebe nach einem Update z. B. ein alter Symbol-Atlas im Browser und neue Gegenstände zeigten ein Ersatzsymbol.
+    const fixed = found && (url.searchParams.has('v') || /-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/.test(rel));
+    const tag = `"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}"`;
+    if (!fixed && req.headers['if-none-match'] === tag) { res.writeHead(304, { etag: tag, 'cache-control': 'no-cache' }); res.end(); return; }
+    res.writeHead(200, { 'content-type': MIME[ext] ?? 'application/octet-stream', 'cache-control': fixed ? 'public, max-age=31536000, immutable' : 'no-cache', etag: tag });
     fs.createReadStream(file).pipe(res);
   });
 

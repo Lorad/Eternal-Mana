@@ -127,6 +127,8 @@ function cut(sheet: Sheet, frame: string, scale: number): string | null {
   ctx.drawImage(sheet.canvas, f.x, f.y, f.w, f.h, 0, 0, cv.width, cv.height);
   return cv.toDataURL('image/png');
 }
+/** Liegt dieses Icon im geladenen Atlas? (Vor dem Laden: ja – dann gibt es ohnehin noch kein Bild.) */
+export function hasIcon(key: string): boolean { return !icons || !!icons.frames[key]; }
 /** Data-URL eines 24x24-Icons. key = `item_<name>` oder `skill_<glyph>`; element färbt Skill-Hintergründe. */
 export function iconUrl(key: string, element: ElementKey = 'phys'): string {
   if (!icons) return EMPTY;

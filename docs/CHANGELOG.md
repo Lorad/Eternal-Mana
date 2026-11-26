@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.1 – Zwischenspeicher der Grafiken
+
+- `tools/export-assets.ts` hängt jeder Datei im Manifest eine Inhaltskennung an (`?v=<sha1>`); der Server
+  (`server/src/index.ts`) speichert nur noch Adressen mit Kennung oder Vite-Hash lange zwischen, alles andere mit ETag und
+  `no-cache` (304 bei unverändert). Vorher galt `/assets/*` ein Jahr lang als unveränderlich – nach einem Update blieb der alte
+  Symbol-Atlas im Browser, und neue Gegenstände fielen auf `item_gem` zurück.
+- `iconKey` prüft, ob ein Icon im geladenen Atlas liegt (`hasIcon`), und nimmt sonst ein verwandtes Icon; Ersatz in der
+  Schmiede ist die Schriftrolle statt des Edelsteins.
+
 ## 0.11.0 – Endspiel der Expeditionen (Meilensteine 0.10 und 0.11)
 
 - Browser-Durchläufe aller Expeditionen (`tests/e2e/expeditionen.mjs`, `expeditionen-spaet.mjs`, `expedition-grade.mjs`,
