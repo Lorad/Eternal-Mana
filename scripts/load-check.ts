@@ -3,10 +3,14 @@
  * und die Größe der Snapshots. Der Server läuft in diesem Prozess (echte WebSockets), die Bots in einem Kindprozess,
  * damit ihr JSON-Aufwand die Messung nicht verfälscht.
  *
- *   npx tsx scripts/load-check.ts [bots=12] [sekunden=60] [--solo] [--hub]
+ *   npx tsx scripts/load-check.ts [bots=12] [sekunden=60] [--solo] [--hub] [--exp [exp_kristall] [--boss]]
  *
  * `--hub` (0.9): Die Bots stehen in der Quellwarte, laufen zwischen den Einrichtungen hin und her, hängen Gruppengesuche aus
  * und lesen das Brett – so viele Spieler wie möglich an einem Ort, ohne Kampf.
+ *
+ * `--exp [id]` (0.9): Je vier Bots bilden eine Gruppe und laufen gemeinsam durch EINE Expedition (eigene Instanz je Gruppe):
+ * Abschnitt für Abschnitt des Hauptwegs, kämpfen dort, bis es ruhig ist, und ziehen weiter – am Ende in den Endboss.
+ * Mit `--boss` beginnen die Gruppen gleich in der Bossarena. Standard: 4 Bots, 90 Sekunden. Die Taktdauer gilt für den ganzen Server, die Snapshots sind die der Gruppe.
  *
  * Ohne `--solo` bilden die Bots Vierergruppen (Gruppenwertung, Gruppenanzeige). Ausgabe: eine Tabelle und eine JSON-Zeile.
  */
@@ -21,7 +25,8 @@ process.env.EM_DEV = '1';
 const args = process.argv.slice(2);
 const flag = (n: string) => args.includes('--' + n);
 const nums = args.filter(a => /^\d+$/.test(a)).map(Number);
-const BOTS = nums[0] ?? 12, SECS = nums[1] ?? 60;
+const EXP = flag('exp') ? (args[args.indexOf('--exp') + 1]?.startsWith('exp_') ? args[args.indexOf('--exp') + 1] : 'exp_kristall') : '';
+const BOTS = nums[0] ?? (EXP ? 4 : 12), SECS = nums[1] ?? (EXP ? 90 : 60);
 const CLASSES = ['krieger', 'magier', 'waldlaeufer', 'paladin', 'schattenjaeger'] as const;
 
 if (flag('bots')) await runBots(args[args.indexOf('--bots') + 1]);
@@ -61,7 +66,7 @@ async function runServer() {
   await new Promise<void>(res => server.listen(port, '127.0.0.1', res));
   game.start();
 
-  const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', '--import', 'tsx', fileURLToPath(import.meta.url), String(BOTS), String(SECS), ...(flag('solo') ? ['--solo'] : []), ...(flag('hub') ? ['--hub'] : []), '--bots', `ws://127.0.0.1:${port}/ws`],
+  const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', '--import', 'tsx', fileURLToPath(import.meta.url), String(BOTS), String(SECS), ...(flag('solo') ? ['--solo'] : []), ...(flag('hub') ? ['--hub'] : []), ...(EXP ? ['--exp', EXP] : []), ...(flag('boss') ? ['--boss'] : []), '--bots', `ws://127.0.0.1:${port}/ws`],
     { stdio: ['ignore', 'pipe', 'inherit'], env: process.env });
   let botOut = '';
   child.stdout.on('data', d => {
@@ -83,7 +88,7 @@ async function runServer() {
     zonen: zones.map(z => `${z.key}: ${z.players.size} Spieler, ${[...z.mobs.values()].filter(m => m.awake).length} wache Gegner`),
     bots_bericht: botOut.split('\n').filter(l => l.startsWith('BOTS ')).map(l => l.slice(5)).join(' | '),
   };
-  console.log('\nLastprobe – ' + BOTS + ' Bots, ' + SECS + ' s' + (flag('solo') ? ', ohne Gruppen' : ', in Vierergruppen'));
+  console.log('\nLastprobe – ' + BOTS + ' Bots, ' + SECS + ' s' + (EXP ? `, Expedition ${EXP} in Vierergruppen` : flag('solo') ? ', ohne Gruppen' : ', in Vierergruppen'));
   console.log(`  Server-Takt:   Mittel ${res.takt_ms.mittel} ms · p50 ${res.takt_ms.p50} · p95 ${res.takt_ms.p95} · p99 ${res.takt_ms.p99} · max ${res.takt_ms.max} ms  (Budget ${1000 / CFG.net.tickRate} ms, ${res.takt_ms.anzahl} Takte)`);
   console.log(`  Rechenzeit:    Mittel ${res.takt_cpu_ms.mittel} ms · p95 ${res.takt_cpu_ms.p95} · p99 ${res.takt_cpu_ms.p99} ms je Takt`);
   console.log(`  Snapshot:      Mittel ${res.snapshot_bytes.mittel} B · p95 ${res.snapshot_bytes.p95} B · max ${res.snapshot_bytes.max} B`);
@@ -111,6 +116,7 @@ async function runBots(url: string) {
   for (const b of bots) { b.chat('/lvl 5'); b.chat('/welt aus'); }
   await bots[0].sleep(400);
   if (flag('hub')) return hubBots(bots);
+  if (EXP) return expBots(bots);
   // Sammelpunkt: die Gegnergruppe, die dem Start am nächsten liegt – alle kämpfen im selben Gebiet
   const m0 = bots[0].nearestMob()!;
   await Promise.all(bots.map((b, i) => b.warp(m0.x + 30 * Math.cos(i), m0.y + 30 * Math.sin(i)).catch(() => {})));
@@ -177,6 +183,60 @@ async function hubBots(bots: any[]) {
     }
   }));
   console.log(`BOTS Wege: ${walks}, Zone: ${bots[0].zone}`);
+  for (const b of bots) b.close();
+  await new Promise(r => setTimeout(r, 300));
+  process.exit(0);
+}
+
+/** 0.9: Lastprobe in einer Expedition – Vierergruppen, jede in ihrer Instanz, kämpfen sich den Hauptweg entlang bis zum Endboss */
+async function expBots(bots: any[]) {
+  const { EXPEDITIONS } = await import('../shared/src/data/expeditions');
+  const { getMap } = await import('../shared/src/maps/mapgen');
+  const { SKILLS } = await import('../shared/src/data/skills');
+  const x = EXPEDITIONS[EXP];
+  // --boss: gleich in die Arena (misst den Endkampf mit Phasen, Signatur und Helfern)
+  const path = getMap(EXP).exp!.sections.filter(s => s.main && s.role !== 'reward' && s.role !== 'entrance' && (!flag('boss') || s.role === 'boss')).map(s => s.id);
+  // unverwundbar: gemessen wird der Server, nicht das Können der Bots – so erreichen sie in der Messzeit auch den Endboss
+  for (const b of bots) { b.chat('/lvl ' + (x.rec + 4)); b.chat('/expfrei'); b.chat('/god'); }
+  await bots[0].sleep(600);
+  const groups: any[][] = [];
+  for (let i = 0; i < bots.length; i += 4) groups.push(bots.slice(i, i + 4));
+  for (const g of groups) {
+    for (const m of g.slice(1)) { g[0].send({ t: 'party', a: 'invite', id: m.me }); await g[0].sleep(80); m.send({ t: 'party', a: 'accept' }); await g[0].sleep(80); }
+    g[0].chat('/exp ' + EXP);
+  }
+  for (let i = 0; i < 60 && !bots.every(b => b.zone === EXP); i++) await bots[0].sleep(100);
+  if (!bots.every(b => b.zone === EXP)) throw new Error('Nicht alle Bots sind in der Expedition: ' + bots.map(b => b.zone).join(', '));
+  console.log('BEREIT');
+  const until = Date.now() + SECS * 1000;
+  let kills = 0, deaths = 0, casts = 0;
+  const reached = groups.map(() => '');
+  await Promise.all(groups.map(async (g, gi) => {
+    for (const sec of path) {
+      if (Date.now() >= until) break;
+      reached[gi] = sec;
+      for (const b of g) b.chat(`/expgo ${sec} mitte`);
+      await g[0].sleep(500);
+      const t0 = Date.now(), boss = sec === path[path.length - 1];
+      // im Abschnitt kämpfen, bis im Umkreis niemand mehr steht (höchstens 12 s, im Endboss bis zum Ende der Messung)
+      await Promise.all(g.map(async (b, i) => {
+        let castAt = 0;
+        while (Date.now() < until && (boss || Date.now() - t0 < 12000)) {
+          if (b.dead) { deaths++; b.send({ t: 'respawn' }); await b.sleep(600); b.chat(`/expgo ${sec} mitte`); await b.sleep(300); continue; }
+          const t = b.nearestMob(260);
+          if (!t) { if (!boss) break; await b.sleep(200); continue; }
+          const d = Math.hypot(t.x - b.x, t.y - b.y), ang = Math.atan2(t.y - b.y, t.x - b.x);
+          if (d > 26) { const x0 = b.x, y0 = b.y; await b.walkTo(t.x, t.y, 500, 22); if (Math.hypot(b.x - x0, b.y - y0) < 4) await b.warp(t.x + 16 * Math.cos(i), t.y + 16 * Math.sin(i)).catch(() => {}); continue; }
+          b.send({ t: 'atk', ang });
+          if (Date.now() > castAt) { castAt = Date.now() + 2500; const sk = b.char.hotbar.find((id: string) => id && SKILLS[id]); if (sk) { b.send({ t: 'skill', id: sk, ang, tx: t.x, ty: t.y }); casts++; } }
+          const had = b.mobs.has(t.id);
+          await b.sleep(140);
+          if (had && !b.mobs.has(t.id)) kills++;
+        }
+      }));
+    }
+  }));
+  console.log(`BOTS Gegner besiegt (gezählt je Bot): ${kills}, Tode: ${deaths}, Fähigkeiten: ${casts}, erreicht: ${reached.join('/')} von ${path.length} Abschnitten, Stufe: ${bots.map(b => b.char.level).join('/')}`);
   for (const b of bots) b.close();
   await new Promise(r => setTimeout(r, 300));
   process.exit(0);
