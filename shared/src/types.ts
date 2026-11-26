@@ -284,6 +284,8 @@ export type ClientMsg =
   | { t: 'quick'; kind: 'hp' | 'mp' }
   | { t: 'drop'; uid: string }
   | { t: 'sell'; uid: string; qty?: number }
+  /** Verkaufsfeld im Inventar (0.12.1): mehrere ganze Gegenstände/Stapel auf einmal, überall – auch im Dungeon */
+  | { t: 'sellMany'; uids: string[] }
   | { t: 'buy'; npc: string; idx: number; qty?: number }
   | { t: 'upgrade'; uid: string; npc: string }
   // Handwerk (0.4): `at` = NPC-ID der Station oder 'fire' (Lagerfeuer)

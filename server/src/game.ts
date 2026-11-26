@@ -235,6 +235,7 @@ export class Game {
       case 'quick': return this.quick(p, m.kind);
       case 'drop': { const i = p.char.inv.findIndex(it => it.uid === m.uid); if (i >= 0 && ITEMS[p.char.inv[i].base].kind !== 'quest') { p.char.inv.splice(i, 1); p.sync('inv'); } return; }
       case 'sell': return this.sell(p, m.uid, m.qty);
+      case 'sellMany': return this.sellMany(p, m.uids);
       case 'buy': return this.buy(p, m.npc, m.idx, m.qty ?? 1);
       case 'upgrade': return this.upgrade(p, m.uid, m.npc);
       case 'craft': case 'reforge': case 'infuse': case 'enchant': return handleCraft(this, p, m);
@@ -510,6 +511,21 @@ export class Game {
     if ((it.qty ?? 1) > n) it.qty = (it.qty ?? 1) - n; else c.inv.splice(c.inv.indexOf(it), 1);
     p.sync('inv'); p.pev.push({ k: 'sfx', n: 'sell' });
     p.checkCollectQuests();
+  }
+  /** Verkaufsfeld (0.12.1): erst alles prüfen, dann in einem Zug verkaufen und sofort speichern. Questgegenstände bleiben. */
+  private sellMany(p: Player, uids: unknown) {
+    if (!Array.isArray(uids)) return;
+    const c = p.char, want = new Set(uids.filter((u): u is string => typeof u === 'string').slice(0, CFG.player.invSize + 4));
+    const items = c.inv.filter(i => want.has(i.uid) && ITEMS[i.base] && ITEMS[i.base].kind !== 'quest');
+    if (!items.length) return;
+    let gold = 0, n = 0;
+    for (const it of items) { gold += sellPrice(it) * (it.qty ?? 1); n += 1; }
+    c.inv = c.inv.filter(i => !items.includes(i));
+    p.gainGold(gold);
+    p.sync('inv'); p.pev.push({ k: 'sfx', n: 'sell' });
+    p.checkCollectQuests();
+    p.toast(`${n === 1 ? '1 Gegenstand' : n + ' Gegenstände'} für ${gold.toLocaleString('de-DE')} Gold verkauft.`, 'good');
+    this.savePlayer(p);
   }
   private buy(p: Player, npc: string, idx: number, qty: number) {
     if (!this.nearNpc(p, npc)) return;

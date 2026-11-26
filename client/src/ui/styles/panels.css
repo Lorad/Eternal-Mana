@@ -35,6 +35,16 @@
 .inv-grid { display: grid; grid-template-columns: repeat(8, 54px); gap: 4px; padding: 6px; background: rgba(6, 7, 13, .55); border: 2px solid #07080e; box-shadow: inset 0 0 0 1px #2c3352; border-radius: 3px; }
 .inv-grid.sm { grid-template-columns: repeat(10, 42px); }
 .inv-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+/* Verkaufsfeld (0.12.1): Ziel zum Hineinziehen unter dem Rucksack */
+.sell-box { margin-top: 8px; padding: 6px 8px 8px; border: 2px dashed #3a4466; border-radius: 3px; background: rgba(6, 7, 13, .45); transition: border-color .12s, background .12s; }
+.sell-box.hot { border-color: var(--gold); background: rgba(227, 183, 92, .1); }
+.sell-box.full { border-style: solid; }
+.sell-head { display: flex; align-items: center; gap: 10px; min-height: 24px; }
+.sell-head b { font: 700 13px var(--serif); font-variant: small-caps; letter-spacing: .06em; color: var(--gold-hi); }
+.sell-head .note { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sell-sum { flex: none; font-weight: 700; }
+.sell-items { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0 2px; max-height: 96px; overflow-y: auto; }
+.sell-btns { margin-top: 6px; gap: 8px; }
 .inv-gold { display: inline-flex; align-items: center; gap: 8px; padding: 3px 12px; background: rgba(6, 7, 13, .55); box-shadow: inset 0 0 0 1px var(--gold-dk); border-radius: 14px; font-size: 13px; color: var(--dim); white-space: nowrap; }
 .inv-detail { min-height: 300px; display: flex; flex-direction: column; gap: 12px; }
 .inv-detail .tip-item { width: auto; }

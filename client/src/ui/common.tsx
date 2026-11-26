@@ -256,7 +256,11 @@ interface SlotProps {
   size?: 'sm';
   /** 0.12: Ausrüstungswert des Teils als kleine Zahl unten rechts (Puppe, Ansehen) */
   gs?: boolean;
+  /** 0.12.1: lässt sich ziehen (Inventar → Verkaufsfeld); die Kennung landet als ITEM_DRAG im Drag-Datensatz */
+  drag?: boolean;
 }
+/** Datentyp beim Ziehen eines Gegenstands (HTML5 Drag & Drop) */
+export const ITEM_DRAG = 'application/x-em-item';
 export function ItemSlot(p: SlotProps) {
   const it = p.item;
   const b = it ? ITEMS[it.base] : null;
@@ -269,6 +273,8 @@ export function ItemSlot(p: SlotProps) {
       onClick={() => { if (it || p.onClick) sfx('ui_click'); p.onClick?.(); }}
       onDblClick={() => { if (it) p.onAlt?.(); }}
       onContextMenu={e => { e.preventDefault(); if (it) p.onAlt?.(); }}
+      draggable={!!(p.drag && it)}
+      onDragStart={e => { if (!it || !p.drag || !e.dataTransfer) return; if (ref.current) hideTip(ref.current); e.dataTransfer.setData(ITEM_DRAG, it.uid); e.dataTransfer.setData('text/plain', itemName(it)); e.dataTransfer.effectAllowed = 'move'; }}
       onMouseEnter={show} onFocus={show}
       onMouseLeave={() => ref.current && hideTip(ref.current)} onBlur={() => ref.current && hideTip(ref.current)}>
       {it && b ? <Icon k={itemIconKey(it)} size={p.size === 'sm' ? 36 : 48} /> : p.placeholder ? <Icon k={p.placeholder} class="ghost-icon" size={p.size === 'sm' ? 36 : 48} /> : null}

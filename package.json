@@ -1,6 +1,6 @@
 {
   "name": "eternal-mana",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "private": true,
   "description": "Eternal Mana – ein Browser-Action-RPG mit autoritativem Server und Koop-Multiplayer über Tailscale",
   "type": "module",

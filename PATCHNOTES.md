@@ -3,6 +3,13 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.12.1 – Verkaufen von überall
+_26.11.2026_
+
+- **Verkaufsfeld im Inventar:** Zieh Gegenstände aus dem Rucksack ins Feld „Verkauf“ – oder Umschalt+Klick, oder „In den Verkauf“ im Detailbereich – und verkaufe alles mit einem Klick. Der Gesamtpreis steht daneben.
+- Funktioniert überall, auch mitten im Dungeon und in Expeditionen, zum normalen Händlerpreis.
+- Liegen wertvolle Stücke im Feld (episch oder besser, ab +3, Setteile, benannte Stücke, mit Element), fragt das Spiel vorher nach. Questgegenstände lassen sich nicht hineinlegen.
+
 ## 0.12.0 – Ausrüstungswert
 _26.11.2026_
 

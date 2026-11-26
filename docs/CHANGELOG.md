@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.1 – Verkaufsfeld
+
+- Neue Nachricht `sellMany` (`server/src/game.ts`): prüft alle Kennungen, verkauft in einem Zug, speichert sofort; Quest-
+  gegenstände, fremde und doppelte Kennungen zählen nicht. Verkaufsfeld mit HTML5-Drag-and-Drop in
+  `client/src/ui/panels/inventory.tsx` (`ItemSlot drag`, `ITEM_DRAG`). Tests `tests/inventory.test.ts`, Browser-Durchlauf
+  `tests/e2e/verkauf.mjs` (in einer Expedition, 1280×720 und 600×900).
+
 ## 0.12.0 – Ausrüstungswert
 
 - `shared/src/gearscore.ts`: eine Formel für Gegenstand und Charakter (Platzgewicht × (Stufe + 2) × (Seltenheit × Verbesserung
