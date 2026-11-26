@@ -13,6 +13,8 @@ import { EVENTS, SEASON_EFFECT, SEASON_GLYPH, SEASON_NAMES } from '../../../shar
 import { FACTION_LIST, RANK_NAMES, REP_SOURCES } from '../../../shared/src/data/factions';
 import { HOME_LEVELS, HOME_TROPHIES, TROPHY_CATS } from '../../../shared/src/data/home';
 import { LOOK_LIST } from '../../../shared/src/data/looks';
+import { DEPTH_CFG, ENDGAME_LIST, ENDGAME_TITLES } from '../../../shared/src/data/expeditions_endgame';
+import { BOSSES } from '../../../shared/src/data/enemies';
 import { NPCS } from '../../../shared/src/data/npcs';
 import { PET_LIST } from '../../../shared/src/data/pets';
 import { RARE_LIST, WORLD_BOSS_LIST } from '../../../shared/src/data/rares';
@@ -242,6 +244,14 @@ const ALL = [
           <Facts rows={QUELL_TRACKS.map(t => [t.name, `${t.desc} Voll ausgebaut +${t.max} %.`])} />
           <H>Neuer Kreis</H>
           <p>Nach dem Epilog beginnt bei Mirelda die Geschichte von vorn – bis zu {CFG.kreis.max} weitere, härtere Kreise. Stufe, Ausrüstung, Rezepte, Chronik und Fortschritt im Endspiel bleiben. Gruppen spielen in der Welt ihres niedrigsten Kreises.</p>
+          <H>Endspiel-Expeditionen und Tiefen</H>
+          <Facts rows={[
+            ...ENDGAME_LIST.map(x => [x.name, `${BOSSES[x.boss].name} · ab Stufe ${x.rec}. Freischaltung: ${x.unlock.map(r => r.text).join(', ')}. Beute eine Stufe besser als der Grad, dazu Echo-Fragmente und Ätherstaub.`] as [string, string]),
+            ['Tiefen', `Nach einem Abschluss auf Mythisch: Tiefe 1 bis ${DEPTH_CFG.max} in jeder Expedition, eine nach der anderen. Je Tiefe +${Math.round(DEPTH_CFG.hp * 100)} % Leben und +${Math.round(DEPTH_CFG.dmg * 100)} % Schaden der Gegner, alle zwei Tiefen eine Gegnerstufe mehr; ab Tiefe ${DEPTH_CFG.modsAt[0]} ein Modifikator, ab ${DEPTH_CFG.modsAt[1]} zwei, ab ${DEPTH_CFG.modsAt[2]} drei – sie wechseln jede Woche.`],
+            ['Lohn der Tiefen', `Gegenstandsstufe und Mythisch steigen mit, dazu der Bosskern des Endbosses, Echo-Fragmente, ab Tiefe ${DEPTH_CFG.aetherFrom} Ätherstaub; beim ersten Mal auf Tiefe 5, 10, 15 und 20 ein mythisches Stück.`],
+            ['Ehrungen', `${Object.values(ENDGAME_TITLES).map(t => `„${t.name}“ (${t.desc.replace(/\.$/, '')})`).join(' · ')}.`],
+            ['Bestenliste', 'Die Trophäenhalle der Quellwarte zeigt die schnellsten Läufe jedes Grades und die tiefste Tiefe – mit den Namen der Gruppe.'],
+          ]} />
         </div>
         <div>
           <H>Die {RIFT_MOD_LIST.length} Modifikatoren</H>

@@ -422,7 +422,7 @@ describe('Endspiel-Expeditionen (0.11)', () => {
     sim.step(16.5);
     const s = st(b);
     expect(s.song, 'die Stille holt Atem').toBeTruthy();
-    expect(b.mob.vuln).toBe(0.5);
+    expect(b.mob.vuln).toBe(0.7);
     const strike = (i: number) => { const o = tones()[i]; t.p.x = o.x; t.p.y = o.y + 14; t.send({ t: 'interact', id: o.id }); };
     const order = [...s.song!.order];
     strike(order[0]);

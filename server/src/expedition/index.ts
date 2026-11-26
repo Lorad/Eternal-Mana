@@ -35,7 +35,7 @@ import type { Game } from '../game';
 import type { Player } from '../player';
 import { Social } from '../social';
 import { Mob, Zone, type Obj } from '../zone';
-import { expBossMech, mechInteract, tickMechObjs } from './bossmech';
+import { expBossMech, mechDone, mechInteract, tickMechObjs } from './bossmech';
 import { expeditionPortals, portalAt, returnSpot } from './hub';
 import { miniDown, spawnMinis, tickMinis } from './mini';
 import { grant, totals } from './reward';
@@ -689,6 +689,7 @@ export const Expedition = {
     const run = zone.exp!, game = zone.game;
     if (run.done) return;
     run.done = { sec: Math.max(1, Math.round(game.now - run.startAt)), at: game.now, revealed: false };
+    mechDone(zone); // 0.11: Wachfeuer brennen wieder
     for (const p of zone.players.values()) {
       if (p.dead) { p.dead = false; p.hp = Math.round(p.stats.maxHp * 0.5); p.toast('Der Sieg deiner Gruppe reißt dich zurück ins Leben.', 'good'); }
       const res = grant(zone, p);
@@ -708,7 +709,7 @@ export const Expedition = {
       zone.ev({ k: 'fx', n: 'bossdeath', x: boss.mob.x, y: boss.mob.y, el: boss.def.element });
       zone.ev({ k: 'fx', n: 'explosion', x: boss.mob.x, y: boss.mob.y, r: 120, el: boss.def.element });
     }
-    for (const p of zone.players.values()) p.toast(boss.def.spared !== undefined ? `${boss.def.fightName ?? boss.def.name} ist vorüber. Die Arena versiegelt sich …` : `${boss.def.name} ist besiegt! Die Arena versiegelt sich …`, 'story');
+    for (const p of zone.players.values()) p.toast(boss.def.spared === undefined ? `${boss.def.name} ist besiegt! Die Arena versiegelt sich …` : boss.def.fightName ? `${boss.def.fightName} ist vorüber. Die Arena versiegelt sich …` : `${boss.def.name} gibt sich geschlagen. Die Arena versiegelt sich …`, 'story');
     sendInfo(zone);
   },
 

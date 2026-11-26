@@ -69,7 +69,7 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
     if (stashBlock(it) && p.char.inv.length < invCap()) { p.char.inv.push(it); p.sync('inv'); p.checkCollectQuests(); return; }
     p.give(it, false);
   };
-  const gold0 = c.gold, lvl0 = c.level, xp0 = c.xp;
+  const gold0 = c.gold, lvl0 = c.level, xp0 = c.xp, q0 = { lvl: c.quell?.lvl ?? 0, xp: c.quell?.xp ?? 0 };
 
   // ---- die Geschichte: Bossflagge, Siegel, Questziel „boss“, Filmtext – wie im alten Dungeon
   const firstBoss = !c.flags[`b:${boss.id}`];
@@ -141,6 +141,9 @@ export function grant(zone: Zone, p: Player): ExpResult | null {
   // Erfahrung als Zahl (über Stufenaufstiege hinweg geschätzt)
   let xp = c.xp - xp0;
   for (let l = lvl0; l < c.level; l++) xp += CFG.xpToNext(l);
+  // 0.11: auf Stufe 40 fließt die Erfahrung in die Quellstufen – auch die gehören in die Abrechnung
+  const q1 = c.quell ?? { lvl: 0, xp: 0 };
+  if (q1.lvl !== q0.lvl || q1.xp !== q0.xp) { let qx = q1.xp - q0.xp; for (let l = q0.lvl; l < q1.lvl; l++) qx += CFG.quell.xpToNext(l); xp += qx; }
   return {
     exp: run.exp, diff: run.diff, sec, best, first, weekly, kills: run.kills, deaths, bosses: 1 + run.minis.size, xp: Math.max(0, Math.round(xp)), gold: c.gold - gold0,
     items: items.map(it => ({ name: itemName(it), icon: ITEMS[it.base]?.icon ?? 'gem', rarity: it.rarity, qty: it.qty ?? 1 })),

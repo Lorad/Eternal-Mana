@@ -281,7 +281,7 @@ const SIG: Record<string, Signature> = {
       const z = k.boss.zone, r = k.boss.room, cy = Math.round((r.y0 + r.y1) / 2);
       s.objs = [];
       s.kindle = new Map();
-      for (const [tx, ty] of [[r.x0 + 3, cy], [r.x1 - 2, cy], [Math.round((r.x0 + r.x1) / 2), r.y1 - 2]]) {
+      for (const [tx, ty] of [[r.x0 + 3, cy], [r.x1 - 2, cy], [Math.round((r.x0 + r.x1) / 2), r.y0 + 3]]) { // links, rechts, oben – unten ist das Tor
         const o = [...z.objs.values()].find(q => q.props?.kind === 'watchfire' && q.props.idx === s.objs!.length)
           ?? z.addDynamicObj('xobj', (tx + 0.5) * TILE, (ty + 0.5) * TILE, { kind: 'watchfire', idx: s.objs.length, frame: 'brazier', label: 'Wachfeuer', prompt: 'Neu entzünden (stehen bleiben)', light: [80, 0xffc060, 0.9] }, 'watchfire');
         lightFire(z, o, true);
@@ -354,7 +354,7 @@ const SIG: Record<string, Signature> = {
     tick(k, s) {
       const z = k.boss.zone, m = k.boss.mob, t = z.game.now;
       const stunned = (s.stunUntil ?? 0) > t;
-      m.vuln = stunned ? 1.8 : s.song ? 0.5 : 1;
+      m.vuln = stunned ? 1.8 : s.song ? 0.7 : 1; // während des Lieds zäher (Spieltest: 0,5 machte Mythisch zu einem Viertelstundenkampf)
       if (!s.song && !stunned && t >= s.next) {
         const order = z.rng.shuffle([0, 1, 2, 3]), n = k.boss.phase >= 3 ? 4 : 3, dur = (n === 4 ? 15 : 13) / diffOf(z).sigFaster;
         s.song = { order: order.slice(0, n), step: 0, until: t + Math.max(8, dur) };
@@ -397,7 +397,7 @@ const SIG: Record<string, Signature> = {
 };
 /** Wachfeuer an oder aus (Bild, Licht, Zustand für Server und Oberfläche) */
 function lightFire(z: Zone, o: Obj, on: boolean) {
-  const props = { frame: on ? 'brazier' : 'brazier_unlit', light: on ? [80, 0xffc060, 0.9] : [30, 0x6050a0, 0.4], label: on ? 'Wachfeuer' : 'Wachfeuer (dunkel)' };
+  const props = { frame: on ? 'brazier' : 'brazier_unlit', light: on ? [80, 0xffc060, 0.9] : [30, 0x6050a0, 0.4], label: on ? 'Wachfeuer' : 'Wachfeuer (dunkel)', prompt: on ? 'Feuer prüfen' : 'Neu entzünden (stehen bleiben)' };
   Object.assign(o.props!, props);
   z.setObjState(o, on ? 1 : 0, props);
 }
@@ -452,6 +452,11 @@ export function expBossMech(zone: Zone, bossId: string): EchoMech {
     },
     reset(k) { const s = st(k.boss); s.invulnUntil = 0; k.boss.mob.invuln = true; sig?.reset?.(k, s); states.delete(k.boss); },
   };
+}
+
+/** 0.11: Der Kampf ist vorbei – die Arena kommt zur Ruhe (Vaels Wachfeuer brennen wieder: die Wacht ist abgelöst) */
+export function mechDone(zone: Zone) {
+  for (const o of zone.objs.values()) if (o.props?.kind === 'watchfire' && o.state === 0) lightFire(zone, o, true);
 }
 
 /** Objekt einer Bossmechanik benutzt (Kühlkette, Tintenfass). true = erledigt. */

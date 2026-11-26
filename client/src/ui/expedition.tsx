@@ -8,7 +8,7 @@ import { useRef, useState } from 'preact/hooks';
 import { RARITY_COLOR } from '../../../shared/src/config';
 import { BOSSES } from '../../../shared/src/data/enemies';
 import { DIFFICULTIES, DIFFICULTY_NAME, EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, MINIS, WEEKLY_MOD, diffBlock, expUnlock, fmtSec, isExpedition, isoWeek, type WeeklyMod } from '../../../shared/src/data/expeditions';
-import { DEPTH_CFG, depthBlock, depthMods, depthOpen } from '../../../shared/src/data/expeditions_endgame';
+import { DEPTH_CFG, depthBlock, depthMods, depthOpen, depthScale } from '../../../shared/src/data/expeditions_endgame';
 import type { Difficulty } from '../../../shared/src/data/hub';
 import { ITEMS } from '../../../shared/src/data/items';
 import { BIOME_MATS } from '../../../shared/src/data/materials';
@@ -25,6 +25,11 @@ export const openExpedition = openExpeditionState;
 const REGION: Record<string, string> = { gruenwald: 'Grünwald', kristall: 'Kristallhöhlen', glut: 'Glutlande', frost: 'Frostgebirge', ruinen: 'Verlorene Ruinen', schatten: 'Schattenreich' };
 /** Region in der Anzeige (0.11: „Das Atmende Herz“ liegt unter dem Quellgrund) */
 const regionOf = (x: { region: string; parent: string }) => (x.parent === 'quellgrund' ? 'Quellgrund' : REGION[x.region]);
+/** Was eine Tiefe verändert (0.11) – aus DEPTH_CFG, keine abgeschriebenen Zahlen */
+function depthText(t: number): string {
+  const d = depthScale(t), pct = (x: number) => Math.round((x - 1) * 100);
+  return `Gegner ${d.lvl ? `+${d.lvl} ${d.lvl === 1 ? 'Stufe' : 'Stufen'}, ` : ''}+${pct(d.hp)} % Leben, +${pct(d.dmg)} % Schaden. Beute: ${d.ilvl ? `Gegenstandsstufe +${d.ilvl}, ` : ''}öfter Mythisch, der Bosskern des Endbosses, Echo-Fragmente${t >= DEPTH_CFG.aetherFrom ? ', Ätherstaub' : ''}${t % 5 === 0 ? '; beim ersten Mal ein mythisches Stück' : ''}.`;
+}
 /** Modifikatoren einer Tiefe in dieser Woche, als Namen (0.11) */
 export const depthModNames = (id: string, depth: number) => depthMods(isoWeek(Date.now()), id, depth).map(m => WEEKLY_MOD[m]);
 
@@ -111,9 +116,11 @@ export function ExpeditionWindow() {
                 <Btn kind="small" disabled={!!lobby || dep <= 0} onClick={() => { sfx('ui_click'); setDepth(Math.max(0, dep - 1)); }}>−</Btn>
                 <b class="xp-depth-n">{dep ? `Tiefe ${dep}` : 'ohne Tiefe'}</b>
                 <Btn kind="small" disabled={!!lobby || dep >= open} title={dep >= open ? (open >= DEPTH_CFG.max ? 'Tiefer geht es nicht.' : `Erst Tiefe ${open} schaffen.`) : ''} onClick={() => { sfx('ui_click'); setDepth(Math.min(open, dep + 1)); }}>+</Btn>
-                <span class="note grow">{dep ? `Gegner +${dep} Stufen, mehr Leben und Schaden. Beute: Gegenstandsstufe +${dep}, öfter Mythisch, der Bosskern, Echo-Fragmente${dep >= DEPTH_CFG.aetherFrom ? ', Ätherstaub' : ''}.` : `Bis Tiefe ${open} offen. Jede Tiefe ist härter und lohnender.`}</span>
+                <span class="note grow">{dep ? depthText(dep) : `Bis Tiefe ${open} offen. Jede Tiefe ist härter und lohnender.`}</span>
               </div>
-              {dep > 0 && <div class="xp-depth-mods">Diese Woche: {depthModNames(x.id, dep).map(m => <span class="pill" title={m.desc}>{m.name}</span>)}</div>}
+              {dep > 0 && (depthModNames(x.id, dep).length
+                ? <div class="xp-depth-mods">Diese Woche: {depthModNames(x.id, dep).map(m => <span class="pill" title={m.desc}>{m.name}</span>)}</div>
+                : <div class="xp-depth-mods">Modifikatoren erst ab Tiefe {DEPTH_CFG.modsAt[0]} – sie wechseln jede Woche.</div>)}
             </div>
           )}
           {lobby ? <LobbyBox /> : (
@@ -182,10 +189,10 @@ export function ExpHud() {
   const ret = r.ret !== undefined ? Math.max(0, Math.round(r.ret - (performance.now() - store.state.expRunAt) / 1000)) : undefined;
   return (
     <div class={cx('exp-hud', 'd-' + r.diff, r.done !== undefined && 'done')}>
-      <div class="exp-hud-top"><b>{x?.name}</b><small>{DIFFICULTY_NAME[r.diff]}{r.depth ? ` · Tiefe ${r.depth}` : ''}</small><span class="exp-clock"><span ref={clock}>{fmtSec(r.t)}</span>{r.par ? <small> / {fmtSec(r.par)}</small> : null}</span></div>
+      <div class="exp-hud-top"><b>{x?.name}</b><small>{DIFFICULTY_NAME[r.diff]}</small><span class="exp-clock"><span ref={clock}>{fmtSec(r.t)}</span>{r.par ? <small> / {fmtSec(r.par)}</small> : null}</span></div>
       <div class="exp-sec">{r.sec}</div>
       <div class="exp-goal">▸ {r.goal}</div>
-      {r.mods && <div class="exp-mods" title={r.mods.map(m => `${WEEKLY_MOD[m as WeeklyMod]?.name}: ${WEEKLY_MOD[m as WeeklyMod]?.desc}`).join(' · ')}>{r.mods.map(m => WEEKLY_MOD[m as WeeklyMod]?.name).join(' · ')}</div>}
+      {r.depth ? <div class="exp-mods" title={(r.mods ?? []).map(m => `${WEEKLY_MOD[m as WeeklyMod]?.name}: ${WEEKLY_MOD[m as WeeklyMod]?.desc}`).join(' · ')}>Tiefe {r.depth}{r.mods?.length ? ' · ' + r.mods.map(m => WEEKLY_MOD[m as WeeklyMod]?.name).join(' · ') : ''}</div> : null}
       {r.event && <div class="exp-event">{r.event.text}{r.event.waves ? ` ${r.event.wave}/${r.event.waves}` : ''}</div>}
       {r.enrage !== undefined && <div class={cx('exp-enrage', r.enrage <= 0 && 'on')}>{r.enrage > 0 ? `Wut in ${fmtSec(r.enrage)}` : 'Der Boss rast!'}</div>}
       <div class="exp-foot">
@@ -250,7 +257,9 @@ export function ExpResultScreen() {
 }
 export function ExpSummary() {
   const r = useStore(s => s.expSummary);
-  if (!r) return null;
+  // 0.11: liegt nicht über offenen Fenstern (Portal, Einrichtungen der Warte, Gespräche) – sie bleibt, bis man sie schließt
+  const covered = useStore(s => !!(s.expWin || s.hubWin || s.panel || s.dialog));
+  if (!r || covered) return null;
   const x = EXPEDITIONS[r.exp];
   return (
     <div class="exp-summary card" role="status">
