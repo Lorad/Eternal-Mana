@@ -3,6 +3,14 @@
 Diese Datei zeigt der Launcher unter „Neuigkeiten“ an. Neueste Version zuerst; je Version eine Überschrift
 `## Version – Titel`, darunter optional das Datum in `_…_` und die Punkte als Liste.
 
+## 0.11.3 – Expeditionen nur über die Quellwarte
+_26.11.2026_
+
+- **Expeditionen erreichst du nur noch über das Portal der Quellwarte.** Das kleine Portal in Quellhain ist weg.
+- Die Dungeon-Eingänge der Welt führen wieder in die Dungeons ihrer Region (Wurzelgruft, Kristallhöhlen …) – die Expeditionen sind die großen, zusätzlichen Dungeons dazu.
+- **Hinterhalt (z. B. in der Wurzeltiefe):** Die Türen bleiben verschlossen, bis alle vier Wellen besiegt sind – danach ist er endgültig vorbei und beginnt nicht mehr von vorn, auch wenn man an der Tür steht. Ein **Rastplatz** entsteht im Raum und ist sofort dein Wiederbelebungspunkt.
+- Die gemalten Treppen in den Verbindungsgängen der Expeditionen sind entfernt; sie standen teils unter Türen und ergaben keinen Sinn.
+
 ## 0.11.2 – Questzeichen in Farbe
 _26.11.2026_
 

@@ -14,7 +14,7 @@ import { circleFree } from '../../../shared/src/collision';
 import { CFG, RARITY_NAME } from '../../../shared/src/config';
 import { BOSSES, ENEMIES, type BossDef } from '../../../shared/src/data/enemies';
 import {
-  DIFFICULTIES, ELITE_AFFIX, ELITE_AFFIXES, EXPEDITIONS, EXP_BY_LEGACY, EXP_CFG, EXP_DIFF, MINIS, diffBlock, expPar, expUnlock, isExpedition, isoWeek, weeklyChallenge, weeklyFlag,
+  DIFFICULTIES, ELITE_AFFIX, ELITE_AFFIXES, EXPEDITIONS, EXP_CFG, EXP_DIFF, MINIS, diffBlock, expPar, expUnlock, isExpedition, isoWeek, weeklyChallenge, weeklyFlag,
   type EliteAffix, type Weekly,
 } from '../../../shared/src/data/expeditions';
 import { depthBlock, depthMods, depthScale } from '../../../shared/src/data/expeditions_endgame';
@@ -284,7 +284,25 @@ function tickCollapse(zone: Zone, now: number) {
     } else if (o.state === 2 && now >= o.activeUntil!) { zone.setObjState(o, 0, { frame: 'collapse_floor_0' }); o.props.frame = 'collapse_floor_0'; }
   }
 }
-/** Hinterhalt: Der Abschnitt schließt sich, vier Wellen, dann öffnet er sich wieder (mit einer Truhe) */
+/** Der Hinterhalt ist überstanden – endgültig: Türen auf, Truhe, und ein Rastplatz, der sofort Wiederbelebungspunkt ist */
+function finishAmbush(zone: Zone, ev: EventState, s: ExpSection) {
+  const run = zone.exp!;
+  clearBarriers(zone, ev); ev.state = 'done'; ev.next = 0;
+  zone.addDynamicObj('chest', (s.cx + 0.5) * TILE, (s.cy + 0.5) * TILE, { tier: 'silver', label: 'Beute des Hinterhalts' });
+  // Rastplatz neben der Truhe (erste freie Stelle in wachsendem Abstand)
+  let spot = { x: s.entry.x, y: s.entry.y };
+  search: for (let r = 2; r <= 5; r++) for (const [dx, dy] of [[-r, 0], [r, 0], [0, -r], [0, r], [-r, -r], [r, -r], [-r, r], [r, r]]) {
+    const x = (s.cx + dx + 0.5) * TILE, y = (s.cy + dy + 0.5) * TILE;
+    if (inSec(s, x, y, 1) && circleFree(zone.solidWalk, x, y, 14) && circleFree(zone.solidWalk, x, y + 18, 8)) { spot = { x, y }; break search; }
+  }
+  zone.addDynamicObj('xobj', spot.x, spot.y, { kind: 'checkpoint', frame: 'checkpoint', label: 'Rastplatz', prompt: 'Rasten', light: [80, 0x70ffe8, 0.8], spot: { x: spot.x, y: spot.y + 18 } }, 'checkpoint');
+  // Nur vorwärts: Steht der Wiederbelebungspunkt schon am Rastplatz vor der Arena, bleibt er dort.
+  if (!run.checkpoint || run.checkpoint !== zone.map.exp!.checkpoint) run.checkpoint = { x: spot.x, y: spot.y + 18 };
+  zone.ev({ k: 'sfx', n: 'puzzle_solved' });
+  for (const p of zone.players.values()) p.toast(`Der Hinterhalt ist überstanden. ${ambushWall(zone)[1]}. Ein Rastplatz entsteht – wer fällt, kehrt hierher zurück.`, 'good');
+  sendInfo(zone);
+}
+/** Hinterhalt: Der Abschnitt schließt sich, vier Wellen, dann öffnet er sich endgültig (Truhe und Rastplatz) */
 function tickAmbush(zone: Zone, ev: EventState, now: number) {
   const run = zone.exp!, s = secOf(zone, ev.sec);
   const inside = zone.alivePlayers().filter(p => inSec(s, p.x, p.y, 1));
@@ -304,32 +322,29 @@ function tickAmbush(zone: Zone, ev: EventState, now: number) {
   }
   if (ev.state !== 'running') return;
   for (const m of [...ev.mobs]) if (m.dead) ev.mobs.delete(m);
-  if (!inside.length) { // alle gefallen oder geflohen: der Hinterhalt beginnt von vorn
+  // Wer am Rand oder direkt an einer versperrten Tür steht, ist noch im Kampf (vorher zählte der äußerste Kachelring als
+  // „draußen“ – wer nach der letzten Welle zur Tür ging, setzte den Hinterhalt zurück und löste ihn erneut aus).
+  const present = zone.alivePlayers().filter(p => inSec(s, p.x, p.y, -1));
+  if (!present.length) { // alle gefallen: der Hinterhalt beginnt von vorn, damit die Gruppe vom Rastplatz zurück kann
     for (const m of ev.mobs) { m.dead = true; zone.mobs.delete(m.id); zone.ev({ k: 'mob-', id: m.id }); }
     ev.mobs.clear(); clearBarriers(zone, ev); ev.state = 'idle';
     sendInfo(zone); return;
   }
   if (ev.mobs.size) return;
+  if (ev.wave >= ev.waves) { finishAmbush(zone, ev, s); return; } // letzte Welle besiegt: sofort vorbei, keine Pause
   if (!ev.next) { ev.next = now + 2.2; return; }
   if (now < ev.next) return;
   ev.next = 0;
-  if (ev.wave >= ev.waves) {
-    clearBarriers(zone, ev); ev.state = 'done';
-    zone.addDynamicObj('chest', (s.cx + 0.5) * TILE, (s.cy + 0.5) * TILE, { tier: 'silver', label: 'Beute des Hinterhalts' });
-    zone.ev({ k: 'sfx', n: 'puzzle_solved' });
-    for (const p of zone.players.values()) p.toast(`Der Hinterhalt ist überstanden. ${ambushWall(zone)[1]}.`, 'good');
-    sendInfo(zone); return;
-  }
   ev.wave++;
   const mix = EXPEDITIONS[run.exp].mobs[s.look as 0 | 1] ?? EXPEDITIONS[run.exp].mobs[0];
-  const n = 3 + ev.wave * 2 + Math.floor(inside.length / 2);
+  const n = 3 + ev.wave * 2 + Math.floor(present.length / 2);
   const lvl = levelFor(run, zone.map.def.level[0] + Math.round((zone.map.def.level[1] - zone.map.def.level[0]) * 0.7));
   for (let i = 0; i < n; i++) {
     for (let t = 0; t < 30; t++) {
       const x = (zone.rng.int(s.x0 + 1, s.x1 - 1) + 0.5) * TILE, y = (zone.rng.int(s.y0 + 1, s.y1 - 1) + 0.5) * TILE;
-      if (!circleFree(zone.solidWalk, x, y, 8) || inside.some(p => Math.hypot(p.x - x, p.y - y) < 60)) continue;
+      if (!circleFree(zone.solidWalk, x, y, 8) || present.some(p => Math.hypot(p.x - x, p.y - y) < 60)) continue;
       const m = makeMob(zone, zone.rng.weighted(mix), lvl, x, y, ev.wave === ev.waves && i === 0, -200 - ev.wave, -1);
-      m.awake = true; m.state = 'chase'; m.target = zone.rng.pick(inside);
+      m.awake = true; m.state = 'chase'; m.target = zone.rng.pick(present);
       zone.ev({ k: 'mob+', m: m.info() }); zone.ev({ k: 'fx', n: 'spawn', x, y, el: m.element });
       ev.mobs.add(m);
       break;
@@ -539,7 +554,6 @@ export const Expedition = {
   mobXp(zone: Zone): number { return mobXpFactor(zone.exp!.exp); },
   /** Faktor auf die Erfahrung gewöhnlicher Gegner einer Expedition (für den Tempo-Test, scripts/playtest/measure.ts) */
   xpFactor(id: string): number { return mobXpFactor(id); },
-  dressExits(zone: Zone) { for (const o of zone.objs.values()) { const id = o.type === 'exit' ? EXP_BY_LEGACY[o.props?.to] : undefined; if (id) o.props = { ...o.props, label: EXPEDITIONS[id].name }; } },
   /** Zonendefinition der Instanz: Stufen nach Kreis und Schwierigkeitsgrad */
   zoneDef(id: string, diff: Difficulty, kreis: number, depth = 0): ZoneDef {
     const base = ZONES[id], d = EXP_DIFF[diff];
@@ -630,7 +644,7 @@ export const Expedition = {
     if (o.type === 'xobj') {
       switch (pr.kind) {
         case 'checkpoint': {
-          run.checkpoint = zone.map.exp!.checkpoint ?? { x: o.x, y: o.y + 18 };
+          run.checkpoint = (pr.spot as { x: number; y: number } | undefined) ?? zone.map.exp!.checkpoint ?? { x: o.x, y: o.y + 18 };
           if (!p.dead) { p.hp = p.stats.maxHp; p.mp = p.stats.maxMp; zone.ev({ k: 'fx', n: 'heal', x: p.x, y: p.y, el: 'water' }); }
           p.toast('Ihr rastet. Wer fällt, kehrt ab jetzt hierher zurück.', 'good');
           p.pev.push({ k: 'sfx', n: 'heal' });
@@ -681,25 +695,11 @@ export const Expedition = {
     if (o.type === 'node' && pr.rare && (o.harvested!.get(p.charId) ?? 0) <= now) { p.give(makeStack('gem')); p.toast('Eine seltene Ader – ein Edelstein fällt dir in die Hand.', 'loot'); }
     return false;
   },
-  /** Ausgänge: aus der Expedition hinaus – und die alten Dungeon-Eingänge der Oberwelt führen jetzt in die Expedition. */
-  useExit(zone: Zone, p: Player, o: Obj): boolean {
-    const game = zone.game, now = game.now;
-    if (zone.exp) { leave(game, p, 'Du verlässt die Expedition. Solange deine Gruppe drin ist, kannst du zurück.'); return true; }
-    const id = EXP_BY_LEGACY[o.props?.to];
-    if (!id || zone.rift) return false;
-    const say = (s: string) => { if (now - p.msgAt > 3) { p.msgAt = now; reject(p, s); } };
-    const u = expUnlock(p.char, id);
-    if (!u.ok) { say(`${EXPEDITIONS[id].name} ist noch verschlossen: ${u.reqs.filter(r => !r.ok).map(r => r.text).join(', ')}.`); return true; }
-    const running = runFor(game, p);
-    if (running) {
-      if (running.exp!.exp !== id) { say(`Deine Gruppe ist gerade in ${EXPEDITIONS[running.exp!.exp].name}. Erst dort fertig werden.`); return true; }
-      if (running.exp!.done) { say('Dieser Lauf ist schon vorbei.'); return true; }
-      enter(game, p, running, { zone: zone.id, x: p.x, y: p.y + 2 * TILE });
-      return true;
-    }
-    const back = getMap(zone.id).entries[EXPEDITIONS[id].legacy!] ?? { x: p.x, y: p.y + 2 * TILE };
-    startRun(game, p, id, 'normal', [p], { zone: zone.id, x: back.x, y: back.y });
-    return true;
+  /** Ausgänge aus der Expedition hinaus. Die Dungeon-Eingänge der Oberwelt führen (seit 0.11.3 wieder) in die Dungeons der
+   *  Region – Expeditionen erreicht man nur über das Portal der Quellwarte. */
+  useExit(zone: Zone, p: Player, _o: Obj): boolean {
+    if (zone.exp) { leave(zone.game, p, 'Du verlässt die Expedition. Solange deine Gruppe drin ist, kannst du zurück.'); return true; }
+    return false;
   },
   respawn(game: Game, p: Player) {
     const z = p.zone, run = z.exp!;
@@ -813,18 +813,13 @@ export const Expedition = {
     p.send({ t: 'exp', lobby: l ? lobbyInfo(game, l) : null, party: z && !z.exp!.done ? { exp: z.exp!.exp, diff: z.exp!.diff, n: z.players.size, depth: z.exp!.depth || undefined } : null,
       weekly: { ...w, done: !!p.char.flags[weeklyFlag(w.week)] }, ...(p.zone.exp ? { run: runInfo(p.zone, p) } : {}) });
   },
-  /** Anmeldung: Wer in einer Expedition gespeichert wurde, kehrt in seinen laufenden Lauf zurück – sonst zum Portal. Wer noch in einem alten Dungeon stand, steht an dessen Eingang. */
+  /** Anmeldung: Wer in einer Expedition gespeichert wurde, kehrt in seinen laufenden Lauf zurück – sonst zum Portal. Wer in einem Dungeon der Welt stand, bleibt dort (wie vor 0.9). */
   entry(game: Game, p: Player): { zone: Zone; pos: { x: number; y: number } } | null {
     const c = p.char;
     if (isExpedition(c.zone)) {
       for (const z of runs(game)) if (z.exp!.exp === c.zone && z.exp!.members.has(p.charId) && !z.exp!.returned) return { zone: z, pos: { x: c.x, y: c.y } };
       const t = returnSpot();
       return { zone: game.zone(t.zone, kreisOf(c)), pos: { x: t.x, y: t.y } };
-    }
-    const id = EXP_BY_LEGACY[c.zone];
-    if (id) {
-      const parent = EXPEDITIONS[id].parent, m = getMap(parent), e = m.entries[c.zone] ?? m.start;
-      return { zone: game.zone(parent, kreisOf(c)), pos: { x: e.x, y: e.y } };
     }
     return null;
   },

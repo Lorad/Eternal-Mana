@@ -9,7 +9,7 @@ import { ELITE_AFFIX } from '../../../shared/src/data/expeditions';
 
 export const EXP_ART_FALLBACK: Record<string, string[]> = {
   expedition_portal: ['portal'],            // großes, animiertes Portal (~64×80, 6 Bilder) → wirbelndes Portal
-  portal_small: ['portal'],                 // kleines Portal in Quellhain (4 Bilder)
+  portal_small: ['portal'],                 // kleines Portal (nur ohne Quellwarte, 4 Bilder)
   boss_seal: ['door_boss', 'rune_stone'],   // Siegel, das die Arena verschließt (4 Bilder)
   reward_altar: ['shrine', 'd_statue', 'signpost'],
   checkpoint: ['quellstein', 'brazier'],    // Rastplatz vor der Arena (4 Bilder)

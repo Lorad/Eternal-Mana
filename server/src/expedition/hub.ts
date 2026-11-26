@@ -4,7 +4,7 @@
  * ===================================================================================================================
  *  EINZIGE STELLE für den Weg in den Hub. Gibt es die Zone HUB_ZONE (Quellwarte) – sie entsteht parallel –, steht das
  *  große Portal an HUB_SPOTS.portal und man kehrt nach HUB_SPOTS.rueckkehr zurück. Fehlt sie, gilt Quellhain: das
- *  kleine Portal neben dem Dorfplatz, Rückkehr davor. Ein kleines Portal in Quellhain gibt es in beiden Fällen.
+ *  kleine Portal neben dem Dorfplatz, Rückkehr davor. Mit Hub steht in Quellhain kein Portal (nur die Quellwarte führt hinein).
  * ===================================================================================================================
  */
 import { HUB_SPOTS, HUB_ZONE } from '../../../shared/src/data/hub';
@@ -34,7 +34,8 @@ const spotCache = new Map<string, { x: number; y: number } | null>();
 /** Mittelpunkt eines Portals in dieser Karte (px) – oder null, wenn hier keines steht */
 export function portalAt(map: GameMap): { x: number; y: number; big: boolean } | null {
   if (map.id === HUB_ZONE) { const [x, y] = HUB_SPOTS.portal; return { x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, big: true }; }
-  if (map.id !== QUELLHAIN.zone) return null;
+  // Seit 0.11.3 führen Expeditionen nur noch über die Quellwarte; das kleine Portal in Quellhain gibt es nur, solange der Hub fehlt.
+  if (hubExists() || map.id !== QUELLHAIN.zone) return null;
   if (!spotCache.has(map.id)) {
     const poi = map.def.pois?.find(p => p.id === QUELLHAIN.poi);
     const s = poi ? freeSpot(map, poi.x + QUELLHAIN.dx, poi.y + QUELLHAIN.dy) : null;

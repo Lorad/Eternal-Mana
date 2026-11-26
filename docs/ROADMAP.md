@@ -153,8 +153,8 @@ Systeme bis 0.8 bleiben erhalten; der Hub kommt dazu, er ersetzt nichts. Gemeins
 - **Expeditionen** sind die Dungeons des Spiels: je Region eine große, mehrteilige Karte mit Abschnitten (Eingang, Erkundung,
   Kampfhallen, versteckte Schatzkammer, Rätsel, Mini-Boss, neuer Abschnitt, Elite, Vorbereitungsraum, Bossarena,
   Belohnungskammer), geheimen Wegen, Schlüsseln, Fallen und eigener Stimmung. Sie lösen die bisherigen kleinen Story-Dungeons
-  ab: Die Dungeon-Eingänge in der Welt führen in die Expedition dieser Region (Schwierigkeit Normal), das Portal im Hub führt
-  in alle freigeschalteten. Die Story-Bosse sind die Endbosse; Quest-Ziele bleiben gültig. Alte Dungeon-Zonen bleiben für
+  ab: Das Portal im Hub führt in alle freigeschalteten. (Bis 0.11.2 führten auch die Dungeon-Eingänge der Welt hinein; seit
+  0.11.3 führen sie wieder in die Dungeons der Region – Expeditionen gibt es nur über die Quellwarte.) Die Story-Bosse sind die Endbosse; Quest-Ziele bleiben gültig. Alte Dungeon-Zonen bleiben für
   Spielstände und die Mana-Risse erhalten.
 - **Schwierigkeitsgrade** Normal, Schwer, Albtraum, Mythisch – nicht nur mehr Leben: neue Gegnermechaniken, zusätzliche
   Bossangriffe, Zusatzaufgaben, seltenere Belohnungen. Die Mana-Risse (0.5) bleiben und sind über das Portal erreichbar.

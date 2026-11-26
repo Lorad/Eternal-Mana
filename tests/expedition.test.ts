@@ -32,7 +32,7 @@ afterAll(() => sim.close());
 beforeEach(() => sim.clear());
 
 function atPortal(t: Tester) {
-  sim.travel(t, 'gruenwald');
+  sim.travel(t, 'quellwarte'); // seit 0.11.3 nur noch in der Quellwarte
   const o = [...t.p.zone.objs.values()].find(x => x.props?.kind === 'portal')!;
   t.p.x = o.x; t.p.y = o.y + 20;
 }
@@ -109,22 +109,56 @@ describe('Expeditionen – Freischaltung', () => {
 });
 
 describe('Expeditionen – Ablauf', () => {
-  it('alter Dungeon-Eingang führt in die Expedition; ein Spielstand im alten Dungeon steht an dessen Eingang', () => {
+  it('Expeditionen nur über die Quellwarte: kein Portal in Quellhain, der Dungeon-Eingang der Welt führt in den Dungeon der Region', () => {
     const t = sim.join('Ein', 'krieger');
     unlockAll(t);
     sim.travel(t, 'gruenwald');
+    expect([...t.p.zone.objs.values()].some(o => o.props?.kind === 'portal')).toBe(false);
     const ex = [...t.p.zone.objs.values()].find(o => o.type === 'exit' && o.props?.to === 'wurzelgruft')!;
     t.p.exitImmuneUntil = 0; t.p.x = ex.x; t.p.y = ex.y;
     sim.step(0.1);
-    expect(t.p.zone.id).toBe('exp_gruenwald');
+    expect(t.p.zone.id).toBe('wurzelgruft');
+    expect(t.p.zone.exp).toBeFalsy();
     sim.leave(t);
     const id = sim.db.listChars(t.s.account!.id)[0].id, c = sim.db.loadChar(t.s.account!.id, id)!;
     c.zone = 'wurzelgruft'; c.x = 100; c.y = 100;
     sim.db.saveChar(id, c);
     sim.reenter(t);
-    expect(t.p.zone.id).toBe('gruenwald');
-    const e = getMap('gruenwald').entries.wurzelgruft;
-    expect(Math.hypot(t.p.x - e.x, t.p.y - e.y)).toBeLessThan(40);
+    expect(t.p.zone.id).toBe('wurzelgruft'); // ein Spielstand im Dungeon bleibt im Dungeon
+    sim.travel(t, 'quellwarte');
+    expect([...t.p.zone.objs.values()].some(o => o.props?.kind === 'portal')).toBe(true);
+  });
+
+  it('Hinterhalt: kein Neubeginn am Türrand, nach der vierten Welle endgültig vorbei, mit Rastplatz als Wiederbelebungspunkt', () => {
+    const t = sim.join('Hinterhalt', 'krieger', 6);
+    const z = startSolo(t);
+    t.p.god = true;
+    const info = z.map.exp!, evd = info.events.find(e => e.kind === 'ambush')!;
+    const s = info.sections.find(q => q.id === evd.sec)!;
+    t.p.x = (s.cx + 0.5) * TILE; t.p.y = (s.cy + 0.5) * TILE;
+    sim.step(0.6);
+    const ev = z.exp!.events.get(s.id)!;
+    expect(ev.state).toBe('running');
+    const cp0 = z.exp!.checkpoint;
+    for (let i = 0; i < 400 && ev.state === 'running'; i++) {
+      for (const m of [...ev.mobs]) z.killMob(m);
+      if (ev.wave >= ev.waves) { t.p.x = (s.x0 + 0.5) * TILE; t.p.y = (s.cy + 0.5) * TILE; } // am Rand, an der Tür
+      sim.step(0.5);
+    }
+    expect(ev.state).toBe('done');
+    expect(ev.wave).toBe(4);
+    expect(ev.barriers.length).toBe(0);
+    // zurück in die Mitte: nichts beginnt von vorn
+    t.p.x = (s.cx + 0.5) * TILE; t.p.y = (s.cy + 0.5) * TILE;
+    sim.step(3);
+    expect(ev.state).toBe('done');
+    const cp = [...z.objs.values()].find(o => o.props?.kind === 'checkpoint' && o.props?.spot);
+    expect(cp).toBeTruthy();
+    expect(z.exp!.checkpoint).not.toBe(cp0);
+    expect(z.exp!.checkpoint).toEqual(cp!.props!.spot);
+    // Wer fällt, steht am Rastplatz des Hinterhalts wieder auf
+    Expedition.respawn(sim.game, t.p);
+    expect(Math.hypot(t.p.x - cp!.props!.spot.x, t.p.y - cp!.props!.spot.y)).toBeLessThan(2);
   });
 
   it('Instanzen getrennt: zwei Gruppen, ein Außenstehender kommt nicht hinein', () => {

@@ -332,7 +332,7 @@ export function genExpedition(def: ZoneDef): GameMap {
   const rooms: Room[] = [];
   const ROLE_ROOM: Record<string, string> = { entrance: 'entrance', explore: 'treasure', combat: 'combat', elite: 'combat', event: 'combat', mini: 'combat', trap: 'trap', puzzle: 'puzzle', key: 'key', prep: 'prep', boss: 'boss', reward: 'reward', treasure: 'secret' };
 
-  // Übergänge: Türen, Tore, geheime Wände, Treppen
+  // Übergänge: Türen, Tore, geheime Wände (Treppen sind schlichte Gänge)
   for (const l of links) {
     const vert = l.dir === 'n' || l.dir === 's', B = nodes[l.b];
     const mid = Math.round((l.from + l.to) / 2);
@@ -346,7 +346,7 @@ export function genExpedition(def: ZoneDef): GameMap {
     else if (l.kind === 'secret') { addObj('boulder', ox2, oy2, 'secret', { cells, orient, look: 'secret_wall', sec: B.def.id }); info.secrets.push(B.def.id); }
     else if (l.kind === 'locked') addObj('door', ox2, oy2, 'locked', { cells, orient, locked: true });
     else if (l.kind === 'gate') addObj('door', ox2, oy2, 'gate', { cells, orient });
-    else if (l.kind === 'stairs') { decor.push({ f: 'stairs_down', x: vert ? px(l.c) + (l.width - 1) * 8 : px(mid), y: (vert ? mid : l.c + 1) * TILE + 14 }); }
+    // „Treppe“ ist seit 0.11.3 ein schlichter Gang: Die gemalte Treppe stand mitten im Gang, teils unter Türen, und ergab keinen Sinn.
     for (const c of cells) used.add(c);
     // Rätselsiegel: der Ausgang eines Rätselabschnitts öffnet sich erst, wenn das Rätsel gelöst ist
     const A = nodes[l.a];

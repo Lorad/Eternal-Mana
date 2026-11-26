@@ -94,10 +94,9 @@ weitere 40 % der Boss-Erfahrung, dazu jedes Mal eine goldene Truhe.
 
 ## Expeditionen (0.9)
 
-Seit 0.9 sind die Dungeons der sechs Regionen **Expeditionen**: große, mehrteilige Karten (16–21 Abschnitte) für 15–30 Minuten.
-Die Dungeon-Eingänge der Oberwelt führen in die Expedition ihrer Region (Normal, eigene Instanz der Gruppe); das Portal in der
-Quellwarte (bis dahin: das kleine Portal in Quellhain) führt in alle freigeschalteten. Die alten Dungeons oben bleiben für die
-Mana-Risse erhalten.
+Seit 0.9 gibt es zu jeder der sechs Regionen eine **Expedition**: große, mehrteilige Karten (16–21 Abschnitte) für 15–30 Minuten.
+Seit 0.11.3 erreicht man sie **nur über das Portal der Quellwarte** (eigene Instanz der Gruppe). Die Dungeon-Eingänge der Oberwelt
+führen wieder in die Dungeons der Region (wie bis 0.8); dort und in der Expedition zählt der Story-Boss für die Quest.
 
 | Expedition | Region | Stufe | Endboss | Signatur | Ereignis | Mini-Bosse |
 |---|---|---|---|---|---|---|

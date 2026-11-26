@@ -157,7 +157,6 @@ export class Zone {
     for (const f of Home.signs(this.map)) this.objs.set(f.id, f); // 0.7: Wegweiser zum Hof
     for (const f of Hub.gates(this.map)) this.objs.set(f.id, f); // 0.9: Tor zur Quellwarte
     for (const f of Expedition.portals(this.map)) this.objs.set(f.id, f); // 0.9: Expeditionsportal (Hub, Quellhain)
-    if (!this.rift) Expedition.dressExits(this); // 0.9: alte Dungeon-Eingänge tragen den Namen ihrer Expedition
     if (this.exp) Expedition.setup(this); // 0.9: Gegner nach Schwierigkeitsgrad, Mini-Bosse, Rätsel, Ereignisse
     else if (!this.rift) this.map.spawns.forEach((s, i) => this.spawnFrom(s, i));
     if (def.boss && this.map.bossRoom) this.boss = new BossCtl(this, this.rift ? Rift.bossDef(this.rift) : this.exp ? Expedition.bossDef(this) : kreisBossDef(BOSSES[def.boss], this.kreis), this.map.bossRoom);
@@ -722,7 +721,7 @@ export class Zone {
       if (now - p.msgAt > 3) { p.msgAt = now; p.toast(pr.reqMsg ?? 'Der Weg ist versperrt.', 'bad'); }
       return;
     }
-    if (Expedition.useExit(this, p, o)) return; // 0.9: alte Dungeon-Eingänge führen in die Expedition; Ausgang einer Expedition
+    if (Expedition.useExit(this, p, o)) return; // Ausgang einer Expedition
     if (this.rift) { Rift.leave(this.game, p); return; }
     this.game.transfer(p, pr.to, this.id);
   }

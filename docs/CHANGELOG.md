@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.3 – Expeditionen nur über die Quellwarte
+
+- `server/src/expedition/hub.ts`: mit Quellwarte kein Portal in Quellhain. `Expedition.useExit`/`entry`: Dungeon-Eingänge
+  der Oberwelt führen wieder in die Dungeons der Region; ein Spielstand dort bleibt dort (Umleitung aus 0.9 entfernt,
+  `dressExits` entfällt).
+- Hinterhalt (`tickAmbush`/`finishAmbush`): Abbruch nur, wenn niemand lebend im Abschnitt samt Türrand ist (vorher zählte der
+  äußerste Ring als draußen → Neustart nach der letzten Welle); nach der letzten Welle sofort vorbei; Rastplatz mit eigenem
+  Wiederbelebungspunkt (`props.spot`).
+- `shared/src/maps/expedition.ts`: keine `stairs_down`-Deko mehr in Treppen-Übergängen.
+
 ## 0.11.2 – Questzeichen in Farbe
 
 - `npcMark` (`shared/src/data/quests.ts`) liefert Art (abgeben/Angebot/laufend) und Farbe (Haupt/Neben/wiederholbar);
