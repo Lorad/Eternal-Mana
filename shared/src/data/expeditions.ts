@@ -517,7 +517,7 @@ export const secretFlag = (id: string) => 'xs:' + id;
 export function diffBlock(c: CharData, id: string, d: Difficulty): string | null {
   if (!expUnlock(c, id).ok) return 'Diese Expedition ist noch nicht freigeschaltet.';
   const r = c.expeditions?.[id], cl = (k: Difficulty) => (r?.clears?.[k] ?? 0) > 0;
-  if (d === 'normal') return null;
+  if (d === 'normal' || cl(d)) return null; // 0.11: wer einen Grad schon geschafft hat, darf ihn wieder spielen
   if (d === 'schwer') return cl('normal') ? null : 'Erst nach einem Abschluss auf Normal.';
   if (d === 'albtraum') return c.level < CFG.player.maxLevel ? `Erst ab Stufe ${CFG.player.maxLevel}.` : cl('schwer') ? null : 'Erst nach einem Abschluss auf Schwer.';
   return cl('albtraum') ? null : 'Erst nach einem Abschluss auf Albtraum.';

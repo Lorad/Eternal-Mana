@@ -60,15 +60,17 @@ export function expeditionTable(list: string[], n: number) {
 export function endgameTable(n: number) {
   const rows: unknown[] = [];
   const steps: [string, Difficulty, number, number, 'geschichte' | 'riss'][] = [
-    ['exp_wacht', 'normal', 0, 1, 'geschichte'], ['exp_wacht', 'schwer', 0, 5, 'riss'], ['exp_wacht', 'albtraum', 0, 10, 'riss'], ['exp_wacht', 'mythisch', 0, 15, 'riss'],
-    ['exp_herz', 'normal', 0, 1, 'geschichte'], ['exp_herz', 'schwer', 0, 5, 'riss'], ['exp_herz', 'albtraum', 0, 10, 'riss'], ['exp_herz', 'mythisch', 0, 15, 'riss'],
-    ['exp_wacht', 'mythisch', 1, 15, 'riss'], ['exp_wacht', 'mythisch', 5, 20, 'riss'], ['exp_wacht', 'mythisch', 10, 25, 'riss'], ['exp_wacht', 'mythisch', 20, 30, 'riss'],
+    ['exp_wacht', 'normal', 0, 1, 'geschichte'], ['exp_wacht', 'schwer', 0, 5, 'riss'], ['exp_wacht', 'albtraum', 0, 10, 'riss'], ['exp_wacht', 'mythisch', 0, 20, 'riss'],
+    ['exp_herz', 'normal', 0, 1, 'geschichte'], ['exp_herz', 'schwer', 0, 5, 'riss'], ['exp_herz', 'albtraum', 0, 10, 'riss'], ['exp_herz', 'mythisch', 0, 20, 'riss'],
+    ['exp_schatten', 'mythisch', 0, 20, 'riss'], ['exp_schatten', 'mythisch', 1, 20, 'riss'], ['exp_schatten', 'mythisch', 5, 25, 'riss'], ['exp_schatten', 'mythisch', 10, 30, 'riss'],
+    ['exp_wacht', 'mythisch', 1, 20, 'riss'], ['exp_wacht', 'mythisch', 5, 25, 'riss'],
   ];
+  console.log('Sorgfältige Spieler allein (Krieger, Magier), zügig auf dem Hauptweg; Ausrüstung je Stufe des Endspiels.\n');
   console.log('| Expedition | Grad / Tiefe | Ausrüstung | geschafft | Dauer | Bosskampf | Tode | Tränke | hängt |');
   console.log('|---|---|---|---|---|---|---|---|---|');
   for (const [id, diff, depth, stufe, gear] of steps) {
     const rs: ExpRunResult[] = [];
-    (['krieger', 'magier', 'paladin'] as ClassId[]).slice(0, n).forEach((cls, i) => rs.push(expeditionRun(lab, id, [riftChar(cls, stufe, gear, i * 7 + 3)], SKILL.mittel, 'zuegig', i * 13 + 5, diff, 3600, depth)));
+    (['krieger', 'magier', 'paladin'] as ClassId[]).slice(0, n).forEach((cls, i) => rs.push(expeditionRun(lab, id, [riftChar(cls, stufe, gear, i * 7 + 3)], SKILL.sorgsam, 'zuegig', i * 13 + 5, diff, 3600, depth)));
     const ok = rs.filter(q => q.ok);
     console.log(`| ${EXPEDITIONS[id].name} | ${DIFFICULTY_NAME[diff]}${depth ? ` · Tiefe ${depth}` : ''} | ${gear === 'riss' ? `Riss-Stufe ${stufe}` : 'Ende der Geschichte'} | ${ok.length}/${rs.length} | ${ok.length ? mmss(mean(ok.map(q => q.sec))) : '–'} | ${Math.round(mean(rs.map(q => q.bossSec)))} s | ${mean(rs.map(q => q.deaths)).toFixed(1)} | ${mean(rs.map(q => q.potions)).toFixed(1)} | ${rs.reduce((a, q) => a + q.stuck, 0)} |`);
     rows.push({ id, diff, depth, stufe, gear, runs: rs });

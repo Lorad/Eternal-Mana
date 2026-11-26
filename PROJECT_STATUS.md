@@ -32,8 +32,19 @@ zehn Plätze). Offen bleibt:
   ist stärker als vorher (×1,34 statt ×1,19). Keine legendären Zweithand-Stücke.
 - **Gruppen:** mit höchstens zwei echten Browsern geprüft. Gruppen-Instanzen und Gruppengesuche überleben keinen Neustart.
 - Händler-Wechsel um Mitternacht nur mit gestellter Uhr geprüft; Gamepad in Hub-Fenstern und Inventar-Puppe nicht mit echtem Pad.
-- Noch nicht gebaut (0.11): eigene Endspiel-Expeditionen, Abstimmung der Balance über die neue Länge, Leistungsmessung mit
-  vier Spielern in einer Expedition.
+- Noch nicht gebaut (0.11): Leistungsmessung mit vier Spielern in einer Expedition.
+
+### Stand 0.11 (Endspiel-Expeditionen und Balance über die neue Länge)
+
+- **Tempo:** Erfahrung und Gold der Expeditionen auf die Geschichte abgestimmt (ein Normal-Abschluss knapp zwei Stufen statt
+  gut zwei bis drei; Gegner geben 60 % Gold). Der Tempo-Test rechnet über die Expeditionen statt über die alten Karten.
+- **Ausrüstung:** Borins Beigaben bei der Überführung tragen Stufe, Seltenheit und Verbesserung der alten Teile (höchstens −6 %,
+  vorher bis −20 %); +10 auf allem bleibt bei ×1,37 – begründet mit den Kosten (docs/GAME_DESIGN.md, Balance 0.11).
+- **Endspiel:** „Die Lange Wacht“ (Vael) und „Das Atmende Herz“ (Aetherion), Tiefen 1–20 über Mythisch für alle Expeditionen,
+  Bestenliste in der Trophäenhalle; heilende Erwachte heilen keine Heiler mehr (Mythisch war für Einzelne unschaffbar).
+- **Offen:** Spielstände, die schon mit 0.9/0.10 überführt wurden, behalten Borins gewöhnliche Stücke. Tiefen über 10 und
+  Gruppen in Tiefen sind ungemessen (Bots zu zweit hängen dort fest). Wachfeuer und Herztöne benutzen vorhandene Kunst
+  (Feuerschale, Kristall). Lange Namen von Erwachten mit drei Affixen überlappen im Bild. Bestenliste nur serverweit, ohne Zeitraum.
 
 ### Offene Punkte nach 0.8
 
@@ -114,8 +125,7 @@ Dev-Befehle zusätzlich: `/time 0..1` (Tageszeit), `/weather <art>`.
 
 ## Als Nächstes sinnvoll
 
-1. Die übrigen Expeditionen und die Grade ab Schwer im Browser durchspielen; Erfahrung je Abschluss und Tempo-Test auf die
-   Expeditionen umstellen (Roadmap 0.10/0.11).
+1. Die übrigen Expeditionen und die Grade ab Schwer im Browser durchspielen; Tiefen zu zweit und zu viert im Browser spielen.
 2. Spieltest-Runde zu zweit oder dritt über Tailscale: Schwierigkeit, Tempo, Lautstärken und Animationen in Bewegung beurteilen.
 3. Touch-Steuerung (virtueller Stick und Aktionsknöpfe).
 4. Mehr Bewegungsphasen bei Bossen und zusätzliche Rätseltypen (Schiebeblöcke, Spiegel).

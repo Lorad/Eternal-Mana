@@ -398,8 +398,21 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Oberfläche:** `client/src/ui/expedition.tsx` (Auswahl, Bereitschaft, HUD, Abschluss, Zusammenfassung), `ui/exp-net.ts`,
   Rückfalltabelle der Grafik `client/src/game/expart.ts`.
 - **Werkzeuge:** `npx tsx scripts/expdump.ts [id]` (ASCII-Karte und Prüfung), `npx tsx scripts/exp-playtest.ts` (ganze Läufe mit dem
-  Spielermodell: sorgsam/zügig, allein/zu zweit), `tests/expedition.test.ts`, `tests/e2e/expedition.mjs`. Dev-Befehle: `/portal`,
-  `/expfrei`, `/exp id [schwierigkeit]`, `/expgo abschnitt [mitte]`, `/expphase 2|3`, `/expsieg`.
+  Spielermodell: sorgsam/zügig, allein/zu zweit; seit 0.11 mit Erfahrung, Stufen und Gold je Lauf; `--endspiel` für die Leiter aus
+  Endspiel-Expeditionen und Tiefen), `tests/expedition.test.ts`, `tests/e2e/expedition.mjs`, `tests/e2e/lange-wacht.mjs`. Dev-Befehle:
+  `/portal`, `/expfrei`, `/exp id [schwierigkeit] [tiefe]`, `/expgo abschnitt [mitte]`, `/expphase 2|3`, `/expsieg`.
+- **Endspiel (0.11):** `shared/src/data/expeditions_endgame.ts` (zur Laufzeit ohne Importe – nur Typen aus `expeditions.ts`, das die
+  Listen einhängt): zwei Expeditionen (`endgame`, `xpRef` statt `legacy`), ihre Mini-Bosse, `DEPTH_CFG`, `depthOpen`/`depthBlock`,
+  `depthMods(woche, id, tiefe)` (deterministisch, Server und Oberfläche rechnen dasselbe), `depthScale`, Titel (`ENDGAME_TITLES`,
+  eingehängt in `data/looks.ts` über `TITLE_SOURCES`). Tiefe des Laufs: `ExpRun.depth`/`mods`, wirkt in `levelFor`, `makeMob`,
+  `spawnMinis`, `zoneDef`, `bossDef`; Nachricht `exp` mit `depth` bei `select`, Anzeige in `ExpLobbyInfo`, `ExpRunInfo`, `ExpResult`.
+  Belohnung `reward.ts` (`rewardRarity`, Endspiel- und Tiefen-Zugaben, `DungeonRecord.deep`/`deepSec`). Vael und Aetherion: `spared`
+  bleibt, `BossCtl.shouldStart` beginnt in einer Expedition immer (einmal je Lauf), `Expedition.bossDef` nimmt `awaken`/`calm` weg.
+  Signaturen `vael` (Wachfeuer, `xobj` `watchfire`) und `aetherion` (Herztöne, `xobj` `tone`) in `bossmech.ts`, Aufräumen nach dem
+  Sieg `mechDone`. Bestenliste: `server/src/expedition/board.ts` (Tabelle `meta`, Schlüssel `exp_board`), geschickt beim Betreten der
+  Trophäenhalle (`exp` mit `board`), Oberfläche `ui/hub.tsx` (Reiter „Bestenliste“).
+- **Überführung der Ausrüstung (0.11):** `borinGift` in `shared/src/equip.ts`; Beigaben tragen `ItemInstance.gift` (nicht umschmiedbar,
+  `reforgeBlock`).
 
 ## Tests
 
