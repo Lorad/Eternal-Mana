@@ -14,7 +14,7 @@ const a = await player(browser, 'gs', 'a', 'Gerda' + tag, 'Krieger', errors);
 const b = await player(browser, 'gs', 'b', 'Bodo' + tag, 'Magier', errors);
 const step = async (name, fn) => {
   try { await fn(); console.log('  ✓ ' + name); }
-  catch (e) { failed++; console.log('  ✗ ' + name + ': ' + e.message.split('\n')[0]); for (const p of [a, b]) { await p.shot('fehler-' + failed).catch(() => {}); await p.esc().catch(() => {}); await p.esc().catch(() => {}); } }
+  catch (e) { failed++; console.log('  ✗ ' + name + ': ' + e.message.split('\n')[0]); for (const p of [a, b]) { await p.shot(`fehler-${failed}-${p.key}`).catch(() => {}); await p.esc().catch(() => {}); await p.esc().catch(() => {}); } }
 };
 const num = s => Number(String(s).replace(/[^\d-]/g, ''));
 const ok = (cond, msg) => { if (!cond) throw new Error(msg); };
@@ -25,6 +25,11 @@ async function doll(p) {
   const total = num(await p.page.locator('.win-inv .doll-gs .gs-val').innerText());
   const slots = await p.page.locator('.win-inv .doll .slot-gs').allInnerTexts();
   return { total, sum: slots.reduce((x, s) => x + num(s), 0), n: slots.length };
+}
+/** wartet, bis die Puppe einen anderen Wert als `before` zeigt (der Server antwortet unter Last mit Verzögerung) */
+async function dollChange(p, before, timeout = 10000) {
+  await p.page.waitForFunction(v => { const e = document.querySelector('.win-inv .doll-gs .gs-val'); return e && Number(e.textContent.replace(/[^\d-]/g, '')) !== v; }, before, { timeout }).catch(() => {});
+  return doll(p);
 }
 /** Tooltip eines Rucksackplatzes */
 async function hoverBag(p, i) {
@@ -41,8 +46,8 @@ async function talk(p, npc, option) {
   await p.has(option); await p.page.getByText(option).first().click(); await p.wait(500);
 }
 /** Bild in drei Fenstergrößen (Standard, klein quer, schmal hoch) */
-async function sizes(p, n) {
-  for (const [w, h] of [[1280, 720], [1000, 560], [600, 900]]) { await p.page.setViewportSize({ width: w, height: h }); await p.wait(450); await p.shot(`${n}-${w}x${h}`); }
+async function sizes(p, n, prep) {
+  for (const [w, h] of [[1280, 720], [1000, 560], [600, 900]]) { await p.page.setViewportSize({ width: w, height: h }); await p.wait(450); if (prep) await prep(); await p.shot(`${n}-${w}x${h}`); }
   await p.page.setViewportSize({ width: 1280, height: 720 }); await p.wait(300);
 }
 
@@ -73,7 +78,7 @@ await step('Tooltip: Wert des Teils; Vergleich mit Änderung des Charakter-Werts
   const rows = await tip.locator('.tip-gs-row').allInnerTexts();
   ok(rows.length === 2 && /Ring 1/.test(rows[0]) && /Ring 2/.test(rows[1]), 'Ringvergleich: ' + rows.join(' | '));
   ok(rows.every(r => /\(frei\)/.test(r) && /▲ \+/.test(r)), 'beide Ringplätze frei, beide ein Gewinn: ' + rows.join(' | '));
-  await sizes(a, '02-tooltip-ring');
+  await sizes(a, '02-tooltip-ring', () => hoverBag(a, ring));
 });
 await step('Anlegen: der angekündigte Gewinn kommt genau an, die Puppe zählt richtig', async () => {
   for (let k = 0; k < 12; k++) {
@@ -87,8 +92,8 @@ await step('Anlegen: der angekündigte Gewinn kommt genau an, die Puppe zählt r
     }
     if (idx < 0) break;
     const before = (await doll(a)).total;
-    await slots.nth(idx).dblclick(); await a.wait(600);
-    const after = await doll(a);
+    await slots.nth(idx).dblclick();
+    const after = await dollChange(a, before);
     ok(after.total === before + gain, `angekündigt +${gain}, aus ${before} wurde ${after.total}`);
     ok(after.total === after.sum, 'Summe je Platz');
   }
@@ -131,11 +136,11 @@ await step('Portal: Empfehlung je Grad, Belohnungsstufe, Warnung unter dem Minde
   ok(/Empfohlen GS/.test(t) && /Mindestens GS/.test(t) && /Dein Wert GS/.test(t) && /Abenteuer/i.test(t) && /Gegenstandsstufe/.test(t), 'Kasten: ' + t);
   ok((await a.page.locator('.xp-diff .xp-diff-gs').count()) === 4, 'GS an jedem Grad');
   ok(!(await a.page.locator('.xp-gs-warn').count()), 'Normal: keine Warnung erwartet');
-  await sizes(a, '06-portal-normal');
+  await sizes(a, '06-portal-normal', () => box.scrollIntoViewIfNeeded());
   await a.page.locator('.xp-diff.d-mythisch').click(); await a.wait(300);
   await a.page.locator('.xp-gs-warn', { hasText: 'unter dem Mindestwert' }).waitFor({ timeout: 4000 });
   ok(/Raid-Endgame/i.test(await box.innerText()), 'Mythisch: Raid-Endgame');
-  await sizes(a, '07-portal-mythisch');
+  await sizes(a, '07-portal-mythisch', () => box.scrollIntoViewIfNeeded());
   await a.page.locator('.xp-diff.d-normal').click(); await a.esc();
 });
 let bGs = 0;
@@ -159,8 +164,8 @@ await step('Gruppe zu zweit: Rahmen, Gruppenfenster und Ansehen zeigen den Wert,
   // B legt etwas an: der Rahmen bei A folgt
   await b.cmd('/gear 1'); await b.wait(500);
   await b.page.keyboard.press('i'); await b.page.locator('.win-inv').waitFor();
-  await b.page.locator('.win-inv .inv-grid .slot:not(.empty)').filter({ has: b.page.locator('img') }).last().dblclick(); await b.wait(600);
-  const nb = (await doll(b)).total; await b.esc();
+  await b.page.locator('.win-inv .inv-grid .slot:not(.empty)').last().dblclick();
+  const nb = (await dollChange(b, bGs)).total; await b.esc();
   ok(nb !== bGs, 'B: Wert hat sich geändert');
   await a.page.waitForFunction(([n, v]) => [...document.querySelectorAll('.party-frame')].some(f => f.textContent.includes(n) && f.querySelector('.gs-val')?.textContent.replace(/\D/g, '') === String(v)), [b.name, nb], { timeout: 8000 });
   bGs = nb;
@@ -178,7 +183,7 @@ await step('Bereitschaft am Portal: wer unter dem Mindestwert liegt, steht mit N
   await a.page.locator('.xp-lobby-gs').nth(1).waitFor({ timeout: 5000 });
   const gs = (await a.page.locator('.xp-lobby-gs').allInnerTexts()).map(num);
   ok(gs.includes(bGs), `Bereitschaft: ${gs.join(', ')} – erwartet ${bGs} für ${b.name}`);
-  await sizes(a, '12-bereitschaft');
+  await sizes(a, '12-bereitschaft', () => a.page.locator('.xp-lobby').scrollIntoViewIfNeeded());
   await a.page.getByRole('button', { name: 'Abbrechen' }).click(); await a.wait(400);
   await a.esc();
 });

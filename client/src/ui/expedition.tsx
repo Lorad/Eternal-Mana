@@ -117,7 +117,7 @@ export function ExpeditionWindow() {
             })}
           </div>
           <p class="note xp-diffdesc">{EXP_DIFF[diff].desc}</p>
-          <GsReqBox req={req} mine={mine} crew={inParty ? crew : null} warn={warn} />
+          <GsReqBox req={req} mine={mine} crew={inParty && !lobby ? crew : null} warn={lobby ? null : warn} />
           {diff === 'mythisch' && open > 0 && (
             <div class="xp-depth">
               <div class="sec-title">Tiefe <small class="note">über Mythisch · erreicht: {rec?.deep ?? 0} / {DEPTH_CFG.max}</small></div>
