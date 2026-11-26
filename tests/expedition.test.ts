@@ -3,7 +3,7 @@
  * Schwierigkeitsgrade, Herausforderung der Woche, alte Spielstände.
  */
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, WEEKLY_MODS, diffBlock, expUnlock, isoWeek, sanitizeExp, weeklyChallenge } from '../shared/src/data/expeditions';
+import { EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, diffBlock, expUnlock, isoWeek, sanitizeExp, weeklyChallenge } from '../shared/src/data/expeditions';
 import { DEPTH_CFG, depthBlock, depthMods, depthOpen } from '../shared/src/data/expeditions_endgame';
 import { expTrophy } from '../shared/src/data/expitems';
 import { AETHER, BOSS_CORE, ECHO_FRAG } from '../shared/src/data/materials';
@@ -486,7 +486,7 @@ describe('Endspiel-Expeditionen (0.11)', () => {
     expect(start(t, 'exp_gruenwald', 'schwer', 1), 'Tiefen nur auf Mythisch').toBeNull();
     const z = start(t, 'exp_gruenwald', 'mythisch', 1)!;
     expect(z.exp!.depth).toBe(1);
-    expect(z.exp!.mods!.length).toBe(1);
+    expect(z.exp!.mods ?? []).toEqual([]); // Modifikatoren erst ab Tiefe 3
     const lv1 = z.def.level[0], hp1 = z.boss!.def.hpMul;
     const core0 = t.count(BOSS_CORE.dornenmutter), echo0 = t.count(ECHO_FRAG);
     finish(t);
@@ -503,15 +503,16 @@ describe('Endspiel-Expeditionen (0.11)', () => {
     expect(board.exp_gruenwald.best.mythisch!.sec).toBeGreaterThan(0);
     expect(JSON.parse(sim.db.getMeta('exp_board')!).exp_gruenwald.deep.depth).toBe(1);
     sim.leave(t);
-    // Tiefe 10 gegenüber Tiefe 1: höhere Stufe, mehr Leben, drei Modifikatoren – und mehr Belohnung
+    // Tiefe 10 gegenüber Tiefe 1: höhere Stufe, mehr Leben, zwei Modifikatoren – und mehr Belohnung
     const u = veteran('Grundlos');
     unlockAll(u);
     u.p.char.expeditions = { exp_gruenwald: { clears: { normal: 1, schwer: 1, albtraum: 1, mythisch: 1 }, deep: 9 } };
     const z10 = start(u, 'exp_gruenwald', 'mythisch', 10)!;
-    expect(z10.def.level[0]).toBe(lv1 + 9);
-    expect(z10.exp!.mods!.length).toBe(3);
-    expect(new Set(z10.exp!.mods).size).toBe(3);
-    expect(z10.boss!.def.hpMul).toBeGreaterThan(hp1 * 1.9);
+    expect(z10.def.level[0]).toBe(lv1 + 5);
+    expect(z10.exp!.mods!.length).toBe(2);
+    expect(new Set(z10.exp!.mods).size).toBe(2);
+    expect(z10.exp!.mods).not.toContain('erwacht');
+    expect(z10.boss!.def.hpMul).toBeGreaterThan(hp1 * 1.6);
     finish(u);
     expect(u.p.char.expeditions!.exp_gruenwald.deep).toBe(10);
     expect(ownedTitles(u.p.char)).toContain('x_tiefe10');
@@ -526,12 +527,27 @@ describe('Endspiel-Expeditionen (0.11)', () => {
     sim.leave(u);
   });
 
+  it('heilende Erwachte heilen andere, aber keine anderen Heiler (sonst waren zwei davon für Einzelne unbesiegbar)', () => {
+    const t = veteran('Heilerprobe');
+    unlockAll(t);
+    const z = start(t, 'exp_gruenwald')!;
+    const [a, b, c] = [...z.mobs.values()].filter(m => !m.boss).slice(0, 3);
+    for (const m of [a, b, c]) { m.x = a.x + 10; m.y = a.y; m.awake = true; m.hp = Math.round(m.maxHp / 2); }
+    z.exp!.affix.set(a.id, ['heilend']); z.exp!.affix.set(b.id, ['heilend']); z.exp!.affix.delete(c.id);
+    const ha = a.hp, hb = b.hp, hc = c.hp;
+    Expedition.heal(z);
+    expect(a.hp).toBe(ha); expect(b.hp).toBe(hb);
+    expect(c.hp).toBeGreaterThan(hc);
+    sim.leave(t);
+  });
+
   it('Tiefen-Modifikatoren wechseln je Woche, wachsen mit der Tiefe und behalten die der flacheren Tiefe', () => {
-    const a = depthMods('2026-48', 'exp_frost', 12, WEEKLY_MODS);
+    const a = depthMods('2026-48', 'exp_frost', 16);
     expect(a.length).toBe(3);
-    expect(depthMods('2026-48', 'exp_frost', 4, WEEKLY_MODS)).toEqual(a.slice(0, 1));
-    expect(depthMods('2026-48', 'exp_frost', 7, WEEKLY_MODS)).toEqual(a.slice(0, 2));
-    const weeks = new Set(Array.from({ length: 12 }, (_, i) => depthMods(`2027-${String(i + 1).padStart(2, '0')}`, 'exp_frost', 12, WEEKLY_MODS).join()));
+    expect(depthMods('2026-48', 'exp_frost', 2)).toEqual([]);
+    expect(depthMods('2026-48', 'exp_frost', 4)).toEqual(a.slice(0, 1));
+    expect(depthMods('2026-48', 'exp_frost', 12)).toEqual(a.slice(0, 2));
+    const weeks = new Set(Array.from({ length: 12 }, (_, i) => depthMods(`2027-${String(i + 1).padStart(2, '0')}`, 'exp_frost', 16).join()));
     expect(weeks.size, 'mehrere Kombinationen über die Wochen').toBeGreaterThan(4);
   });
 });

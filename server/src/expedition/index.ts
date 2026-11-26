@@ -17,7 +17,6 @@ import {
   DIFFICULTIES, ELITE_AFFIX, ELITE_AFFIXES, EXPEDITIONS, EXP_BY_LEGACY, EXP_CFG, EXP_DIFF, MINIS, diffBlock, expPar, expUnlock, isExpedition, isoWeek, weeklyChallenge, weeklyFlag,
   type EliteAffix, type Weekly,
 } from '../../../shared/src/data/expeditions';
-import { WEEKLY_MODS } from '../../../shared/src/data/expeditions';
 import { depthBlock, depthMods, depthScale } from '../../../shared/src/data/expeditions_endgame';
 import type { Difficulty } from '../../../shared/src/data/hub';
 import { DIFFICULTY_NAME } from '../../../shared/src/data/hub';
@@ -127,7 +126,7 @@ function startRun(game: Game, lead: Player, id: string, diff: Difficulty, member
   const w = weeklyNow();
   const run = newRun(id, diff, lead.party, game.now, w.exp === id && w.diff === diff ? w : null);
   run.kreis = game.worldKreis(lead);
-  if (depth > 0) { run.depth = depth; run.mods = depthMods(isoWeek(Date.now()), id, depth, WEEKLY_MODS); } // 0.11: Tiefen
+  if (depth > 0) { run.depth = depth; run.mods = depthMods(isoWeek(Date.now()), id, depth); } // 0.11: Tiefen
   const zone = new Zone(game, Expedition.zoneDef(id, diff, run.kreis, depth), { key: 'exp:' + run.id, exp: run });
   game.zones.set(zone.key, zone);
   const name = runName(id, diff, depth);
@@ -594,7 +593,8 @@ export const Expedition = {
       if (!aff.includes('heilend')) continue;
       const m = zone.mobs.get(id);
       if (!m || m.dead || !m.awake) continue;
-      for (const o of zone.mobs.values()) if (o !== m && !o.dead && o.hp < o.maxHp && Math.hypot(o.x - m.x, o.y - m.y) < 70) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.04); zone.ev({ k: 'fx', n: 'heal', x: o.x, y: o.y, el: 'light' }); }
+      // 0.11: Heiler heilen keine anderen Heiler – zwei heilende Erwachte nebeneinander waren für Einzelne unbesiegbar (Spieltest Mythisch)
+      for (const o of zone.mobs.values()) if (o !== m && !o.dead && o.hp < o.maxHp && Math.hypot(o.x - m.x, o.y - m.y) < 70 && !run.affix.get(o.id)?.includes('heilend')) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.04); zone.ev({ k: 'fx', n: 'heal', x: o.x, y: o.y, el: 'light' }); }
     }
   },
 

@@ -5,7 +5,7 @@
  *                  (Aetherion). Gleicher Generator, gleiche Regeln wie die übrigen; eigene Mini-Bosse, Signaturmechanik
  *                  (server/src/expedition/bossmech.ts), Belohnung mit Echo-Fragmenten, Ätherstaub und Mythisch.
  *   Tiefen         über „Mythisch“ hinaus: Tiefe 1–20 je Expedition, freigeschaltet Stufe um Stufe. Jede Tiefe hebt Gegnerstufe,
- *                  Leben und Schaden; ab Tiefe 1 gilt ein Modifikator, ab 5 zwei, ab 10 drei – sie wechseln jede Woche
+ *                  Leben und Schaden; ab Tiefe 3 gilt ein Modifikator, ab 8 zwei, ab 15 drei – sie wechseln jede Woche
  *                  (`depthMods`). Die Belohnung steigt mit: Gegenstandsstufe, Mythisch, Bosskern, Echo-Fragmente, Ätherstaub.
  *   Ehrungen       Titel und Waffenglanz für die schwersten Abschlüsse (`endgameTitles`, Erscheinungen in data/looks.ts).
  *
@@ -109,14 +109,16 @@ export const ENDGAME_LIST: ExpeditionDef[] = [
 export const DEPTH_CFG = {
   /** höchste Tiefe */
   max: 20,
-  /** je Tiefe: Gegnerstufe +, Leben ×(1 + hp·t), Schaden ×(1 + dmg·t) – zusätzlich zu Mythisch */
-  lvl: 1, hp: 0.12, dmg: 0.06,
+  /** je Tiefe: Gegnerstufe + (abgerundet), Leben ×(1 + hp·t), Schaden ×(1 + dmg·t) – zusätzlich zu Mythisch.
+   *  Spieltest (scripts/exp-playtest.ts --endspiel): allein, sorgfältig, Riss-Ausrüstung 20 → Tiefe 1 in ~20 min; Riss 25 → Tiefe 5
+   *  in ~35 min mit einigen Toden; Tiefe 10 und mehr allein nicht mehr – das ist Gruppen und voll verbesserter Ausrüstung vorbehalten. */
+  lvl: 0.5, hp: 0.08, dmg: 0.04,
   /** Belohnung je Tiefe: Gegenstandsstufe +, Faktor auf Erfahrung/Gold (1 + reward·t), Gewicht „Mythisch“ ×(1 + mythic·t) */
   ilvl: 1, reward: 0.15, mythic: 0.15,
   /** Echo-Fragmente je Abschluss: 1 + ⌊t/2⌋ · Ätherstaub ab dieser Tiefe · Bosskern des Endbosses ab Tiefe 1 garantiert */
   aetherFrom: 5,
-  /** Modifikatoren: einer ab Tiefe 1, zwei ab 5, drei ab 10 */
-  modsAt: [1, 5, 10],
+  /** Modifikatoren: einer ab Tiefe 3, zwei ab 8, drei ab 15 */
+  modsAt: [3, 8, 15],
   /** Titel und Glanz */
   titleAt: [10, 20],
 } as const;
@@ -139,21 +141,24 @@ export function depthBlock(c: CharData, id: string, depth: number): string | nul
 export const depthModCount = (t: number) => DEPTH_CFG.modsAt.filter(a => t >= a).length;
 function hash(s: string): number { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 /**
- * Modifikatoren einer Tiefe in einer Woche – wechseln jede Woche, je Expedition und Tiefe anders (deterministisch: Server und
- * Oberfläche rechnen dasselbe). `all` = die Liste der Wochenmodifikatoren (WEEKLY_MODS; als Parameter, damit diese Datei
- * zur Laufzeit nichts aus expeditions.ts braucht).
+ * Modifikatoren der Tiefen: die der Wochen-Herausforderung (WEEKLY_MOD in expeditions.ts) ohne „Erwacht“ – doppelt so viele
+ * Erwachte mit drei Affixen machten schon Tiefe 1 für Einzelne unspielbar (Spieltest, docs/GAME_DESIGN.md).
  */
-export function depthMods(week: string, id: string, depth: number, all: readonly WeeklyMod[]): WeeklyMod[] {
+export const DEPTH_MOD_POOL: WeeklyMod[] = ['horde', 'glas', 'versiegt', 'hast', 'finster'];
+/**
+ * Modifikatoren einer Tiefe in einer Woche – wechseln jede Woche, je Expedition anders (deterministisch: Server und Oberfläche
+ * rechnen dasselbe). Tiefe t trägt die Modifikatoren der flacheren Tiefe und einen neuen.
+ */
+export function depthMods(week: string, id: string, depth: number, all: readonly WeeklyMod[] = DEPTH_MOD_POOL): WeeklyMod[] {
   const n = Math.min(all.length, depthModCount(depth)), pool = [...all], out: WeeklyMod[] = [];
   let h = hash(`tiefe:${week}:${id}`);
-  // Tiefe t trägt die Modifikatoren von t−1 und einen neuen – wer tiefer steigt, behält, was er schon kennt
   for (let i = 0; i < n; i++) { const k = h % pool.length; out.push(pool.splice(k, 1)[0]); h = Math.imul(h ^ (h >>> 13), 2654435761) >>> 0; }
   return out;
 }
 /** Faktoren einer Tiefe (für Gegner, Boss und Belohnung) */
 export function depthScale(depth: number) {
   const t = Math.max(0, depth | 0), D = DEPTH_CFG;
-  return { lvl: D.lvl * t, hp: 1 + D.hp * t, dmg: 1 + D.dmg * t, ilvl: D.ilvl * t, reward: 1 + D.reward * t, mythic: 1 + D.mythic * t };
+  return { lvl: Math.floor(D.lvl * t), hp: 1 + D.hp * t, dmg: 1 + D.dmg * t, ilvl: Math.floor(D.ilvl * t), reward: 1 + D.reward * t, mythic: 1 + D.mythic * t };
 }
 /** tiefste erreichte Tiefe über alle Expeditionen */
 export function deepest(c: CharData): number { let n = 0; for (const id in c.expeditions ?? {}) n = Math.max(n, Math.floor(c.expeditions![id].deep ?? 0)); return n; }

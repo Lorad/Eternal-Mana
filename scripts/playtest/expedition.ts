@@ -36,6 +36,14 @@ function learnSignature(z: Zone, bots: Bot[], now: number) {
     const ink = [...z.objs.values()].filter(o => o.props?.kind === 'ink').sort((a, c) => Math.hypot(a.x - s.entry!.p.x, a.y - s.entry!.p.y) - Math.hypot(c.x - s.entry!.p.x, c.y - s.entry!.p.y))[0];
     if (who && ink) { who.goto = { x: ink.x, y: ink.y + 10 }; who.focus = () => false; }
   }
+  // 0.11 Vael: ein dunkles Wachfeuer – der Letzte der Gruppe stellt sich daneben, bis es wieder brennt
+  const dark = s.kindle ? (s.objs ?? []).filter(o => o.state === 0) : [];
+  if (dark.length) { const who = alive[alive.length - 1], o = dark[0]; if (who) { who.goto = { x: o.x + 6, y: o.y + 10 }; who.focus = () => false; } }
+  // 0.11 Aetherion: das Wiegenlied – der Erste schlägt die Töne in der genannten Reihenfolge an
+  if (s.song && s.objs) {
+    const who = alive[0], o = s.objs[s.song.order[s.song.step]];
+    if (who && o) { if (Math.hypot(o.x - who.p.x, o.y - who.p.y) < 26) who.send({ t: 'interact', id: o.id }); else { who.goto = { x: o.x, y: o.y + 12 }; who.focus = () => false; } }
+  }
   if (s.wisp) {
     const w = s.wisp, f = Math.min(1, (now - w.at) / (w.until - w.at - 0.8));
     for (const x of alive) { x.goto = { x: w.x0 + (w.x1 - w.x0) * f, y: w.y0 + (w.y1 - w.y0) * f }; x.focus = () => false; }
@@ -72,20 +80,21 @@ type Task =
 const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const inSec = (s: ExpSection, x: number, y: number, pad = 0) => x >= (s.x0 + pad) * TILE && x < (s.x1 + 1 - pad) * TILE && y >= (s.y0 + pad) * TILE && y < (s.y1 + 1 - pad) * TILE;
 
-export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Skill, style: Style, seed: number, diff: Difficulty = 'normal', maxSec = 3600): ExpRunResult {
+export function expeditionRun(lab: Lab, id: string, chars: CharData[], skill: Skill, style: Style, seed: number, diff: Difficulty = 'normal', maxSec = 3600, depth = 0): ExpRunResult {
   const bots = chars.map((c, i) => lab.join(c, skill, seed * 31 + i));
   lab.party(bots);
   const x = EXPEDITIONS[id], game = lab.game, rng = new Rng(seed), T = THINK[style];
   // freischalten und zum Portal
   for (const b of bots) {
-    for (const r of x.unlock) { if (r.cond?.flag) b.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started) b.p.char.quests[a.started] = { s: 'active', p: [0] }; }
-    if (diff !== 'normal') b.p.char.expeditions = { [id]: { clears: { normal: 1, schwer: 1, albtraum: 1 } } };
+    const ex = (b.p.char.expeditions ??= {});
+    for (const r of x.unlock) { if (r.cond?.flag) b.p.char.flags[r.cond.flag] = 1; for (const a of r.cond?.any ?? []) if (a.started) b.p.char.quests[a.started] = { s: 'active', p: [0] }; if (r.exp) ex[r.exp] ??= { clears: { normal: 1 } }; }
+    if (diff !== 'normal') ex[id] = { clears: { normal: 1, schwer: 1, albtraum: 1, ...(depth ? { mythisch: 1 } : {}) }, ...(depth > 1 ? { deep: depth - 1 } : {}) };
     b.p.char.flags[weeklyFlag(isoWeek(Date.now()))] = 1; // 0.11: ohne den Bonus der Wochen-Herausforderung – die Messung hängt nicht vom Kalender ab
     game.transfer(b.p, 'gruenwald', '');
     const o = [...b.p.zone.objs.values()].find(q => q.props?.kind === 'portal')!;
     lab.place(b.p, o.x, o.y + 20);
   }
-  bots[0].send({ t: 'exp', a: 'select', id, diff });
+  bots[0].send({ t: 'exp', a: 'select', id, diff, ...(depth ? { depth } : {}) });
   if (bots.length > 1) { for (const b of bots.slice(1)) b.send({ t: 'exp', a: 'ready' }); bots[0].send({ t: 'exp', a: 'start' }); }
   const z = bots[0].p.zone;
   if (!z.exp) throw new Error('Expedition startet nicht: ' + id);

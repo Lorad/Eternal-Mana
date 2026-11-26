@@ -7,7 +7,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { RARITY_COLOR } from '../../../shared/src/config';
 import { BOSSES } from '../../../shared/src/data/enemies';
-import { DIFFICULTIES, DIFFICULTY_NAME, EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, MINIS, WEEKLY_MOD, WEEKLY_MODS, diffBlock, expUnlock, fmtSec, isExpedition, isoWeek, type WeeklyMod } from '../../../shared/src/data/expeditions';
+import { DIFFICULTIES, DIFFICULTY_NAME, EXPEDITION_LIST, EXPEDITIONS, EXP_DIFF, MINIS, WEEKLY_MOD, diffBlock, expUnlock, fmtSec, isExpedition, isoWeek, type WeeklyMod } from '../../../shared/src/data/expeditions';
 import { DEPTH_CFG, depthBlock, depthMods, depthOpen } from '../../../shared/src/data/expeditions_endgame';
 import type { Difficulty } from '../../../shared/src/data/hub';
 import { ITEMS } from '../../../shared/src/data/items';
@@ -26,7 +26,7 @@ const REGION: Record<string, string> = { gruenwald: 'Grünwald', kristall: 'Kris
 /** Region in der Anzeige (0.11: „Das Atmende Herz“ liegt unter dem Quellgrund) */
 const regionOf = (x: { region: string; parent: string }) => (x.parent === 'quellgrund' ? 'Quellgrund' : REGION[x.region]);
 /** Modifikatoren einer Tiefe in dieser Woche, als Namen (0.11) */
-export const depthModNames = (id: string, depth: number) => depthMods(isoWeek(Date.now()), id, depth, WEEKLY_MODS).map(m => WEEKLY_MOD[m]);
+export const depthModNames = (id: string, depth: number) => depthMods(isoWeek(Date.now()), id, depth).map(m => WEEKLY_MOD[m]);
 
 // ------------------------------------------------------------------ Auswahlfenster
 export function ExpeditionWindow() {
