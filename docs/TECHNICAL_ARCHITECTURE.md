@@ -421,6 +421,24 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Überführung der Ausrüstung (0.11):** `borinGift` in `shared/src/equip.ts`; Beigaben tragen `ItemInstance.gift` (nicht umschmiedbar,
   `reforgeBlock`).
 
+## Ausrüstungswert (GS, 0.12)
+
+Vollständig beschrieben in **`docs/GEAR_SCORE.md`** (Formel, Konstanten, Messtabelle, Farbstufen, Empfehlungen).
+
+- **Eine Formel:** `shared/src/gearscore.ts` (`itemGS`, `itemGSParts`, `charGS`, `slotGS`, `gsCompare`, `itemGSEquiv`) – Server,
+  Oberfläche, Tests und Skripte rufen dieselben Funktionen. Gespeichert wird kein Wert: Er folgt aus `CharData.equip`.
+- **Messpunkte und Empfehlungen:** `shared/src/data/gsreq.ts` (`GS_REF` aus `scripts/gearscore-calib.ts --ref`, `GS_BRACKETS`,
+  `expRequirement`, `riftRequirement`, `trialRequirement`, `gsCheck`, `gsWarning`; `rewardRarity`/`rewardIlvl` der Expeditionen
+  stehen ebenfalls hier, damit Server-Belohnung und Portal-Anzeige dieselbe Rechnung nutzen). Inhalte können Werte selbst festlegen:
+  `ExpeditionDef.gsReq` (`GsReqDecl`, auch `hard`).
+- **Server:** `Player.gs` wird in `recalc()` neu berechnet (jede Änderung der Ausrüstung ruft es). Der Wert geht nur in
+  `PartyMember.gs`, `InspectInfo.gs`, `ExpLobbyInfo.members[].gs`, die Online-Liste (`online`) und `LfgEntry.gs` – nicht in Snapshots.
+  `server/src/expedition/index.ts` (`gsGate`) prüft beim Aufbruch, bei „Bereit“ und beim Nachkommen eine harte Grenze und schickt
+  sonst die Warnung als Hinweis. Ein Wert vom Client wird nirgends gelesen.
+- **Oberfläche:** `GsValue`, `GS_HELP` und der Vergleich im Tooltip in `ui/common.tsx`; `GsReqBox` in `ui/gearscore.tsx`
+  (Portal, Riss-Stein); Puppe (`panels/inventory.tsx`), Charakterbogen, Gruppenrahmen und Ansehen (`ui/social.tsx`),
+  Gruppenfenster, Quellwarte (`ui/hub.tsx`, Trophäenhalle über `data/hall.ts`), Schmiede (`ui/dialog.tsx`, `Upgrade`).
+
 ## Tests
 
 - `tests/endgame.test.ts` – Endspiel ohne Netzwerk (`tests/helpers/sim.ts`): Freischaltung, getrennte Instanzen,
@@ -445,6 +463,9 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
   volles Inventar, zweiter Charakter desselben Profils, Verbindungsabbruch, Absturz und Neustart, beschädigter Stand), Ausbau
   und Stationen je Stufe, Bett, Trophäen, jeder Begleiter mit Quelle und Wirkung, Sammlung und Meilensteine, Nachtrag für alte
   Spielstände, Erscheinungen samt Rückfall, Neuer Kreis.
+- `tests/gearscore.test.ts` – Ausrüstungswert: Formel, jede Verbesserungsstufe, Klassenneutralität, Sets, Vergleich mit Ringen,
+  Überführung alter Stände, Empfehlungen und Warnungen, harte Grenze, Server rechnet selbst (Gruppe, Ansehen, Online-Liste,
+  Bereitschaft); die Messpunkte bewacht `tests/balance.test.ts`.
 - `tests/client.test.ts` – Client-Logik ohne Browser (0.8): Bewegung bei 4 bis 60 Bildern pro Sekunde (reine Rechnung und
   gegen den echten Server: kein Zurücksetzen, auch mit Ausweichrolle), Tastenbelegung (keine Konflikte, Gruppen vollständig,
   Wegnehmen, alte Einstellungen), Hinweise (Reihenfolge der ersten Schritte, einmalig, abschaltbar, Kapitel vorhanden),
@@ -453,7 +474,8 @@ Filmszenen, Echos, Schreine, Orte, Platzierung der Story-Objekte), `npcs_akt2.ts
 - **Browser-Durchläufe** (`tests/e2e/*.mjs`, Playwright): `smoke` (Menü → Charakter → Welt → bewegen → angreifen),
   `erste-schritte` (neuer Spieler: Hinweise, Handbuch, neue Tasten, Menü, Einstellungen, Verbindungsabriss), `fenster` (jedes
   Fenster und das HUD bei 1280×720, 1000×560 und 600×900: im Bild, Kopfzeile einzeilig, nichts ragt hinaus, keine Überdeckung),
-  `endgame`, `welt`, `zuhause`, `coop` (zwei Browser). **`npm run test:e2e:all`** (`scripts/e2e-all.mjs`) startet für jeden
+  `endgame`, `welt`, `zuhause`, `coop` (zwei Browser), `ausruestungswert` (zwei Browser: Puppe, Vergleich, Schmiede, Portal,
+  Gruppe, Bereitschaft; Bilder in drei Fenstergrößen). **`npm run test:e2e:all`** (`scripts/e2e-all.mjs`) startet für jeden
   Durchlauf einen eigenen Server mit leerer Datenbank und Dev-Befehlen (ab acht Kernen mehrere nebeneinander, `EM_JOBS`) und
   meldet je Skript bestanden/gescheitert; einzelne Skripte: `npm run test:e2e:all -- coop welt`.
 - **Messwerkzeuge:** `scripts/load-check.ts` (Server: Taktdauer und Snapshot-Größe mit Bots), `scripts/perf-browser.mjs`

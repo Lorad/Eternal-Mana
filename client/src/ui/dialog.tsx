@@ -11,7 +11,8 @@ import type { QuestDef } from '../../../shared/src/data/quests';
 import { ZONES } from '../../../shared/src/data/zones';
 import { MOD_LABEL, SLOTS } from '../../../shared/src/types';
 import type { CharData, ItemInstance, ModKey } from '../../../shared/src/types';
-import { Btn, Confirm, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtMod, fmtNum, hideTip, itemIconKey, modEntries, send, sfx, UpgradeLadder, windowSlot } from './common';
+import { Btn, Confirm, GS_HELP, Gold, INV_SIZE, Icon, ItemSlot, Portrait, Tabs, cx, fmtMod, fmtNum, hideTip, itemIconKey, modEntries, send, sfx, UpgradeLadder, windowSlot } from './common';
+import { itemGS } from '../../../shared/src/gearscore';
 import { CostList, StationOptions } from './craft';
 import { upgradeBlock, upgradeCost, upgradePreview } from '../../../shared/src/craft';
 import { equippedItems } from '../../../shared/src/equip';
@@ -299,6 +300,7 @@ export function Upgrade({ npc, char, back }: { npc: string; char: CharData; back
                   {modEntries(cur).map(([k, v]) => <li><span>{MOD_LABEL[k as ModKey]}</span><span>{v}</span><i>➜</i><b class="good">{(nxt as any)[k] ?? v}</b></li>)}
                   {pre.bonus && <li class="upg-bonus"><span>Neu bei +{pre.to}</span><b class="good">{fmtMod(pre.bonus[0], pre.bonus[1])}</b></li>}
                   {pre.passive && <li class="upg-bonus"><span>Neu bei +{pre.to}</span><b class="good">{pre.passive.name}</b></li>}
+                  <li class="upg-gs" title={GS_HELP}><span>Ausrüstungswert</span><span>{itemGS(it)}</span><i>➜</i><b class="good">{itemGS({ ...it, up: it.up + 1 })}</b></li>
                 </ul>
                 {pre.passive && <p class="note upg-passive">{pre.passive.text}</p>}
                 <CostList cost={cost} char={char} />

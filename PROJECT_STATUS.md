@@ -54,6 +54,21 @@ Bei jeder spürbaren Änderung: `PATCHNOTES.md` (zeigt der Launcher an) und die 
   auf 4 Kernen) scheitern unter Last gelegentlich zeitkritische Schritte (zuletzt `coop`: Reaktion zu zweit, `welt`: seltenes
   Monster); einzeln laufen alle durch. Auf schwachen Rechnern `EM_JOBS=1` und `EM_TIMEOUT=2400` verwenden.
 
+### Ausrüstungswert (GS) – in Arbeit für die nächste Version
+
+- Eine Formel in `shared/src/gearscore.ts`, Messpunkte und Empfehlungen in `shared/src/data/gsreq.ts`, alles beschrieben in
+  `docs/GEAR_SCORE.md`. Gezeigt in Puppe (mit Wert je Platz), Charakterbogen, jedem Tooltip (Vergleich mit Änderung des
+  Charakter-Werts, Ringe gegen beide Plätze), Schmiede, Gruppenrahmen, Gruppenfenster, Ansehen, Bereitschaftsprüfung,
+  Gruppenbereich und Trophäenhalle der Quellwarte, Portal (je Expedition, Grad und Tiefe) und Riss-Stein (je Stufe, Prüfung der Sieben).
+- Der Server rechnet den Wert aus seinen Gegenständen und schickt ihn nur mit Gruppe, Ansehen, Online-Liste, Gesuchen und
+  Bereitschaft – nie mit den Snapshots. Unter dem Mindestwert gibt es eine Warnung (in Gruppen mit Namen), keine Sperre;
+  eine harte Grenze kann ein Inhalt festlegen (`ExpeditionDef.gsReq`), keiner tut es.
+- **Es gibt keine Raids.** Die Belohnungsstufe „Raid-Endgame“ tragen die schwersten vorhandenen Inhalte (Mythisch, Tiefen,
+  Prüfung der Sieben, Mana-Risse ab Stufe 20); ein späterer Raid legt nur empfohlenen und Mindestwert fest.
+- **Offen:** Empfehlungen für Schwer (Story) und für Tiefen über 10 sind aus dem Modell fortgeschrieben, nicht mit Bots gemessen.
+  Ein neuer Charakter liegt unter dem Mindestwert der Wurzeltiefe (Warnung schon beim ersten Dungeon). Eigenschaften zählen
+  gleich, ob Krit oder Goldfund (Güte der Würfelung, nicht Kampfnutzen). Keine eigene „Kampfkraft“.
+
 ### Offene Punkte nach 0.8
 
 Alle Inhalte der Roadmap sind umgesetzt. Was bleibt, betrifft vor allem das, was nur Menschen beurteilen können:

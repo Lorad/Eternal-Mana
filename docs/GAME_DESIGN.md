@@ -246,6 +246,12 @@ Die Zweithand hängt an der Klasse: Schild (Krieger, Paladin), Köcher (Waldläu
 Bosse lassen benannte Elementarwaffen und – ab dem zweiten Sieg – benannte Stücke für die neuen Plätze fallen. Händler
 verkaufen Tränke und Grundausrüstung für alle Plätze.
 
+**Ausrüstungswert (GS, 0.12):** eine Zahl für die Güte der zehn angelegten Teile – Gegenstandsstufe, Seltenheit, Verbesserung
+(mit den Boni bei +3/+6/+9 und der Passive bei +10), Eigenschaften, Rune, Element, Legendäre Wirkung, Unikate; Setboni zählen
+nicht. Gemessen am Budget des Platzes, nicht an den Werten – damit für alle Klassen gleich. Er steht in Puppe, Charakterbogen,
+jedem Tooltip (mit Vergleich), bei Mitspielern und am Portal, wo jede Expedition, jeder Grad und jede Tiefe einen empfohlenen
+und einen Mindestwert aus dem Spielermodell trägt (Warnung, keine Sperre). Alles dazu: **`docs/GEAR_SCORE.md`**.
+
 ## Handwerk (0.3)
 
 Bewusst schlank: keine Berufsstufen, keine eigene Währung – nur Rezept, Rohstoffe, Gold, Stufe und die richtige Station.
@@ -587,6 +593,14 @@ derselbe Bot auf Mythisch im Hof der Hohlen Krone selbst mit Riss-Ausrüstung de
 Leben); danach 21 Minuten, ein Tod. Die erste Fassung der Tiefen (Stufe +1 und +12 % Leben je Tiefe, „Erwacht“ unter den
 Modifikatoren) war schon ab Tiefe 1 nicht zu schaffen. Tiefe 10 und mehr ist allein kaum noch möglich – das ist Gruppen und voll
 verbesserter Ausrüstung vorbehalten (zu zweit hängen die Bots dort in Kämpfen fest: unbestätigt).
+
+### Ausrüstungswert entlang der Reise (0.12)
+
+Die Charaktere dieses Spieltests liefern auch die Messpunkte des Ausrüstungswerts: typisch ausgerüstet Stufe 10 → GS 168,
+Stufe 20 → 335, Stufe 30 → 518, Stufe 40 → 747, Ende der Geschichte 784, Riss-Ausrüstung 10 / 20 / 30 → 1.706 / 2.235 / 2.687,
+alles Legendär +10 → 3.672, alles Mythisch +10 → 4.159; die Klassen liegen jeweils innerhalb von 1 %. Daraus folgen Farbstufen
+und die Empfehlungen je Inhalt (die Grade des Endspiels genau so, wie die Tabelle oben sie gemessen hat: Albtraum ↔ Riss 10,
+Mythisch ↔ Riss 20, Tiefe t ↔ Riss 20 + t). Tabellen und Herleitung: `docs/GEAR_SCORE.md`; Wächter in `tests/balance.test.ts`.
 
 ### Was der Spieltest nicht beurteilen kann
 
