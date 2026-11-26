@@ -5,7 +5,7 @@
 // Bilder: tests/e2e/out/grade-*.png
 //   EM_DEV=1 EM_PORT=7795 EM_DATA=/tmp/em-e2e npm start        (anderes Fenster)
 //   EM_URL=http://localhost:7795 node tests/e2e/expedition-grade.mjs
-import { enter, finish, goHome, launch, player, url, viaPortal } from './lib/exp.mjs';
+import { enter, finish, goHome, launch, openPortal, player, url, viaPortal } from './lib/exp.mjs';
 
 const browser = await launch();
 const errors = [];
@@ -23,7 +23,7 @@ async function openChest(label, n) {
   const c = (await a.objs('chest')).find(o => o.props.label === label);
   if (!c) throw new Error(`keine „${label}“ in der Belohnungskammer`);
   const inv0 = await a.page.evaluate(() => window.__em.store.state.char.inv.length);
-  if (!(await a.walkTo(c.x, c.y + 16, { near: 8 }))) { a.notes.push(`${label}: nicht erreicht, Dev-Sprung`); await a.goto(c.x, c.y + 16); }
+  await a.goto(c.x, c.y + 18); // direkt davor: Geprüft wird die Truhe, nicht der Weg um den Kristall daneben
   await a.has('Truhe öffnen');
   await a.use();
   await a.page.waitForFunction(i => window.__em.store.state.char.inv.length > i, inv0, { timeout: 5000 });
@@ -52,8 +52,7 @@ await step('Charakter: Stufe 40, Expeditionen frei', async () => {
 
 console.log('\nNormal (schaltet Schwer frei)');
 await step('Auswahl: Schwer gesperrt, mit Grund', async () => {
-  await a.cmd('/portal'); await a.inZone('quellwarte');
-  await a.page.keyboard.press('e');
+  await openPortal(a);
   await a.page.locator('.xp-list .craft-row', { hasText: X.name }).click();
   await a.page.locator('.xp-diff.d-schwer.locked').waitFor({ timeout: 4000 });
   await a.has('Nach einem Abschluss auf Normal.');

@@ -70,6 +70,8 @@ export async function player(browser, prefix, key, name, cls, errors) {
     /** Schwebetext seit `since` (Zeitstempel) gesehen? */
     saw: (s, since = 0) => log.some(e => e.at >= since && e.k === 'txt' && String(e.s).includes(s)),
     sawWait: async (s, since = 0, timeout = 10000) => { const t0 = Date.now(); while (Date.now() - t0 < timeout) { if (p.saw(s, since)) return true; await page.waitForTimeout(120); } throw new Error(`Schwebetext „${s}“ kam nicht`); },
+    /** hinlaufen; klappt es nicht (Gegner drängen, Deko im Weg), springt die Figur hin – gezählt in notes */
+    reach: async (x, y, what, opt = {}) => { if (!(await p.walkTo(x, y, { near: 8, timeout: 9000, ...opt }))) { p.notes.push(what + ': hingesprungen'); await p.goto(x, y); } },
     goto: async (x, y) => { await p.cmd(`/goto ${Math.round(x)} ${Math.round(y)}`); await page.waitForTimeout(250); },
     /** Echt laufen (Tasten W/A/S/D) bis in die Nähe von (x, y). Steckt die Figur fest, hilft ein kurzer Dev-Sprung (wird gezählt). */
     walkTo: async (x, y, { near = 10, timeout = 8000 } = {}) => {
@@ -115,11 +117,18 @@ export async function enter(p) {
 
 export const DIFF_NAME = { normal: 'Normal', schwer: 'Schwer', albtraum: 'Albtraum', mythisch: 'Mythisch' };
 
+/** Vor das Expeditionsportal der Quellwarte und das Auswahlfenster öffnen */
+export async function openPortal(p) {
+  for (let i = 0; ; i++) { // E trifft manchmal eine vorbeilaufende Figur der Warte statt des Portals – dann noch einmal davor
+    await p.cmd('/portal'); await p.inZone('quellwarte');
+    await p.use();
+    try { await p.has('Herausforderung der Woche', 3000); return; } catch (e) { if (i >= 2) throw e; p.notes.push('Portal: E traf etwas anderes'); await p.esc(); await p.esc(); }
+  }
+}
+
 /** Durch das Portal der Quellwarte: Auswahlfenster, Expedition und Grad wählen, allein aufbrechen, Einleitung lesen */
 export async function viaPortal(p, x, diff = 'normal', n = '') {
-  await p.cmd('/portal'); await p.inZone('quellwarte');
-  await p.page.keyboard.press('e');
-  await p.has('Herausforderung der Woche');
+  await openPortal(p);
   await p.page.locator('.xp-list .craft-row', { hasText: x.name }).click();
   if (diff !== 'normal') await p.page.locator('.xp-diff.d-' + diff).click();
   await p.wait(250);
@@ -154,7 +163,7 @@ async function useAll(p, kind, n) {
     const j0 = p.jumps;
     let tries = 0;
     for (; tries < 3; tries++) { // Gegner drängen die Figur gern ein Stück weg – dann noch einmal hin
-      if (!(await p.walkTo(o.x, o.y + 16, { near: 8, timeout: 9000 }))) throw new Error(`${kind} bei ${Math.round(o.x)},${Math.round(o.y)} nicht erreicht`);
+      await p.reach(o.x, o.y + 16, kind);
       await p.use(); await p.wait(400);
       if ((await p.objs(kind)).find(x => x.id === o.id)?.state === 1) break;
     }
@@ -272,7 +281,7 @@ export const SIGS = {
     const chains = await p.objs('chain');
     if (chains.length < 2) throw new Error(`${chains.length} Kühlketten`);
     const c = nearest(chains, await p.me());
-    await p.walkTo(c.x, c.y + 16, { near: 8, timeout: 9000 });
+    await p.reach(c.x, c.y + 16, 'Kühlkette');
     await p.use();
     await p.has('zieht die Kühlkette', 6000);
     await p.wait(400); await p.shot(n + '-kuehlkette');
@@ -283,10 +292,11 @@ export const SIGS = {
     const since = Date.now();
     await p.shot(n + '-halt-still');
     await p.sawWait('Erstarrt!', since, 4000); // 2,6 s nach der Ansage – ab da zählt jede Bewegung, 1,6 s lang
-    await p.shot(n + '-erstarrt');
+    await p.wait(250);
     if (p.saw('Bewegt!', since)) throw new Error('Stillstand traf, obwohl die Figur stand');
     await p.page.keyboard.down('KeyD'); await p.wait(400); await p.page.keyboard.up('KeyD');
     await p.sawWait('Bewegt!', since, 2000);
+    await p.shot(n + '-bewegt');
   },
   /** Archivar: eingetragen werden, zum Tintenfass laufen, gestrichen werden */
   async ink(p, n) {
@@ -296,7 +306,7 @@ export const SIGS = {
     const inks = await p.objs('ink');
     if (inks.length < 3) throw new Error(`${inks.length} Tintenfässer`);
     const o = nearest(inks, await p.me());
-    await p.walkTo(o.x, o.y + 14, { near: 8, timeout: 7000 });
+    await p.reach(o.x, o.y + 14, 'Tintenfass', { timeout: 6000 });
     await p.sawWait('Gestrichen!', since, 3000);
     await p.has('Vorgang ausgesetzt', 3000);
     await p.shot(n + '-gestrichen');

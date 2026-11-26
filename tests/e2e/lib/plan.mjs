@@ -2,7 +2,7 @@
 // je durch das Portal der Quellwarte hinein, zuerst der Mini-Boss, das besondere Ereignis (Finsternis, Einsturz, Flut,
 // Hinterhalt), Abschnitte ansehen, die Schatzkammer (in den Unteren Archiven mit der Spur zur geheimen Expedition), die
 // Signatur des Endbosses wirklich auslösen, Phasen 2 und 3, Abschluss, Rückkehr in die Warte.
-import { EVENTS, bossToEnd, enter, finish, goHome, launch, mini, player, url, viaPortal, visit } from './exp.mjs';
+import { EVENTS, bossToEnd, enter, finish, goHome, launch, mini, openPortal, player, url, viaPortal, visit } from './exp.mjs';
 
 /** Plan je Expedition: Abschnitte zum Ansehen, Ereignis, Mini-Boss, Bossarena, Signatur, Schatzkammer */
 export const PLAN = [
@@ -39,8 +39,7 @@ export async function playExpeditions(prefix, ids) {
   await step('Charakter anlegen, Expeditionen freischalten' + (only.includes('exp_ruinen') ? ' (die geheime noch nicht)' : ''), async () => {
     await enter(a);
     await a.cmd('/lvl 8'); await a.cmd(only.includes('exp_ruinen') ? '/expfrei spuren' : '/expfrei'); await a.cmd('/welt aus'); await a.cmd('/time 0.45'); await a.cmd('/god');
-    await a.cmd('/portal'); await a.inZone('quellwarte');
-    await a.page.keyboard.press('e');
+    await openPortal(a);
     await a.has('Der Hof der Hohlen Krone');
     if (only.includes('exp_ruinen') && await a.page.locator('.xp-list .craft-row', { hasText: 'Die Gestrichenen Seiten' }).count()) throw new Error('die geheime Expedition steht schon vor ihrer Entdeckung in der Liste');
     await a.shot('00-liste');
@@ -77,8 +76,7 @@ export async function playExpeditions(prefix, ids) {
     await step('Sieg, Abschlussbildschirm, Belohnungskammer', () => finish(a, x, n));
     await step('Gemeinsame Rückkehr in die Quellwarte, Zusammenfassung', () => goHome(a, x, n));
     if (x.discover) await step('Die geheime Expedition steht jetzt am Portal', async () => {
-      await a.cmd('/portal'); await a.wait(600);
-      await a.use();
+      await openPortal(a);
       await a.page.locator('.xp-list .craft-row', { hasText: 'Die Gestrichenen Seiten' }).waitFor({ timeout: 5000 });
       await a.shot('gestrichen-in-der-liste');
       await a.esc();
