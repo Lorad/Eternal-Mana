@@ -1148,6 +1148,17 @@ export class GameScene extends Phaser.Scene {
    * 0.8: Ein Fehler in einem einzelnen Bild darf das Spiel nicht einfrieren (Phaser fordert nach einer Ausnahme kein neues
    * Bild mehr an). Er wird gemeldet, das nächste Bild läuft weiter; häufen sich die Fehler, steht eine Leiste mit „Neu laden“.
    */
+  /** 0.9: Namen über Gegnern (Erwachte auf Mythisch tragen drei Affixe) überdecken sich in dichten Gruppen – der nächste gewinnt */
+  private labelSweepAt = 0;
+  private declutterMobLabels() {
+    const placed: Phaser.Geom.Rectangle[] = [], me = this.me;
+    const list = [...this.mobs.values()].filter(v => v.label).sort((a, b) => Math.hypot(a.x - me.x, a.y - me.y) - Math.hypot(b.x - me.x, b.y - me.y));
+    for (const v of list) {
+      const r = v.label!.getBounds(), free = !placed.some(p => Phaser.Geom.Intersects.RectangleToRectangle(p, r));
+      if (v.label!.visible !== free) v.label!.setVisible(free);
+      if (free) placed.push(r);
+    }
+  }
   update(t: number, dtMs: number) {
     try { this.frame(t, dtMs); this.failCount = 0; }
     catch (e) {
@@ -1181,6 +1192,7 @@ export class GameScene extends Phaser.Scene {
     for (const v of this.players.values()) { this.interp(v, rt); v.setLook(v.info.g); v.draw(now); this.syncPet(v, v.info.pet, dt, now); }
     this.me.setLook(st.char?.look?.g); this.syncPet(this.me, st.char?.pet, dt, now); // 0.7: Gewand und Begleiter
     for (const v of this.mobs.values()) { this.interp(v, rt); v.draw(now); }
+    if (now - this.labelSweepAt > 150) { this.labelSweepAt = now; this.declutterMobLabels(); }
     for (let k = this.dying.length - 1; k >= 0; k--) {
       const v = this.dying[k];
       v.draw(now);

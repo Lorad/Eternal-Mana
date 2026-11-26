@@ -5,6 +5,8 @@
  * Client den ersten vorhandenen Ersatz aus dieser Liste (animierte Varianten `<name>_0..n` werden wie üblich erkannt).
  * Ist die echte Grafik da, wird sie ohne weitere Änderung benutzt.
  */
+import { ELITE_AFFIX } from '../../../shared/src/data/expeditions';
+
 export const EXP_ART_FALLBACK: Record<string, string[]> = {
   expedition_portal: ['portal'],            // großes, animiertes Portal (~64×80, 6 Bilder) → wirbelndes Portal
   portal_small: ['portal'],                 // kleines Portal in Quellhain (4 Bilder)
@@ -26,3 +28,15 @@ export const EXP_ART_FALLBACK: Record<string, string[]> = {
   exp_schatten_a: ['shadow_spire_l', 'void_crystal'], exp_schatten_b: ['chain_pillar', 'eye_stalk'], exp_schatten_c: ['broken_arch', 'void_rift'],
 };
 export function expArtFallback(name: string): string[] { return EXP_ART_FALLBACK[name] ?? []; }
+
+/**
+ * Erwachte mit Affixen (Expeditionen ab Schwer): Der Server nennt sie „Brennend, Eilig, Heilend: Erwachter Glimmerwisp“.
+ * Über dem Kopf steht daraus der Name und darunter die Affixe – halb so breit, damit eine Gruppe auf Mythisch lesbar bleibt.
+ */
+const AFFIX_NAMES = new Set(Object.values(ELITE_AFFIX).map(a => a.name));
+export function eliteLabel(name: string): { text: string; lines: number } {
+  const i = name.indexOf(': ');
+  const aff = i > 0 ? name.slice(0, i).split(', ') : [];
+  if (!aff.length || !aff.every(a => AFFIX_NAMES.has(a))) return { text: name, lines: 1 };
+  return { text: `${name.slice(i + 2)}\n${aff.join(' · ')}`, lines: 2 };
+}

@@ -9,6 +9,7 @@ import type { Fx, FxHandle } from './fxlib';
 import { outfitSheet } from '../../../shared/src/data/looks';
 import type { PetView } from './pets';
 import { ensureCharTexture } from './textures';
+import { eliteLabel } from './expart';
 
 export interface Buf { t: number; x: number; y: number }
 /** Schattenwurf: Drehung (rad), Längenfaktor, Deckkraft */
@@ -153,7 +154,11 @@ export class MobView {
     if (this.boss) this.blob.setScale(meta.w / 56); else if (this.scale > 1.3) this.blob.setScale(this.scale * 0.8);
     this.shadow = makeShadow(sc, this.key, '0', this.originY);
     this.sprite = sc.add.sprite(info.x, info.y, this.key, '0').setOrigin(0.5, this.originY).setScale(this.scale);
-    if (info.elite || edef?.named) this.label = ctx.text(0, 0, info.name ?? '', edef?.named ? '#ffb8f0' : '#ffd070').setOrigin(0.5, 1);
+    if (info.elite || edef?.named) {
+      const l = eliteLabel(info.name ?? ''); // 0.9: Affixe der Erwachten in einer zweiten, kleineren Zeile
+      this.label = ctx.text(0, 0, l.text, edef?.named ? '#ffb8f0' : '#ffd070', l.lines > 1 ? 7 : undefined).setOrigin(0.5, 1);
+      if (l.lines > 1) this.label.setAlign('center').setLineSpacing(-2);
+    }
     this.bar = sc.add.graphics();
   }
   private baseTint?: number;
