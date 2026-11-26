@@ -102,13 +102,17 @@ await step('Vor der Tür: Vael, drei Wachfeuer, eines erlischt – Stehenbleiben
   let fires = await objs('watchfire');
   if (fires.length !== 3) throw new Error(`${fires.length} Wachfeuer statt 3`);
   await shot('09-vael-wachfeuer');
-  for (let i = 0; i < 40 && !(fires = await objs('watchfire')).some(f => f.state === 0); i++) await wait(500);
-  const dark = fires.find(f => f.state === 0);
+  // dunkel = Beschriftung „Wachfeuer (dunkel)“ (die Beschriftung kommt mit jedem Wechsel; der Zustand beim ersten Aufbau nicht immer)
+  const isDark = f => /dunkel/.test(f.label ?? '');
+  for (let i = 0; i < 40 && !(fires = await objs('watchfire')).some(isDark); i++) await wait(500);
+  const dark = fires.find(isDark);
   if (!dark) throw new Error('kein Wachfeuer erloschen');
   await shot('10-wachfeuer-dunkel');
   await cmd(`/goto ${Math.round(dark.x + 6)} ${Math.round(dark.y + 10)}`);
-  for (let i = 0; i < 20 && (await objs('watchfire')).find(f => f.id === dark.id)?.state === 0; i++) await wait(400);
-  if ((await objs('watchfire')).find(f => f.id === dark.id)?.state !== 1) throw new Error('das Feuer brennt nicht wieder');
+  // die Szene baut ein Objekt mit neuen Eigenschaften kurz neu auf – deshalb warten, bis es wirklich als brennend dasteht
+  let lit = false;
+  for (let i = 0; i < 25 && !lit; i++) { await wait(400); const f = (await objs('watchfire')).find(q => q.id === dark.id); lit = !!f && !isDark(f); }
+  if (!lit) throw new Error('das Feuer brennt nicht wieder');
   await shot('11-wachfeuer-entzuendet');
 });
 await step('Phasen 2 und 3, Vael gibt sich geschlagen, Abschluss mit Endspiel-Beute', async () => {
