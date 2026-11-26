@@ -10,7 +10,7 @@ const MECH: EnemyDef[] = [
   { id: 'xm_knospe', name: 'Dornenknospe', element: 'earth', hpMul: 2.2, dmgMul: 0.9, defMul: 0.7, xpMul: 0.3, speed: 0, radius: 10, ai: 'ranged', aggro: 180,
     atk: { range: 170, windup: 0.9, cd: 3.2, proj: { spr: 'spore', speed: 80, count: 3, spread: 30 } }, sprite: 'pilzling', tint: 0xff6a8a, scale: 1.5, named: true, weak: ['fire'] },
   { id: 'xm_prisma', name: 'Prismensäule', element: 'light', hpMul: 9, dmgMul: 0, defMul: 4, xpMul: 0, speed: 0, radius: 12, ai: 'chase', aggro: 0,
-    atk: { range: 0, windup: 9, cd: 99 }, sprite: 'kristallkrabbler', tint: 0xd8f8ff, scale: 1.6, named: true },
+    atk: { range: 0, windup: 9, cd: 99 }, sprite: 'frostwisp', tint: 0xe0f4ff, scale: 2.2, named: true }, // ein schwebender Kristallsplitter liest sich als Säule, ein Krebs nicht
   { id: 'xm_folio', name: 'Lebender Foliant', element: 'wind', hpMul: 2.4, dmgMul: 1, defMul: 0.8, xpMul: 0.3, speed: 0, radius: 10, ai: 'ranged', aggro: 200,
     atk: { range: 180, windup: 0.8, cd: 2.8, proj: { spr: 'orb', speed: 90 } }, sprite: 'arkanauge', tint: 0xfff0c0, scale: 1.3, named: true },
   { id: 'xm_eisspiegel', name: 'Eisspiegel', element: 'water', hpMul: 2.6, dmgMul: 0.8, defMul: 1.2, xpMul: 0.3, speed: 0, radius: 10, ai: 'ranged', aggro: 200,

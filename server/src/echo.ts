@@ -15,6 +15,9 @@ export interface EchoMech {
   speed?: number; start?(k: BossKit): void; phase?(k: BossKit, phase: number): void; pattern?(k: BossKit): Gen;
   // ---- 0.9 Expeditionen (server/src/expedition/bossmech.ts): eigene Phasengrenzen, Takt der Signaturmechanik, Aufräumen beim Zurücksetzen
   phases?: [number, number]; tick?(k: BossKit, dt: number): void; reset?(k: BossKit): void;
+  /** Ein Ansturm des Bosses ist von (x0, y0) nach (x1, y1) gegangen. Gibt die Mechanik eine Pause zurück, hat sie den Ausgang
+   *  übernommen (z. B. Prismensäule getroffen oder Panzer hält) und der Boss wartet so lange; sonst gilt das alte Muster. */
+  charged?(k: BossKit, x0: number, y0: number, x1: number, y1: number): number | undefined;
 }
 
 export const ECHO_MECH: Record<string, EchoMech> = {

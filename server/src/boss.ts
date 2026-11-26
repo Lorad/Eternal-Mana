@@ -296,7 +296,9 @@ export class BossCtl {
   private *dashLine(t: Player, len: number, w: number, delay: number, mult: number): Gen {
     const m = this.mob;
     const a = Math.atan2(t.y - m.y, t.x - m.x);
-    const [ex, ey] = this.clampRoom(m.x + Math.cos(a) * len, m.y + Math.sin(a) * len);
+    let [ex, ey] = this.clampRoom(m.x + Math.cos(a) * len, m.y + Math.sin(a) * len);
+    // 0.9: Arenen der Expeditionen sind nicht rechteckig – der Ansturm endet vor der Wand, nicht in ihr
+    for (let k = 0; k < 40 && !circleFree(this.zone.solidWalk, ex, ey, 8) && Math.hypot(ex - m.x, ey - m.y) > 8; k++) { ex -= Math.cos(a) * 8; ey -= Math.sin(a) * 8; }
     this.beam(m.x, m.y, ex, ey, w, delay, mult);
     this.anim(Anim.Windup, delay);
     m.facingLeft = ex < m.x ? 1 : 0;
@@ -407,8 +409,12 @@ export class BossCtl {
   }
   private *kkCharge(): Gen {
     const t = this.target(); if (!t) return;
+    const x0 = this.mob.x, y0 = this.mob.y;
     yield* this.dashLine(t, 230, 34, 0.95, 1.8);
     this.radial(8, 100, 0, 'rock', 0.7);
+    // 0.9: In seiner Expedition entscheidet der Kristallpanzer (Prismensäulen), ob er taumelt
+    const mech = this.echo?.charged?.(this.kit(), x0, y0, this.mob.x, this.mob.y);
+    if (mech !== undefined) { yield mech; return; }
     this.say('*Der Koloss rammt die Wand und taumelt – jetzt ist er verwundbar!*');
     this.mob.vuln = 1.6; this.anim(Anim.Hurt, 2.5);
     yield 2.5;

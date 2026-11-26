@@ -5,6 +5,7 @@
  *   – je Schwierigkeitsgrad: einen zusätzlichen Angriff, Helfer in jeder Phase, Wut nach einer Frist, die Signatur öfter.
  * BossCtl ruft die Haken über dieselbe Schnittstelle wie bei den Boss-Echos auf (EchoMech in echo.ts).
  */
+import { circleFree } from '../../../shared/src/collision';
 import { TILE } from '../../../shared/src/maps/tiles';
 import { EXPEDITIONS, EXP_CFG, EXP_DIFF } from '../../../shared/src/data/expeditions';
 import { Anim } from '../../../shared/src/types';
@@ -42,6 +43,8 @@ interface Signature {
   pattern?(k: BossKit, s: MechState): Gen;
   /** Spieler benutzt ein Objekt der Mechanik (Kühlkette, Tintenfass) */
   use?(k: BossKit, s: MechState, p: Player, o: Obj): void;
+  /** Ansturm aus einem gewöhnlichen Muster des Bosses (EchoMech.charged) */
+  charged?(k: BossKit, s: MechState, x0: number, y0: number, x1: number, y1: number): number | undefined;
 }
 
 /** Punkte am Rand der Arena (px), mindestens `minD` von der Mitte */
@@ -58,6 +61,23 @@ function edgeSpots(k: BossKit, n: number, minD = 110): [number, number][] {
 function overgrow(k: BossKit, x: number, y: number, r: number, el: Element) {
   const z = k.boss.zone, t = now(k);
   z.addFx({ kind: 'zone', x, y, r, el, dur: 999, until: t + 999, tick: 0.6, nextTick: t + 1.2, hostile: true, raw: k.boss.mob.dmg * 0.35, lvl: k.boss.def.level, status: el === 'earth' ? { id: 'slow', dur: 1.5 } : undefined, by: k.boss.def.name });
+}
+
+/** Kristallkoloss: Trifft der Weg (x0, y0) → (x1, y1) eine Prismensäule, zerschellt sie – und er taumelt. */
+function shatter(k: BossKit, s: MechState, x0: number, y0: number, x1: number, y1: number): boolean {
+  const z = k.boss.zone, L = Math.hypot(x1 - x0, y1 - y0) || 1;
+  for (const p of [...s.adds]) {
+    if (p.dead) continue;
+    const c = Math.max(0, Math.min(1, ((p.x - x0) * (x1 - x0) + (p.y - y0) * (y1 - y0)) / (L * L)));
+    if (Math.hypot(x0 + (x1 - x0) * c - p.x, y0 + (y1 - y0) * c - p.y) > 30) continue;
+    p.invuln = false; z.killMob(p); s.adds.delete(p);
+    z.ev({ k: 'fx', n: 'explosion', x: p.x, y: p.y, r: 50, el: 'light' });
+    s.stunUntil = z.game.now + 5;
+    k.say('*Die Säule zerspringt – der Koloss taumelt. Jetzt!*');
+    k.anim(Anim.Hurt, 4.5);
+    return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------------------------------------------- Signaturen
@@ -105,8 +125,14 @@ const SIG: Record<string, Signature> = {
     *pattern(k, s) {
       const t = k.target(); if (!t) return;
       const m = k.boss.mob, z = k.boss.zone, a = Math.atan2(t.y - m.y, t.x - m.x), r = k.boss.room;
+      // Der Weg endet an der ersten Säule auf der Bahn – sonst vor der Wand (die Arena ist nicht rechteckig)
       let ex = m.x, ey = m.y;
-      for (let d = 0; d < 360; d += 6) { const nx = m.x + Math.cos(a) * d, ny = m.y + Math.sin(a) * d; if (nx < (r.x0 + 1.5) * TILE || nx > (r.x1 - 0.5) * TILE || ny < (r.y0 + 1.5) * TILE || ny > (r.y1 - 0.5) * TILE) break; ex = nx; ey = ny; }
+      for (let d = 0; d < 360; d += 6) {
+        const nx = m.x + Math.cos(a) * d, ny = m.y + Math.sin(a) * d;
+        if (nx < (r.x0 + 1.5) * TILE || nx > (r.x1 - 0.5) * TILE || ny < (r.y0 + 1.5) * TILE || ny > (r.y1 - 0.5) * TILE || !circleFree(z.solidWalk, nx, ny, 10)) break;
+        ex = nx; ey = ny;
+        if (d > 20 && [...s.adds].some(p => !p.dead && Math.hypot(p.x - nx, p.y - ny) < 22)) break;
+      }
       k.say('*Der Koloss senkt den Kopf. Ansturm!*');
       k.beam(m.x, m.y, ex, ey, 34, 1.1, 1.8);
       k.anim(Anim.Windup, 1.1);
@@ -115,21 +141,16 @@ const SIG: Record<string, Signature> = {
       z.ev({ k: 'fx', n: 'dash', x: m.x, y: m.y, el: m.element, ang: a });
       m.x = ex; m.y = ey;
       k.anim(Anim.Attack, 0.3);
-      // trifft der Weg eine Säule, zerschellt sie – und er mit ihr
-      for (const p of [...s.adds]) {
-        if (p.dead) continue;
-        const L = Math.hypot(ex - x0, ey - y0) || 1, u = ((p.x - x0) * (ex - x0) + (p.y - y0) * (ey - y0)) / (L * L), c = Math.max(0, Math.min(1, u));
-        if (Math.hypot(x0 + (ex - x0) * c - p.x, y0 + (ey - y0) * c - p.y) > 30) continue;
-        p.invuln = false; z.killMob(p); s.adds.delete(p);
-        z.ev({ k: 'fx', n: 'explosion', x: p.x, y: p.y, r: 50, el: 'light' });
-        s.stunUntil = z.game.now + 5;
-        k.say('*Die Säule zerspringt – der Koloss taumelt. Jetzt!*');
-        k.anim(Anim.Hurt, 4.5);
-        yield 4.5;
-        return;
-      }
+      if (shatter(k, s, x0, y0, ex, ey)) { yield 4.5; return; }
       k.radial(10, 100, 0, 'rock', 0.7);
       yield 0.6;
+    },
+    // Der Ansturm aus seinen gewöhnlichen Mustern (Phase 2 und 3) zählt genauso – solange Säulen stehen, hält sonst der Panzer
+    charged(k, s, x0, y0, x1, y1) {
+      if (shatter(k, s, x0, y0, x1, y1)) return 4.5;
+      if (!s.adds.size) return undefined;
+      k.say('*Der Koloss rammt die Wand – doch der Kristallpanzer hält. Lockt ihn in eine Säule!*');
+      return 1.2;
     },
     tick(k, s) {
       const z = k.boss.zone, m = k.boss.mob, t = z.game.now;
@@ -320,6 +341,7 @@ export function expBossMech(zone: Zone, bossId: string): EchoMech {
       sig?.tick?.(k, s, dt);
     },
     reset(k) { const s = st(k.boss); s.invulnUntil = 0; k.boss.mob.invuln = true; sig?.reset?.(k, s); states.delete(k.boss); },
+    charged: sig?.charged ? (k, x0, y0, x1, y1) => sig.charged!(k, st(k.boss), x0, y0, x1, y1) : undefined,
   };
 }
 
