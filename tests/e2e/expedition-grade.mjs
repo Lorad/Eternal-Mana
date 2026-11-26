@@ -23,8 +23,8 @@ async function openChest(label, n) {
   const c = (await a.objs('chest')).find(o => o.props.label === label);
   if (!c) throw new Error(`keine „${label}“ in der Belohnungskammer`);
   const inv0 = await a.page.evaluate(() => window.__em.store.state.char.inv.length);
-  await a.walkTo(c.x, c.y + 16, { near: 8 });
-  await a.has(label);
+  if (!(await a.walkTo(c.x, c.y + 16, { near: 8 }))) { a.notes.push(`${label}: nicht erreicht, Dev-Sprung`); await a.goto(c.x, c.y + 16); }
+  await a.has('Truhe öffnen');
   await a.use();
   await a.page.waitForFunction(i => window.__em.store.state.char.inv.length > i, inv0, { timeout: 5000 });
   if (n) await a.shot(n);
@@ -92,7 +92,8 @@ await step('Endboss: Helfer und Wut-Anzeige', async () => {
   await hud('.exp-enrage').waitFor({ timeout: 6000 });
   const txt = await hud('.exp-enrage').innerText();
   if (!/^Wut in [45]:\d\d$/.test(txt)) throw new Error('Wut-Anzeige: ' + txt);
-  const helpers = (await a.mobs()).filter(m => !m.boss && m.name !== 'Prismensäule').length;
+  const all = await a.mobs(), b = all.find(m => m.boss);
+  const helpers = all.filter(m => !m.boss && m.name !== 'Prismensäule' && Math.hypot(m.x - b.x, m.y - b.y) < 300).length;
   if (helpers < 1) throw new Error('keine Helfer beim Kampfbeginn');
   await a.shot('albtraum-boss');
   return `${txt}, ${helpers} Helfer`;
@@ -118,10 +119,9 @@ await step('Endboss: Wut löst aus, der Boss rast', async () => {
 });
 await step('Abschluss: Beute in Seltenheitsfarben, Zusatztruhen', async () => {
   await finish(a, X, 'mythisch');
-  const items = await a.page.evaluate(() => window.__em.store.state.expRun && [...document.querySelectorAll('.xr-item')].length);
   const one = await openChest('Truhe der Unversehrten');
   const two = await openChest('Truhe der Eile');
-  return `${items ?? 0} Funde im Abschluss; Truhen: ${[...one, ...two].join(', ')}`;
+  return `Truhen: ${[...one, ...two].join(', ')}`;
 });
 await step('Mythische Beute: Lichtsäule am Boden, Rahmen im Inventar', async () => {
   await a.cmd('/mythisch'); await a.wait(1800);
@@ -138,7 +138,7 @@ await step('Mythische Beute: Lichtsäule am Boden, Rahmen im Inventar', async ()
 });
 await step('Heimkehr', () => goHome(a, X, 'mythisch'));
 
-console.log(`\nDev-Sprünge beim Laufen (Figur steckte fest): ${a.jumps}`);
+console.log(`\nDev-Sprünge beim Laufen (Figur steckte fest): ${a.jumps}${a.notes.length ? ' – ' + a.notes.join(', ') : ''}`);
 console.log(errors.length ? '\nFehler im Browser:\n' + [...new Set(errors)].slice(0, 20).join('\n') : '\nKeine Fehler im Browser.');
 await browser.close();
 process.exit(failed || errors.length ? 1 : 0);

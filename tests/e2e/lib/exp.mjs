@@ -121,7 +121,7 @@ export async function viaPortal(p, x, diff = 'normal', n = '') {
   await p.page.keyboard.press('e');
   await p.has('Herausforderung der Woche');
   await p.page.locator('.xp-list .craft-row', { hasText: x.name }).click();
-  if (diff !== 'normal') await p.page.locator('.xp-diff', { hasText: DIFF_NAME[diff] }).click();
+  if (diff !== 'normal') await p.page.locator('.xp-diff.d-' + diff).click();
   await p.wait(250);
   if (n) await p.shot(n + '-auswahl');
   await p.page.getByRole('button', { name: 'Allein aufbrechen' }).click();
