@@ -278,7 +278,7 @@ function openWindow(url) {
   if (x != null) args.push(`--window-position=${x},${y}`);
   if (!exe || !detach(exe, args)) openDefault(url);
 }
-/** Fenster im Format eines quer liegenden DIN-A4-Blatts (Seitenverhältnis 1,414 : 1), mittig auf dem Hauptbildschirm. */
+/** Fenster quer und breit (Seitenverhältnis 1,6 : 1, etwas breiter als DIN A4 quer), mittig auf dem Hauptbildschirm. */
 function windowBounds() {
   let area = null;
   if (isWin) {
@@ -292,11 +292,12 @@ function windowBounds() {
   }
   return fitA4(area);
 }
+const RATIO = 1.6;
 function fitA4(area) {
-  let w = 1120, h = 792;
+  let w = 1300, h = 812;
   if (!area) return { w, h, x: null, y: null };
-  w = Math.min(w, Math.floor(area.w * 0.92)); h = Math.round(w / 1.414);
-  if (h > area.h * 0.92) { h = Math.floor(area.h * 0.92); w = Math.round(h * 1.414); }
+  w = Math.min(w, Math.floor(area.w * 0.92)); h = Math.round(w / RATIO);
+  if (h > area.h * 0.92) { h = Math.floor(area.h * 0.92); w = Math.round(h * RATIO); }
   return { w, h, x: area.x + Math.round((area.w - w) / 2), y: area.y + Math.round((area.h - h) / 2) };
 }
 function gameUrl() {
