@@ -11,7 +11,7 @@
  * Daten und Regeln: shared/src/data/expeditions.ts, Karte: shared/src/maps/expedition.ts.
  */
 import { circleFree } from '../../../shared/src/collision';
-import { CFG } from '../../../shared/src/config';
+import { CFG, RARITY_NAME } from '../../../shared/src/config';
 import { BOSSES, ENEMIES, type BossDef } from '../../../shared/src/data/enemies';
 import {
   DIFFICULTIES, ELITE_AFFIX, ELITE_AFFIXES, EXPEDITIONS, EXP_BY_LEGACY, EXP_CFG, EXP_DIFF, MINIS, diffBlock, expPar, expUnlock, isExpedition, isoWeek, weeklyChallenge, weeklyFlag,
@@ -44,6 +44,12 @@ type ExpMsg = Extract<ClientMsg, { t: 'exp' }>;
 const reject = (p: Player, s: string) => { p.toast(s, 'bad'); p.pev.push({ k: 'sfx', n: 'ui_error' }); };
 const secOf = (zone: Zone, id: string) => zone.map.exp!.sections.find(s => s.id === id)!;
 const inSec = (s: ExpSection, x: number, y: number, pad = 0) => x >= (s.x0 + pad) * TILE && x < (s.x1 + 1 - pad) * TILE && y >= (s.y0 + pad) * TILE && y < (s.y1 + 1 - pad) * TILE;
+/** Was beim Hinterhalt die Ausgänge versperrt – im Grünwald Wurzeln, in den Archiven Gitter: [schließen, öffnen, Tür hält] */
+const AMBUSH_WALL: Record<string, [string, string, string]> = {
+  gruenwald: ['Wurzeln schließen den Raum', 'Die Wurzeln ziehen sich zurück', 'Die Wurzeln geben nicht nach'],
+  other: ['Eiserne Gitter fallen vor die Ausgänge', 'Die Gitter heben sich wieder', 'Das Gitter gibt nicht nach'],
+};
+const ambushWall = (zone: Zone) => AMBUSH_WALL[EXPEDITIONS[zone.exp!.exp].region] ?? AMBUSH_WALL.other;
 const EVENT_TEXT: Record<string, string> = { ambush: 'Hinterhalt: Welle', darkness: 'Finsternis: Lichtsteine', flood: 'Flut: Ventile', collapse: 'Einsturz – lauft!' };
 const weeklyNow = (): Weekly => weeklyChallenge(isoWeek(Date.now()));
 /** Stufe eines Gegners in diesem Lauf: Plan + Neuer Kreis + Schwierigkeitsgrad */
@@ -279,7 +285,7 @@ function tickAmbush(zone: Zone, ev: EventState, now: number) {
       for (const p of zone.alivePlayers()) if (m.cells.includes(Math.floor(p.y / TILE) * zone.map.w + Math.floor(p.x / TILE))) { p.x = s.entry.x; p.y = s.entry.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
     }
     zone.ev({ k: 'sfx', n: 'boss_roar' });
-    for (const p of zone.players.values()) p.toast('Hinterhalt! Wurzeln schließen den Raum. Haltet vier Wellen stand!', 'story');
+    for (const p of zone.players.values()) p.toast(`Hinterhalt! ${ambushWall(zone)[0]}. Haltet vier Wellen stand!`, 'story');
     sendInfo(zone);
     return;
   }
@@ -298,7 +304,7 @@ function tickAmbush(zone: Zone, ev: EventState, now: number) {
     clearBarriers(zone, ev); ev.state = 'done';
     zone.addDynamicObj('chest', (s.cx + 0.5) * TILE, (s.cy + 0.5) * TILE, { tier: 'silver', label: 'Beute des Hinterhalts' });
     zone.ev({ k: 'sfx', n: 'puzzle_solved' });
-    for (const p of zone.players.values()) p.toast('Der Hinterhalt ist überstanden. Die Wurzeln ziehen sich zurück.', 'good');
+    for (const p of zone.players.values()) p.toast(`Der Hinterhalt ist überstanden. ${ambushWall(zone)[1]}.`, 'good');
     sendInfo(zone); return;
   }
   ev.wave++;
@@ -367,7 +373,8 @@ function tickEvent(zone: Zone, ev: EventState, now: number) {
 /** Finsternis: das Licht geht aus; drei Lichtsteine bringen es zurück, bis dahin kommen Schatten */
 function startDarkness(zone: Zone, ev: EventState, s: ExpSection) {
   ev.waves = 3;
-  for (const [x, y] of eventSpots(zone, s, 3)) zone.addDynamicObj('xobj', x, y, { kind: 'lightstone', sec: s.id, frame: 'brazier_unlit', label: 'Lichtstein', prompt: 'Lichtstein entzünden' }, 'lightstone');
+  // ein kalter Schimmer: Im Dunkeln wären die Steine sonst nur an ihrer Beschriftung zu finden
+  for (const [x, y] of eventSpots(zone, s, 3)) zone.addDynamicObj('xobj', x, y, { kind: 'lightstone', sec: s.id, frame: 'brazier_unlit', light: [48, 0x9fb4ff, 0.7], label: 'Lichtstein', prompt: 'Lichtstein entzünden' }, 'lightstone');
   for (const p of zone.players.values()) p.toast('Das Licht geht aus. Irgendwo hier stehen Lichtsteine – entzündet alle drei!', 'story');
   zone.ev({ k: 'sfx', n: 'boss_phase' });
 }
@@ -622,7 +629,7 @@ export const Expedition = {
     }
     if ((o.type === 'brazier' || o.type === 'lever') && pr.psec) return puzzleInteract(zone, p, o);
     if (o.type === 'door' && o.state === 0) {
-      if (pr.ambush) { p.toast('Die Wurzeln geben nicht nach, solange der Hinterhalt dauert.', 'bad'); return true; }
+      if (pr.ambush) { p.toast(`${ambushWall(zone)[2]}, solange der Hinterhalt dauert.`, 'bad'); return true; }
       if (typeof pr.seal === 'string' && pr.seal.startsWith('pz:') && !run.puzzles.get(pr.seal.slice(3))?.solved) { p.toast('Versiegelt. Das Rätsel dieses Abschnitts hält das Tor.', 'bad'); p.pev.push({ k: 'sfx', n: 'door_locked' }); return true; }
       if (pr.seal === 'boss' && !run.done?.revealed) { p.toast('Dahinter wartet, was der Sieg verspricht. Erst der Kampf.', 'bad'); p.pev.push({ k: 'sfx', n: 'door_locked' }); return true; }
     }
@@ -803,10 +810,20 @@ export const Expedition = {
       if (p.zone.id !== t.zone || p.zone.exp) game.transfer(p, t.zone, '', { x: t.x, y: t.y }); else { p.x = t.x; p.y = t.y; p.epoch++; p.send({ t: 'pos', x: p.x, y: p.y, e: p.epoch }); }
       return true;
     }
-    if (cmd === 'expfrei') { // alle Expeditionen auf Normal freischalten (Bedingungen der Daten erfüllen)
-      for (const x of Object.values(EXPEDITIONS)) for (const r of x.unlock) { const c = r.cond; if (c?.flag) p.char.flags[c.flag] = 1; for (const a2 of c?.any ?? []) { if (a2.started && !p.char.quests[a2.started]) p.char.quests[a2.started] = { s: 'active', p: [0] }; } if (r.item) p.give(makeStack(r.item)); }
-      for (const x of Object.values(EXPEDITIONS)) p.char.flags['xs:' + x.id] = 1;
+    if (cmd === 'expfrei') { // alle Expeditionen auf Normal freischalten (Bedingungen der Daten erfüllen); „/expfrei spuren“ lässt die geheimen unentdeckt
+      const keep = a[0] === 'spuren', secret = (f: string) => keep && f.startsWith('xs:');
+      for (const x of Object.values(EXPEDITIONS)) for (const r of x.unlock) { const c = r.cond; if (c?.flag && !secret(c.flag)) p.char.flags[c.flag] = 1; for (const a2 of c?.any ?? []) { if (a2.started && !p.char.quests[a2.started]) p.char.quests[a2.started] = { s: 'active', p: [0] }; } if (r.item) p.give(makeStack(r.item)); }
+      if (!keep) for (const x of Object.values(EXPEDITIONS)) p.char.flags['xs:' + x.id] = 1;
       p.sync('flags', 'quests');
+      return true;
+    }
+    if (cmd === 'expwut' && p.zone.boss?.active && p.zone.exp) { // die Wut des Grads in drei Sekunden auslösen
+      const d = EXP_DIFF[p.zone.exp.diff];
+      if (d.enrage) p.zone.exp.bossAt = game.now - d.enrage + 3; else p.toast('Auf diesem Grad wird der Boss nicht wütend.', 'info');
+      return true;
+    }
+    if (cmd === 'mythisch') { // ein mythisches Stück vor die Füße legen (Darstellung am Boden prüfen)
+      p.zone.dropItemFor(p, generateGear(p.zone.rng, p.char.level, RARITY_NAME.length - 1, p.char.cls), p.x + 24, p.y);
       return true;
     }
     if (cmd === 'expphase' && p.zone.boss?.active) { const b = p.zone.boss, f = [0, 1, 0.58, 0.23][Math.max(1, Math.min(3, +a[0] || 2))]; b.mob.hp = Math.max(1, Math.round(b.mob.maxHp * f)); return true; }
